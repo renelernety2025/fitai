@@ -4,14 +4,15 @@ phases:
   pre_build:
     commands:
       - echo Logging into ECR...
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URL
+      - ECR_REGISTRY=$(echo $ECR_URL | cut -d'/' -f1)
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
       - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
   build:
     commands:
       - echo Building Web Docker image...
-      - docker build -t $ECR_URL/fitai-web:$IMAGE_TAG -t $ECR_URL/fitai-web:latest --platform linux/amd64 --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL -f apps/web/Dockerfile .
-      - docker push $ECR_URL/fitai-web:$IMAGE_TAG
-      - docker push $ECR_URL/fitai-web:latest
+      - docker build -t $ECR_URL:$IMAGE_TAG -t $ECR_URL:latest --platform linux/amd64 --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL -f apps/web/Dockerfile .
+      - docker push $ECR_URL:$IMAGE_TAG
+      - docker push $ECR_URL:latest
   post_build:
     commands:
       - echo Deploying to ECS...
