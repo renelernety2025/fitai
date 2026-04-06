@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.turbo/
+.env
+.env.local
+*.log
+coverage/
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+tsconfig.tsbuildinfo
+.expo/

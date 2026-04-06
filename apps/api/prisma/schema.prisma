@@ -1,0 +1,533 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum VideoCategory {
+  YOGA
+  PILATES
+  STRENGTH
+  CARDIO
+  MOBILITY
+}
+
+enum VideoDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PreprocessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  QUADRICEPS
+  HAMSTRINGS
+  GLUTES
+  CALVES
+  CORE
+  FULL_BODY
+}
+
+enum WorkoutPlanType {
+  PUSH_PULL_LEGS
+  UPPER_LOWER
+  FULL_BODY
+  CUSTOM
+}
+
+enum SetStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  level        UserLevel @default(BEGINNER)
+  isAdmin      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions        WorkoutSession[]
+  progress        UserProgress?
+  workoutPlans    WorkoutPlan[]
+  gymSessions      GymSession[]
+  exerciseHistory  ExerciseHistory[]
+  coachingSessions CoachingSession[]
+  safetyEvents     SafetyEvent[]
+  fitnessProfile    FitnessProfile?
+  aiPlans           AIGeneratedPlan[]
+  pushSubscriptions PushSubscription[]
+  notificationPrefs NotificationPreference?
+  following         Follow[]              @relation("follower")
+  followers         Follow[]              @relation("followed")
+  feedItems         ActivityFeedItem[]
+  challengeEntries  ChallengeParticipant[]
+  wearableData      WearableData[]
+  contentImports    ContentImport[]
+  marketplaceItems  MarketplaceItem[]
+}
+
+model UserProgress {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  totalXP         Int       @default(0)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastWorkoutDate DateTime?
+  totalSessions   Int       @default(0)
+  totalMinutes    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Video {
+  id                   String              @id @default(uuid())
+  title                String
+  description          String
+  category             VideoCategory
+  difficulty           VideoDifficulty
+  durationSeconds      Int
+  thumbnailUrl         String
+  hlsUrl               String?
+  s3RawKey             String
+  choreographyUrl      String?
+  preprocessingStatus  PreprocessingStatus @default(PENDING)
+  preprocessingError   String?
+  preprocessingJobId   String?
+  isPublished          Boolean             @default(false)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  sessions WorkoutSession[]
+}
+
+model WorkoutSession {
+  id              String    @id @default(uuid())
+  userId          String
+  videoId         String?
+  gymSessionId    String?   @unique
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  durationSeconds Int       @default(0)
+  accuracyScore   Float     @default(0)
+  poseData        Json?
+
+  user       User        @relation(fields: [userId], references: [id])
+  video      Video?      @relation(fields: [videoId], references: [id])
+  gymSession GymSession? @relation(fields: [gymSessionId], references: [id])
+  snapshots  PoseSnapshot[]
+
+  @@index([userId])
+  @@index([videoId])
+}
+
+model PoseSnapshot {
+  id           String  @id @default(uuid())
+  sessionId    String
+  timestamp    Int
+  poseName     String
+  isCorrect    Boolean
+  errorMessage String?
+  jointAngles  Json
+
+  session WorkoutSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+// ── Gym / Exercise System ──
+
+model Exercise {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  nameCs        String
+  description   String
+  descriptionCs String
+  muscleGroups  MuscleGroup[]
+  difficulty    VideoDifficulty
+  phases        Json
+  thumbnailUrl  String?
+  instructionUrl String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  plannedExercises PlannedExercise[]
+  exerciseSets     ExerciseSet[]
+  exerciseHistory  ExerciseHistory[]
+}
+
+model WorkoutPlan {
+  id          String          @id @default(uuid())
+  userId      String?
+  name        String
+  nameCs      String
+  description String
+  type        WorkoutPlanType
+  difficulty  VideoDifficulty
+  isTemplate  Boolean         @default(false)
+  daysPerWeek Int             @default(3)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User?            @relation(fields: [userId], references: [id])
+  days        WorkoutDay[]
+  gymSessions GymSession[]
+  aiPlans     AIGeneratedPlan[]
+}
+
+model WorkoutDay {
+  id            String   @id @default(uuid())
+  workoutPlanId String
+  dayIndex      Int
+  name          String
+  nameCs        String
+  createdAt     DateTime @default(now())
+
+  workoutPlan      WorkoutPlan       @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  plannedExercises PlannedExercise[]
+
+  @@unique([workoutPlanId, dayIndex])
+}
+
+model PlannedExercise {
+  id           String  @id @default(uuid())
+  workoutDayId String
+  exerciseId   String
+  orderIndex   Int
+  targetSets   Int
+  targetReps   Int
+  targetWeight Float?
+  restSeconds  Int     @default(90)
+  notes        String?
+
+  workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id])
+
+  @@unique([workoutDayId, orderIndex])
+}
+
+model GymSession {
+  id              String    @id @default(uuid())
+  userId          String
+  workoutPlanId   String?
+  workoutDayIndex Int?
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  totalReps       Int       @default(0)
+  averageFormScore Float    @default(0)
+  durationSeconds Int       @default(0)
+
+  user           User             @relation(fields: [userId], references: [id])
+  workoutPlan    WorkoutPlan?     @relation(fields: [workoutPlanId], references: [id])
+  workoutSession WorkoutSession?
+  exerciseSets   ExerciseSet[]
+
+  @@index([userId])
+}
+
+model ExerciseSet {
+  id           String    @id @default(uuid())
+  gymSessionId String
+  exerciseId   String
+  setNumber    Int
+  targetReps   Int
+  actualReps   Int       @default(0)
+  targetWeight Float?
+  actualWeight Float?
+  formScore    Float     @default(0)
+  status       SetStatus @default(PENDING)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  repData      Json?
+
+  gymSession GymSession @relation(fields: [gymSessionId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id])
+
+  @@index([gymSessionId])
+}
+
+model ExerciseHistory {
+  id           String   @id @default(uuid())
+  userId       String
+  exerciseId   String
+  date         DateTime @default(now())
+  bestWeight   Float?
+  bestReps     Int
+  avgFormScore Float
+  totalVolume  Float
+
+  user     User     @relation(fields: [userId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([userId, exerciseId])
+  @@index([userId, date])
+}
+
+// ── Smart Coach System ──
+
+model CoachingSession {
+  id            String   @id @default(uuid())
+  userId        String
+  sessionType   String
+  sessionId     String
+  messagesCount Int      @default(0)
+  tokensUsed    Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user     User              @relation(fields: [userId], references: [id])
+  messages CoachingMessage[]
+
+  @@index([userId])
+}
+
+model CoachingMessage {
+  id                String   @id @default(uuid())
+  coachingSessionId String
+  role              String
+  content           String
+  priority          String
+  audioUrl          String?
+  createdAt         DateTime @default(now())
+
+  coachingSession CoachingSession @relation(fields: [coachingSessionId], references: [id], onDelete: Cascade)
+
+  @@index([coachingSessionId])
+}
+
+model SafetyEvent {
+  id            String   @id @default(uuid())
+  userId        String
+  sessionType   String
+  sessionId     String
+  jointName     String
+  measuredAngle Float
+  safeMin       Float
+  safeMax       Float
+  exerciseName  String
+  severity      String
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ── Adaptive Intelligence ──
+
+enum FitnessGoal {
+  STRENGTH
+  HYPERTROPHY
+  ENDURANCE
+  WEIGHT_LOSS
+  GENERAL_FITNESS
+  MOBILITY
+}
+
+model FitnessProfile {
+  id               String      @id @default(uuid())
+  userId           String      @unique
+  goal             FitnessGoal @default(GENERAL_FITNESS)
+  experienceMonths Int         @default(0)
+  daysPerWeek      Int         @default(3)
+  sessionMinutes   Int         @default(45)
+  hasGymAccess     Boolean     @default(true)
+  equipment        String[]
+  injuries         String[]
+  notes            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model AIGeneratedPlan {
+  id             String      @id @default(uuid())
+  userId         String
+  workoutPlanId  String?
+  goal           FitnessGoal
+  weekNumber     Int
+  totalWeeks     Int
+  isDeloadWeek   Boolean     @default(false)
+  claudePrompt   String
+  claudeResponse String
+  status         String      @default("active")
+  createdAt      DateTime    @default(now())
+
+  user        User         @relation(fields: [userId], references: [id])
+  workoutPlan WorkoutPlan? @relation(fields: [workoutPlanId], references: [id])
+
+  @@index([userId])
+}
+
+// ── Push Notifications ──
+
+model PushSubscription {
+  id       String   @id @default(uuid())
+  userId   String
+  endpoint String
+  p256dh   String
+  auth     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, endpoint])
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  workoutReminder Boolean @default(true)
+  streakWarning   Boolean @default(true)
+  achievements    Boolean @default(true)
+  quietHoursStart Int     @default(22)
+  quietHoursEnd   Int     @default(7)
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ── Social & Community ──
+
+model Follow {
+  id         String   @id @default(uuid())
+  followerId String
+  followedId String
+  createdAt  DateTime @default(now())
+
+  follower User @relation("follower", fields: [followerId], references: [id])
+  followed User @relation("followed", fields: [followedId], references: [id])
+
+  @@unique([followerId, followedId])
+  @@index([followerId])
+  @@index([followedId])
+}
+
+model ActivityFeedItem {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  data      Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Challenge {
+  id          String   @id @default(uuid())
+  name        String
+  nameCs      String
+  description String
+  type        String
+  targetValue Int
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  participants ChallengeParticipant[]
+}
+
+model ChallengeParticipant {
+  id           String   @id @default(uuid())
+  challengeId  String
+  userId       String
+  currentValue Int      @default(0)
+  joinedAt     DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+}
+
+// ── Wearables ──
+
+model WearableData {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionId    String?
+  provider     String   // apple_health, google_fit, garmin
+  dataType     String   // heart_rate, calories, steps, hrv, sleep
+  value        Float
+  unit         String   // bpm, kcal, steps, ms
+  timestamp    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, dataType])
+  @@index([userId, sessionId])
+}
+
+// ── Content Pipeline ──
+
+model ContentImport {
+  id        String   @id @default(uuid())
+  userId    String
+  sourceUrl String
+  videoId   String?
+  status    String   @default("pending") // pending, downloading, processing, completed, failed
+  error     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model MarketplaceItem {
+  id          String   @id @default(uuid())
+  trainerId   String
+  type        String   // exercise, plan, program
+  title       String
+  titleCs     String
+  description String
+  price       Float    @default(0)
+  currency    String   @default("CZK")
+  rating      Float    @default(0)
+  ratingCount Int      @default(0)
+  isPublished Boolean  @default(false)
+  linkedId    String?  // exerciseId or workoutPlanId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trainer User @relation(fields: [trainerId], references: [id])
+
+  @@index([trainerId])
+  @@index([type])
+}

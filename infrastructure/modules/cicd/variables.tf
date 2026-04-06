@@ -1,0 +1,12 @@
+variable "project_name" { type = string }
+variable "env" { type = string }
+variable "tags" { type = map(string) }
+variable "aws_region" { type = string }
+variable "ecr_api_url" { type = string }
+variable "ecr_web_url" { type = string }
+variable "ecr_api_arn" { type = string }
+variable "ecr_web_arn" { type = string }
+variable "ecs_cluster_name" { type = string }
+variable "ecs_api_service_name" { type = string }
+variable "ecs_web_service_name" { type = string }
+variable "api_url" { type = string }

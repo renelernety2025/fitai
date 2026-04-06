@@ -1,0 +1,135 @@
+import { VideosService } from './videos.service';
+import { S3Service } from './s3.service';
+import { MediaConvertService } from './mediaconvert.service';
+import { PreprocessingService } from '../preprocessing/preprocessing.service';
+import { CreateVideoDto } from './dto/create-video.dto';
+import { VideoCategory, VideoDifficulty } from '@prisma/client';
+export declare class VideosController {
+    private videosService;
+    private s3Service;
+    private mediaConvertService;
+    private preprocessingService;
+    private readonly logger;
+    constructor(videosService: VideosService, s3Service: S3Service, mediaConvertService: MediaConvertService, preprocessingService: PreprocessingService);
+    findAllAdmin(): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }[]>;
+    findAll(category?: VideoCategory, difficulty?: VideoDifficulty): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }[]>;
+    getUploadUrl(filename: string, contentType: string): Promise<{
+        uploadUrl: string;
+        s3Key: string;
+    }>;
+    findOne(id: string): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }>;
+    create(dto: CreateVideoDto): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }>;
+    publish(id: string): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }>;
+    reprocess(id: string): Promise<{
+        jobId: `${string}-${string}-${string}-${string}-${string}`;
+        status: string;
+        message: string;
+    }>;
+    delete(id: string): Promise<{
+        id: string;
+        description: string;
+        difficulty: import(".prisma/client").$Enums.VideoDifficulty;
+        thumbnailUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        category: import(".prisma/client").$Enums.VideoCategory;
+        durationSeconds: number;
+        hlsUrl: string | null;
+        s3RawKey: string;
+        choreographyUrl: string | null;
+        preprocessingStatus: import(".prisma/client").$Enums.PreprocessingStatus;
+        preprocessingError: string | null;
+        preprocessingJobId: string | null;
+        isPublished: boolean;
+    }>;
+    handleWebhook(body: any): Promise<{
+        ok: boolean;
+    }>;
+}
+//# sourceMappingURL=videos.controller.d.ts.map

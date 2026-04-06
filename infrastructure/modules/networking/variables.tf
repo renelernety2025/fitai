@@ -1,0 +1,4 @@
+variable "vpc_cidr" { type = string }
+variable "project_name" { type = string }
+variable "env" { type = string }
+variable "tags" { type = map(string) }

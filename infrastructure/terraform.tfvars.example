@@ -1,0 +1,8 @@
+env               = "production"
+aws_region        = "eu-west-1"
+project_name      = "fitai"
+db_password       = "CHANGE_ME_STRONG_PASSWORD"
+jwt_secret        = "CHANGE_ME_LONG_RANDOM_STRING"
+alert_email       = "your@email.com"
+openai_api_key    = ""
+anthropic_api_key = ""

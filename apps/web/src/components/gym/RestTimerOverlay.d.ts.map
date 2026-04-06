@@ -1,0 +1,1 @@
+{"version":3,"file":"RestTimerOverlay.d.ts","sourceRoot":"","sources":["RestTimerOverlay.tsx"],"names":[],"mappings":"AAEA,UAAU,qBAAqB;IAC7B,SAAS,EAAE,MAAM,CAAC;IAClB,KAAK,EAAE,MAAM,CAAC;IACd,gBAAgB,EAAE,MAAM,CAAC;IACzB,aAAa,EAAE,MAAM,CAAC;IACtB,MAAM,EAAE,MAAM,IAAI,CAAC;CACpB;AAED,wBAAgB,gBAAgB,CAAC,EAC/B,SAAS,EACT,KAAK,EACL,gBAAgB,EAChB,aAAa,EACb,MAAM,GACP,EAAE,qBAAqB,+BAuCvB"}

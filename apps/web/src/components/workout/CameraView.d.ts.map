@@ -1,0 +1,1 @@
+{"version":3,"file":"CameraView.d.ts","sourceRoot":"","sources":["CameraView.tsx"],"names":[],"mappings":"AAGA,OAAO,EAAsB,KAAK,aAAa,EAAE,MAAM,sBAAsB,CAAC;AAE9E,UAAU,eAAe;IACvB,cAAc,EAAE,CAAC,SAAS,EAAE,aAAa,KAAK,IAAI,CAAC;IACnD,MAAM,EAAE,OAAO,CAAC;IAChB,aAAa,CAAC,EAAE,MAAM,CAAC;CACxB;AAED,wBAAgB,UAAU,CAAC,EAAE,cAAc,EAAE,MAAM,EAAE,aAAa,EAAE,EAAE,eAAe,+BAyFpF"}

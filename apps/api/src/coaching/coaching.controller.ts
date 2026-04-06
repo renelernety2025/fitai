@@ -1,0 +1,35 @@
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { CoachingService } from './coaching.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+@Controller('coaching')
+@UseGuards(JwtAuthGuard)
+export class CoachingController {
+  constructor(private coachingService: CoachingService) {}
+
+  @Post('feedback')
+  generateFeedback(@Request() req: any, @Body() dto: any) {
+    return this.coachingService.generateFeedback({
+      userId: req.user.id,
+      ...dto,
+    });
+  }
+
+  @Post('safety-event')
+  logSafetyEvent(@Request() req: any, @Body() dto: any) {
+    return this.coachingService.logSafetyEvent({
+      userId: req.user.id,
+      ...dto,
+    });
+  }
+
+  @Post('tts')
+  synthesize(@Body('text') text: string) {
+    return this.coachingService.synthesize(text);
+  }
+
+  @Post('precache')
+  precache() {
+    return this.coachingService.precache();
+  }
+}

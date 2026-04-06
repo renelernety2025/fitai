@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "FitAI",
+    "slug": "fitai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fitai.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FitAI potřebuje kameru pro sledování správné formy při cvičení.",
+        "NSMotionUsageDescription": "FitAI sleduje pohyb pro přesnější počítání opakování."
+      }
+    },
+    "android": {
+      "package": "com.fitai.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        { "cameraPermission": "FitAI potřebuje kameru pro sledování formy." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#16a34a"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": { "projectId": "" }
+    }
+  }
+}
