@@ -89,6 +89,39 @@ async function main() {
       descriptionCs: 'Základní cvik na dolní tělo — stehna, hýždě, core.',
       muscleGroups: ['QUADRICEPS', 'GLUTES', 'CORE'],
       difficulty: 'INTERMEDIATE' as const,
+      instructions: {
+        steps: [
+          'Postav se pod činku v racku, nohy na šířku ramen.',
+          'Polož činku na horní část trapézů (ne na krk!).',
+          'Odejdi od racku — 2 kroky dozadu.',
+          'Špičky mírně ven (15-30°), váha na celé plosce.',
+          'Nadechni se, zpevni core a začni klesat.',
+          'Tlač kolena ven směrem za špičky.',
+          'Klesej dokud stehna nejsou paralelně se zemí (nebo níže).',
+          'Krátká pauza dole, pak výdech a tlač ze země přes paty.',
+          'Narovnej se do výchozí pozice. Opakuj.',
+        ],
+        commonMistakes: [
+          'Kolena padají dovnitř — aktivně je tlač ven.',
+          'Zaoblená záda — drž hrudník nahoru, pohled dopředu.',
+          'Zvedání pat — váha musí zůstat na celé plosce.',
+          'Nedostatečná hloubka — stehna musí být alespoň paralelně.',
+          'Příliš rychlý sestup — kontroluj pohyb (2 sekundy dolů).',
+        ],
+        targetMuscles: {
+          primary: ['Quadriceps (přední stehna)', 'Gluteus maximus (velký hýžďový)'],
+          secondary: ['Core (břišní svaly)', 'Hamstringy (zadní stehna)', 'Adduktory (vnitřní stehna)', 'Vzpřimovače páteře'],
+        },
+        breathing: 'NADECH při sestupu (zpevni core), VÝDECH při výstupu (nejvyšší úsilí).',
+        tempo: '2-1-2 (2s sestup, 1s výdrž dole, 2s výstup)',
+        warmup: 'Zahřívací set: 2×15 repů s prázdnou činkou (20kg). Pak 1×10 s 50% váhy.',
+        tips: [
+          'Tlač z pat, ne ze špiček.',
+          'Představ si, že si sedáš na židli za tebou.',
+          'Hrudník nahoru, pohled dopředu — ne dolů.',
+          'Core zpevněný po celou dobu pohybu.',
+        ],
+      },
       phases: [
         { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_knee', angle_min: 160, angle_max: 180 }, { joint: 'right_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Narovnej se do vzpřímené pozice', feedback_correct: 'Připraven', minDurationMs: 300 },
         { phase: 'ECCENTRIC', name: 'Descending', nameCs: 'Klesání', rules: [{ joint: 'left_knee', angle_min: 100, angle_max: 150 }, { joint: 'left_hip', angle_min: 80, angle_max: 140 }], feedback_wrong: 'Kolena za špičky, záda rovná', feedback_correct: 'Dobrý sestup', minDurationMs: 200 },
@@ -102,6 +135,15 @@ async function main() {
       descriptionCs: 'Tlak na lavici — prsa, ramena, tricepsy.',
       muscleGroups: ['CHEST', 'SHOULDERS', 'TRICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      instructions: {
+        steps: ['Lehni si na lavici, oči pod činkou.', 'Uchop činku o trochu šířeji než ramena.', 'Stáhni lopatky k sobě a dolů — vytvoř "oblouk" v horní části zad.', 'Zvedni činku z racku, ruce propnuté nad hrudníkem.', 'Nadechni se a pomalu spouštěj činku k dolní části hrudníku.', 'Lehce se dotkni hrudi (nesklápěj!).', 'Výdech a tlač činku zpět nahoru — mírně dozadu k očím.'],
+        commonMistakes: ['Odrážení činky od hrudi — kontrolovaný dotek.', 'Zvedání hýždí z lavice — boky musí zůstat dole.', 'Lokty příliš daleko od těla (90°) — drž je v 45° úhlu.', 'Nerovnoměrný tlak — obě ruce stejně.'],
+        targetMuscles: { primary: ['Pectoralis major (velký prsní sval)'], secondary: ['Přední deltoid (rameno)', 'Triceps'] },
+        breathing: 'NADECH při spouštění, VÝDECH při tlaku nahoru.',
+        tempo: '2-1-1 (2s dolů, 1s dotek, 1s nahoru)',
+        warmup: '2×15 repů s prázdnou činkou. 1×10 s 50% váhy.',
+        tips: ['Lopatky stažené — stabilní základ.', 'Nohy pevně na zemi.', 'Představ si, že ohýbáš činku do tvaru U.'],
+      },
       phases: [
         { phase: 'START', name: 'Arms Extended', nameCs: 'Vzpažení', rules: [{ joint: 'left_elbow', angle_min: 150, angle_max: 180 }, { joint: 'right_elbow', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Propni ruce', feedback_correct: 'Připraven', minDurationMs: 300 },
         { phase: 'ECCENTRIC', name: 'Lowering', nameCs: 'Spouštění', rules: [{ joint: 'left_elbow', angle_min: 80, angle_max: 140 }], feedback_wrong: 'Kontrolovaně spouštěj', feedback_correct: 'Dobrý sestup', minDurationMs: 200 },
@@ -115,6 +157,15 @@ async function main() {
       descriptionCs: 'Komplexní cvik na záda, hýždě a zadní stehna.',
       muscleGroups: ['BACK', 'HAMSTRINGS', 'GLUTES', 'CORE'],
       difficulty: 'ADVANCED' as const,
+      instructions: {
+        steps: ['Postav se k čince, nohy na šířku boků, činka nad středem chodidla.', 'Předkloň se v kyčlích (ne v zádech!), uchop činku nadhmatem.', 'Stáhni lopatky, hrudník nahoru, záda ROVNÁ.', 'Nadechni se, zpevni core.', 'Tlač nohama do země — činka jde nahoru podél nohou.', 'Vzpřim se, boky dopředu, ramena dozadu.', 'Nahoře: stůj zpříma, nezaklánět se.', 'Kontrolovaně spusť činku dolů — kyčle dozadu, pak ohni kolena.'],
+        commonMistakes: ['Zaoblená záda — KRITICKÉ! Záda musí být neutrální po celou dobu.', 'Činka daleko od těla — musí jít podél nohou.', 'Trhání činky — plynulý, kontrolovaný pohyb.', 'Hyperextenze nahoře — stůj rovně, nezaklánět.'],
+        targetMuscles: { primary: ['Vzpřimovače páteře', 'Gluteus maximus', 'Hamstringy'], secondary: ['Trapézy', 'Předloktí (úchop)', 'Core', 'Quadriceps'] },
+        breathing: 'NADECH dole (zpevnit core), VÝDECH nahoře.',
+        tempo: '1-0-2 (1s nahoru, 0 pauza, 2s kontrolovaně dolů)',
+        warmup: '2×10 rumunský mrtvý tah s lehkou váhou. 1×5 s 50% váhy.',
+        tips: ['Záda VŽDY rovná — raději menší váha s perfektní formou.', 'Činka jde podél nohou — ne od těla.', 'Začni pohyb nohama, ne zády.'],
+      },
       phases: [
         { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_hip', angle_min: 160, angle_max: 180 }, { joint: 'left_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Stůj zpříma', feedback_correct: 'Připraven', minDurationMs: 300 },
         { phase: 'ECCENTRIC', name: 'Hinging', nameCs: 'Předklon', rules: [{ joint: 'left_hip', angle_min: 80, angle_max: 140 }, { joint: 'left_knee', angle_min: 140, angle_max: 170 }], feedback_wrong: 'Záda rovná, ohýbej v kyčlích', feedback_correct: 'Dobrý předklon', minDurationMs: 200 },
@@ -128,6 +179,15 @@ async function main() {
       descriptionCs: 'Izolovaný cvik na bicepsy.',
       muscleGroups: ['BICEPS'],
       difficulty: 'BEGINNER' as const,
+      instructions: {
+        steps: ['Postav se rovně, jednoručky v rukou, dlaně dopředu.', 'Lokty u těla — nepohybuj jimi!', 'Pomalu zdvihni činky směrem k ramenům.', 'Stiskni biceps nahoře (1s výdrž).', 'Pomalu spusť zpět dolů — kontrolovaně, ne pádem.'],
+        commonMistakes: ['Švihání tělem — stůj pevně, pracuje jen předloktí.', 'Lokty utíkají dopředu — drž je u boků.', 'Příliš rychlé spouštění — negativní fáze je důležitá.', 'Nepropnutí rukou dole — plný rozsah pohybu.'],
+        targetMuscles: { primary: ['Biceps brachii'], secondary: ['Brachialis', 'Předloktí'] },
+        breathing: 'VÝDECH při zdvihu, NADECH při spouštění.',
+        tempo: '2-1-3 (2s nahoru, 1s stisk, 3s dolů — důraz na negativní fázi)',
+        warmup: '1×15 s lehkou váhou.',
+        tips: ['Lokty = fixní bod, nehýbej jimi.', 'Kontroluj negativní fázi (spouštění) — tam roste sval.', 'Alternativně střídat ruce pro lepší soustředění.'],
+      },
       phases: [
         { phase: 'START', name: 'Arms Down', nameCs: 'Ruce dole', rules: [{ joint: 'left_elbow', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Propni ruce dolů', feedback_correct: 'Připraven', minDurationMs: 200 },
         { phase: 'CONCENTRIC', name: 'Curling', nameCs: 'Zdvih', rules: [{ joint: 'left_elbow', angle_min: 50, angle_max: 120 }], feedback_wrong: 'Lokty u těla, nešvihej', feedback_correct: 'Dobrý zdvih', minDurationMs: 200 },
@@ -141,6 +201,15 @@ async function main() {
       descriptionCs: 'Ramena a tricepsy — tlak nad hlavu.',
       muscleGroups: ['SHOULDERS', 'TRICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      instructions: {
+        steps: ['Uchop činku nadhmatem na šířku ramen.', 'Zvedni ji do pozice u ramen (činka se dotýká klíčních kostí).', 'Nadechni se, zpevni core a hýždě.', 'Tlač činku rovně nad hlavu — hlava se uhne dozadu.', 'Propni ruce nahoře, činka nad středem hlavy.', 'Kontrolovaně spusť zpět k ramenům.'],
+        commonMistakes: ['Zaklánění — drž trup vzpřímený, zpevni core.', 'Tlak dopředu místo nahoru — činka jde rovně.', 'Lokty příliš vzadu — drž je mírně vpředu.', 'Nezamčené ruce nahoře — propni úplně.'],
+        targetMuscles: { primary: ['Přední a střední deltoid'], secondary: ['Triceps', 'Horní trapéz', 'Core (stabilizace)'] },
+        breathing: 'NADECH dole, VÝDECH při tlaku nahoru.',
+        tempo: '1-1-2 (1s nahoru, 1s nahoře, 2s dolů)',
+        warmup: '2×15 s prázdnou činkou.',
+        tips: ['Zpevni hýždě — stabilita celého těla.', 'Dívej se dopředu, ne nahoru.', 'Činka jde rovně — nejkratší cesta.'],
+      },
       phases: [
         { phase: 'START', name: 'Rack', nameCs: 'U ramen', rules: [{ joint: 'left_elbow', angle_min: 60, angle_max: 100 }, { joint: 'left_shoulder', angle_min: 60, angle_max: 100 }], feedback_wrong: 'Činka u ramen', feedback_correct: 'Připraven', minDurationMs: 200 },
         { phase: 'CONCENTRIC', name: 'Pressing', nameCs: 'Tlak', rules: [{ joint: 'left_elbow', angle_min: 100, angle_max: 160 }], feedback_wrong: 'Tlač rovně nahoru', feedback_correct: 'Nahoru!', minDurationMs: 200 },
@@ -154,6 +223,15 @@ async function main() {
       descriptionCs: 'Záda — široký sval a mezilopatkové svaly.',
       muscleGroups: ['BACK', 'BICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      instructions: {
+        steps: ['Uchop činku nadhmatem, mírně šířeji než ramena.', 'Předkloň se v kyčlích do cca 45° — záda ROVNÁ.', 'Ruce visí dolů, mírně pokrčené lokty.', 'Táhni činku k dolní části hrudníku / břichu.', 'Stiskni lopatky k sobě nahoře (1s výdrž).', 'Kontrolovaně spusť dolů.'],
+        commonMistakes: ['Zaoblená záda — neutrální páteř po celou dobu.', 'Trhání činky — plynulý tah, ne švih.', 'Příliš vzpřímený postoj — předklon musí být dostatečný (45°).', 'Lokty příliš daleko od těla.'],
+        targetMuscles: { primary: ['Latissimus dorsi (široký zádový)', 'Rhomboids (mezilopatkové)'], secondary: ['Biceps', 'Zadní deltoid', 'Vzpřimovače páteře'] },
+        breathing: 'VÝDECH při tahu nahoru, NADECH při spouštění.',
+        tempo: '1-1-2 (1s tah, 1s stisk, 2s dolů)',
+        warmup: '2×15 s lehkou váhou nebo prázdnou činkou.',
+        tips: ['Táhni lokty dozadu, ne ruce.', 'Představ si, že mačkáš tužku mezi lopatkami.', 'Záda musí být rovná — jako při mrtvém tahu.'],
+      },
       phases: [
         { phase: 'START', name: 'Hinged', nameCs: 'Předklon', rules: [{ joint: 'left_hip', angle_min: 60, angle_max: 100 }, { joint: 'left_elbow', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Předkloň se, ruce propnuté', feedback_correct: 'Připraven', minDurationMs: 200 },
         { phase: 'CONCENTRIC', name: 'Rowing', nameCs: 'Přítah', rules: [{ joint: 'left_elbow', angle_min: 60, angle_max: 120 }], feedback_wrong: 'Táhni k břichu, lokty dozadu', feedback_correct: 'Táhni!', minDurationMs: 200 },
@@ -167,6 +245,15 @@ async function main() {
       descriptionCs: 'Izometrický cvik na stabilizaci trupu.',
       muscleGroups: ['CORE', 'SHOULDERS'],
       difficulty: 'BEGINNER' as const,
+      instructions: {
+        steps: ['Lehni si na břicho, předloktí na zem (lokty pod rameny).', 'Zvedni tělo — opora na předloktích a špičkách.', 'Tělo tvoří ROVNOU linii: hlava-ramena-boky-paty.', 'Zpevni břicho (jako bys čekal ránu do břicha).', 'Stáhni hýždě.', 'Drž pozici po stanovenou dobu.'],
+        commonMistakes: ['Propadlá záda — zpevni core, nezvedej hlavu.', 'Zvednutý zadek — boky v linii s rameny.', 'Zadržování dechu — dýchej normálně.', 'Pohled nahoru — krk neutrální, dívej se na zem.'],
+        targetMuscles: { primary: ['Rectus abdominis (přímý břišní)', 'Transverzus abdominis (hluboký stabilizátor)'], secondary: ['Přední deltoid', 'Quadriceps', 'Gluteus'] },
+        breathing: 'Dýchej normálně — nezadržuj dech! Krátké pravidelné nádechy a výdechy.',
+        tempo: 'Výdrž: 30-60s pro začátečníky, 60-120s pro pokročilé.',
+        warmup: 'Žádný speciální warm-up. Začni kratší výdrží.',
+        tips: ['Méně je více — 30s s perfektní formou > 2min se špatnou.', 'Zkus varianty: boční plank, plank s dotykem ramene.'],
+      },
       phases: [
         { phase: 'START', name: 'Hold', nameCs: 'Výdrž', rules: [{ joint: 'left_hip', angle_min: 160, angle_max: 180 }, { joint: 'left_shoulder', angle_min: 70, angle_max: 110 }], feedback_wrong: 'Boky v linii, nezvedej zadek', feedback_correct: 'Perfektní plank!', minDurationMs: 1000 },
       ],
@@ -177,6 +264,15 @@ async function main() {
       descriptionCs: 'Výpady vpřed — stehna, hýždě, stabilita.',
       muscleGroups: ['QUADRICEPS', 'GLUTES', 'HAMSTRINGS'],
       difficulty: 'BEGINNER' as const,
+      instructions: {
+        steps: ['Postav se rovně, nohy u sebe.', 'Vykroč jednou nohou dopředu (velký krok).', 'Sniž tělo dolů — obě kolena do 90°.', 'Zadní koleno se téměř dotkne země.', 'Přední koleno nepřesahuje špičku.', 'Odraz z přední paty a vrať se do stoje.', 'Opakuj s druhou nohou (střídej).'],
+        commonMistakes: ['Koleno přes špičku — krok musí být dostatečně dlouhý.', 'Úzký postoj — nohy na šířku boků, ne za sebou.', 'Předklon trupu — drž se vzpřímeně.', 'Odraz ze špičky — tlač z paty.'],
+        targetMuscles: { primary: ['Quadriceps', 'Gluteus maximus'], secondary: ['Hamstringy', 'Adduktory', 'Core (stabilizace)'] },
+        breathing: 'NADECH při sestupu, VÝDECH při výstupu.',
+        tempo: '2-1-1 (2s dolů, 1s dole, 1s nahoru)',
+        warmup: '1×10 výpady bez závaží na každou nohu.',
+        tips: ['Skvělý cvik pro opravu asymetrií mezi nohama.', 'Varianta: bulharský výpad (zadní noha na lavičce) pro větší výzvu.'],
+      },
       phases: [
         { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_knee', angle_min: 160, angle_max: 180 }, { joint: 'right_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Stůj rovně', feedback_correct: 'Připraven', minDurationMs: 300 },
         { phase: 'ECCENTRIC', name: 'Stepping', nameCs: 'Výkrok', rules: [{ joint: 'left_knee', angle_min: 100, angle_max: 150 }], feedback_wrong: 'Koleno za špičku, trup rovně', feedback_correct: 'Dobrý výkrok', minDurationMs: 200 },
@@ -189,7 +285,7 @@ async function main() {
   for (const ex of exercises) {
     await prisma.exercise.upsert({
       where: { name: ex.name },
-      update: { phases: ex.phases },
+      update: { phases: ex.phases, instructions: (ex as any).instructions },
       create: ex as any,
     });
   }

@@ -171,11 +171,13 @@ model Exercise {
   nameCs        String
   description   String
   descriptionCs String
-  muscleGroups  MuscleGroup[]
-  difficulty    VideoDifficulty
-  phases        Json
-  thumbnailUrl  String?
-  instructionUrl String?
+  muscleGroups    MuscleGroup[]
+  difficulty      VideoDifficulty
+  phases          Json
+  instructions    Json?
+  thumbnailUrl    String?
+  instructionUrl  String?
+  videoUrl        String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

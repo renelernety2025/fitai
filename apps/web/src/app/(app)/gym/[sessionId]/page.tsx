@@ -248,6 +248,7 @@ export default function GymSessionPage({ params }: { params: { sessionId: string
             completedReps={completedReps}
             weight={currentSet.targetWeight}
             recommendation={recommendation}
+            instructions={(currentExercise as any).instructions}
           />
         )}
       </div>
