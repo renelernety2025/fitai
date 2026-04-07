@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { getWorkoutPlan } from '../lib/api';
+import { View, Text, Pressable, Alert } from 'react-native';
+import { getWorkoutPlan, startGymSession } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
 
 export function PlanDetailScreen({ route, navigation }: any) {
@@ -10,6 +10,21 @@ export function PlanDetailScreen({ route, navigation }: any) {
   useEffect(() => {
     if (id) getWorkoutPlan(id).then(setPlan).catch(console.error);
   }, [id]);
+
+  const [starting, setStarting] = useState(false);
+
+  async function handleStart(dayIndex: number) {
+    if (!plan) return;
+    setStarting(true);
+    try {
+      const session = await startGymSession({ workoutPlanId: plan.id, workoutDayIndex: dayIndex });
+      navigation.navigate('CameraWorkout', { sessionId: session.id });
+    } catch (e: any) {
+      Alert.alert('Chyba', e.message || 'Nepodařilo se spustit trénink');
+    } finally {
+      setStarting(false);
+    }
+  }
 
   if (!plan) return <V2Screen><V2Loading /></V2Screen>;
 
@@ -27,10 +42,29 @@ export function PlanDetailScreen({ route, navigation }: any) {
 
       {plan.days?.map((day: any) => (
         <View key={day.id} style={{ marginTop: 40 }}>
-          <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
-            DEN {day.dayIndex + 1}
-          </Text>
-          <V2Display size="md">{day.nameCs}</V2Display>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
+                DEN {day.dayIndex + 1}
+              </Text>
+              <V2Display size="md">{day.nameCs}</V2Display>
+            </View>
+            <Pressable
+              onPress={() => handleStart(day.dayIndex)}
+              disabled={starting}
+              style={{
+                backgroundColor: '#FFF',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 999,
+                opacity: starting ? 0.5 : 1,
+              }}
+            >
+              <Text style={{ color: '#000', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
+                ZAČÍT →
+              </Text>
+            </Pressable>
+          </View>
 
           {day.plannedExercises?.map((pe: any) => (
             <View

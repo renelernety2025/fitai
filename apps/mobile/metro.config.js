@@ -1,11 +1,10 @@
 // Metro config for Expo in a monorepo.
 // Prevents duplicate React: the root workspace has React 18 hoisted from
-// the web app, while mobile needs React 19. We block the root React path
-// and explicitly alias React/react-native to mobile's own node_modules.
+// the web app, while mobile needs React 19. We alias React/react-native
+// explicitly and use a simple blockList regex to exclude the duplicates.
 
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
-const exclusionList = require('metro-config/src/defaults/exclusionList');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
@@ -21,18 +20,18 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// Explicit aliases — force React from mobile's own copy.
+// Explicit aliases — force React/react-native from mobile's own copy.
 config.resolver.extraNodeModules = {
   react: path.resolve(projectRoot, 'node_modules/react'),
   'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
 };
 
-// Block the duplicate React at the workspace root so Metro never picks it up.
-config.resolver.blockList = exclusionList([
-  new RegExp(`${path.resolve(workspaceRoot, 'node_modules/react')}/.*`),
-  new RegExp(`${path.resolve(workspaceRoot, 'node_modules/react-native')}/.*`),
-  // Also block web's React so it can't be resolved via hierarchical lookup
-  new RegExp(`${path.resolve(workspaceRoot, 'apps/web/node_modules/react')}/.*`),
-]);
+// Block duplicate React copies at the workspace root and in web.
+const escapedRoot = workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+config.resolver.blockList = [
+  new RegExp(`${escapedRoot}/node_modules/react/.*`),
+  new RegExp(`${escapedRoot}/node_modules/react-native/.*`),
+  new RegExp(`${escapedRoot}/apps/web/node_modules/react/.*`),
+];
 
 module.exports = config;
