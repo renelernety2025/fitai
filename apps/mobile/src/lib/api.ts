@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = `${API_BASE}/api`;
 const TOKEN_KEY = 'fitai_token';
 
 export async function getToken(): Promise<string | null> {

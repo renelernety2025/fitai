@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = `${API_BASE}/api`;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('fitai_token') : null;
@@ -85,7 +86,7 @@ export function getVideos(filters?: { category?: string; difficulty?: string }) 
   if (filters?.category) params.set('category', filters.category);
   if (filters?.difficulty) params.set('difficulty', filters.difficulty);
   const qs = params.toString();
-  return request<VideoData[]>(`/videos/${qs ? `?${qs}` : ''}`);
+  return request<VideoData[]>(`/videos${qs ? `?${qs}` : ''}`);
 }
 
 export function getVideo(id: string) {
@@ -235,7 +236,7 @@ export function getExercises(filters?: { muscleGroup?: string; difficulty?: stri
   if (filters?.muscleGroup) params.set('muscleGroup', filters.muscleGroup);
   if (filters?.difficulty) params.set('difficulty', filters.difficulty);
   const qs = params.toString();
-  return request<ExerciseData[]>(`/exercises/${qs ? `?${qs}` : ''}`);
+  return request<ExerciseData[]>(`/exercises${qs ? `?${qs}` : ''}`);
 }
 
 export function getExercise(id: string) {
@@ -271,7 +272,7 @@ export interface WorkoutPlanData {
 }
 
 export function getWorkoutPlans() {
-  return request<WorkoutPlanData[]>('/workout-plans/');
+  return request<WorkoutPlanData[]>('/workout-plans');
 }
 
 export function getWorkoutPlan(id: string) {

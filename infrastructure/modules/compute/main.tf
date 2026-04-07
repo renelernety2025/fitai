@@ -304,7 +304,7 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-resource "aws_lb_listener_rule" "api_1" {
+resource "aws_lb_listener_rule" "api_main" {
   listener_arn = aws_lb_listener.http.arn
   priority     = 10
 
@@ -314,77 +314,7 @@ resource "aws_lb_listener_rule" "api_1" {
   }
 
   condition {
-    path_pattern { values = ["/auth/*", "/videos/*", "/sessions/*", "/health"] }
-  }
-}
-
-resource "aws_lb_listener_rule" "api_2" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 11
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    path_pattern { values = ["/preprocessing/*", "/users/*"] }
-  }
-}
-
-resource "aws_lb_listener_rule" "api_3" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 12
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    path_pattern { values = ["/exercises/*", "/workout-plans/*"] }
-  }
-}
-
-resource "aws_lb_listener_rule" "api_4" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 13
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    path_pattern { values = ["/gym-sessions/*", "/adaptive/*", "/coaching/*"] }
-  }
-}
-
-resource "aws_lb_listener_rule" "api_5" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 14
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    path_pattern { values = ["/ai-planner/*", "/notifications/*", "/social/*"] }
-  }
-}
-
-resource "aws_lb_listener_rule" "api_6" {
-  listener_arn = aws_lb_listener.http.arn
-  priority     = 15
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  condition {
-    path_pattern { values = ["/vision/*", "/wearables/*", "/content/*"] }
+    path_pattern { values = ["/api/*", "/health"] }
   }
 }
 
