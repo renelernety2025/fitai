@@ -2,133 +2,90 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getVideos, type VideoData } from '@/lib/api';
-import { Header } from '@/components/layout/Header';
 
-const CATEGORIES = ['ALL', 'YOGA', 'PILATES', 'STRENGTH', 'CARDIO', 'MOBILITY'] as const;
-const DIFFICULTIES = ['ALL', 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
+const CATS = [
+  { v: 'ALL', l: 'Vše' },
+  { v: 'YOGA', l: 'Yoga' },
+  { v: 'PILATES', l: 'Pilates' },
+  { v: 'STRENGTH', l: 'Strength' },
+  { v: 'CARDIO', l: 'Cardio' },
+  { v: 'MOBILITY', l: 'Mobilita' },
+];
 
-const categoryColors: Record<string, string> = {
-  YOGA: 'bg-emerald-500',
-  PILATES: 'bg-blue-500',
-  STRENGTH: 'bg-orange-500',
-  CARDIO: 'bg-red-500',
-  MOBILITY: 'bg-purple-500',
+const catAccent: Record<string, string> = {
+  YOGA: '#A8FF00',
+  PILATES: '#00E5FF',
+  STRENGTH: '#FF9500',
+  CARDIO: '#FF375F',
+  MOBILITY: '#BF5AF2',
 };
 
-function formatDuration(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  return `${m} min`;
-}
-
-export default function VideosPage() {
+export default function VideosV2Page() {
   const [videos, setVideos] = useState<VideoData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<string>('ALL');
-  const [difficulty, setDifficulty] = useState<string>('ALL');
+  const [cat, setCat] = useState('ALL');
 
   useEffect(() => {
-    setLoading(true);
-    const filters: any = {};
-    if (category !== 'ALL') filters.category = category;
-    if (difficulty !== 'ALL') filters.difficulty = difficulty;
-    getVideos(filters)
-      .then(setVideos)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [category, difficulty]);
+    const f: any = {};
+    if (cat !== 'ALL') f.category = cat;
+    getVideos(f).then(setVideos).catch(console.error);
+  }, [cat]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
+    <V2Layout>
+      <section className="pt-12 pb-12">
+        <V2SectionLabel>Knihovna</V2SectionLabel>
+        <V2Display size="xl">Videa.</V2Display>
+        <p className="mt-4 max-w-xl text-base text-white/55">
+          Yoga, Pilates, strength, cardio, mobilita. S real-time pose detection.
+        </p>
+      </section>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <h1 className="mb-6 text-3xl font-bold text-white">Videa</h1>
+      <div className="mb-16 flex flex-wrap gap-2">
+        {CATS.map((c) => (
+          <button
+            key={c.v}
+            onClick={() => setCat(c.v)}
+            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
+              cat === c.v
+                ? 'border-white bg-white text-black'
+                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
+            }`}
+          >
+            {c.l}
+          </button>
+        ))}
+      </div>
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-wrap gap-3">
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  category === c
-                    ? 'bg-[#16a34a] text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                {c === 'ALL' ? 'Vše' : c.charAt(0) + c.slice(1).toLowerCase()}
-              </button>
-            ))}
-          </div>
-          <div className="ml-auto">
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-300"
+      <section className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+        {videos.map((v) => (
+          <Link
+            key={v.id}
+            href={`/videos/${v.id}`}
+            className="group block"
+          >
+            <div className="relative mb-4 overflow-hidden rounded-3xl">
+              <img
+                src={v.thumbnailUrl}
+                alt={v.title}
+                className="aspect-video w-full object-cover transition group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <span className="absolute bottom-4 right-4 rounded-full bg-black/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white backdrop-blur-md">
+                {Math.floor(v.durationSeconds / 60)} min
+              </span>
+            </div>
+            <div
+              className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+              style={{ color: catAccent[v.category] || '#FFF' }}
             >
-              {DIFFICULTIES.map((d) => (
-                <option key={d} value={d}>
-                  {d === 'ALL' ? 'Všechny úrovně' : d === 'BEGINNER' ? 'Začátečník' : d === 'INTERMEDIATE' ? 'Pokročilý' : 'Expert'}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Loading skeleton */}
-        {loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse rounded-xl bg-gray-800">
-                <div className="aspect-video rounded-t-xl bg-gray-700" />
-                <div className="p-4 space-y-3">
-                  <div className="h-5 w-3/4 rounded bg-gray-700" />
-                  <div className="h-4 w-1/2 rounded bg-gray-700" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Video grid */}
-        {!loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {videos.map((video) => (
-              <Link
-                key={video.id}
-                href={`/videos/${video.id}`}
-                className="group overflow-hidden rounded-xl bg-gray-900 transition hover:scale-[1.02] hover:brightness-110"
-              >
-                <div className="relative aspect-video overflow-hidden">
-                  <img
-                    src={video.thumbnailUrl}
-                    alt={video.title}
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                  />
-                  <span className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-0.5 text-xs font-medium text-white">
-                    {formatDuration(video.durationSeconds)}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <h3 className="mb-2 text-lg font-semibold text-white">{video.title}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${categoryColors[video.category] || 'bg-gray-600'}`}>
-                      {video.category}
-                    </span>
-                    <span className="text-xs text-gray-400">{video.difficulty}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {!loading && videos.length === 0 && (
-          <p className="text-center text-gray-500">Žádná videa v této kategorii.</p>
-        )}
-      </main>
-    </div>
+              {v.category} · {v.difficulty}
+            </div>
+            <V2Display size="sm">{v.title}</V2Display>
+          </Link>
+        ))}
+      </section>
+    </V2Layout>
   );
 }

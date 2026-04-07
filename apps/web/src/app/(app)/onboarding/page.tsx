@@ -2,43 +2,42 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
+import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2Input, V2Button } from '@/components/v2/V2AuthLayout';
 import {
-  getOnboardingStatus, getOnboardingTestExercises, saveOnboardingMeasurements,
-  submitFitnessTest, completeOnboarding, getSuggestedWeights,
-  type OnboardingStatus, type SuggestedWeight,
+  getOnboardingStatus,
+  getOnboardingTestExercises,
+  saveOnboardingMeasurements,
+  submitFitnessTest,
+  completeOnboarding,
+  getSuggestedWeights,
+  type SuggestedWeight,
 } from '@/lib/api';
 
-type Step = 'measurements' | 'test' | 'review' | 'done';
+type Step = 'measurements' | 'test' | 'review';
 
-export default function OnboardingPage() {
+export default function OnboardingV2Page() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('measurements');
   const [loading, setLoading] = useState(true);
 
-  // Step 1: measurements
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
 
-  // Step 2: fitness test
   const [testExercises, setTestExercises] = useState<any[]>([]);
   const [testResults, setTestResults] = useState<Record<string, { weight: string; reps: string }>>({});
 
-  // Step 3: review
   const [suggested, setSuggested] = useState<SuggestedWeight[]>([]);
 
   useEffect(() => {
     Promise.all([getOnboardingStatus(), getOnboardingTestExercises()])
       .then(([status, exs]) => {
         setTestExercises(exs);
-        if (status.completed) {
-          router.push('/dashboard');
-        } else if (status.step === 'measurements' || status.step === 'profile') {
-          setStep('measurements');
-        } else if (status.step === 'fitness_test') {
-          setStep('test');
-        } else if (status.step === 'finalize') {
+        if (status.completed) router.push('/dashboard');
+        else if (status.step === 'measurements' || status.step === 'profile') setStep('measurements');
+        else if (status.step === 'fitness_test') setStep('test');
+        else if (status.step === 'finalize') {
           setStep('review');
           getSuggestedWeights().then(setSuggested);
         }
@@ -77,165 +76,137 @@ export default function OnboardingPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-[#0a0a0a]"><Header /><p className="p-8 text-gray-500">Načítání...</p></div>;
+    return (
+      <V2Layout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        </div>
+      </V2Layout>
+    );
   }
 
+  const stepIdx = ['measurements', 'test', 'review'].indexOf(step);
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
-      <main className="mx-auto max-w-2xl px-6 py-8">
-        <h1 className="mb-2 text-3xl font-bold text-white">Pojďme začít</h1>
-        <p className="mb-6 text-gray-400">Pomůžeme ti vytvořit personalizovaný tréninkový plán.</p>
+    <V2Layout>
+      <section className="pt-12 pb-12">
+        <V2SectionLabel>Krok {stepIdx + 1} ze 3</V2SectionLabel>
+        <V2Display size="xl">
+          {step === 'measurements' && 'O tobě.'}
+          {step === 'test' && 'Tvůj výkon.'}
+          {step === 'review' && 'Tvůj plán.'}
+        </V2Display>
+      </section>
 
-        {/* Progress indicator */}
-        <div className="mb-8 flex gap-2">
-          {(['measurements', 'test', 'review'] as Step[]).map((s, i) => (
-            <div
-              key={s}
-              className={`h-2 flex-1 rounded-full ${
-                step === s || (i < ['measurements', 'test', 'review'].indexOf(step))
-                  ? 'bg-[#16a34a]'
-                  : 'bg-gray-800'
-              }`}
-            />
-          ))}
+      {/* Progress bar */}
+      <div className="mb-16 flex gap-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={`h-[2px] flex-1 rounded-full transition ${
+              i <= stepIdx ? 'bg-white' : 'bg-white/10'
+            }`}
+          />
+        ))}
+      </div>
+
+      {step === 'measurements' && (
+        <div className="space-y-12">
+          <p className="max-w-xl text-base text-white/55">
+            Tyto údaje pomohou personalizovat tvůj plán a spočítat denní příjem kalorií.
+          </p>
+          <div className="space-y-10">
+            <V2Input label="Věk" type="number" value={age} onChange={setAge} placeholder="25" />
+            <V2Input label="Váha (kg)" type="number" value={weight} onChange={setWeight} placeholder="75" />
+            <V2Input label="Výška (cm)" type="number" value={height} onChange={setHeight} placeholder="180" />
+          </div>
+          <V2Button onClick={handleMeasurementsNext} disabled={!age || !weight || !height}>
+            Pokračovat →
+          </V2Button>
         </div>
+      )}
 
-        {/* STEP 1: Measurements */}
-        {step === 'measurements' && (
-          <div className="rounded-2xl bg-gray-900 p-6">
-            <h2 className="mb-4 text-xl font-semibold text-white">1/3 — Základní údaje</h2>
-            <p className="mb-6 text-sm text-gray-400">Tyto údaje pomohou personalizovat tvůj plán.</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm text-gray-400">Věk</label>
-                <input
-                  type="number"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="w-full rounded-lg bg-gray-800 px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-                  placeholder="25"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-gray-400">Váha (kg)</label>
-                <input
-                  type="number"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="w-full rounded-lg bg-gray-800 px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-                  placeholder="75"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-gray-400">Výška (cm)</label>
-                <input
-                  type="number"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  className="w-full rounded-lg bg-gray-800 px-4 py-3 text-white focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-                  placeholder="180"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={handleMeasurementsNext}
-              disabled={!age || !weight || !height}
-              className="mt-6 w-full rounded-lg bg-[#16a34a] py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-40"
-            >
-              Pokračovat
-            </button>
-          </div>
-        )}
-
-        {/* STEP 2: Fitness Test */}
-        {step === 'test' && (
-          <div className="rounded-2xl bg-gray-900 p-6">
-            <h2 className="mb-2 text-xl font-semibold text-white">2/3 — Fitness test</h2>
-            <p className="mb-2 text-sm text-gray-400">
-              Pro každý cvik zadej váhu a počet opakování, které událáš s perfektní formou (2-10 repů).
-            </p>
-            <p className="mb-6 text-xs text-gray-500">
-              Z toho spočítáme tvoje 1RM (maximální váha) a navrhneme pracovní zátěž. Můžeš přeskočit cviky které neznáš.
-            </p>
-
-            <div className="space-y-4">
-              {testExercises.map((ex) => (
-                <div key={ex.id} className="rounded-lg bg-gray-800 p-4">
-                  <p className="mb-3 font-semibold text-white">{ex.nameCs}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      placeholder="Váha (kg)"
-                      value={testResults[ex.id]?.weight || ''}
-                      onChange={(e) =>
-                        setTestResults({ ...testResults, [ex.id]: { ...(testResults[ex.id] || { reps: '' }), weight: e.target.value } })
-                      }
-                      className="rounded bg-gray-700 px-3 py-2 text-sm text-white"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Opakování"
-                      value={testResults[ex.id]?.reps || ''}
-                      onChange={(e) =>
-                        setTestResults({ ...testResults, [ex.id]: { ...(testResults[ex.id] || { weight: '' }), reps: e.target.value } })
-                      }
-                      className="rounded bg-gray-700 px-3 py-2 text-sm text-white"
-                    />
-                  </div>
+      {step === 'test' && (
+        <div className="space-y-12">
+          <p className="max-w-xl text-base text-white/55">
+            U každého cviku zadej váhu a počet opakování s perfektní formou. Z toho spočítáme tvoje 1RM. Cviky které neznáš můžeš přeskočit.
+          </p>
+          <div className="space-y-10">
+            {testExercises.map((ex) => (
+              <div key={ex.id} className="border-b border-white/10 pb-8">
+                <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+                  Cvik
                 </div>
-              ))}
-            </div>
-
-            <button
-              onClick={handleTestNext}
-              className="mt-6 w-full rounded-lg bg-[#16a34a] py-3 font-semibold text-white hover:bg-green-700"
-            >
-              Spočítat 1RM
-            </button>
+                <V2Display size="sm">{ex.nameCs}</V2Display>
+                <div className="mt-6 grid grid-cols-2 gap-6">
+                  <V2Input
+                    label="Váha (kg)"
+                    type="number"
+                    value={testResults[ex.id]?.weight || ''}
+                    onChange={(v) =>
+                      setTestResults({
+                        ...testResults,
+                        [ex.id]: { ...(testResults[ex.id] || { reps: '' }), weight: v },
+                      })
+                    }
+                  />
+                  <V2Input
+                    label="Opakování"
+                    type="number"
+                    value={testResults[ex.id]?.reps || ''}
+                    onChange={(v) =>
+                      setTestResults({
+                        ...testResults,
+                        [ex.id]: { ...(testResults[ex.id] || { weight: '' }), reps: v },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+          <V2Button onClick={handleTestNext}>Spočítat 1RM →</V2Button>
+        </div>
+      )}
 
-        {/* STEP 3: Review */}
-        {step === 'review' && (
-          <div className="rounded-2xl bg-gray-900 p-6">
-            <h2 className="mb-2 text-xl font-semibold text-white">3/3 — Tvoje pracovní váhy</h2>
-            <p className="mb-6 text-sm text-gray-400">
-              Spočítáno na základě tvého 1RM. První týden začneme jemně na 60% — tělo si zvykne.
-            </p>
-
-            <div className="mb-6 space-y-3">
-              {suggested.map((s) => (
-                <div key={s.exerciseId} className="rounded-lg bg-gray-800 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="font-semibold text-white">{s.exerciseName}</p>
-                    <span className="text-xs text-gray-500">1RM: {s.oneRMKg}kg</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded bg-yellow-900/20 border border-yellow-800/30 p-2">
-                      <p className="text-xs text-yellow-400">První týden</p>
-                      <p className="font-bold text-white">{s.firstWeekWeight}kg × {s.recommendedReps}</p>
+      {step === 'review' && (
+        <div className="space-y-12">
+          <p className="max-w-xl text-base text-white/55">
+            Spočítáno na základě tvého 1RM. První týden začneme jemně na 60 % — tělo si zvykne.
+          </p>
+          <div className="space-y-1">
+            {suggested.map((s) => (
+              <div key={s.exerciseId} className="border-b border-white/10 py-8">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+                  1RM {s.oneRMKg}kg
+                </div>
+                <V2Display size="md">{s.exerciseName}</V2Display>
+                <div className="mt-4 flex gap-8 text-sm">
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#FF9F0A]">
+                      První týden
                     </div>
-                    <div className="rounded bg-green-900/20 border border-green-800/30 p-2">
-                      <p className="text-xs text-green-400">Cílová váha</p>
-                      <p className="font-bold text-white">{s.recommendedWorkingWeight}kg × {s.recommendedReps}</p>
+                    <div className="mt-1 text-2xl font-bold text-white tabular-nums">
+                      {s.firstWeekWeight}
+                      <span className="text-base text-white/40">kg × {s.recommendedReps}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#A8FF00]">
+                      Cílová váha
+                    </div>
+                    <div className="mt-1 text-2xl font-bold text-white tabular-nums">
+                      {s.recommendedWorkingWeight}
+                      <span className="text-base text-white/40">kg × {s.recommendedReps}</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <button
-              onClick={handleFinish}
-              className="w-full rounded-lg bg-[#16a34a] py-3 font-semibold text-white hover:bg-green-700"
-            >
-              Začít cvičit 💪
-            </button>
+              </div>
+            ))}
           </div>
-        )}
-      </main>
-    </div>
+          <V2Button onClick={handleFinish}>Začít cvičit →</V2Button>
+        </div>
+      )}
+    </V2Layout>
   );
 }

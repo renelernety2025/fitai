@@ -5,8 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authRegister } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { V2AuthLayout, V2Input, V2Button } from '@/components/v2/V2AuthLayout';
 
-export default function RegisterPage() {
+const LEVELS = [
+  { value: 'BEGINNER', label: 'Začátečník' },
+  { value: 'INTERMEDIATE', label: 'Pokročilý' },
+  { value: 'ADVANCED', label: 'Expert' },
+];
+
+export default function RegisterV2Page() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +30,7 @@ export default function RegisterPage() {
     try {
       const res = await authRegister({ name, email, password, level });
       login(res.accessToken, res.user);
-      router.push('/dashboard');
+      router.push('/onboarding');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -32,98 +39,76 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <h1 className="mb-2 text-center text-3xl font-bold tracking-tight text-gray-900">
-          FitAI
+    <V2AuthLayout>
+      <div className="text-center">
+        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+          Začni
+        </div>
+        <h1
+          className="font-bold tracking-tight text-white"
+          style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', letterSpacing: '-0.04em' }}
+        >
+          Vytvoř účet.
         </h1>
-        <p className="mb-8 text-center text-sm text-gray-500">
-          Vytvoř si nový účet
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
-              Jméno
-            </label>
-            <input
-              id="name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-              placeholder="Jan Novák"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-              placeholder="tvuj@email.cz"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-              Heslo
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-              placeholder="Minimálně 8 znaků"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="level" className="mb-1 block text-sm font-medium text-gray-700">
-              Úroveň
-            </label>
-            <select
-              id="level"
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-            >
-              <option value="BEGINNER">Začátečník</option>
-              <option value="INTERMEDIATE">Pokročilý</option>
-              <option value="ADVANCED">Expert</option>
-            </select>
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-[#16a34a] py-2.5 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? 'Registrace...' : 'Vytvořit účet'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Už máš účet?{' '}
-          <Link href="/login" className="font-medium text-[#16a34a] hover:underline">
-            Přihlaš se
-          </Link>
-        </p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="mt-12 space-y-8">
+        <V2Input label="Jméno" value={name} onChange={setName} placeholder="Jan Novák" required />
+        <V2Input
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          placeholder="tvuj@email.cz"
+          required
+        />
+        <V2Input
+          label="Heslo"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          placeholder="Min. 8 znaků"
+          required
+          minLength={8}
+        />
+
+        <div>
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+            Úroveň
+          </div>
+          <div className="flex gap-2">
+            {LEVELS.map((l) => (
+              <button
+                key={l.value}
+                type="button"
+                onClick={() => setLevel(l.value)}
+                className={`flex-1 rounded-full border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition ${
+                  level === l.value
+                    ? 'border-white bg-white text-black'
+                    : 'border-white/15 text-white/60 hover:border-white/40'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-[#FF375F]">{error}</p>}
+
+        <div className="pt-4">
+          <V2Button type="submit" disabled={loading} full>
+            {loading ? 'Vytváření…' : 'Vytvořit účet →'}
+          </V2Button>
+        </div>
+      </form>
+
+      <p className="mt-10 text-center text-sm text-white/40">
+        Už máš účet?{' '}
+        <Link href="/login" className="text-white underline-offset-4 hover:underline">
+          Přihlas se
+        </Link>
+      </p>
+    </V2AuthLayout>
   );
 }

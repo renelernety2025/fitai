@@ -1,215 +1,169 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Header } from '@/components/layout/Header';
+import {
+  V2Layout,
+  V2SectionLabel,
+  V2Display,
+  V2Ring,
+} from '@/components/v2/V2Layout';
 import {
   getNutritionToday,
   getQuickFoods,
   addFoodLog,
   deleteFoodLog,
-  autoCalculateNutritionGoals,
   type NutritionToday,
   type QuickFood,
 } from '@/lib/api';
 
-const MEAL_TYPES = [
+const MEALS = [
   { value: 'breakfast', label: 'Snídaně' },
   { value: 'lunch', label: 'Oběd' },
   { value: 'dinner', label: 'Večeře' },
   { value: 'snack', label: 'Svačina' },
 ];
 
-function MacroRing({
-  label,
-  value,
-  total,
-  color,
-  unit = 'g',
-}: {
-  label: string;
-  value: number;
-  total: number;
-  color: string;
-  unit?: string;
-}) {
-  const pct = Math.min(100, total > 0 ? (value / total) * 100 : 0);
-  return (
-    <div className="rounded-xl bg-gray-900 p-4 text-center">
-      <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={`mt-1 text-2xl font-bold ${color}`}>
-        {value}
-        <span className="text-sm text-gray-500">/{total}</span>
-      </div>
-      <div className="mt-1 text-xs text-gray-500">{unit}</div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-800">
-        <div
-          className={`h-full ${color.replace('text-', 'bg-')}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-export default function NutritionPage() {
+export default function NutritionV2Page() {
   const [data, setData] = useState<NutritionToday | null>(null);
   const [foods, setFoods] = useState<QuickFood[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [selectedMeal, setSelectedMeal] = useState('breakfast');
+  const [meal, setMeal] = useState('breakfast');
 
   const reload = () => {
-    setLoading(true);
     Promise.all([getNutritionToday(), getQuickFoods()])
-      .then(([today, quick]) => {
-        setData(today);
-        setFoods(quick);
+      .then(([t, q]) => {
+        setData(t);
+        setFoods(q);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
   };
-
   useEffect(reload, []);
 
+  if (!data) {
+    return (
+      <V2Layout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        </div>
+      </V2Layout>
+    );
+  }
+
+  const grouped = MEALS.map((m) => ({ ...m, items: data.log.filter((i) => i.mealType === m.value) }));
+
   const handleAdd = async (food: QuickFood) => {
-    await addFoodLog({ ...food, mealType: selectedMeal });
+    await addFoodLog({ ...food, mealType: meal });
     setShowAdd(false);
     reload();
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteFoodLog(id);
-    reload();
-  };
-
-  const handleAutoCalc = async () => {
-    await autoCalculateNutritionGoals();
-    reload();
-  };
-
-  if (loading || !data) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <Header />
-        <main className="mx-auto max-w-4xl px-6 py-8">
-          <p className="text-gray-500">Načítání...</p>
-        </main>
-      </div>
-    );
-  }
-
-  const grouped = MEAL_TYPES.map((m) => ({
-    ...m,
-    items: data.log.filter((i) => i.mealType === m.value),
-  }));
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-6 flex items-baseline justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Výživa</h1>
-            <p className="text-gray-400">
-              Cíl:{' '}
-              <span className="text-white">{data.goals.dailyKcal} kcal</span>{' '}
-              <span className="text-xs text-gray-500">({data.goals.source})</span>
-            </p>
-          </div>
-          {data.goals.source !== 'profile' && (
-            <button
-              onClick={handleAutoCalc}
-              className="rounded-lg bg-[#16a34a] px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-            >
-              Spočítat z profilu
-            </button>
-          )}
+    <V2Layout>
+      {/* Hero */}
+      <section className="pt-12 pb-24 text-center">
+        <V2SectionLabel>Dnes</V2SectionLabel>
+        <h1
+          className="font-bold tracking-tight text-white"
+          style={{ fontSize: 'clamp(3rem, 7vw, 5.5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
+        >
+          {data.totals.kcal.toLocaleString('cs-CZ')}
+          <span className="text-white/30">
+            {' '}/ {data.goals.dailyKcal.toLocaleString('cs-CZ')}
+          </span>
+        </h1>
+        <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+          Kalorie
         </div>
+      </section>
 
-        {/* Macro rings */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MacroRing label="Kalorie" value={data.totals.kcal} total={data.goals.dailyKcal} color="text-orange-400" unit="kcal" />
-          <MacroRing label="Protein" value={data.totals.proteinG} total={data.goals.dailyProteinG} color="text-red-400" />
-          <MacroRing label="Sacharidy" value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="text-yellow-400" />
-          <MacroRing label="Tuky" value={data.totals.fatG} total={data.goals.dailyFatG} color="text-blue-400" />
-        </div>
+      {/* Macro rings */}
+      <section className="mb-32 grid grid-cols-1 gap-12 sm:grid-cols-3">
+        <V2Ring value={data.totals.proteinG} total={data.goals.dailyProteinG} color="#FF375F" label="Protein" unit="g" />
+        <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="#A8FF00" label="Sacharidy" unit="g" />
+        <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} color="#00E5FF" label="Tuky" unit="g" />
+      </section>
 
-        {/* Meals */}
-        <div className="space-y-4">
-          {grouped.map((meal) => (
-            <div key={meal.value} className="rounded-xl bg-gray-900 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold text-white">{meal.label}</h3>
-                <button
-                  onClick={() => {
-                    setSelectedMeal(meal.value);
-                    setShowAdd(true);
-                  }}
-                  className="text-sm text-[#16a34a] hover:underline"
-                >
-                  + Přidat
-                </button>
-              </div>
-              {meal.items.length === 0 ? (
-                <p className="text-sm text-gray-500">Žádné jídlo</p>
-              ) : (
-                <ul className="space-y-2">
-                  {meal.items.map((item) => (
-                    <li key={item.id} className="flex items-center justify-between rounded-lg bg-gray-800 p-3">
-                      <div>
-                        <div className="text-sm font-medium text-white">{item.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {item.kcal} kcal · P {item.proteinG}g · S {item.carbsG}g · T {item.fatG}g
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-xs text-gray-500 hover:text-red-400"
-                      >
-                        ✕
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+      {/* Meals */}
+      <section className="space-y-16">
+        {grouped.map((m) => (
+          <div key={m.value}>
+            <div className="mb-4 flex items-center justify-between">
+              <V2Display size="md">{m.label}</V2Display>
+              <button
+                onClick={() => {
+                  setMeal(m.value);
+                  setShowAdd(true);
+                }}
+                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60 transition hover:text-white"
+              >
+                + Přidat
+              </button>
             </div>
-          ))}
-        </div>
-
-        {/* Quick add modal */}
-        {showAdd && (
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center"
-            onClick={() => setShowAdd(false)}
-          >
-            <div
-              className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-gray-900 p-6 sm:rounded-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="mb-4 text-lg font-semibold text-white">
-                Přidat jídlo — {MEAL_TYPES.find((m) => m.value === selectedMeal)?.label}
-              </h3>
-              <div className="space-y-2">
-                {foods.map((f) => (
-                  <button
-                    key={f.name}
-                    onClick={() => handleAdd(f)}
-                    className="flex w-full items-center justify-between rounded-lg bg-gray-800 p-3 text-left hover:bg-gray-700"
+            {m.items.length === 0 ? (
+              <div className="text-sm text-white/30">Žádné jídlo</div>
+            ) : (
+              <ul className="space-y-3">
+                {m.items.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between border-b border-white/8 pb-3"
                   >
                     <div>
-                      <div className="text-sm font-medium text-white">{f.name}</div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-base text-white">{item.name}</div>
+                      <div className="text-xs text-white/40">
+                        {item.kcal} kcal · P {item.proteinG}g · S {item.carbsG}g · T {item.fatG}g
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await deleteFoodLog(item.id);
+                        reload();
+                      }}
+                      className="text-xs text-white/30 transition hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </section>
+
+      {/* Quick add modal */}
+      {showAdd && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xl sm:items-center"
+          onClick={() => setShowAdd(false)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-white/10 bg-black p-8 sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <V2SectionLabel>{MEALS.find((x) => x.value === meal)?.label}</V2SectionLabel>
+            <V2Display size="md">Přidat jídlo</V2Display>
+            <ul className="mt-6 space-y-1">
+              {foods.map((f) => (
+                <li key={f.name}>
+                  <button
+                    onClick={() => handleAdd(f)}
+                    className="flex w-full items-center justify-between border-b border-white/8 py-4 text-left transition hover:bg-white/5"
+                  >
+                    <div>
+                      <div className="text-base text-white">{f.name}</div>
+                      <div className="text-xs text-white/40">
                         P {f.proteinG}g · S {f.carbsG}g · T {f.fatG}g
                       </div>
                     </div>
-                    <div className="text-sm font-bold text-orange-400">{f.kcal} kcal</div>
+                    <div className="font-bold text-white tabular-nums">{f.kcal}</div>
                   </button>
-                ))}
-              </div>
-            </div>
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </V2Layout>
   );
 }

@@ -1,234 +1,118 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Header } from '@/components/layout/Header';
-import { getMyStats, getMySessions, getMyWeeklyVolume, type StatsData, type SessionData, type WeeklyVolumeEntry } from '@/lib/api';
+import {
+  V2Layout,
+  V2SectionLabel,
+  V2Display,
+  V2Stat,
+} from '@/components/v2/V2Layout';
+import { getMyStats, getInsights, type StatsData, type Insights } from '@/lib/api';
 
-const muscleLabels: Record<string, string> = {
-  CHEST: 'Prsa', BACK: 'Záda', SHOULDERS: 'Ramena', BICEPS: 'Biceps',
-  TRICEPS: 'Triceps', QUADRICEPS: 'Stehna', HAMSTRINGS: 'Zadní stehna',
-  GLUTES: 'Hýždě', CORE: 'Core',
-};
-
-const levelColors: Record<string, string> = {
-  'Začátečník': 'bg-gray-600',
-  'Pokročilý': 'bg-blue-600',
-  'Expert': 'bg-green-600',
-  'Mistr': 'bg-purple-600',
-  'Legenda': 'bg-[#F59E0B]',
-};
-
-const DAY_NAMES = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
-
-export default function ProgressPage() {
+export default function ProgressV2Page() {
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [sessions, setSessions] = useState<SessionData[]>([]);
-  const [volume, setVolume] = useState<WeeklyVolumeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState<Insights | null>(null);
 
   useEffect(() => {
-    Promise.all([getMyStats(), getMySessions(), getMyWeeklyVolume().catch(() => [])])
-      .then(([s, sess, vol]) => {
-        setStats(s);
-        setSessions(sess.slice(0, 10));
-        setVolume(vol);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    getMyStats().then(setStats).catch(console.error);
+    getInsights().then(setInsights).catch(console.error);
   }, []);
 
-  // Build 30-day streak calendar
-  const streakDays = new Set<string>();
-  sessions.forEach((s) => {
-    if (s.completedAt) {
-      streakDays.add(new Date(s.startedAt).toISOString().slice(0, 10));
-    }
-  });
-
-  const last30: { date: string; active: boolean }[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const ds = d.toISOString().slice(0, 10);
-    last30.push({ date: ds, active: streakDays.has(ds) });
-  }
-
-  if (loading) {
+  if (!stats) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <Header />
-        <div className="flex items-center justify-center py-20">
-          <p className="text-gray-500">Načítání...</p>
+      <V2Layout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
         </div>
-      </div>
+      </V2Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
+    <V2Layout>
+      <section className="pt-12 pb-16">
+        <V2SectionLabel>Vše co jsi udělal</V2SectionLabel>
+        <V2Display size="xl">Pokrok.</V2Display>
+      </section>
 
-      <main className="mx-auto max-w-4xl px-6 py-10">
-        <div className="mb-8 flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-white">Progres</h1>
-          {stats && (
-            <span className={`rounded-full px-3 py-1 text-xs font-bold text-white ${levelColors[stats.levelName] || 'bg-gray-600'}`}>
-              {stats.levelName}
-            </span>
-          )}
-        </div>
+      {/* Big stats */}
+      <section className="mb-32 grid grid-cols-2 gap-y-16 sm:grid-cols-4">
+        <V2Stat value={stats.totalSessions} label="Cvičení" />
+        <V2Stat value={stats.currentStreak} label="Streak" />
+        <V2Stat value={stats.longestStreak || 0} label="Best Streak" />
+        <V2Stat value={stats.totalXP} label="XP" />
+      </section>
 
-        {/* Stats cards */}
-        {stats && (
-          <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-xl bg-gray-900 p-5">
-              <p className="text-2xl font-bold text-[#EA580C]">🔥 {stats.currentStreak}</p>
-              <p className="text-xs text-gray-400">Série (dní)</p>
-            </div>
-            <div className="rounded-xl bg-gray-900 p-5">
-              <p className="text-2xl font-bold text-[#F59E0B]">{stats.totalXP}</p>
-              <p className="text-xs text-gray-400">XP celkem</p>
-            </div>
-            <div className="rounded-xl bg-gray-900 p-5">
-              <p className="text-2xl font-bold text-white">{stats.totalSessions}</p>
-              <p className="text-xs text-gray-400">Cvičení</p>
-            </div>
-            <div className="rounded-xl bg-gray-900 p-5">
-              <p className="text-2xl font-bold text-white">{stats.totalMinutes}</p>
-              <p className="text-xs text-gray-400">Minut celkem</p>
-            </div>
-          </div>
-        )}
+      {/* Time breakdown */}
+      <section className="mb-32 border-y border-white/10 py-16">
+        <V2SectionLabel>Čas v tréninku</V2SectionLabel>
+        <V2Display size="xl">
+          {Math.floor((stats.totalMinutes || 0) / 60).toLocaleString('cs-CZ')}
+          <span className="text-white/30"> hodin</span>
+        </V2Display>
+        <p className="mt-4 text-sm text-white/55">
+          {stats.totalMinutes.toLocaleString('cs-CZ')} minut · průměrně{' '}
+          {stats.totalSessions > 0
+            ? Math.round(stats.totalMinutes / stats.totalSessions)
+            : 0}{' '}
+          min na cvičení
+        </p>
+      </section>
 
-        {/* Weekly Volume per Muscle Group */}
-        {volume.length > 0 && (
-          <div className="mb-10">
-            <h2 className="mb-4 text-lg font-semibold text-white">Tento týden — objem dle svalů</h2>
-            <div className="space-y-2 rounded-xl bg-gray-900 p-5">
-              {volume.map((v) => {
-                const pct = Math.min(100, (v.sets / v.recommended.max) * 100);
-                const barColor =
-                  v.status === 'undertrained' ? 'bg-yellow-500' :
-                  v.status === 'overtrained' ? 'bg-red-500' :
-                  'bg-[#16a34a]';
-                const label =
-                  v.status === 'undertrained' ? 'Málo' :
-                  v.status === 'overtrained' ? 'Příliš' :
-                  'Optimální';
-                return (
-                  <div key={v.muscleGroup}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-white">{muscleLabels[v.muscleGroup] || v.muscleGroup}</span>
-                      <span className="text-gray-400">
-                        {v.sets} setů · {Math.round(v.volumeKg)}kg
-                        <span className={`ml-2 text-xs ${
-                          v.status === 'undertrained' ? 'text-yellow-400' :
-                          v.status === 'overtrained' ? 'text-red-400' : 'text-green-400'
-                        }`}>{label}</span>
-                      </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-gray-800">
-                      <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-              <p className="mt-3 text-xs text-gray-500">Doporučení: 10-20 setů na svalovou skupinu / týden pro hypertrofii</p>
-            </div>
-          </div>
-        )}
+      {/* Recovery */}
+      {insights?.recovery && (
+        <section className="mb-32">
+          <V2SectionLabel>Stav regenerace</V2SectionLabel>
+          <V2Display size="lg">
+            {insights.recovery.overallStatus === 'fresh' && 'Svěží.'}
+            {insights.recovery.overallStatus === 'normal' && 'Normální.'}
+            {insights.recovery.overallStatus === 'fatigued' && 'Unavený.'}
+            {insights.recovery.overallStatus === 'overreached' && 'Přetrénovaný.'}
+          </V2Display>
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/55">
+            {insights.recovery.recommendation}
+          </p>
+        </section>
+      )}
 
-        {/* Streak calendar */}
-        <div className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-white">Posledních 30 dní</h2>
-          <div className="grid grid-cols-10 gap-1.5 sm:grid-cols-15">
-            {last30.map((d) => (
+      {/* Plateaus */}
+      {insights && insights.plateaus.length > 0 && (
+        <section className="mb-32">
+          <V2SectionLabel>Plateaus</V2SectionLabel>
+          <div className="space-y-1">
+            {insights.plateaus.slice(0, 5).map((p) => (
               <div
-                key={d.date}
-                title={d.date}
-                className={`aspect-square rounded-sm ${d.active ? 'bg-[#16a34a]' : 'bg-gray-800'}`}
-              />
+                key={p.exerciseId}
+                className="border-b border-white/8 py-6"
+              >
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#FF9F0A]">
+                  {p.weeksStagnant} týdnů na {p.currentMaxWeight}kg
+                </div>
+                <V2Display size="md">{p.exerciseName}</V2Display>
+                <p className="mt-2 max-w-xl text-sm text-white/55">{p.recommendation}</p>
+              </div>
             ))}
           </div>
-          <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              <div className="h-2.5 w-2.5 rounded-sm bg-gray-800" /> Necvičil
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="h-2.5 w-2.5 rounded-sm bg-[#16a34a]" /> Cvičil
-            </span>
-          </div>
-        </div>
+        </section>
+      )}
 
-        {/* Weekly chart */}
-        {stats && stats.weeklyActivity.length > 0 && (
-          <div className="mb-10">
-            <h2 className="mb-4 text-lg font-semibold text-white">Tento týden</h2>
-            <div className="flex items-end gap-2 rounded-xl bg-gray-900 p-6" style={{ height: 180 }}>
-              {stats.weeklyActivity.map((day) => {
-                const maxMin = Math.max(...stats.weeklyActivity.map((d) => d.minutes), 1);
-                const height = day.minutes > 0 ? Math.max(20, (day.minutes / maxMin) * 100) : 8;
-                const d = new Date(day.date + 'T00:00:00');
-                return (
-                  <div key={day.date} className="flex flex-1 flex-col items-center gap-2">
-                    <div className="flex flex-col items-center justify-end" style={{ height: 100 }}>
-                      {day.minutes > 0 && (
-                        <span className="mb-1 text-xs text-gray-400">{day.minutes}m</span>
-                      )}
-                      <div
-                        className={`w-full max-w-[40px] rounded-t ${day.minutes > 0 ? 'bg-[#16a34a]' : 'bg-gray-700'}`}
-                        style={{ height: `${height}%`, minWidth: 24 }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500">{DAY_NAMES[d.getDay()]}</span>
-                  </div>
-                );
-              })}
-            </div>
+      {/* Weak points */}
+      {insights && insights.weakPoints.weakMuscleGroups.length > 0 && (
+        <section className="mb-32">
+          <V2SectionLabel>Slabá místa</V2SectionLabel>
+          <div className="space-y-1">
+            {insights.weakPoints.weakMuscleGroups.slice(0, 5).map((w) => (
+              <div key={w.muscle} className="border-b border-white/8 py-6">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#BF5AF2]">
+                  Méně objemu
+                </div>
+                <V2Display size="md">{w.muscle}</V2Display>
+                <p className="mt-2 max-w-xl text-sm text-white/55">{w.reason}</p>
+              </div>
+            ))}
           </div>
-        )}
-
-        {/* Sessions table */}
-        <div>
-          <h2 className="mb-4 text-lg font-semibold text-white">Poslední cvičení</h2>
-          {sessions.length === 0 ? (
-            <p className="text-gray-500">Zatím žádná cvičení. Začni ještě dnes!</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl bg-gray-900">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-800 text-gray-400">
-                    <th className="px-4 py-3 font-medium">Datum</th>
-                    <th className="px-4 py-3 font-medium">Video</th>
-                    <th className="px-4 py-3 font-medium">Délka</th>
-                    <th className="px-4 py-3 font-medium">Přesnost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((s) => (
-                    <tr key={s.id} className="border-b border-gray-800/50">
-                      <td className="px-4 py-3 text-gray-300">
-                        {new Date(s.startedAt).toLocaleDateString('cs-CZ')}
-                      </td>
-                      <td className="px-4 py-3 text-white">
-                        {s.video?.title || 'Neznámé'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-300">
-                        {Math.floor(s.durationSeconds / 60)} min
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`font-medium ${s.accuracyScore >= 70 ? 'text-[#16a34a]' : 'text-red-400'}`}>
-                          {Math.round(s.accuracyScore)}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+        </section>
+      )}
+    </V2Layout>
   );
 }

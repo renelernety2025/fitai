@@ -2,100 +2,80 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getVideo, type VideoData } from '@/lib/api';
 
-const categoryColors: Record<string, string> = {
-  YOGA: 'bg-emerald-500',
-  PILATES: 'bg-blue-500',
-  STRENGTH: 'bg-orange-500',
-  CARDIO: 'bg-red-500',
-  MOBILITY: 'bg-purple-500',
+const catAccent: Record<string, string> = {
+  YOGA: '#A8FF00',
+  PILATES: '#00E5FF',
+  STRENGTH: '#FF9500',
+  CARDIO: '#FF375F',
+  MOBILITY: '#BF5AF2',
 };
 
-function formatDuration(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m} min`;
-}
-
-export default function VideoDetailPage({ params }: { params: { id: string } }) {
+export default function VideoV2DetailPage({ params }: { params: { id: string } }) {
   const [video, setVideo] = useState<VideoData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
-    getVideo(params.id)
-      .then(setVideo)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    getVideo(params.id).then(setVideo).catch(console.error);
   }, [params.id]);
 
-  if (loading) {
+  if (!video) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
-        <div className="animate-pulse text-gray-500">Načítání...</div>
-      </div>
-    );
-  }
-
-  if (error || !video) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] gap-4">
-        <p className="text-red-400">{error || 'Video nenalezeno'}</p>
-        <Link href="/videos" className="text-[#16a34a] hover:underline">Zpět na videa</Link>
-      </div>
+      <V2Layout>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        </div>
+      </V2Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="border-b border-gray-800">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-4">
-          <Link href="/videos" className="text-gray-400 hover:text-white">&larr; Zpět</Link>
-          <span className="text-xl font-bold text-white">FitAI</span>
-        </div>
-      </header>
+    <V2Layout>
+      <Link
+        href="/videos"
+        className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
+      >
+        ← Videa
+      </Link>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        {/* Hero thumbnail */}
-        <div className="relative mb-8 overflow-hidden rounded-2xl">
+      <section className="pt-8 pb-12">
+        <div className="relative mb-12 overflow-hidden rounded-3xl">
           <img
             src={video.thumbnailUrl}
             alt={video.title}
             className="aspect-video w-full object-cover"
           />
           {!video.hlsUrl && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <span className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-300">
-                Video se zpracovává...
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/60">
+                Video se zpracovává…
               </span>
             </div>
           )}
         </div>
 
-        {/* Metadata */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <span className={`rounded-full px-3 py-1 text-sm font-medium text-white ${categoryColors[video.category] || 'bg-gray-600'}`}>
-            {video.category}
-          </span>
-          <span className="rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-300">
-            {video.difficulty === 'BEGINNER' ? 'Začátečník' : video.difficulty === 'INTERMEDIATE' ? 'Pokročilý' : 'Expert'}
-          </span>
-          <span className="rounded-full bg-gray-800 px-3 py-1 text-sm text-gray-300">
-            {formatDuration(video.durationSeconds)}
-          </span>
-        </div>
-
-        <h1 className="mb-4 text-3xl font-bold text-white">{video.title}</h1>
-        <p className="mb-8 text-lg leading-relaxed text-gray-400">{video.description}</p>
-
-        <Link
-          href={`/workout/${video.id}`}
-          className="inline-block rounded-xl bg-[#16a34a] px-8 py-4 text-lg font-bold text-white transition hover:bg-green-700"
+        <div
+          className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em]"
+          style={{ color: catAccent[video.category] || '#FFF' }}
         >
-          Začít cvičit
-        </Link>
-      </main>
-    </div>
+          {video.category} · {video.difficulty} · {Math.floor(video.durationSeconds / 60)} min
+        </div>
+        <V2Display size="xl">{video.title}</V2Display>
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/55">
+          {video.description}
+        </p>
+
+        <div className="mt-12">
+          <Link
+            href={`/workout/${video.id}`}
+            className="group inline-flex items-center gap-3 rounded-full bg-white px-10 py-5 text-base font-semibold tracking-tight text-black transition hover:scale-105"
+          >
+            Začít cvičit
+            <span className="transition group-hover:translate-x-1">→</span>
+          </Link>
+        </div>
+      </section>
+    </V2Layout>
   );
 }

@@ -1,217 +1,207 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Header } from '@/components/layout/Header';
+import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import {
-  getSocialFeed, getChallenges, joinChallenge, searchUsers,
-  followUser, unfollowUser, getFollowCounts,
-  type FeedItem, type ChallengeData,
+  getSocialFeed,
+  getChallenges,
+  joinChallenge,
+  searchUsers,
+  followUser,
+  getFollowCounts,
+  type FeedItem,
+  type ChallengeData,
 } from '@/lib/api';
 
-const feedTypeIcons: Record<string, string> = {
-  workout_completed: '🏋️',
-  gym_completed: '💪',
-  streak_milestone: '🔥',
-  level_up: '⭐',
-  challenge_won: '🏆',
-};
-
 function timeAgo(date: string) {
-  const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-  if (mins < 1) return 'právě teď';
-  if (mins < 60) return `před ${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `před ${hours}h`;
-  return `před ${Math.floor(hours / 24)}d`;
+  const m = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
+  if (m < 1) return 'právě teď';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
 }
 
-export default function CommunityPage() {
+export default function CommunityV2Page() {
   const { user } = useAuth();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
   const [counts, setCounts] = useState({ following: 0, followers: 0 });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [tab, setTab] = useState<'feed' | 'challenges' | 'people'>('feed');
-  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     Promise.all([getSocialFeed(), getChallenges(), getFollowCounts()])
-      .then(([f, c, fc]) => { setFeed(f); setChallenges(c); setCounts(fc); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .then(([f, c, fc]) => {
+        setFeed(f);
+        setChallenges(c);
+        setCounts(fc);
+      })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
-    if (searchQuery.length < 2) { setSearchResults([]); return; }
-    const timer = setTimeout(() => {
-      searchUsers(searchQuery).then(setSearchResults).catch(console.error);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  async function handleJoinChallenge(id: string) {
-    await joinChallenge(id);
-    const updated = await getChallenges();
-    setChallenges(updated);
-  }
-
-  async function handleFollow(userId: string) {
-    await followUser(userId);
-    setCounts((c) => ({ ...c, following: c.following + 1 }));
-  }
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
+    const t = setTimeout(() => searchUsers(query).then(setResults).catch(console.error), 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">Komunita</h1>
-          <div className="flex gap-3 text-sm">
-            <span className="text-gray-400">{counts.following} sleduji</span>
-            <span className="text-gray-400">{counts.followers} sledujících</span>
-          </div>
-        </div>
+    <V2Layout>
+      <section className="pt-12 pb-12">
+        <V2SectionLabel>Komunita</V2SectionLabel>
+        <V2Display size="xl">Lidé.</V2Display>
+        <p className="mt-4 text-base text-white/55">
+          {counts.following} sleduji · {counts.followers} sledujících
+        </p>
+      </section>
 
-        {/* Tabs */}
-        <div className="mb-6 flex gap-2">
-          {(['feed', 'challenges', 'people'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                tab === t ? 'bg-[#16a34a] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              {t === 'feed' ? 'Feed' : t === 'challenges' ? 'Výzvy' : 'Lidé'}
-            </button>
+      {/* Tabs */}
+      <div className="mb-16 flex gap-2">
+        {(['feed', 'challenges', 'people'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
+              tab === t
+                ? 'border-white bg-white text-black'
+                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
+            }`}
+          >
+            {t === 'feed' ? 'Feed' : t === 'challenges' ? 'Výzvy' : 'Lidé'}
+          </button>
+        ))}
+      </div>
+
+      {/* Feed */}
+      {tab === 'feed' && (
+        <section className="space-y-1">
+          {feed.length === 0 && (
+            <p className="py-12 text-center text-sm text-white/40">
+              Feed je prázdný. Sleduj další cvičence nebo začni cvičit.
+            </p>
+          )}
+          {feed.map((item) => (
+            <div key={item.id} className="border-b border-white/8 py-6">
+              <div className="mb-2 flex items-baseline gap-3">
+                <span className="font-semibold text-white">{item.user.name}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                  {timeAgo(item.createdAt)}
+                </span>
+              </div>
+              <p className="text-base text-white">{item.title}</p>
+              <p className="text-sm text-white/55">{item.body}</p>
+            </div>
           ))}
-        </div>
+        </section>
+      )}
 
-        {/* Feed Tab */}
-        {tab === 'feed' && (
-          <div className="space-y-3">
-            {loading && <p className="text-gray-500">Načítání...</p>}
-            {!loading && feed.length === 0 && (
-              <div className="rounded-xl bg-gray-900 p-8 text-center">
-                <p className="text-gray-400">Feed je prázdný. Sleduj další cvičence nebo začni cvičit!</p>
-              </div>
-            )}
-            {feed.map((item) => (
-              <div key={item.id} className="rounded-xl bg-gray-900 p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-lg">
-                    {feedTypeIcons[item.type] || '📋'}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{item.user.name}</span>
-                      <span className="text-xs text-gray-500">{timeAgo(item.createdAt)}</span>
-                    </div>
-                    <p className="text-sm font-medium text-gray-200">{item.title}</p>
-                    <p className="text-sm text-gray-400">{item.body}</p>
-                  </div>
+      {/* Challenges */}
+      {tab === 'challenges' && (
+        <section className="space-y-12">
+          {challenges.length === 0 && (
+            <p className="py-12 text-center text-sm text-white/40">Žádné aktivní výzvy.</p>
+          )}
+          {challenges.map((ch) => {
+            const days = Math.max(0, Math.ceil((new Date(ch.endDate).getTime() - Date.now()) / 86400000));
+            const joined = ch.participants.some((p) => p.user.id === user?.id);
+            return (
+              <div key={ch.id} className="border-b border-white/10 pb-12">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+                  {days} dní zbývá · {ch._count.participants} účastníků
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+                <V2Display size="md">{ch.nameCs}</V2Display>
+                <p className="mt-3 text-base text-white/55">{ch.description}</p>
+                <p className="mt-1 text-sm text-white/40">Cíl: {ch.targetValue}</p>
 
-        {/* Challenges Tab */}
-        {tab === 'challenges' && (
-          <div className="space-y-4">
-            {challenges.length === 0 && (
-              <p className="text-center text-gray-400">Žádné aktivní výzvy.</p>
-            )}
-            {challenges.map((ch) => {
-              const daysLeft = Math.max(0, Math.ceil((new Date(ch.endDate).getTime() - Date.now()) / 86400000));
-              const isJoined = ch.participants.some((p) => p.user.id === user?.id);
-              return (
-                <div key={ch.id} className="rounded-xl bg-gray-900 p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white">{ch.nameCs}</h3>
-                      <p className="text-sm text-gray-400">{ch.description}</p>
-                    </div>
-                    <span className="rounded-full bg-gray-800 px-3 py-1 text-xs text-gray-300">
-                      {daysLeft} dní zbývá
-                    </span>
+                {ch.participants.length > 0 && (
+                  <div className="mt-6 space-y-2">
+                    {ch.participants.slice(0, 3).map((p, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between border-b border-white/5 pb-2"
+                      >
+                        <span className="text-sm text-white">
+                          <span className="text-white/40 tabular-nums">{i + 1}.</span> {p.user.name}
+                        </span>
+                        <span className="font-bold text-white tabular-nums">
+                          {p.currentValue}
+                          <span className="text-white/40">/{ch.targetValue}</span>
+                        </span>
+                      </div>
+                    ))}
                   </div>
+                )}
 
-                  <div className="mb-3 flex items-center gap-2 text-sm text-gray-400">
-                    <span>Cíl: {ch.targetValue}</span>
-                    <span>·</span>
-                    <span>{ch._count.participants} účastníků</span>
-                  </div>
-
-                  {/* Top 3 leaderboard */}
-                  {ch.participants.length > 0 && (
-                    <div className="mb-3 space-y-1">
-                      {ch.participants.slice(0, 3).map((p, i) => (
-                        <div key={i} className="flex items-center justify-between rounded bg-gray-800 px-3 py-1.5 text-sm">
-                          <span className="text-white">
-                            {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'} {p.user.name}
-                          </span>
-                          <span className="font-mono text-[#16a34a]">{p.currentValue}/{ch.targetValue}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!isJoined ? (
+                <div className="mt-6">
+                  {!joined ? (
                     <button
-                      onClick={() => handleJoinChallenge(ch.id)}
-                      className="rounded-lg bg-[#16a34a] px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                      onClick={async () => {
+                        await joinChallenge(ch.id);
+                        setChallenges(await getChallenges());
+                      }}
+                      className="rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition hover:bg-white/90"
                     >
-                      Připojit se
+                      Připojit se →
                     </button>
                   ) : (
-                    <span className="text-sm text-green-400">Účastníš se</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#A8FF00]">
+                      ✓ Účastníš se
+                    </span>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </section>
+      )}
 
-        {/* People Tab */}
-        {tab === 'people' && (
-          <div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Hledej uživatele..."
-              className="mb-4 w-full rounded-lg bg-gray-900 px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#16a34a]"
-            />
-            <div className="space-y-2">
-              {searchResults.map((u) => (
-                <div key={u.id} className="flex items-center justify-between rounded-xl bg-gray-900 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#16a34a] text-sm font-bold text-white">
-                      {u.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">{u.name}</p>
-                      <p className="text-xs text-gray-400">{u.level}</p>
+      {/* People */}
+      {tab === 'people' && (
+        <section>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Hledej uživatele…"
+            className="mb-12 w-full border-b border-white/15 bg-transparent py-4 text-2xl text-white placeholder-white/20 focus:border-white focus:outline-none"
+          />
+          <div className="space-y-1">
+            {results.map((u) => (
+              <div
+                key={u.id}
+                className="flex items-center justify-between border-b border-white/8 py-5"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-sm font-bold text-white">
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-base text-white">{u.name}</div>
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                      {u.level}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleFollow(u.id)}
-                    className="rounded-lg bg-gray-800 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700"
-                  >
-                    Sledovat
-                  </button>
                 </div>
-              ))}
-              {searchQuery.length >= 2 && searchResults.length === 0 && (
-                <p className="text-center text-gray-500">Nikdo nenalezen.</p>
-              )}
-            </div>
+                <button
+                  onClick={() => followUser(u.id)}
+                  className="rounded-full border border-white/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-white hover:text-white"
+                >
+                  Sledovat
+                </button>
+              </div>
+            ))}
+            {query.length >= 2 && results.length === 0 && (
+              <p className="py-12 text-center text-sm text-white/40">Nikdo nenalezen.</p>
+            )}
           </div>
-        )}
-      </main>
-    </div>
+        </section>
+      )}
+    </V2Layout>
   );
 }

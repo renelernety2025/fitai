@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authLogin } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { V2AuthLayout, V2Input, V2Button } from '@/components/v2/V2AuthLayout';
 
-export default function LoginPage() {
+export default function LoginV2Page() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,66 +31,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-        <h1 className="mb-2 text-center text-3xl font-bold tracking-tight text-gray-900">
-          FitAI
+    <V2AuthLayout>
+      <div className="text-center">
+        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+          Vítej zpět
+        </div>
+        <h1
+          className="font-bold tracking-tight text-white"
+          style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', letterSpacing: '-0.04em' }}
+        >
+          Přihlas se.
         </h1>
-        <p className="mb-8 text-center text-sm text-gray-500">
-          Přihlaš se ke svému účtu
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-              placeholder="tvuj@email.cz"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-              Heslo
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
-              placeholder="Minimálně 8 znaků"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-[#16a34a] py-2.5 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading ? 'Přihlašování...' : 'Přihlásit se'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Nemáš účet?{' '}
-          <Link href="/register" className="font-medium text-[#16a34a] hover:underline">
-            Registruj se
-          </Link>
-        </p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="mt-12 space-y-8">
+        <V2Input
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          placeholder="tvuj@email.cz"
+          required
+        />
+        <V2Input
+          label="Heslo"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          placeholder="••••••••"
+          required
+        />
+
+        {error && <p className="text-sm text-[#FF375F]">{error}</p>}
+
+        <div className="pt-4">
+          <V2Button type="submit" disabled={loading} full>
+            {loading ? 'Přihlašování…' : 'Pokračovat →'}
+          </V2Button>
+        </div>
+      </form>
+
+      <p className="mt-10 text-center text-sm text-white/40">
+        Nemáš účet?{' '}
+        <Link href="/register" className="text-white underline-offset-4 hover:underline">
+          Vytvoř si ho
+        </Link>
+      </p>
+    </V2AuthLayout>
   );
 }

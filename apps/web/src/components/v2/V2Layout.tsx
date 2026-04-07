@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV = [
-  { href: '/dashboard-v2', label: 'Dnes' },
-  { href: '/gym-v2', label: 'Trénink' },
-  { href: '/vyziva-v2', label: 'Výživa' },
-  { href: '/lekce-v2', label: 'Lekce' },
-  { href: '/progress-v2', label: 'Pokrok' },
+  { href: '/dashboard', label: 'Dnes' },
+  { href: '/gym', label: 'Trénink' },
+  { href: '/vyziva', label: 'Výživa' },
+  { href: '/lekce', label: 'Lekce' },
+  { href: '/progress', label: 'Pokrok' },
 ];
 
 export function V2Layout({ children }: { children: React.ReactNode }) {
@@ -24,7 +24,7 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
         }}
       />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <Link href="/dashboard-v2" className="text-sm font-bold tracking-tight">
+        <Link href="/dashboard" className="text-sm font-bold tracking-tight">
           FitAI
         </Link>
         <nav className="hidden gap-7 text-[13px] font-medium text-white/55 sm:flex">

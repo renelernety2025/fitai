@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Header } from '@/components/layout/Header';
+import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getLessons, type Lesson } from '@/lib/api';
 
 const CATEGORIES = [
@@ -13,67 +13,72 @@ const CATEGORIES = [
   { value: 'mindset', label: 'Mindset' },
 ];
 
-const categoryColors: Record<string, string> = {
-  technique: 'bg-blue-600', nutrition: 'bg-orange-600', recovery: 'bg-purple-600', mindset: 'bg-green-600',
+const accent: Record<string, string> = {
+  technique: '#00E5FF',
+  nutrition: '#FF9500',
+  recovery: '#BF5AF2',
+  mindset: '#A8FF00',
 };
 
-export default function LessonsPage() {
+export default function LessonsV2Page() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [category, setCategory] = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [cat, setCat] = useState('all');
 
   useEffect(() => {
-    setLoading(true);
-    getLessons(category === 'all' ? undefined : category)
-      .then(setLessons)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [category]);
+    getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error);
+  }, [cat]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Header />
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <h1 className="mb-2 text-3xl font-bold text-white">Lekce</h1>
-        <p className="mb-6 text-gray-400">Krátké lekce o tréninku, výživě a regeneraci.</p>
+    <V2Layout>
+      <section className="pt-12 pb-16">
+        <V2SectionLabel>Knihovna</V2SectionLabel>
+        <V2Display size="xl">Lekce.</V2Display>
+        <p className="mt-4 max-w-xl text-base text-white/55">
+          Krátké, hluboké lekce o tréninku, výživě, regeneraci a mentalitě. Ne novinky. Principy.
+        </p>
+      </section>
 
-        <div className="mb-6 flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.value}
-              onClick={() => setCategory(c.value)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                category === c.value ? 'bg-[#16a34a] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
+      {/* Category filter */}
+      <div className="mb-16 flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setCat(c.value)}
+            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
+              cat === c.value
+                ? 'border-white bg-white text-black'
+                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
 
-        {loading ? (
-          <p className="text-gray-500">Načítání...</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {lessons.map((lesson) => (
-              <Link
-                key={lesson.id}
-                href={`/lekce/${lesson.slug}`}
-                className="group rounded-xl bg-gray-900 p-5 transition hover:bg-gray-800"
+      {/* Lessons list — magazine style */}
+      <section className="space-y-1">
+        {lessons.map((lesson) => (
+          <Link
+            key={lesson.id}
+            href={`/lekce/${lesson.slug}`}
+            className="group flex items-baseline justify-between border-b border-white/8 py-8 transition hover:border-white/30"
+          >
+            <div className="flex-1 pr-6">
+              <div
+                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+                style={{ color: accent[lesson.category] || '#FFF' }}
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium text-white ${categoryColors[lesson.category] || 'bg-gray-600'}`}>
-                    {lesson.category}
-                  </span>
-                  <span className="text-xs text-gray-500">{lesson.durationMin} min čtení</span>
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-white group-hover:text-[#16a34a]">{lesson.titleCs}</h3>
-                <p className="text-sm text-gray-400 line-clamp-2">{lesson.bodyCs}</p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+                {lesson.category} · {lesson.durationMin} min
+              </div>
+              <V2Display size="md">{lesson.titleCs}</V2Display>
+              <p className="mt-3 max-w-xl text-sm text-white/50 line-clamp-2">{lesson.bodyCs}</p>
+            </div>
+            <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
+              →
+            </div>
+          </Link>
+        ))}
+      </section>
+    </V2Layout>
   );
 }
