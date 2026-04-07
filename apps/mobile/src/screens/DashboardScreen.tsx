@@ -6,6 +6,7 @@ import {
   getInsights,
   getLessonOfTheWeek,
   getNutritionToday,
+  getWeeklyReview,
 } from '../lib/api';
 import {
   V2Screen,
@@ -23,12 +24,14 @@ export function DashboardScreen({ navigation }: any) {
   const [insights, setInsights] = useState<any>(null);
   const [lesson, setLesson] = useState<any>(null);
   const [nutrition, setNutrition] = useState<any>(null);
+  const [weekly, setWeekly] = useState<any>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
     getLessonOfTheWeek().then(setLesson).catch(console.error);
     getNutritionToday().then(setNutrition).catch(console.error);
+    getWeeklyReview().then((r: any) => setWeekly(r.review)).catch(console.error);
   }, []);
 
   const move = stats && stats.totalSessions > 0 ? Math.min(1, stats.totalSessions / 5) : 0.15;
@@ -98,6 +101,40 @@ export function DashboardScreen({ navigation }: any) {
           <V2Stat value={stats.totalSessions || 0} label="Cvičení" />
           <V2Stat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hodin" />
           <V2Stat value={stats.totalXP || 0} label="XP" />
+        </View>
+      )}
+
+      {/* Weekly Review (AI) */}
+      {weekly && (
+        <View style={{ marginBottom: 48 }}>
+          <V2SectionLabel>AI Týdenní review</V2SectionLabel>
+          <V2Display size="md">{weekly.summary}</V2Display>
+          {weekly.highlights?.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={{ color: v2.green, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
+                ✓ POVEDLO SE
+              </Text>
+              {weekly.highlights.map((h: string, i: number) => (
+                <Text key={i} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginTop: 4 }}>{h}</Text>
+              ))}
+            </View>
+          )}
+          {weekly.improvements?.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={{ color: v2.yellow, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
+                → ZLEPŠIT
+              </Text>
+              {weekly.improvements.map((h: string, i: number) => (
+                <Text key={i} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginTop: 4 }}>{h}</Text>
+              ))}
+            </View>
+          )}
+          <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderColor: v2.border }}>
+            <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
+              CÍL PŘÍŠTÍHO TÝDNE
+            </Text>
+            <Text style={{ color: '#FFF', fontSize: 16, marginTop: 6 }}>{weekly.nextWeekFocus}</Text>
+          </View>
         </View>
       )}
 

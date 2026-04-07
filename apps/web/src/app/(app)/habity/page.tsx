@@ -7,9 +7,19 @@ import {
   updateHabitsToday,
   getHabitsStats,
   getHabitsHistory,
+  getRecoveryTips,
   type DailyCheckIn,
   type HabitsStats,
+  type RecoveryTip,
 } from '@/lib/api';
+
+const tipColors: Record<string, string> = {
+  sleep: '#0A84FF',
+  nutrition: '#FF9500',
+  recovery: '#A8FF00',
+  stress: '#BF5AF2',
+  training: '#FF375F',
+};
 
 function Scale1to5({
   label,
@@ -85,6 +95,7 @@ export default function HabityPage() {
   const [today, setToday] = useState<DailyCheckIn | null>(null);
   const [stats, setStats] = useState<HabitsStats | null>(null);
   const [history, setHistory] = useState<DailyCheckIn[]>([]);
+  const [tips, setTips] = useState<RecoveryTip[]>([]);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
@@ -92,6 +103,7 @@ export default function HabityPage() {
     getHabitsToday().then(setToday).catch(console.error);
     getHabitsStats().then(setStats).catch(console.error);
     getHabitsHistory(14).then(setHistory).catch(console.error);
+    getRecoveryTips().then((r) => setTips(r.tips)).catch(console.error);
   };
   useEffect(reload, []);
 
@@ -171,6 +183,27 @@ export default function HabityPage() {
                 <span className="text-sm text-white/30"> dní</span>
               </div>
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* AI recovery tips */}
+      {tips.length > 0 && (
+        <section className="mb-24">
+          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          <div className="space-y-1">
+            {tips.map((t, i) => (
+              <div key={i} className="border-b border-white/8 py-6">
+                <div
+                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+                  style={{ color: tipColors[t.category] || '#FFF' }}
+                >
+                  {t.category} · {t.priority}
+                </div>
+                <V2Display size="md">{t.title}</V2Display>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">{t.body}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}

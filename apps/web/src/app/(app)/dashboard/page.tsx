@@ -16,10 +16,12 @@ import {
   getInsights,
   getLessonOfTheWeek,
   getNutritionToday,
+  getWeeklyReview,
   type StatsData,
   type Insights,
   type Lesson,
   type NutritionToday,
+  type WeeklyReview,
 } from '@/lib/api';
 
 function TripleRing({
@@ -75,12 +77,14 @@ export default function DashboardV2Page() {
   const [insights, setInsights] = useState<Insights | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [nutrition, setNutrition] = useState<NutritionToday | null>(null);
+  const [weekly, setWeekly] = useState<WeeklyReview | null>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
     getLessonOfTheWeek().then(setLesson).catch(console.error);
     getNutritionToday().then(setNutrition).catch(console.error);
+    getWeeklyReview().then((r) => setWeekly(r.review)).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -152,6 +156,53 @@ export default function DashboardV2Page() {
           <Stat value={Math.floor((stats?.totalMinutes || 0) / 60)} label="Hodin" />
           <Stat value={stats?.totalXP || 0} label="XP" />
         </section>
+
+        {/* ── WEEKLY REVIEW (AI) ── */}
+        {weekly && (
+          <section className="mb-32">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+              AI Týdenní review
+            </div>
+            <h2
+              className="mb-6 max-w-3xl font-bold tracking-tight text-white"
+              style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '-0.04em', lineHeight: 1.1 }}
+            >
+              {weekly.summary}
+            </h2>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              {weekly.highlights.length > 0 && (
+                <div>
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#A8FF00]">
+                    ✓ Povedlo se
+                  </div>
+                  <ul className="space-y-2">
+                    {weekly.highlights.map((h, i) => (
+                      <li key={i} className="text-base text-white/75">{h}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {weekly.improvements.length > 0 && (
+                <div>
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#FF9F0A]">
+                    → Zlepšit
+                  </div>
+                  <ul className="space-y-2">
+                    {weekly.improvements.map((h, i) => (
+                      <li key={i} className="text-base text-white/75">{h}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="mt-8 border-t border-white/10 pt-6">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+                Cíl příštího týdne
+              </div>
+              <p className="mt-2 text-lg text-white">{weekly.nextWeekFocus}</p>
+            </div>
+          </section>
+        )}
 
         {/* ── LESSON ── */}
         {lesson && (

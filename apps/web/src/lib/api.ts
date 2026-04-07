@@ -757,3 +757,24 @@ export function getHabitsHistory(days = 30) {
 export function getHabitsStats() {
   return request<HabitsStats>('/habits/stats');
 }
+
+// ── AI Insights (Section H) ──
+export interface RecoveryTip {
+  category: 'sleep' | 'nutrition' | 'recovery' | 'stress' | 'training';
+  title: string;
+  body: string;
+  priority: 'high' | 'medium' | 'low';
+}
+export interface WeeklyReview {
+  summary: string;
+  highlights: string[];
+  improvements: string[];
+  nextWeekFocus: string;
+}
+
+export function getRecoveryTips() {
+  return request<{ tips: RecoveryTip[]; cached: boolean }>('/ai-insights/recovery-tips');
+}
+export function getWeeklyReview() {
+  return request<{ review: WeeklyReview; cached: boolean }>('/ai-insights/weekly-review');
+}

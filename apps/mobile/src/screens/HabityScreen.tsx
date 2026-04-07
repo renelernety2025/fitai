@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
-import { getHabitsToday, updateHabitsToday, getHabitsStats } from '../lib/api';
+import { getHabitsToday, updateHabitsToday, getHabitsStats, getRecoveryTips } from '../lib/api';
+
+const tipColors: Record<string, string> = {
+  sleep: '#0A84FF',
+  nutrition: '#FF9500',
+  recovery: '#A8FF00',
+  stress: '#BF5AF2',
+  training: '#FF375F',
+};
 import { V2Screen, V2Display, V2SectionLabel, V2Ring, V2Loading, v2 } from '../components/v2/V2';
 
 function Scale1to5({
@@ -93,11 +101,13 @@ function NumberField({
 export function HabityScreen() {
   const [today, setToday] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
+  const [tips, setTips] = useState<any[]>([]);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   const reload = () => {
     getHabitsToday().then(setToday).catch(console.error);
     getHabitsStats().then(setStats).catch(console.error);
+    getRecoveryTips().then((r: any) => setTips(r.tips || [])).catch(console.error);
   };
   useEffect(reload, []);
 
@@ -158,6 +168,22 @@ export function HabityScreen() {
               </Text>
             </View>
           </View>
+        </View>
+      )}
+
+      {/* AI tips */}
+      {tips.length > 0 && (
+        <View style={{ marginBottom: 32 }}>
+          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          {tips.map((t, i) => (
+            <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 16 }}>
+              <Text style={{ color: tipColors[t.category] || '#FFF', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
+                {String(t.category || '').toUpperCase()} · {String(t.priority || '').toUpperCase()}
+              </Text>
+              <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '700', letterSpacing: -0.5 }}>{t.title}</Text>
+              <Text style={{ color: v2.muted, fontSize: 13, lineHeight: 20, marginTop: 6 }}>{t.body}</Text>
+            </View>
+          ))}
         </View>
       )}
 

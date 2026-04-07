@@ -170,3 +170,7 @@ export function registerExpoPushToken(token: string) {
 export function testPushNotification() {
   return request<any>('/notifications/test', { method: 'POST' });
 }
+
+// ── AI Insights (Section H) ──
+export function getRecoveryTips() { return request<any>('/ai-insights/recovery-tips'); }
+export function getWeeklyReview() { return request<any>('/ai-insights/weekly-review'); }
