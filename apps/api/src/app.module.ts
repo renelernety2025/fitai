@@ -22,6 +22,7 @@ import { IntelligenceModule } from './intelligence/intelligence.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { EducationModule } from './education/education.module';
 import { HomeTrainingModule } from './home-training/home-training.module';
+import { NutritionModule } from './nutrition/nutrition.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { HomeTrainingModule } from './home-training/home-training.module';
     OnboardingModule,
     EducationModule,
     HomeTrainingModule,
+    NutritionModule,
   ],
 })
 export class AppModule {}

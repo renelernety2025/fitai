@@ -646,3 +646,69 @@ export function getHomeWorkout() {
 export function getTravelWorkout() {
   return request<HomeWorkoutData>('/home-training/travel');
 }
+
+// ── Nutrition (Section F) ──
+export interface NutritionGoals {
+  dailyKcal: number;
+  dailyProteinG: number;
+  dailyCarbsG: number;
+  dailyFatG: number;
+  source?: string;
+}
+
+export interface FoodLogItem {
+  id: string;
+  date: string;
+  mealType: string;
+  name: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  servings: number;
+}
+
+export interface NutritionToday {
+  goals: NutritionGoals;
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  remaining: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  log: FoodLogItem[];
+}
+
+export interface QuickFood {
+  name: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+}
+
+export function getNutritionGoals() {
+  return request<NutritionGoals>('/nutrition/goals');
+}
+export function setNutritionGoals(body: Omit<NutritionGoals, 'source'>) {
+  return request<any>('/nutrition/goals', { method: 'PUT', body: JSON.stringify(body) });
+}
+export function autoCalculateNutritionGoals() {
+  return request<any>('/nutrition/goals/auto', { method: 'POST' });
+}
+export function getNutritionToday() {
+  return request<NutritionToday>('/nutrition/today');
+}
+export function addFoodLog(body: {
+  mealType: string;
+  name: string;
+  kcal: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+  servings?: number;
+}) {
+  return request<FoodLogItem>('/nutrition/log', { method: 'POST', body: JSON.stringify(body) });
+}
+export function deleteFoodLog(id: string) {
+  return request<{ ok: boolean }>(`/nutrition/log/${id}`, { method: 'DELETE' });
+}
+export function getQuickFoods() {
+  return request<QuickFood[]>('/nutrition/quick-foods');
+}
