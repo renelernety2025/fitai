@@ -106,6 +106,46 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
     : [];
   const exerciseSetIdx = exerciseSets.findIndex((s: any) => s.id === currentSet?.id);
 
+  // Overall progress: how many distinct exercises in the session, current exercise index
+  const allExerciseIds = session
+    ? Array.from(new Set(session.exerciseSets.map((s: any) => s.exerciseId)))
+    : [];
+  const currentExerciseNum = currentSet
+    ? allExerciseIds.indexOf(currentSet.exerciseId) + 1
+    : 0;
+  const totalExercises = allExerciseIds.length;
+  const totalSets = session?.exerciseSets?.length ?? 0;
+
+  // Skip current exercise — jump to first set of next exerciseId
+  const skipExercise = () => {
+    if (!session || !currentSet) return;
+    const next = session.exerciseSets.findIndex(
+      (s: any, i: number) => i > currentSetIdx && s.exerciseId !== currentSet.exerciseId,
+    );
+    if (next === -1) {
+      // No more exercises — end workout
+      Alert.alert('Konec tréninku', 'Tohle byl poslední cvik. Ukončit?', [
+        { text: 'Ne', style: 'cancel' },
+        { text: 'Ano', onPress: handleEnd },
+      ]);
+      return;
+    }
+    setCurrentSetIdx(next);
+    setReps(0);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const confirmFinish = () => {
+    Alert.alert(
+      'Dokončit trénink?',
+      'Nedokončené sety budou označeny jako přeskočené.',
+      [
+        { text: 'Pokračovat', style: 'cancel' },
+        { text: 'Dokončit', style: 'destructive', onPress: handleEnd },
+      ],
+    );
+  };
+
   // ── Complete set — show RPE modal ──
   const handleSetComplete = () => {
     if (!session || !currentSet) return;
@@ -278,13 +318,14 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         {/* Exercise name + set tracker */}
         <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
           <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-            SET {exerciseSetIdx + 1} / {exerciseSets.length}{currentSet.isWarmup ? ' · ZAHŘÍVACÍ' : ''}
+            CVIK {currentExerciseNum} / {totalExercises}  ·  CELKEM SET {currentSetIdx + 1} / {totalSets}
           </Text>
           <Text style={{ color: '#FFF', fontSize: 38, fontWeight: '700', letterSpacing: -1.2, marginTop: 4 }}>
             {currentSet.exercise.nameCs}
           </Text>
           <Text style={{ color: v2.muted, fontSize: 14, marginTop: 4 }}>
-            Cíl: {currentSet.targetReps} repů
+            Set {exerciseSetIdx + 1} / {exerciseSets.length}{currentSet.isWarmup ? ' · zahřívací' : ''}
+            {' · '}Cíl: {currentSet.targetReps} repů
             {currentSet.targetWeight ? ` · ${currentSet.targetWeight}kg` : ''}
           </Text>
         </View>
@@ -359,6 +400,42 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
               SET HOTOVÝ →
             </Text>
           </Pressable>
+
+          {/* Skip exercise + Finish workout — secondary actions */}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+            <Pressable
+              onPress={skipExercise}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 20,
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                borderWidth: 1,
+                borderColor: v2.border,
+              }}
+            >
+              <Text style={{ color: v2.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
+                PŘESKOČIT CVIK →
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={confirmFinish}
+              style={{
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 20,
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                borderWidth: 1,
+                borderColor: v2.borderStrong,
+              }}
+            >
+              <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
+                ✓ DOKONČIT TRÉNINK
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
 
