@@ -20,6 +20,7 @@ import { WearablesModule } from './wearables/wearables.module';
 import { ContentModule } from './content/content.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { EducationModule } from './education/education.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     ContentModule,
     IntelligenceModule,
     OnboardingModule,
+    EducationModule,
   ],
 })
 export class AppModule {}

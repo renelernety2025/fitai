@@ -7,7 +7,8 @@ import { Header } from '@/components/layout/Header';
 import { useRouter } from 'next/navigation';
 import {
   getVideos, getMyStats, getReminderStatus, getInsights, getOnboardingStatus,
-  type VideoData, type StatsData, type ReminderData, type Insights,
+  getLessonOfTheWeek,
+  type VideoData, type StatsData, type ReminderData, type Insights, type Lesson,
 } from '@/lib/api';
 
 const recoveryColors: Record<string, string> = {
@@ -49,9 +50,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [reminder, setReminder] = useState<ReminderData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
+  const [lesson, setLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
-    // Redirect to onboarding if not completed
     getOnboardingStatus().then((status) => {
       if (!status.completed) router.push('/onboarding');
     }).catch(() => {});
@@ -60,6 +61,7 @@ export default function DashboardPage() {
     getMyStats().then(setStats).catch(console.error);
     getReminderStatus().then(setReminder).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
+    getLessonOfTheWeek().then(setLesson).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -120,6 +122,18 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-400">Minut celkem</p>
             </div>
           </div>
+        )}
+
+        {/* Lesson of the Week */}
+        {lesson && (
+          <Link href={`/lekce/${lesson.slug}`} className="mb-6 block rounded-xl border border-blue-500/30 bg-blue-900/20 p-5 transition hover:bg-blue-900/30">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-blue-400">📚 Lekce týdne</span>
+              <span className="text-xs text-blue-300/70">{lesson.durationMin} min</span>
+            </div>
+            <h3 className="mb-1 text-lg font-semibold text-white">{lesson.titleCs}</h3>
+            <p className="text-sm text-blue-100/80 line-clamp-2">{lesson.bodyCs}</p>
+          </Link>
         )}
 
         {/* AI Insights */}

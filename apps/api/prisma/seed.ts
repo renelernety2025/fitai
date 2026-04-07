@@ -400,11 +400,125 @@ async function main() {
     },
   });
 
+  // ── Education Lessons (Section D) ──
+  const lessons = [
+    {
+      slug: 'progressive-overload',
+      title: 'Progressive Overload',
+      titleCs: 'Progresivní zatížení',
+      category: 'technique',
+      body: 'Progressive overload is the principle of gradually increasing weight, reps, or volume.',
+      bodyCs: 'Progresivní zatížení je princip postupného zvyšování váhy, repů nebo objemu. Bez tohoto principu se nezlepšíš. Cíl: každý týden o 1-2.5kg víc, nebo o 1 rep víc. Alternativy: víc setů, kratší pauzy, lepší forma. Klíč je KONZISTENCE — malé zlepšení každý týden = obrovský pokrok za rok.',
+      durationMin: 3,
+    },
+    {
+      slug: 'recovery-basics',
+      title: 'Recovery Basics',
+      titleCs: 'Základy regenerace',
+      category: 'recovery',
+      body: 'Recovery is when growth happens.',
+      bodyCs: 'Sval neroste v gym, ale při odpočinku. Tři pilíře regenerace: 1) SPÁNEK — 7-9 hodin, ideálně chladná místnost, žádné obrazovky před spaním. 2) VÝŽIVA — protein 1.6-2.2g/kg váhy denně, dostatek sacharidů pro energii. 3) ODPOČINEK — alespoň 1 den volna mezi tréninkem stejné svalové skupiny. Bez regenerace nepřijde progres, jen vyhoření.',
+      durationMin: 4,
+    },
+    {
+      slug: 'protein-intake',
+      title: 'Protein Intake',
+      titleCs: 'Příjem proteinů',
+      category: 'nutrition',
+      body: 'Protein is essential for muscle growth.',
+      bodyCs: 'Pro růst svalů potřebuješ 1.6-2.2g proteinu na kg tělesné váhy. Příklad: 75kg člověk = 120-165g proteinu denně. Zdroje: kuřecí (23g/100g), vajíčka (6g/kus), tvaroh (12g/100g), proteinový prášek (20-25g/scoop), tuňák (25g/100g). Rozděl příjem do 4-5 jídel po 30-40g — tělo lépe využije.',
+      durationMin: 4,
+    },
+    {
+      slug: 'mind-muscle-connection',
+      title: 'Mind-Muscle Connection',
+      titleCs: 'Mind-muscle connection',
+      category: 'technique',
+      body: 'Focus on the muscle you are working.',
+      bodyCs: 'Mind-muscle connection znamená vědomě cítit sval, který pracuje. Místo přemýšlení "zvedám činku" mysli "stahuji biceps". Tento mentální fokus aktivuje víc svalových vláken a vede k lepšímu růstu. Tipy: 1) Použij menší váhu na začátku. 2) Pomalu provádej negativní fázi (3 sekundy dolů). 3) Stiskni sval nahoře (1s peak contraction). 4) Soustřeď se — žádné odbíhání myšlenek.',
+      durationMin: 3,
+    },
+    {
+      slug: 'sleep-and-gains',
+      title: 'Sleep and Gains',
+      titleCs: 'Spánek a růst svalů',
+      category: 'recovery',
+      body: 'Sleep is when most muscle protein synthesis happens.',
+      bodyCs: 'Během spánku tělo produkuje testosteron a růstový hormon — klíčové pro růst svalů. Studie ukazují že nedostatek spánku (méně než 6h) snižuje sílu o 11% a růst svalů o 60%! Doporučení: 7-9 hodin denně, jdi spát ve stejnou dobu, vyhni se kofeinu po 14:00, ložnice tmavá a chladná (18-20°C).',
+      durationMin: 4,
+    },
+    {
+      slug: 'rpe-explained',
+      title: 'RPE Explained',
+      titleCs: 'Co je RPE',
+      category: 'technique',
+      body: 'Rate of Perceived Exertion is a 1-10 scale of effort.',
+      bodyCs: 'RPE (Rate of Perceived Exertion) je škála 1-10 jak těžké bylo cvičení. RPE 10 = absolutní selhání, neudělal bys už ani jeden rep. RPE 9 = 1 rep v rezervě. RPE 8 = 2 repy v rezervě. Pro hypertrofii cvič na RPE 7-9, pro sílu RPE 8-10. RPE 6 a méně = příliš lehké, nestačí na progres. Sleduj RPE — pomáhá ti vidět zda potřebuješ přidat váhu.',
+      durationMin: 3,
+    },
+    {
+      slug: 'compound-vs-isolation',
+      title: 'Compound vs Isolation',
+      titleCs: 'Compound vs izolační cviky',
+      category: 'technique',
+      body: 'Understand the difference between compound and isolation exercises.',
+      bodyCs: 'COMPOUND cviky aktivují více svalových skupin současně (dřep, mrtvý tah, bench press). Dej je vždy na začátek tréninku — největší síla, nejvíc svalů. IZOLAČNÍ cviky cílí jeden sval (bicepsový zdvih, triceps extension). Patří na konec — doladění slabých míst. Pravidlo: 70% času na compound, 30% na isolation.',
+      durationMin: 3,
+    },
+    {
+      slug: 'avoiding-injury',
+      title: 'Avoiding Injury',
+      titleCs: 'Jak se vyhnout zranění',
+      category: 'mindset',
+      body: 'Form first, weight second.',
+      bodyCs: 'Nejčastější chyby vedoucí ke zranění: 1) FORMA před váhou — raději 50kg perfektně než 100kg s katastrofální technikou. 2) ZAHŘÍVÁNÍ — vždy 2-3 lehčí sety před pracovní vahou. 3) POSLOUCHEJ TĚLO — bolest v kloubech = STOP, sval únava = pokračuj. 4) PROGRESE postupně — max +2.5kg za týden na compound. 5) ODPOČÍVEJ — přetrénování = zranění.',
+      durationMin: 5,
+    },
+  ];
+
+  for (const lesson of lessons) {
+    await prisma.educationLesson.upsert({
+      where: { slug: lesson.slug },
+      update: { bodyCs: lesson.bodyCs, titleCs: lesson.titleCs },
+      create: lesson,
+    });
+  }
+
+  // ── Glossary terms ──
+  const glossary = [
+    { term: '1RM', termCs: '1RM (One Rep Max)', definition: '', definitionCs: 'Maximální váha kterou jsi schopen zvednout právě jednou s perfektní formou. Základ pro výpočet pracovních vah.', category: 'strength' },
+    { term: 'RPE', termCs: 'RPE', definition: '', definitionCs: 'Rate of Perceived Exertion. Škála 1-10 jak těžké cvičení bylo. RPE 10 = absolutní selhání.', category: 'training' },
+    { term: 'AMRAP', termCs: 'AMRAP', definition: '', definitionCs: 'As Many Reps As Possible. Set ve kterém uděláš co nejvíc opakování s danou váhou.', category: 'training' },
+    { term: 'Compound', termCs: 'Compound cvik', definition: '', definitionCs: 'Cvik který zapojuje více kloubů a svalových skupin (dřep, mrtvý tah, bench press).', category: 'exercise' },
+    { term: 'Isolation', termCs: 'Izolační cvik', definition: '', definitionCs: 'Cvik který izoluje jeden sval (bicepsový zdvih, leg extension).', category: 'exercise' },
+    { term: 'Hypertrofie', termCs: 'Hypertrofie', definition: '', definitionCs: 'Růst svalových vláken. Hlavní cíl pro budování svalové hmoty. Optimální rep range 6-12.', category: 'goals' },
+    { term: 'Deload', termCs: 'Deload', definition: '', definitionCs: 'Týden s nižším objemem (50%) a intenzitou (70%) pro regeneraci. Doporučeno každý 4-6. týden.', category: 'recovery' },
+    { term: 'Progresivní zatížení', termCs: 'Progresivní zatížení', definition: '', definitionCs: 'Postupné zvyšování zátěže v čase. Bez něj se nezlepšíš.', category: 'training' },
+    { term: 'Mind-muscle connection', termCs: 'Mind-muscle connection', definition: '', definitionCs: 'Vědomé soustředění na sval, který pracuje. Vede k lepší aktivaci svalových vláken.', category: 'technique' },
+    { term: 'Tempo', termCs: 'Tempo', definition: '', definitionCs: 'Rychlost provedení cviku. Notace 2-1-2 = 2s eccentric, 1s pauza, 2s concentric.', category: 'technique' },
+    { term: 'Failure', termCs: 'Selhání svalů', definition: '', definitionCs: 'Bod kdy už nemůžeš udělat další rep s dobrou formou. Trénink do selhání = max stimulus, ale i max únava.', category: 'training' },
+    { term: 'Volume', termCs: 'Objem', definition: '', definitionCs: 'Celková práce v setu/tréninku/týdnu. Vzorec: sety × repy × váha. Klíčový faktor pro hypertrofii.', category: 'training' },
+    { term: 'Rest pause', termCs: 'Rest-pause', definition: '', definitionCs: 'Technika: set do selhání, 15s pauza, pokračuj. Zvyšuje intenzitu bez zvýšení váhy.', category: 'technique' },
+    { term: 'Drop set', termCs: 'Drop set', definition: '', definitionCs: 'Po setu okamžitě snížíš váhu o 20-30% a pokračuješ. Skvělé pro hypertrofii.', category: 'technique' },
+    { term: 'Eccentric', termCs: 'Eccentric (negativní)', definition: '', definitionCs: 'Spouštěcí fáze cviku. Sval se prodlužuje pod zátěží. Důležité pro růst.', category: 'technique' },
+    { term: 'Concentric', termCs: 'Concentric (pozitivní)', definition: '', definitionCs: 'Zvedací fáze cviku. Sval se zkracuje pod zátěží.', category: 'technique' },
+  ];
+
+  for (const term of glossary) {
+    await prisma.glossaryTerm.upsert({
+      where: { termCs: term.termCs },
+      update: { definitionCs: term.definitionCs },
+      create: term,
+    });
+  }
+
   console.log('Seed complete:', {
     users: [admin.email, user.email],
     videos: [video1.title, video2.title, video3.title],
     exercises: exercises.length,
     plans: 3,
+    lessons: lessons.length,
+    glossary: glossary.length,
   });
 }
 

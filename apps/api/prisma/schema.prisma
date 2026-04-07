@@ -395,6 +395,32 @@ model FitnessProfile {
   oneRepMax OneRepMax[]
 }
 
+model EducationLesson {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  titleCs     String
+  category    String   // nutrition, recovery, technique, mindset
+  body        String
+  bodyCs      String
+  durationMin Int      @default(3)
+  publishedAt DateTime @default(now())
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model GlossaryTerm {
+  id          String   @id @default(uuid())
+  term        String
+  termCs      String
+  definition  String
+  definitionCs String
+  category    String?
+  createdAt   DateTime @default(now())
+
+  @@unique([termCs])
+}
+
 model OneRepMax {
   id          String   @id @default(uuid())
   profileId   String

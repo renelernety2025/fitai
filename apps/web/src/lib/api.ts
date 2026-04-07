@@ -338,6 +338,69 @@ export function endGymSession(sessionId: string) {
   );
 }
 
+// Education (Section D)
+export interface Lesson {
+  id: string;
+  slug: string;
+  titleCs: string;
+  category: string;
+  bodyCs: string;
+  durationMin: number;
+  publishedAt: string;
+}
+
+export interface GlossaryTerm {
+  id: string;
+  termCs: string;
+  definitionCs: string;
+  category: string | null;
+}
+
+export interface PreWorkoutBriefing {
+  greeting: string;
+  summary: string;
+  muscleGroups: string[];
+  exercises: string;
+  tips: string[];
+  warmupReminder: string;
+}
+
+export interface PostWorkoutDebrief {
+  duration: number;
+  totalSets: number;
+  totalReps: number;
+  totalVolumeKg: number;
+  avgFormScore: number;
+  avgRpe: number | null;
+  wins: string[];
+  improvements: string[];
+  nextSteps: string[];
+}
+
+export function getLessons(category?: string) {
+  return request<Lesson[]>(`/education/lessons${category ? `?category=${category}` : ''}`);
+}
+
+export function getLessonOfTheWeek() {
+  return request<Lesson | null>('/education/lessons/of-the-week');
+}
+
+export function getLesson(slug: string) {
+  return request<Lesson>(`/education/lessons/${slug}`);
+}
+
+export function getGlossary(query?: string) {
+  return request<GlossaryTerm[]>(`/education/glossary${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+}
+
+export function getPreWorkoutBriefing(gymSessionId: string) {
+  return request<PreWorkoutBriefing>(`/education/briefing/${gymSessionId}`);
+}
+
+export function getPostWorkoutDebrief(gymSessionId: string) {
+  return request<PostWorkoutDebrief>(`/education/debrief/${gymSessionId}`);
+}
+
 // Onboarding (Section C)
 export interface OnboardingStatus {
   completed: boolean;

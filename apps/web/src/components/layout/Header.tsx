@@ -18,6 +18,8 @@ export function Header() {
             <Link href="/exercises" className="text-sm text-gray-400 transition hover:text-white">Cviky</Link>
             <Link href="/plans" className="text-sm text-gray-400 transition hover:text-white">Plány</Link>
             <Link href="/ai-coach" className="text-sm text-[#F59E0B] transition hover:text-yellow-300">AI Trenér</Link>
+            <Link href="/lekce" className="text-sm text-gray-400 transition hover:text-white">Lekce</Link>
+            <Link href="/slovnik" className="text-sm text-gray-400 transition hover:text-white">Slovník</Link>
             <Link href="/community" className="text-sm text-gray-400 transition hover:text-white">Komunita</Link>
             <Link href="/progress" className="text-sm text-gray-400 transition hover:text-white">Progres</Link>
           </nav>
