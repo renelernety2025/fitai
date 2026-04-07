@@ -94,16 +94,57 @@ export class NotificationService {
       });
       if (prefs && !prefs.streakWarning) continue;
 
-      await this.sendToUser(progress.userId, {
+      const payload = {
         title: `🔥 Série ${progress.currentStreak} dní!`,
         body: `Neztrať sérii, ${progress.user.name}! Udělej dnes alespoň krátký trénink.`,
-        url: '/dashboard',
-        tag: 'streak-reminder',
-      });
+      };
+      await this.sendToUser(progress.userId, { ...payload, url: '/dashboard', tag: 'streak-reminder' });
+      await this.sendExpoToUser(progress.userId, payload);
       sent++;
     }
 
     return { sent, total: usersWithStreaks.length };
+  }
+
+  /** Register Expo push token for mobile push notifications. */
+  async registerExpoPushToken(userId: string, token: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { expoPushToken: token },
+    });
+  }
+
+  /** Send a notification to a user via Expo Push API (mobile only). */
+  async sendExpoToUser(userId: string, payload: { title: string; body: string; data?: any }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.expoPushToken) return { sent: 0, reason: 'no_token' };
+
+    try {
+      const res = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          to: user.expoPushToken,
+          title: payload.title,
+          body: payload.body,
+          data: payload.data || {},
+          sound: 'default',
+        }),
+      });
+      const json: any = await res.json();
+      if (json?.data?.status === 'error') {
+        this.logger.warn(`Expo push error: ${JSON.stringify(json.data)}`);
+        // Drop invalid token
+        if (json.data.details?.error === 'DeviceNotRegistered') {
+          await this.prisma.user.update({ where: { id: userId }, data: { expoPushToken: null } });
+        }
+        return { sent: 0, error: json.data };
+      }
+      return { sent: 1 };
+    } catch (e: any) {
+      this.logger.error(`Expo push failed: ${e.message}`);
+      return { sent: 0, error: e.message };
+    }
   }
 
   async getPreferences(userId: string) {

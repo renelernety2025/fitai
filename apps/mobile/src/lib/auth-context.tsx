@@ -1,5 +1,30 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authMe, getToken, setToken as saveToken, removeToken } from './api';
+import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { authMe, getToken, setToken as saveToken, removeToken, registerExpoPushToken } from './api';
+
+async function registerForPushNotificationsAsync(): Promise<string | null> {
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') return null;
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    }
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    return tokenData.data;
+  } catch (e) {
+    console.warn('Push registration failed:', e);
+    return null;
+  }
+}
 
 interface AuthContextType {
   user: any | null;
@@ -21,16 +46,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!stored) { setIsLoading(false); return; }
       setTokenState(stored);
       authMe()
-        .then(setUser)
+        .then((u) => {
+          setUser(u);
+          // Re-register expo token (idempotent — server upserts)
+          registerForPushNotificationsAsync().then((pushToken) => {
+            if (pushToken) registerExpoPushToken(pushToken).catch(() => {});
+          });
+        })
         .catch(() => removeToken())
         .finally(() => setIsLoading(false));
     });
   }, []);
 
-  const login = useCallback((newToken: string, newUser: any) => {
-    saveToken(newToken);
+  const login = useCallback(async (newToken: string, newUser: any) => {
+    await saveToken(newToken);
     setTokenState(newToken);
     setUser(newUser);
+    // Register expo push token in background
+    registerForPushNotificationsAsync().then((pushToken) => {
+      if (pushToken) registerExpoPushToken(pushToken).catch(() => {});
+    });
   }, []);
 
   const logout = useCallback(() => {

@@ -38,10 +38,21 @@ export class NotificationController {
   @Post('test')
   @UseGuards(JwtAuthGuard)
   async testNotification(@Request() req: any) {
-    return this.notificationService.sendToUser(req.user.id, {
+    const web = await this.notificationService.sendToUser(req.user.id, {
       title: 'FitAI Test',
       body: 'Push notifikace fungují! 💪',
       url: '/dashboard',
     });
+    const expo = await this.notificationService.sendExpoToUser(req.user.id, {
+      title: 'FitAI Test',
+      body: 'Push notifikace fungují! 💪',
+    });
+    return { web, expo };
+  }
+
+  @Post('expo-subscribe')
+  @UseGuards(JwtAuthGuard)
+  registerExpo(@Request() req: any, @Body() body: { token: string }) {
+    return this.notificationService.registerExpoPushToken(req.user.id, body.token);
   }
 }

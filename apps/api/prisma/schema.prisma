@@ -70,6 +70,7 @@ model User {
   avatarUrl    String?
   level        UserLevel @default(BEGINNER)
   isAdmin      Boolean  @default(false)
+  expoPushToken String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

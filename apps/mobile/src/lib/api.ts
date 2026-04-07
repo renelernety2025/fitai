@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://fitai-production-alb-1685369378.eu-west-1.elb.amazonaws.com';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
 const API_URL = `${API_BASE}/api`;
 const TOKEN_KEY = 'fitai_token';
 
@@ -162,3 +162,11 @@ export function updateHabitsToday(body: any) {
 }
 export function getHabitsHistory(days = 30) { return request<any[]>(`/habits/history?days=${days}`); }
 export function getHabitsStats() { return request<any>('/habits/stats'); }
+
+// ── Push notifications ──
+export function registerExpoPushToken(token: string) {
+  return request<any>('/notifications/expo-subscribe', { method: 'POST', body: JSON.stringify({ token }) });
+}
+export function testPushNotification() {
+  return request<any>('/notifications/test', { method: 'POST' });
+}

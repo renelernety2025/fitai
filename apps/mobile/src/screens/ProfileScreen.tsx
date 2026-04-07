@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../lib/auth-context';
+import { testPushNotification } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
 
 const SECONDARY = [
@@ -42,6 +43,23 @@ export function ProfileScreen({ navigation }: any) {
             <Text style={{ color: v2.ghost, fontSize: 18 }}>→</Text>
           </Pressable>
         ))}
+      </View>
+
+      <View style={{ marginBottom: 16 }}>
+        <V2Button
+          onPress={async () => {
+            try {
+              const r = await testPushNotification();
+              Alert.alert('Test push', `Expo: ${r.expo?.sent ? 'sent ✓' : r.expo?.reason || 'failed'}\nWeb: ${r.web?.sent || 0}`);
+            } catch (e: any) {
+              Alert.alert('Test push', e.message || 'Failed');
+            }
+          }}
+          variant="secondary"
+          full
+        >
+          Otestovat push notifikace
+        </V2Button>
       </View>
 
       <V2Button onPress={logout} variant="secondary" full>
