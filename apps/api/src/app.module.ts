@@ -18,6 +18,7 @@ import { SocialModule } from './social/social.module';
 import { VisionModule } from './vision/vision.module';
 import { WearablesModule } from './wearables/wearables.module';
 import { ContentModule } from './content/content.module';
+import { IntelligenceModule } from './intelligence/intelligence.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ContentModule } from './content/content.module';
     VisionModule,
     WearablesModule,
     ContentModule,
+    IntelligenceModule,
   ],
 })
 export class AppModule {}

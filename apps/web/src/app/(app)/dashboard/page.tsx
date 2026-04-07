@@ -5,9 +5,23 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Header } from '@/components/layout/Header';
 import {
-  getVideos, getMyStats, getReminderStatus,
-  type VideoData, type StatsData, type ReminderData,
+  getVideos, getMyStats, getReminderStatus, getInsights,
+  type VideoData, type StatsData, type ReminderData, type Insights,
 } from '@/lib/api';
+
+const recoveryColors: Record<string, string> = {
+  fresh: 'border-green-500/30 bg-green-900/20 text-green-300',
+  normal: 'border-blue-500/30 bg-blue-900/20 text-blue-300',
+  fatigued: 'border-yellow-500/30 bg-yellow-900/20 text-yellow-300',
+  overreached: 'border-red-500/30 bg-red-900/20 text-red-300',
+};
+
+const recoveryLabels: Record<string, string> = {
+  fresh: '✨ Svěží',
+  normal: '👍 Normální',
+  fatigued: '⚠️ Unavený',
+  overreached: '🔥 Přetrénovaný',
+};
 
 const categoryColors: Record<string, string> = {
   YOGA: 'bg-emerald-500',
@@ -32,11 +46,13 @@ export default function DashboardPage() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [reminder, setReminder] = useState<ReminderData | null>(null);
+  const [insights, setInsights] = useState<Insights | null>(null);
 
   useEffect(() => {
     getVideos().then((v) => setVideos(v.slice(0, 3))).catch(console.error);
     getMyStats().then(setStats).catch(console.error);
     getReminderStatus().then(setReminder).catch(console.error);
+    getInsights().then(setInsights).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -95,6 +111,52 @@ export default function DashboardPage() {
             <div className="rounded-xl bg-gray-900 p-5">
               <p className="text-2xl font-bold text-white">{stats.totalMinutes}</p>
               <p className="text-xs text-gray-400">Minut celkem</p>
+            </div>
+          </div>
+        )}
+
+        {/* AI Insights */}
+        {insights && (insights.recovery || insights.plateaus.length > 0 || insights.weakPoints.weakMuscleGroups.length > 0) && (
+          <div className="mb-8">
+            <h3 className="mb-4 text-lg font-semibold text-white">🧠 AI Insights</h3>
+            <div className="space-y-3">
+              {/* Recovery status */}
+              {insights.recovery && (
+                <div className={`rounded-xl border p-4 ${recoveryColors[insights.recovery.overallStatus] || recoveryColors.normal}`}>
+                  <p className="mb-1 text-sm font-semibold">{recoveryLabels[insights.recovery.overallStatus]}</p>
+                  <p className="text-xs opacity-90">{insights.recovery.recommendation}</p>
+                </div>
+              )}
+
+              {/* Plateaus */}
+              {insights.plateaus.slice(0, 3).map((p) => (
+                <div key={p.exerciseId} className="rounded-xl border border-orange-500/30 bg-orange-900/20 p-4">
+                  <p className="mb-1 text-sm font-semibold text-orange-300">📊 Plateau: {p.exerciseName}</p>
+                  <p className="text-xs text-orange-200/80">Stagnuje {p.weeksStagnant} týdnů na {p.currentMaxWeight}kg</p>
+                  <p className="mt-1 text-xs text-orange-100">{p.recommendation}</p>
+                </div>
+              ))}
+
+              {/* Weak points */}
+              {insights.weakPoints.weakMuscleGroups.slice(0, 2).map((w) => (
+                <div key={w.muscle} className="rounded-xl border border-purple-500/30 bg-purple-900/20 p-4">
+                  <p className="mb-1 text-sm font-semibold text-purple-300">🎯 Slabé místo: {w.muscle}</p>
+                  <p className="text-xs text-purple-200/80">{w.reason}</p>
+                  {w.suggestedExercises.length > 0 && (
+                    <p className="mt-1 text-xs text-purple-100">
+                      Doporučené cviky: {w.suggestedExercises.slice(0, 3).join(', ')}
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              {/* Asymmetries */}
+              {insights.weakPoints.asymmetries.slice(0, 2).map((a, i) => (
+                <div key={i} className="rounded-xl border border-yellow-500/30 bg-yellow-900/20 p-4">
+                  <p className="mb-1 text-sm font-semibold text-yellow-300">⚖️ Asymetrie: {a.joint}</p>
+                  <p className="text-xs text-yellow-200/80">{a.recommendation}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}

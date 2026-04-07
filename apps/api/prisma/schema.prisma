@@ -382,6 +382,7 @@ model FitnessProfile {
   hasGymAccess     Boolean     @default(true)
   equipment        String[]
   injuries         String[]
+  priorityMuscles  String[]    @default([])
   notes            String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt

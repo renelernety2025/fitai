@@ -338,6 +338,40 @@ export function endGymSession(sessionId: string) {
   );
 }
 
+// Intelligence (Section B)
+export interface Insights {
+  plateaus: {
+    exerciseId: string;
+    exerciseName: string;
+    weeksStagnant: number;
+    currentMaxWeight: number;
+    recommendation: string;
+    suggestedAction: string;
+  }[];
+  recovery: {
+    formTrend: string;
+    rpeTrend: string;
+    volumeTrend: string;
+    overallStatus: 'fresh' | 'normal' | 'fatigued' | 'overreached';
+    recommendation: string;
+  };
+  weakPoints: {
+    weakMuscleGroups: { muscle: string; reason: string; suggestedExercises: string[] }[];
+    asymmetries: { joint: string; severity: number; recommendation: string }[];
+  };
+}
+
+export function getInsights() {
+  return request<Insights>('/intelligence/insights');
+}
+
+export function updatePriorityMuscles(muscles: string[]) {
+  return request<any>('/intelligence/priority-muscles', {
+    method: 'PUT',
+    body: JSON.stringify({ muscles }),
+  });
+}
+
 export interface WeeklyVolumeEntry {
   muscleGroup: string;
   sets: number;
