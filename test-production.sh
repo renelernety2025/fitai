@@ -95,6 +95,9 @@ api_endpoints=(
   "/api/education/lessons/of-the-week"
   "/api/social/feed"
   "/api/social/follow-counts"
+  "/api/home-training/quick"
+  "/api/home-training/home"
+  "/api/home-training/travel"
 )
 for ep in "${api_endpoints[@]}"; do
   check "GET $ep" "200" "$(http_status "$ALB$ep" "$AUTH")"
@@ -130,6 +133,7 @@ pages=(
   "/slovnik"
   "/community"
   "/progress"
+  "/doma"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"

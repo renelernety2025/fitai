@@ -4,6 +4,24 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section E — Training Outside Gym] 2026-04-07
+### Added
+- `Exercise.equipment String[]` field — bodyweight = `[]`
+- 6 nových bodyweight cviků: Push-up, Bodyweight Squat, Glute Bridge, Mountain Climbers, Burpees, Jumping Jacks
+- Nový modul `home-training` s endpointy `/api/home-training/quick`, `/home`, `/travel`
+- Stránka `/doma` se 3 tabs (Quick 15min, Doma 35min, Travel 20min)
+- Header navigace: Doma
+
+### Files
+- `apps/api/prisma/schema.prisma` (+ Exercise.equipment)
+- `apps/api/prisma/seed.ts` (+ bodyweight exercises + equipmentMap)
+- `apps/api/src/home-training/{module,controller,service}.ts`
+- `apps/web/src/app/(app)/doma/page.tsx`
+- `apps/web/src/lib/api.ts` (+ home training functions)
+- `apps/web/src/components/layout/Header.tsx` (+ Doma link)
+
+---
+
 ## [Regression Prevention] 2026-04-07
 ### Added
 - `CONTRACTS.md` — zámčená API, DB modely, frontend routes, core soubory

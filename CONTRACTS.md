@@ -89,6 +89,11 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### Home Training (Section E)
+- `GET  /api/home-training/quick`
+- `GET  /api/home-training/home`
+- `GET  /api/home-training/travel`
+
 ### Education (Section D)
 - `GET  /api/education/lessons`
 - `GET  /api/education/lessons/of-the-week`
@@ -114,7 +119,7 @@ Nemazat ani nepřejmenovávat tato pole:
 | `FitnessProfile` | `userId`, `priorityMuscles`, `age`, `weightKg`, `heightCm`, `onboardingDone` |
 | `Video` | `id`, `title`, `s3Key`, `duration` |
 | `Session` | `id`, `userId`, `videoId`, `startedAt`, `completedAt` |
-| `Exercise` | `id`, `name`, `phases`, `instructions`, `category` |
+| `Exercise` | `id`, `name`, `phases`, `instructions`, `category`, `equipment` |
 | `ExerciseSet` | `id`, `gymSessionId`, `exerciseId`, `reps`, `weight`, `rpe`, `isWarmup`, `tempoSeconds` |
 | `GymSession` | `id`, `userId`, `planDayId`, `startedAt`, `completedAt` |
 | `WorkoutPlan` | `id`, `name`, `days` |
