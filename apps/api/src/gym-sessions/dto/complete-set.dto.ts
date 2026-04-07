@@ -19,4 +19,14 @@ export class CompleteSetDto {
 
   @IsOptional()
   repData?: any;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  rpe?: number;
+
+  @IsOptional()
+  @IsNumber()
+  tempoSeconds?: number;
 }

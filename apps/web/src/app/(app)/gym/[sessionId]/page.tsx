@@ -22,6 +22,7 @@ import { SetTracker } from '@/components/gym/SetTracker';
 import { ExerciseInstructions } from '@/components/gym/ExerciseInstructions';
 import { RestTimerOverlay } from '@/components/gym/RestTimerOverlay';
 import { GymWorkoutSummary } from '@/components/gym/GymWorkoutSummary';
+import { RPEModal } from '@/components/gym/RPEModal';
 import { XPGainedOverlay } from '@/components/workout/XPGainedOverlay';
 import type { PoseFeedback } from '@/lib/feedback-engine';
 
@@ -41,6 +42,8 @@ export default function GymSessionPage({ params }: { params: { sessionId: string
   const [loading, setLoading] = useState(true);
   const [coachingMsg, setCoachingMsg] = useState<string | null>(null);
   const [coachingPriority, setCoachingPriority] = useState<'safety' | 'correction' | 'encouragement' | 'info' | null>(null);
+  const [showRPE, setShowRPE] = useState(false);
+  const pendingSetCompletionRef = useRef<{ setId: string; reps: number; weight: number | null; form: number; repData: any } | null>(null);
 
   const repCounterRef = useRef<ReturnType<typeof createRepCounter> | null>(null);
   const restTimerRef = useRef<ReturnType<typeof createRestTimer> | null>(null);
@@ -139,14 +142,38 @@ export default function GymSessionPage({ params }: { params: { sessionId: string
 
     speak('Set hotový!');
 
-    // Save to backend
-    await completeGymSet(session.id, {
+    // Store pending completion data — actual save happens after RPE
+    pendingSetCompletionRef.current = {
       setId: set.id,
-      actualReps: reps,
-      actualWeight: set.targetWeight ?? undefined,
-      formScore: Math.round(avgForm),
+      reps,
+      weight: set.targetWeight,
+      form: Math.round(avgForm),
       repData: repDataRef.current,
-    }).catch(console.error);
+    };
+
+    // Skip RPE for warmup sets
+    if ((set as any).isWarmup) {
+      submitSetWithRPE(null);
+    } else {
+      setShowRPE(true);
+    }
+  }
+
+  async function submitSetWithRPE(rpe: number | null) {
+    setShowRPE(false);
+    if (!session || !pendingSetCompletionRef.current) return;
+    const pending = pendingSetCompletionRef.current;
+
+    await completeGymSet(session.id, {
+      setId: pending.setId,
+      actualReps: pending.reps,
+      actualWeight: pending.weight ?? undefined,
+      formScore: pending.form,
+      repData: pending.repData,
+      ...(rpe ? { rpe } : {}),
+    } as any).catch(console.error);
+
+    pendingSetCompletionRef.current = null;
 
     // Check if more sets
     const nextIdx = currentSetIdx + 1;
@@ -157,7 +184,7 @@ export default function GymSessionPage({ params }: { params: { sessionId: string
 
     // Start rest timer
     const nextSet = session.exerciseSets[nextIdx];
-    const restSeconds = 90; // Default
+    const restSeconds = 90;
     setRestTotal(restSeconds);
     setIsResting(true);
 
@@ -286,6 +313,14 @@ export default function GymSessionPage({ params }: { params: { sessionId: string
           Set hotový
         </button>
       </div>
+
+      {/* RPE Modal */}
+      {showRPE && (
+        <RPEModal
+          onSubmit={(rpe) => submitSetWithRPE(rpe)}
+          onSkip={() => submitSetWithRPE(null)}
+        />
+      )}
 
       {/* Rest timer */}
       {isResting && currentSetIdx + 1 < session.exerciseSets.length && (

@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
-import { getMyStats, getMySessions, type StatsData, type SessionData } from '@/lib/api';
+import { getMyStats, getMySessions, getMyWeeklyVolume, type StatsData, type SessionData, type WeeklyVolumeEntry } from '@/lib/api';
+
+const muscleLabels: Record<string, string> = {
+  CHEST: 'Prsa', BACK: 'Záda', SHOULDERS: 'Ramena', BICEPS: 'Biceps',
+  TRICEPS: 'Triceps', QUADRICEPS: 'Stehna', HAMSTRINGS: 'Zadní stehna',
+  GLUTES: 'Hýždě', CORE: 'Core',
+};
 
 const levelColors: Record<string, string> = {
   'Začátečník': 'bg-gray-600',
@@ -17,13 +23,15 @@ const DAY_NAMES = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
 export default function ProgressPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [volume, setVolume] = useState<WeeklyVolumeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getMyStats(), getMySessions()])
-      .then(([s, sess]) => {
+    Promise.all([getMyStats(), getMySessions(), getMyWeeklyVolume().catch(() => [])])
+      .then(([s, sess, vol]) => {
         setStats(s);
         setSessions(sess.slice(0, 10));
+        setVolume(vol);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -88,6 +96,44 @@ export default function ProgressPage() {
             <div className="rounded-xl bg-gray-900 p-5">
               <p className="text-2xl font-bold text-white">{stats.totalMinutes}</p>
               <p className="text-xs text-gray-400">Minut celkem</p>
+            </div>
+          </div>
+        )}
+
+        {/* Weekly Volume per Muscle Group */}
+        {volume.length > 0 && (
+          <div className="mb-10">
+            <h2 className="mb-4 text-lg font-semibold text-white">Tento týden — objem dle svalů</h2>
+            <div className="space-y-2 rounded-xl bg-gray-900 p-5">
+              {volume.map((v) => {
+                const pct = Math.min(100, (v.sets / v.recommended.max) * 100);
+                const barColor =
+                  v.status === 'undertrained' ? 'bg-yellow-500' :
+                  v.status === 'overtrained' ? 'bg-red-500' :
+                  'bg-[#16a34a]';
+                const label =
+                  v.status === 'undertrained' ? 'Málo' :
+                  v.status === 'overtrained' ? 'Příliš' :
+                  'Optimální';
+                return (
+                  <div key={v.muscleGroup}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="text-white">{muscleLabels[v.muscleGroup] || v.muscleGroup}</span>
+                      <span className="text-gray-400">
+                        {v.sets} setů · {Math.round(v.volumeKg)}kg
+                        <span className={`ml-2 text-xs ${
+                          v.status === 'undertrained' ? 'text-yellow-400' :
+                          v.status === 'overtrained' ? 'text-red-400' : 'text-green-400'
+                        }`}>{label}</span>
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-gray-800">
+                      <div className={`h-full ${barColor} transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="mt-3 text-xs text-gray-500">Doporučení: 10-20 setů na svalovou skupinu / týden pro hypertrofii</p>
             </div>
           </div>
         )}

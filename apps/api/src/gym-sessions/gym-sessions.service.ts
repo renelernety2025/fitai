@@ -27,19 +27,51 @@ export class GymSessionsService {
     });
 
     // Pre-populate sets from plan or ad-hoc
+    // Compound exercises get 2 warmup sets (50% and 75% of target weight)
     if (dto.workoutPlanId && dto.workoutDayIndex !== undefined) {
       const day = await this.prisma.workoutDay.findFirst({
         where: { workoutPlanId: dto.workoutPlanId, dayIndex: dto.workoutDayIndex },
-        include: { plannedExercises: { orderBy: { orderIndex: 'asc' } } },
+        include: { plannedExercises: { include: { exercise: true }, orderBy: { orderIndex: 'asc' } } },
       });
       if (day) {
-        for (const pe of day.plannedExercises) {
+        // Sort: compound first, then accessory, then isolation
+        const sorted = [...day.plannedExercises].sort((a, b) => {
+          const order: Record<string, number> = { compound: 0, accessory: 1, isolation: 2 };
+          return (order[a.exercise.category] ?? 1) - (order[b.exercise.category] ?? 1);
+        });
+
+        for (const pe of sorted) {
+          let setNum = 1;
+          // Warmup sets for compound exercises with weight
+          if (pe.exercise.category === 'compound' && pe.targetWeight && pe.targetWeight > 20) {
+            await this.prisma.exerciseSet.create({
+              data: {
+                gymSessionId: gymSession.id,
+                exerciseId: pe.exerciseId,
+                setNumber: setNum++,
+                targetReps: 15,
+                targetWeight: Math.round(pe.targetWeight * 0.5),
+                isWarmup: true,
+              },
+            });
+            await this.prisma.exerciseSet.create({
+              data: {
+                gymSessionId: gymSession.id,
+                exerciseId: pe.exerciseId,
+                setNumber: setNum++,
+                targetReps: 8,
+                targetWeight: Math.round(pe.targetWeight * 0.75),
+                isWarmup: true,
+              },
+            });
+          }
+          // Working sets
           for (let s = 1; s <= pe.targetSets; s++) {
             await this.prisma.exerciseSet.create({
               data: {
                 gymSessionId: gymSession.id,
                 exerciseId: pe.exerciseId,
-                setNumber: s,
+                setNumber: setNum++,
                 targetReps: pe.targetReps,
                 targetWeight: pe.targetWeight,
               },
@@ -81,10 +113,93 @@ export class GymSessionsService {
         actualWeight: dto.actualWeight,
         formScore: dto.formScore,
         repData: dto.repData,
+        rpe: (dto as any).rpe,
+        tempoSeconds: (dto as any).tempoSeconds,
         status: 'COMPLETED',
         completedAt: new Date(),
       },
     });
+  }
+
+  async getMyWeeklyVolume(userId: string) {
+    const now = new Date();
+    const day = now.getDay() || 7;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - day + 1);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const volumes = await this.prisma.weeklyVolume.findMany({
+      where: { userId, weekStart },
+      orderBy: { totalVolumeKg: 'desc' },
+    });
+
+    // Recommended sets per muscle group per week (8-20 for hypertrophy)
+    const RECOMMENDED = { min: 10, max: 20 };
+
+    return volumes.map((v) => ({
+      muscleGroup: v.muscleGroup,
+      sets: v.totalSets,
+      reps: v.totalReps,
+      volumeKg: Math.round(v.totalVolumeKg),
+      status:
+        v.totalSets < RECOMMENDED.min
+          ? 'undertrained'
+          : v.totalSets > RECOMMENDED.max
+          ? 'overtrained'
+          : 'optimal',
+      recommended: RECOMMENDED,
+    }));
+  }
+
+  /** Update WeeklyVolume aggregate for the user based on completed sets */
+  private async updateWeeklyVolume(userId: string, sets: any[]) {
+    const exerciseIds = [...new Set(sets.map((s) => s.exerciseId))];
+    const exercises = await this.prisma.exercise.findMany({
+      where: { id: { in: exerciseIds } },
+      select: { id: true, muscleGroups: true },
+    });
+    const exMap = new Map(exercises.map((e) => [e.id, e.muscleGroups]));
+
+    // Get start of current week (Monday)
+    const now = new Date();
+    const day = now.getDay() || 7;
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - day + 1);
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Aggregate sets per muscle group
+    const volume = new Map<string, { sets: number; reps: number; volumeKg: number }>();
+    for (const set of sets) {
+      if (set.status !== 'COMPLETED' || set.isWarmup) continue;
+      const muscles = exMap.get(set.exerciseId) || [];
+      for (const muscle of muscles) {
+        const existing = volume.get(muscle as string) || { sets: 0, reps: 0, volumeKg: 0 };
+        existing.sets += 1;
+        existing.reps += set.actualReps;
+        existing.volumeKg += set.actualReps * (set.actualWeight ?? 0);
+        volume.set(muscle as string, existing);
+      }
+    }
+
+    // Upsert volume rows
+    for (const [muscle, v] of volume) {
+      await this.prisma.weeklyVolume.upsert({
+        where: { userId_weekStart_muscleGroup: { userId, weekStart, muscleGroup: muscle } },
+        update: {
+          totalSets: { increment: v.sets },
+          totalReps: { increment: v.reps },
+          totalVolumeKg: { increment: v.volumeKg },
+        },
+        create: {
+          userId,
+          weekStart,
+          muscleGroup: muscle,
+          totalSets: v.sets,
+          totalReps: v.reps,
+          totalVolumeKg: v.volumeKg,
+        },
+      });
+    }
   }
 
   async endSession(sessionId: string, userId: string) {
@@ -96,6 +211,10 @@ export class GymSessionsService {
     if (session.userId !== userId) throw new ForbiddenException();
 
     const completedSets = session.exerciseSets.filter((s) => s.status === 'COMPLETED');
+
+    // Update weekly volume aggregates
+    await this.updateWeeklyVolume(userId, completedSets);
+
     const totalReps = completedSets.reduce((sum, s) => sum + s.actualReps, 0);
     const avgForm = completedSets.length
       ? completedSets.reduce((sum, s) => sum + s.formScore, 0) / completedSets.length

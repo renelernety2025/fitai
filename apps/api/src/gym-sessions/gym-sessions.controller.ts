@@ -33,6 +33,11 @@ export class GymSessionsController {
     return this.gymSessionsService.getMySessions(req.user.id);
   }
 
+  @Get('my/weekly-volume')
+  getWeeklyVolume(@Request() req: any) {
+    return this.gymSessionsService.getMyWeeklyVolume(req.user.id);
+  }
+
   @Get(':id')
   getSession(@Param('id') id: string) {
     return this.gymSessionsService.getSession(id);

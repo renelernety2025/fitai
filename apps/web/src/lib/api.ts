@@ -338,6 +338,19 @@ export function endGymSession(sessionId: string) {
   );
 }
 
+export interface WeeklyVolumeEntry {
+  muscleGroup: string;
+  sets: number;
+  reps: number;
+  volumeKg: number;
+  status: 'undertrained' | 'optimal' | 'overtrained';
+  recommended: { min: number; max: number };
+}
+
+export function getMyWeeklyVolume() {
+  return request<WeeklyVolumeEntry[]>('/gym-sessions/my/weekly-volume');
+}
+
 export function getAdaptiveRecommendation(exerciseId: string) {
   return request<{ exerciseId: string; currentWeight: number | null; recommendedWeight: number | null; reasonCs: string }>(
     `/adaptive/recommendations/${exerciseId}`,

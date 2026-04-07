@@ -89,6 +89,7 @@ async function main() {
       descriptionCs: 'Základní cvik na dolní tělo — stehna, hýždě, core.',
       muscleGroups: ['QUADRICEPS', 'GLUTES', 'CORE'],
       difficulty: 'INTERMEDIATE' as const,
+      category: 'compound',
       instructions: {
         steps: [
           'Postav se pod činku v racku, nohy na šířku ramen.',
@@ -135,6 +136,7 @@ async function main() {
       descriptionCs: 'Tlak na lavici — prsa, ramena, tricepsy.',
       muscleGroups: ['CHEST', 'SHOULDERS', 'TRICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      category: 'compound',
       instructions: {
         steps: ['Lehni si na lavici, oči pod činkou.', 'Uchop činku o trochu šířeji než ramena.', 'Stáhni lopatky k sobě a dolů — vytvoř "oblouk" v horní části zad.', 'Zvedni činku z racku, ruce propnuté nad hrudníkem.', 'Nadechni se a pomalu spouštěj činku k dolní části hrudníku.', 'Lehce se dotkni hrudi (nesklápěj!).', 'Výdech a tlač činku zpět nahoru — mírně dozadu k očím.'],
         commonMistakes: ['Odrážení činky od hrudi — kontrolovaný dotek.', 'Zvedání hýždí z lavice — boky musí zůstat dole.', 'Lokty příliš daleko od těla (90°) — drž je v 45° úhlu.', 'Nerovnoměrný tlak — obě ruce stejně.'],
@@ -157,6 +159,7 @@ async function main() {
       descriptionCs: 'Komplexní cvik na záda, hýždě a zadní stehna.',
       muscleGroups: ['BACK', 'HAMSTRINGS', 'GLUTES', 'CORE'],
       difficulty: 'ADVANCED' as const,
+      category: 'compound',
       instructions: {
         steps: ['Postav se k čince, nohy na šířku boků, činka nad středem chodidla.', 'Předkloň se v kyčlích (ne v zádech!), uchop činku nadhmatem.', 'Stáhni lopatky, hrudník nahoru, záda ROVNÁ.', 'Nadechni se, zpevni core.', 'Tlač nohama do země — činka jde nahoru podél nohou.', 'Vzpřim se, boky dopředu, ramena dozadu.', 'Nahoře: stůj zpříma, nezaklánět se.', 'Kontrolovaně spusť činku dolů — kyčle dozadu, pak ohni kolena.'],
         commonMistakes: ['Zaoblená záda — KRITICKÉ! Záda musí být neutrální po celou dobu.', 'Činka daleko od těla — musí jít podél nohou.', 'Trhání činky — plynulý, kontrolovaný pohyb.', 'Hyperextenze nahoře — stůj rovně, nezaklánět.'],
@@ -179,6 +182,7 @@ async function main() {
       descriptionCs: 'Izolovaný cvik na bicepsy.',
       muscleGroups: ['BICEPS'],
       difficulty: 'BEGINNER' as const,
+      category: 'isolation',
       instructions: {
         steps: ['Postav se rovně, jednoručky v rukou, dlaně dopředu.', 'Lokty u těla — nepohybuj jimi!', 'Pomalu zdvihni činky směrem k ramenům.', 'Stiskni biceps nahoře (1s výdrž).', 'Pomalu spusť zpět dolů — kontrolovaně, ne pádem.'],
         commonMistakes: ['Švihání tělem — stůj pevně, pracuje jen předloktí.', 'Lokty utíkají dopředu — drž je u boků.', 'Příliš rychlé spouštění — negativní fáze je důležitá.', 'Nepropnutí rukou dole — plný rozsah pohybu.'],
@@ -201,6 +205,7 @@ async function main() {
       descriptionCs: 'Ramena a tricepsy — tlak nad hlavu.',
       muscleGroups: ['SHOULDERS', 'TRICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      category: 'compound',
       instructions: {
         steps: ['Uchop činku nadhmatem na šířku ramen.', 'Zvedni ji do pozice u ramen (činka se dotýká klíčních kostí).', 'Nadechni se, zpevni core a hýždě.', 'Tlač činku rovně nad hlavu — hlava se uhne dozadu.', 'Propni ruce nahoře, činka nad středem hlavy.', 'Kontrolovaně spusť zpět k ramenům.'],
         commonMistakes: ['Zaklánění — drž trup vzpřímený, zpevni core.', 'Tlak dopředu místo nahoru — činka jde rovně.', 'Lokty příliš vzadu — drž je mírně vpředu.', 'Nezamčené ruce nahoře — propni úplně.'],
@@ -223,6 +228,7 @@ async function main() {
       descriptionCs: 'Záda — široký sval a mezilopatkové svaly.',
       muscleGroups: ['BACK', 'BICEPS'],
       difficulty: 'INTERMEDIATE' as const,
+      category: 'compound',
       instructions: {
         steps: ['Uchop činku nadhmatem, mírně šířeji než ramena.', 'Předkloň se v kyčlích do cca 45° — záda ROVNÁ.', 'Ruce visí dolů, mírně pokrčené lokty.', 'Táhni činku k dolní části hrudníku / břichu.', 'Stiskni lopatky k sobě nahoře (1s výdrž).', 'Kontrolovaně spusť dolů.'],
         commonMistakes: ['Zaoblená záda — neutrální páteř po celou dobu.', 'Trhání činky — plynulý tah, ne švih.', 'Příliš vzpřímený postoj — předklon musí být dostatečný (45°).', 'Lokty příliš daleko od těla.'],
@@ -245,6 +251,7 @@ async function main() {
       descriptionCs: 'Izometrický cvik na stabilizaci trupu.',
       muscleGroups: ['CORE', 'SHOULDERS'],
       difficulty: 'BEGINNER' as const,
+      category: 'accessory',
       instructions: {
         steps: ['Lehni si na břicho, předloktí na zem (lokty pod rameny).', 'Zvedni tělo — opora na předloktích a špičkách.', 'Tělo tvoří ROVNOU linii: hlava-ramena-boky-paty.', 'Zpevni břicho (jako bys čekal ránu do břicha).', 'Stáhni hýždě.', 'Drž pozici po stanovenou dobu.'],
         commonMistakes: ['Propadlá záda — zpevni core, nezvedej hlavu.', 'Zvednutý zadek — boky v linii s rameny.', 'Zadržování dechu — dýchej normálně.', 'Pohled nahoru — krk neutrální, dívej se na zem.'],
@@ -264,6 +271,7 @@ async function main() {
       descriptionCs: 'Výpady vpřed — stehna, hýždě, stabilita.',
       muscleGroups: ['QUADRICEPS', 'GLUTES', 'HAMSTRINGS'],
       difficulty: 'BEGINNER' as const,
+      category: 'accessory',
       instructions: {
         steps: ['Postav se rovně, nohy u sebe.', 'Vykroč jednou nohou dopředu (velký krok).', 'Sniž tělo dolů — obě kolena do 90°.', 'Zadní koleno se téměř dotkne země.', 'Přední koleno nepřesahuje špičku.', 'Odraz z přední paty a vrať se do stoje.', 'Opakuj s druhou nohou (střídej).'],
         commonMistakes: ['Koleno přes špičku — krok musí být dostatečně dlouhý.', 'Úzký postoj — nohy na šířku boků, ne za sebou.', 'Předklon trupu — drž se vzpřímeně.', 'Odraz ze špičky — tlač z paty.'],
