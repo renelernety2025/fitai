@@ -1,31 +1,52 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useAuth } from '../lib/auth-context';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
 
-export function ProfileScreen() {
+const SECONDARY = [
+  { screen: 'Exercises', label: 'Cviky', color: v2.green },
+  { screen: 'Videos', label: 'Videa', color: v2.blue },
+  { screen: 'Doma', label: 'Doma', color: v2.green },
+  { screen: 'AICoach', label: 'AI Trenér', color: v2.purple },
+  { screen: 'Community', label: 'Komunita', color: v2.red },
+  { screen: 'Slovnik', label: 'Slovník', color: v2.yellow },
+];
+
+export function ProfileScreen({ navigation }: any) {
   const { user, logout } = useAuth();
 
   return (
-    <View style={s.container}>
-      <View style={s.avatar}>
-        <Text style={s.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
+    <V2Screen>
+      <View style={{ paddingTop: 24, marginBottom: 32 }}>
+        <V2SectionLabel>Účet</V2SectionLabel>
+        <V2Display size="xl">{user?.name?.split(' ')[0] || 'Profil'}.</V2Display>
+        <Text style={{ color: v2.muted, marginTop: 8, fontSize: 14 }}>{user?.email}</Text>
       </View>
-      <Text style={s.name}>{user?.name}</Text>
-      <Text style={s.email}>{user?.email}</Text>
 
-      <TouchableOpacity style={s.logoutBtn} onPress={logout}>
-        <Text style={s.logoutText}>Odhlásit se</Text>
-      </TouchableOpacity>
-    </View>
+      <V2SectionLabel>Více</V2SectionLabel>
+      <View style={{ marginBottom: 48 }}>
+        {SECONDARY.map((s) => (
+          <Pressable
+            key={s.screen}
+            onPress={() => navigation.navigate(s.screen)}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderBottomWidth: 1,
+              borderBottomColor: v2.border,
+              paddingVertical: 20,
+            }}
+          >
+            <View style={{ width: 24, height: 3, borderRadius: 2, backgroundColor: s.color, marginRight: 16 }} />
+            <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '600', flex: 1 }}>{s.label}</Text>
+            <Text style={{ color: v2.ghost, fontSize: 18 }}>→</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <V2Button onPress={logout} variant="secondary" full>
+        Odhlásit se
+      </V2Button>
+    </V2Screen>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#16a34a', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  avatarText: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
-  name: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  email: { fontSize: 14, color: '#6b7280', marginBottom: 32 },
-  logoutBtn: { borderWidth: 1, borderColor: '#ef4444', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
-  logoutText: { color: '#ef4444', fontSize: 16 },
-});

@@ -1,52 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getExercises } from '../lib/api';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Row, v2 } from '../components/v2/V2';
 
-const muscleLabels: Record<string, string> = {
-  CHEST: 'Prsa', BACK: 'Záda', SHOULDERS: 'Ramena', BICEPS: 'Biceps',
-  TRICEPS: 'Triceps', QUADRICEPS: 'Stehna', HAMSTRINGS: 'Zadní stehna',
-  GLUTES: 'Hýždě', CORE: 'Core',
+const MUSCLES = [
+  { v: 'ALL', l: 'Vše' },
+  { v: 'CHEST', l: 'Prsa' },
+  { v: 'BACK', l: 'Záda' },
+  { v: 'SHOULDERS', l: 'Ramena' },
+  { v: 'BICEPS', l: 'Biceps' },
+  { v: 'TRICEPS', l: 'Triceps' },
+  { v: 'QUADRICEPS', l: 'Stehna' },
+  { v: 'GLUTES', l: 'Hýždě' },
+  { v: 'CORE', l: 'Core' },
+];
+
+const diffAccent: Record<string, string> = {
+  BEGINNER: v2.green,
+  INTERMEDIATE: v2.blue,
+  ADVANCED: v2.red,
 };
 
-export function ExercisesScreen() {
+const diffLabel: Record<string, string> = {
+  BEGINNER: 'Začátečník',
+  INTERMEDIATE: 'Pokročilý',
+  ADVANCED: 'Expert',
+};
+
+export function ExercisesScreen({ navigation }: any) {
   const [exercises, setExercises] = useState<any[]>([]);
+  const [filter, setFilter] = useState('ALL');
 
   useEffect(() => {
-    getExercises().then(setExercises).catch(console.error);
-  }, []);
+    const params = filter !== 'ALL' ? { muscleGroup: filter } : undefined;
+    getExercises(params).then(setExercises).catch(console.error);
+  }, [filter]);
 
   return (
-    <View style={s.container}>
-      <Text style={s.title}>Cviky</Text>
-      <FlatList
-        data={exercises}
-        keyExtractor={(e) => e.id}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={s.card} onPress={() => Alert.alert(item.nameCs, item.descriptionCs)}>
-            <Text style={s.name}>{item.nameCs}</Text>
-            <Text style={s.desc} numberOfLines={2}>{item.descriptionCs}</Text>
-            <View style={s.muscles}>
-              {item.muscleGroups.map((mg: string) => (
-                <View key={mg} style={s.muscleBadge}>
-                  <Text style={s.muscleText}>{muscleLabels[mg] || mg}</Text>
-                </View>
-              ))}
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+    <V2Screen>
+      <View style={{ paddingTop: 24, marginBottom: 24 }}>
+        <V2SectionLabel>Knihovna</V2SectionLabel>
+        <V2Display size="xl">Cviky.</V2Display>
+      </View>
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
+        {MUSCLES.map((m) => (
+          <V2Chip key={m.v} label={m.l} selected={filter === m.v} onPress={() => setFilter(m.v)} />
+        ))}
+      </View>
+
+      {exercises.map((ex) => (
+        <V2Row key={ex.id} onPress={() => navigation.navigate('ExerciseDetail', { id: ex.id })}>
+          <Text style={{ color: diffAccent[ex.difficulty] || '#FFF', fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
+            {(diffLabel[ex.difficulty] || '').toUpperCase()} · {(ex.muscleGroups || []).slice(0, 2).join(', ')}
+          </Text>
+          <Text style={{ color: '#FFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 }}>{ex.nameCs}</Text>
+          <Text style={{ color: v2.faint, fontSize: 13, marginTop: 4 }} numberOfLines={1}>
+            {ex.descriptionCs}
+          </Text>
+        </V2Row>
+      ))}
+    </V2Screen>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', padding: 20, paddingTop: 60 },
-  card: { backgroundColor: '#111827', borderRadius: 12, padding: 16, marginBottom: 12 },
-  name: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 4 },
-  desc: { fontSize: 13, color: '#6b7280', marginBottom: 8 },
-  muscles: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  muscleBadge: { backgroundColor: '#374151', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
-  muscleText: { fontSize: 11, color: '#d1d5db' },
-});

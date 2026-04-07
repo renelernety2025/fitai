@@ -1,102 +1,154 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useAuth } from '../lib/auth-context';
-import { getMyStats, getReminderStatus } from '../lib/api';
+import {
+  getMyStats,
+  getInsights,
+  getLessonOfTheWeek,
+  getNutritionToday,
+} from '../lib/api';
+import {
+  V2Screen,
+  V2Display,
+  V2SectionLabel,
+  V2Stat,
+  V2TripleRing,
+  V2Loading,
+  v2,
+} from '../components/v2/V2';
 
-export function DashboardScreen() {
-  const { user, logout } = useAuth();
+export function DashboardScreen({ navigation }: any) {
+  const { user } = useAuth();
   const [stats, setStats] = useState<any>(null);
-  const [reminder, setReminder] = useState<any>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [insights, setInsights] = useState<any>(null);
+  const [lesson, setLesson] = useState<any>(null);
+  const [nutrition, setNutrition] = useState<any>(null);
 
-  const loadData = () => {
-    Promise.all([getMyStats(), getReminderStatus()])
-      .then(([s, r]) => { setStats(s); setReminder(r); })
-      .catch(console.error)
-      .finally(() => setRefreshing(false));
-  };
+  useEffect(() => {
+    getMyStats().then(setStats).catch(console.error);
+    getInsights().then(setInsights).catch(console.error);
+    getLessonOfTheWeek().then(setLesson).catch(console.error);
+    getNutritionToday().then(setNutrition).catch(console.error);
+  }, []);
 
-  useEffect(loadData, []);
+  const move = stats && stats.totalSessions > 0 ? Math.min(1, stats.totalSessions / 5) : 0.15;
+  const exercise = stats ? Math.min(1, (stats.currentStreak || 0) / 7) : 0.25;
+  const stand = stats ? Math.min(1, ((stats.totalXP || 0) % 1000) / 1000) : 0.5;
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Dobré ráno' : hour < 18 ? 'Dobré odpoledne' : 'Dobrý večer';
 
   return (
-    <ScrollView style={s.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#16a34a" />}>
-      <View style={s.header}>
-        <View>
-          <Text style={s.greeting}>Vítej, {user?.name}!</Text>
-          {stats && <Text style={s.level}>{stats.levelName}</Text>}
-        </View>
-        <TouchableOpacity onPress={logout} style={s.logoutBtn}>
-          <Text style={s.logoutText}>Odhlásit</Text>
-        </TouchableOpacity>
+    <V2Screen>
+      {/* Top bar with Profile link */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 16 }}>
+        <Pressable onPress={() => navigation.navigate('Profile')}>
+          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>VÍCE →</Text>
+        </Pressable>
       </View>
 
-      {reminder?.shouldRemind && (
-        <View style={s.reminderBanner}>
-          <Text style={s.reminderText}>{reminder.message}</Text>
-        </View>
-      )}
+      {/* Hero greeting */}
+      <View style={{ paddingTop: 16, alignItems: 'center', marginBottom: 24 }}>
+        <V2SectionLabel>{greeting}</V2SectionLabel>
+        <V2Display size="lg">{(user?.name || 'Athlete').split(' ')[0]}.</V2Display>
+      </View>
 
+      {/* Triple Ring */}
+      <View style={{ alignItems: 'center', marginVertical: 32 }}>
+        <V2TripleRing move={move} exercise={exercise} stand={stand} size={260} />
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: v2.text, fontSize: 64, fontWeight: '700', letterSpacing: -2 }}>
+            {stats?.currentStreak || 0}
+          </Text>
+          <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
+            DNÍ V ŘADĚ
+          </Text>
+        </View>
+      </View>
+
+      {/* Legend */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 48 }}>
+        {[
+          { c: v2.red, l: 'SESSIONS' },
+          { c: v2.green, l: 'STREAK' },
+          { c: v2.blue, l: 'XP' },
+        ].map((it) => (
+          <View key={it.l} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: it.c }} />
+            <Text style={{ color: v2.muted, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
+              {it.l}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Stats */}
       {stats && (
-        <View style={s.statsRow}>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>🔥 {stats.currentStreak}</Text>
-            <Text style={s.statLabel}>Série</Text>
-          </View>
-          <View style={s.statCard}>
-            <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.totalXP}</Text>
-            <Text style={s.statLabel}>XP</Text>
-          </View>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>{stats.totalSessions}</Text>
-            <Text style={s.statLabel}>Cvičení</Text>
-          </View>
-          <View style={s.statCard}>
-            <Text style={s.statValue}>{stats.totalMinutes}</Text>
-            <Text style={s.statLabel}>Minut</Text>
-          </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderBottomWidth: 1, borderColor: v2.border, paddingVertical: 32, marginBottom: 48 }}>
+          <V2Stat value={stats.totalSessions || 0} label="Cvičení" />
+          <V2Stat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hodin" />
+          <V2Stat value={stats.totalXP || 0} label="XP" />
         </View>
       )}
 
-      {stats?.weeklyActivity && (
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Tento týden</Text>
-          <View style={s.weekChart}>
-            {stats.weeklyActivity.map((day: any, i: number) => {
-              const maxMin = Math.max(...stats.weeklyActivity.map((d: any) => d.minutes), 1);
-              const height = day.minutes > 0 ? Math.max(8, (day.minutes / maxMin) * 60) : 4;
-              const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
-              const d = new Date(day.date + 'T00:00:00');
-              return (
-                <View key={i} style={s.weekDay}>
-                  <View style={[s.weekBar, { height, backgroundColor: day.minutes > 0 ? '#16a34a' : '#374151' }]} />
-                  <Text style={s.weekLabel}>{dayNames[d.getDay()]}</Text>
-                </View>
-              );
-            })}
+      {/* Lesson of the week */}
+      {lesson && (
+        <Pressable
+          onPress={() => navigation.navigate('LessonDetail', { slug: lesson.slug })}
+          style={{ marginBottom: 48 }}
+        >
+          <V2SectionLabel>Lekce týdne</V2SectionLabel>
+          <V2Display size="md">{lesson.titleCs}</V2Display>
+          <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14, lineHeight: 22 }} numberOfLines={3}>
+            {lesson.bodyCs}
+          </Text>
+          <Text style={{ color: v2.text, marginTop: 12, fontSize: 12, fontWeight: '600' }}>Číst →</Text>
+        </Pressable>
+      )}
+
+      {/* Nutrition */}
+      {nutrition && (
+        <Pressable onPress={() => navigation.navigate('Vyziva')} style={{ marginBottom: 48 }}>
+          <V2SectionLabel>Výživa</V2SectionLabel>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+            <Text style={{ color: v2.text, fontSize: 44, fontWeight: '700', letterSpacing: -2 }}>
+              {nutrition.totals.kcal.toLocaleString('cs-CZ')}
+            </Text>
+            <Text style={{ color: v2.ghost, fontSize: 20, marginLeft: 6 }}>
+              / {nutrition.goals.dailyKcal.toLocaleString('cs-CZ')} kcal
+            </Text>
           </View>
+          <Text style={{ color: v2.muted, marginTop: 4, fontSize: 13 }}>
+            P {nutrition.totals.proteinG}g · S {nutrition.totals.carbsG}g · T {nutrition.totals.fatG}g
+          </Text>
+        </Pressable>
+      )}
+
+      {/* AI Insight */}
+      {insights?.recovery && (
+        <View style={{ marginBottom: 48 }}>
+          <V2SectionLabel>AI · Stav regenerace</V2SectionLabel>
+          <V2Display size="md">
+            {insights.recovery.overallStatus === 'fresh' && 'Svěží.'}
+            {insights.recovery.overallStatus === 'normal' && 'Normální.'}
+            {insights.recovery.overallStatus === 'fatigued' && 'Unavený.'}
+            {insights.recovery.overallStatus === 'overreached' && 'Přetrénovaný.'}
+          </V2Display>
+          <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14, lineHeight: 22 }}>
+            {insights.recovery.recommendation}
+          </Text>
         </View>
       )}
-    </ScrollView>
+    </V2Screen>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
-  greeting: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  level: { fontSize: 14, color: '#6b7280', marginTop: 2 },
-  logoutBtn: { borderWidth: 1, borderColor: '#374151', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  logoutText: { color: '#6b7280', fontSize: 12 },
-  reminderBanner: { marginHorizontal: 20, marginBottom: 16, backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.3)', borderRadius: 12, padding: 16 },
-  reminderText: { color: '#F59E0B', fontSize: 14 },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 12, gap: 8, marginBottom: 20 },
-  statCard: { flex: 1, backgroundColor: '#111827', borderRadius: 12, padding: 16, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  statLabel: { fontSize: 11, color: '#6b7280', marginTop: 4 },
-  section: { paddingHorizontal: 20, marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 12 },
-  weekChart: { flexDirection: 'row', backgroundColor: '#111827', borderRadius: 12, padding: 16, alignItems: 'flex-end', height: 100, gap: 4 },
-  weekDay: { flex: 1, alignItems: 'center' },
-  weekBar: { width: '80%', borderRadius: 4, minHeight: 4 },
-  weekLabel: { fontSize: 10, color: '#6b7280', marginTop: 6 },
-});

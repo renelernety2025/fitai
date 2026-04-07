@@ -1,54 +1,64 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, Image, Pressable } from 'react-native';
 import { getVideos } from '../lib/api';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
 
-const categoryColors: Record<string, string> = {
-  YOGA: '#10b981', PILATES: '#3b82f6', STRENGTH: '#f97316', CARDIO: '#ef4444', MOBILITY: '#a855f7',
+const CATS = [
+  { v: 'ALL', l: 'Vše' },
+  { v: 'YOGA', l: 'Yoga' },
+  { v: 'PILATES', l: 'Pilates' },
+  { v: 'STRENGTH', l: 'Strength' },
+  { v: 'CARDIO', l: 'Cardio' },
+];
+
+const accent: Record<string, string> = {
+  YOGA: v2.green,
+  PILATES: v2.blue,
+  STRENGTH: v2.orange,
+  CARDIO: v2.red,
+  MOBILITY: v2.purple,
 };
 
-export function VideosScreen() {
+export function VideosScreen({ navigation }: any) {
   const [videos, setVideos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [cat, setCat] = useState('ALL');
 
   useEffect(() => {
-    getVideos().then(setVideos).catch(console.error).finally(() => setLoading(false));
-  }, []);
+    getVideos().then((all) => {
+      const filtered = cat === 'ALL' ? all : all.filter((v) => v.category === cat);
+      setVideos(filtered);
+    }).catch(console.error);
+  }, [cat]);
 
   return (
-    <View style={s.container}>
-      <Text style={s.title}>Videa</Text>
-      <FlatList
-        data={videos}
-        keyExtractor={(v) => v.id}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={s.card} onPress={() => Alert.alert(item.title, 'Workout flow bude přidán v další verzi.')}>
-            <Image source={{ uri: item.thumbnailUrl }} style={s.thumbnail} />
-            <View style={s.info}>
-              <Text style={s.videoTitle}>{item.title}</Text>
-              <View style={s.badges}>
-                <View style={[s.badge, { backgroundColor: categoryColors[item.category] || '#374151' }]}>
-                  <Text style={s.badgeText}>{item.category}</Text>
-                </View>
-                <Text style={s.duration}>{Math.floor(item.durationSeconds / 60)} min</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+    <V2Screen>
+      <View style={{ paddingTop: 24, marginBottom: 24 }}>
+        <V2SectionLabel>Knihovna</V2SectionLabel>
+        <V2Display size="xl">Videa.</V2Display>
+      </View>
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
+        {CATS.map((c) => (
+          <V2Chip key={c.v} label={c.l} selected={cat === c.v} onPress={() => setCat(c.v)} />
+        ))}
+      </View>
+
+      {videos.map((v) => (
+        <Pressable
+          key={v.id}
+          onPress={() => navigation.navigate('VideoDetail', { id: v.id })}
+          style={{ marginBottom: 32 }}
+        >
+          <Image
+            source={{ uri: v.thumbnailUrl }}
+            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 16, marginBottom: 12 }}
+          />
+          <Text style={{ color: accent[v.category] || '#FFF', fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 4 }}>
+            {(v.category || '').toUpperCase()} · {Math.floor(v.durationSeconds / 60)} MIN
+          </Text>
+          <Text style={{ color: '#FFF', fontSize: 24, fontWeight: '700', letterSpacing: -0.5 }}>{v.title}</Text>
+        </Pressable>
+      ))}
+    </V2Screen>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', padding: 20, paddingTop: 60 },
-  card: { backgroundColor: '#111827', borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
-  thumbnail: { width: '100%', height: 180 },
-  info: { padding: 12 },
-  videoTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 8 },
-  badges: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  badgeText: { fontSize: 11, color: '#fff', fontWeight: '500' },
-  duration: { fontSize: 12, color: '#6b7280' },
-});

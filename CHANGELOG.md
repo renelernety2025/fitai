@@ -4,6 +4,43 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Mobile v2 — full sync s webem] 2026-04-07
+### Added
+Mobile React Native app dohnaná na úroveň webu. Stejný v2 design system, stejné featury (kromě pose detection s kamerou — vlastní fáze).
+
+**Sdílené komponenty:**
+- `apps/mobile/src/components/v2/V2.tsx` — V2Screen, V2Display, V2SectionLabel, V2Stat, V2Button, V2Chip, V2Input, V2Ring, V2TripleRing, V2Loading, V2Row + theme tokens
+
+**Rozšířený API klient (`apps/mobile/src/lib/api.ts`):**
+- Onboarding (status, measurements, fitness test, suggested weights, complete)
+- Intelligence (recovery, plateaus, weak points)
+- Education (lessons, lesson detail, glossary, lesson of week)
+- Home Training (quick, home, travel)
+- Nutrition (goals, today, log CRUD, quick foods, auto-calc)
+- AI Planner (profile, generate, break recovery, asymmetry, update)
+- Social full (feed, challenges, join, search, follow, counts)
+
+**Obrazovky reskinnuté v v2 stylu:** LoginScreen, RegisterScreen, DashboardScreen (s Triple Activity Ring hero), VideosScreen, ExercisesScreen, PlansScreen (s quick start cards), ProgressScreen, ProfileScreen (rozšířená na "Více" menu)
+
+**Nové obrazovky:** OnboardingScreen (3-step), VyzivaScreen (s makro ringy + modal), LekceScreen, LessonDetailScreen, SlovnikScreen, DomaScreen (3 modes), AICoachScreen, CommunityScreen, ExerciseDetailScreen, PlanDetailScreen, VideoDetailScreen
+
+**Navigace:** 5-tab bottom nav (Dnes / Trénink / Výživa / Lekce / Pokrok). Sekundární obrazovky (Cviky, Videa, Doma, AI Trenér, Komunita, Slovník) přístupné přes Profile menu nebo z Plans/Dashboard quick links. Stack screens pro detail pages.
+
+**Nová dependency:** `react-native-svg@15.12.1` (pro Activity Rings). **Uživatel musí spustit:**
+```bash
+cd apps/mobile
+pnpm install
+npx expo install --check
+```
+
+**API URL:** Mobile teď defaultně cílí na produkční ALB (`http://fitai-production-alb-1685369378.eu-west-1.elb.amazonaws.com`). Override přes `EXPO_PUBLIC_API_URL` env.
+
+### Skipping (do další fáze)
+- Workout in-progress s kamerou + pose detection (vyžaduje native MediaPipe plugin pro RN)
+- Gym session in-progress s rep counterem (stejný důvod)
+
+---
+
 ## [v2 Swap — v2 nyní default] 2026-04-07
 ### Changed
 - Všechny v1 stránky nahrazeny obsahem z v2. Původní URL (`/`, `/login`, `/dashboard`, `/gym`, `/vyziva`, `/lekce`, atd.) zobrazují nový design.
