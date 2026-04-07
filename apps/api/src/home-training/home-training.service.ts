@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 type Mode = 'home' | 'travel' | 'quick';
 
-interface HomeWorkout {
+export interface HomeWorkout {
   mode: Mode;
   title: string;
   durationMin: number;
