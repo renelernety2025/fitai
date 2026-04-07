@@ -30,12 +30,8 @@ export default function NutritionV2Page() {
   const [meal, setMeal] = useState('breakfast');
 
   const reload = () => {
-    Promise.all([getNutritionToday(), getQuickFoods()])
-      .then(([t, q]) => {
-        setData(t);
-        setFoods(q);
-      })
-      .catch(console.error);
+    getNutritionToday().then(setData).catch(console.error);
+    getQuickFoods().then(setFoods).catch(console.error);
   };
   useEffect(reload, []);
 

@@ -53,13 +53,9 @@ export default function AICoachV2Page() {
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
-    Promise.all([getFitnessProfile(), getAsymmetryReport(), getBreakRecovery()])
-      .then(([p, a, b]) => {
-        setProfile(p);
-        setAsymmetry(a);
-        setBreakRecovery(b);
-      })
-      .catch(console.error);
+    getFitnessProfile().then(setProfile).catch(console.error);
+    getAsymmetryReport().then(setAsymmetry).catch(console.error);
+    getBreakRecovery().then(setBreakRecovery).catch(console.error);
   }, []);
 
   async function save(field: string, value: any) {

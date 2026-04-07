@@ -31,18 +31,20 @@ export default function OnboardingV2Page() {
   const [suggested, setSuggested] = useState<SuggestedWeight[]>([]);
 
   useEffect(() => {
-    Promise.all([getOnboardingStatus(), getOnboardingTestExercises()])
-      .then(([status, exs]) => {
-        setTestExercises(exs);
-        if (status.completed) router.push('/dashboard');
-        else if (status.step === 'measurements' || status.step === 'profile') setStep('measurements');
-        else if (status.step === 'fitness_test') setStep('test');
-        else if (status.step === 'finalize') {
-          setStep('review');
-          getSuggestedWeights().then(setSuggested);
+    Promise.allSettled([getOnboardingStatus(), getOnboardingTestExercises()])
+      .then(([statusRes, exsRes]) => {
+        if (exsRes.status === 'fulfilled') setTestExercises(exsRes.value);
+        if (statusRes.status === 'fulfilled') {
+          const status = statusRes.value;
+          if (status.completed) router.push('/dashboard');
+          else if (status.step === 'measurements' || status.step === 'profile') setStep('measurements');
+          else if (status.step === 'fitness_test') setStep('test');
+          else if (status.step === 'finalize') {
+            setStep('review');
+            getSuggestedWeights().then(setSuggested).catch(console.error);
+          }
         }
       })
-      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 

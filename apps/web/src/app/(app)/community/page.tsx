@@ -33,13 +33,9 @@ export default function CommunityV2Page() {
   const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
-    Promise.all([getSocialFeed(), getChallenges(), getFollowCounts()])
-      .then(([f, c, fc]) => {
-        setFeed(f);
-        setChallenges(c);
-        setCounts(fc);
-      })
-      .catch(console.error);
+    getSocialFeed().then(setFeed).catch(console.error);
+    getChallenges().then(setChallenges).catch(console.error);
+    getFollowCounts().then(setCounts).catch(console.error);
   }, []);
 
   useEffect(() => {
