@@ -4,6 +4,22 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [v2 Swap — v2 nyní default] 2026-04-07
+### Changed
+- Všechny v1 stránky nahrazeny obsahem z v2. Původní URL (`/`, `/login`, `/dashboard`, `/gym`, `/vyziva`, `/lekce`, atd.) zobrazují nový design.
+- Smazáno všech 21 v2 directories (`*-v2/`, `v2/`).
+- Všechny interní odkazy přepsány — žádný `-v2` v codebase.
+- `/plans` → 307 redirect na `/gym` (kde je nový list plánů).
+- Nový route `/gym` (gym list — předtím v1 mělo jen `/gym/start` a `/gym/[sessionId]`).
+- Sdílené komponenty `V2Layout` + `V2AuthLayout` zůstávají (`apps/web/src/components/v2/`).
+- Stará `apps/web/src/components/layout/Header.tsx` je dead code (neimportuje ji už žádná stránka), nesmazána pro jistotu.
+- `test-production.sh` upraven: curl `-L` follow redirects, `/plans` nahrazen `/gym`.
+
+### Why
+Uživatel nechce pamatovat `-v2` URL ani zachovávat legacy design.
+
+---
+
 ## [v2 Design System — celá platforma] 2026-04-07
 ### Added
 Kompletní redesign celé platformy v jednotném "Apple Music + Activity Rings" stylu (Jonny Ive era B+C). Stará v1 zůstává živá vedle.

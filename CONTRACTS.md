@@ -144,18 +144,11 @@ Nemazat ani nepřejmenovávat tato pole:
 
 ---
 
-## 🔒 Zámčené v2 stránky (paralelní routes, ne breaking)
+## 🔒 Design system
 
-V2 redesign — stejné URL pattern jako v1, jen s `-v2` suffixem:
-- `/v2` (public landing), `/login-v2`, `/register-v2`, `/onboarding-v2`
-- `/dashboard-v2`, `/gym-v2`, `/vyziva-v2`, `/lekce-v2`, `/progress-v2`
-- `/lekce-v2/[slug]`, `/slovnik-v2`, `/exercises-v2[/id]`, `/plans-v2/[id]`
-- `/doma-v2`, `/ai-coach-v2`, `/videos-v2[/id]`, `/community-v2`
-- `/gym-v2/[sessionId]`, `/workout-v2/[videoId]`
+Celá platforma používá `apps/web/src/components/v2/V2Layout.tsx` (V2Layout, V2SectionLabel, V2Display, V2Stat, V2Ring) a `V2AuthLayout.tsx` (V2AuthLayout, V2Input, V2Button).
 
-Sdílený design system: `apps/web/src/components/v2/V2Layout.tsx` + `V2AuthLayout.tsx`.
-
-**Pravidlo:** Změny v jedné v2 stránce → ověřit konzistenci s `V2Layout.tsx`. Změny v `V2Layout.tsx` ovlivní VŠECHNY v2 stránky.
+**Pravidlo:** Změny v `V2Layout.tsx` ovlivní VŠECHNY stránky v `(app)` group. Změny v `V2AuthLayout.tsx` ovlivní login/register/landing.
 
 ## 🔒 Zámčené frontend stránky (URL paths)
 

@@ -46,7 +46,7 @@ check_contains() {
 }
 
 http_status() {
-  curl -s -o /dev/null -w "%{http_code}" "$1" ${2:+-H "$2"}
+  curl -sL -o /dev/null -w "%{http_code}" "$1" ${2:+-H "$2"}
 }
 
 echo "$(yellow '=== FitAI Regression Tests ===')"
@@ -129,7 +129,7 @@ pages=(
   "/onboarding"
   "/videos"
   "/exercises"
-  "/plans"
+  "/gym"
   "/gym/start"
   "/ai-coach"
   "/lekce"
