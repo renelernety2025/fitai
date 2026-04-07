@@ -27,12 +27,16 @@
         "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "plugins": [
       [
         "expo-camera",
-        { "cameraPermission": "FitAI potřebuje kameru pro sledování formy." }
+        {
+          "cameraPermission": "FitAI potřebuje kameru pro sledování formy."
+        }
       ],
       [
         "expo-notifications",
@@ -40,10 +44,13 @@
           "icon": "./assets/icon.png",
           "color": "#16a34a"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
-      "eas": { "projectId": "" }
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }
