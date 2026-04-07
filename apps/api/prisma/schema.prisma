@@ -384,10 +384,32 @@ model FitnessProfile {
   injuries         String[]
   priorityMuscles  String[]    @default([])
   notes            String?
+  onboardingDone   Boolean     @default(false)
+  age              Int?
+  weightKg         Float?
+  heightCm         Float?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+  oneRepMax OneRepMax[]
+}
+
+model OneRepMax {
+  id          String   @id @default(uuid())
+  profileId   String
+  exerciseId  String
+  estimatedKg Float
+  testReps    Int
+  testWeight  Float
+  source      String   @default("calculated") // calculated, manual, tested
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile FitnessProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, exerciseId])
+  @@index([profileId])
 }
 
 model AIGeneratedPlan {

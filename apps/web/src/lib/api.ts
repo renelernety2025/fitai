@@ -338,6 +338,46 @@ export function endGymSession(sessionId: string) {
   );
 }
 
+// Onboarding (Section C)
+export interface OnboardingStatus {
+  completed: boolean;
+  step: 'profile' | 'measurements' | 'fitness_test' | 'finalize' | 'done';
+  nextAction: string | null;
+}
+
+export interface SuggestedWeight {
+  exerciseId: string;
+  exerciseName: string;
+  oneRMKg: number;
+  recommendedWorkingWeight: number;
+  recommendedReps: number;
+  firstWeekWeight: number;
+}
+
+export function getOnboardingStatus() {
+  return request<OnboardingStatus>('/onboarding/status');
+}
+
+export function getOnboardingTestExercises() {
+  return request<{ id: string; nameCs: string; muscleGroups: string[] }[]>('/onboarding/test-exercises');
+}
+
+export function saveOnboardingMeasurements(data: { age: number; weightKg: number; heightCm: number }) {
+  return request<any>('/onboarding/measurements', { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export function submitFitnessTest(results: { exerciseId: string; weight: number; reps: number }[]) {
+  return request<any>('/onboarding/fitness-test', { method: 'POST', body: JSON.stringify({ results }) });
+}
+
+export function completeOnboarding() {
+  return request<any>('/onboarding/complete', { method: 'POST' });
+}
+
+export function getSuggestedWeights() {
+  return request<SuggestedWeight[]>('/onboarding/suggested-weights');
+}
+
 // Intelligence (Section B)
 export interface Insights {
   plateaus: {

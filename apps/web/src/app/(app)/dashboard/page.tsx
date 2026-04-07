@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Header } from '@/components/layout/Header';
+import { useRouter } from 'next/navigation';
 import {
-  getVideos, getMyStats, getReminderStatus, getInsights,
+  getVideos, getMyStats, getReminderStatus, getInsights, getOnboardingStatus,
   type VideoData, type StatsData, type ReminderData, type Insights,
 } from '@/lib/api';
 
@@ -43,12 +44,18 @@ const DAY_NAMES = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [reminder, setReminder] = useState<ReminderData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
 
   useEffect(() => {
+    // Redirect to onboarding if not completed
+    getOnboardingStatus().then((status) => {
+      if (!status.completed) router.push('/onboarding');
+    }).catch(() => {});
+
     getVideos().then((v) => setVideos(v.slice(0, 3))).catch(console.error);
     getMyStats().then(setStats).catch(console.error);
     getReminderStatus().then(setReminder).catch(console.error);
