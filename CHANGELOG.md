@@ -4,6 +4,72 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section G — Habits & daily check-in] 2026-04-08
+### Added
+- `DailyCheckIn` model (sleep, hydration, steps, mood, energy, soreness, stress, notes)
+- Modul `habits` s endpointy: `GET /today`, `PUT /today`, `/history`, `/stats`
+- Recovery score (0-100) — spočítaný ze 7-day průměru spánku, energie, soreness, stres
+- Streak counter (consecutive check-in days)
+- Web stránka `/habity` — recovery ring + 1-5 scale form + history
+- Mobile `HabityScreen` jako 6. tab v bottom nav
+- Web nav rozšířený o "Habity"
+
+### Why
+Holistic fitness coach — propojuje mimotreningové metriky s recovery score, AI Insights tak ví kdy snížit intenzitu.
+
+### Files
+- `apps/api/prisma/schema.prisma` (+ DailyCheckIn)
+- `apps/api/src/habits/{module,controller,service}.ts`
+- `apps/web/src/app/(app)/habity/page.tsx`
+- `apps/web/src/components/v2/V2Layout.tsx` (+nav)
+- `apps/mobile/src/screens/HabityScreen.tsx`
+- `apps/mobile/src/navigation/AppNavigator.tsx` (+tab)
+
+---
+
+## [Real AI Keys] 2026-04-08
+### Added
+- AWS Secrets Manager: `fitai/anthropic-api-key`, `fitai/openai-api-key`, `fitai/elevenlabs-api-key`, `fitai/elevenlabs-voice-id`
+- ECS task definition (revision 3) injektuje secrets jako env vars
+- IAM: `SecretsManagerReadWrite` policy na `fitai-production-ecs-execution` roli
+
+### Result
+- Claude Haiku **reálně koučuje** s českým personalizovaným feedbackem (test: "Lokte níž, prsou se dotykej! Tlak pomaleji.")
+- ElevenLabs vrací **real Czech audio** (60KB base64 audio na 1 větu)
+- Mock fallbacky pro Anthropic/ElevenLabs/OpenAI vypnuté
+
+---
+
+## [HTTPS na produkci] 2026-04-08
+### Added
+- ACM certifikát pro `fitai.bfevents.cz` (DNS validation, Active24)
+- ALB HTTPS listener (443) s rule `/api/* + /health → API`
+- DNS CNAME `fitai → ALB hostname`
+- `NEXT_PUBLIC_API_URL = https://fitai.bfevents.cz` v CodeBuild env
+
+### Result
+- Web teď běží na **https://fitai.bfevents.cz** — kamera v prohlížeči funguje, pose detection live
+- Stará HTTP URL `fitai-production-alb-...amazonaws.com` zůstává funkční (HTTP listener nezměněn)
+
+---
+
+## [Mobile camera workout — Phase 6 part 1] 2026-04-08
+### Added
+- `apps/mobile/src/screens/CameraWorkoutScreen.tsx` — `expo-camera` mirror mode + manuální rep counter
+- Haptic feedback (`expo-haptics`) při tap, set complete, end
+- RPE modal po každém pracovním setu (1-10)
+- Rest timer (90s countdown)
+- Overall progress display: "CVIK X/Y · CELKEM SET X/Y"
+- "PŘESKOČIT CVIK" + "✓ DOKONČIT TRÉNINK" tlačítka
+- Backend save přes existing `completeGymSet` + `endGymSession`
+- Camera permission flow přes `useCameraPermissions`
+- Linked z `PlanDetailScreen` přes "ZAČÍT" buttony per den
+
+### Skipping (Phase 6 part 2)
+- Native MediaPipe pose detection na mobilu (vyžaduje EAS Build, custom dev build, react-native-vision-camera + frame processor plugin)
+
+---
+
 ## [Mobile v2 — full sync s webem] 2026-04-07
 ### Added
 Mobile React Native app dohnaná na úroveň webu. Stejný v2 design system, stejné featury (kromě pose detection s kamerou — vlastní fáze).
