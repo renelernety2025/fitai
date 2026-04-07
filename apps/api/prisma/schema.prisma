@@ -94,6 +94,7 @@ model User {
   marketplaceItems  MarketplaceItem[]
   foodLogs          FoodLog[]
   dailyCheckIns     DailyCheckIn[]
+  achievementUnlocks AchievementUnlock[]
 }
 
 model UserProgress {
@@ -403,6 +404,35 @@ model FitnessProfile {
   dailyProteinG Int?
   dailyCarbsG   Int?
   dailyFatG     Int?
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  code        String   @unique // first_workout, streak_7, total_100_reps...
+  title       String
+  titleCs     String
+  description String
+  descriptionCs String
+  category    String   // training, streak, milestone, social, exploration
+  icon        String   // emoji nebo SVG ref
+  xpReward    Int      @default(0)
+  threshold   Int?     // např. 7 pro streak_7, 100 pro 100 reps
+  createdAt   DateTime @default(now())
+
+  unlocks AchievementUnlock[]
+}
+
+model AchievementUnlock {
+  id            String   @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
 }
 
 model DailyCheckIn {

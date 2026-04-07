@@ -5,6 +5,7 @@ import { testPushNotification } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
 
 const SECONDARY = [
+  { screen: 'Uspechy', label: 'Úspěchy', color: v2.yellow },
   { screen: 'Exercises', label: 'Cviky', color: v2.green },
   { screen: 'Videos', label: 'Videa', color: v2.blue },
   { screen: 'Doma', label: 'Doma', color: v2.green },

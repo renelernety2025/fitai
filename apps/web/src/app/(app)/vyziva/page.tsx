@@ -12,9 +12,19 @@ import {
   getQuickFoods,
   addFoodLog,
   deleteFoodLog,
+  getNutritionTips,
   type NutritionToday,
   type QuickFood,
+  type NutritionTip,
 } from '@/lib/api';
+
+const nutritionTipColors: Record<string, string> = {
+  protein: '#FF375F',
+  hydration: '#0A84FF',
+  timing: '#FF9500',
+  macros: '#A8FF00',
+  quality: '#BF5AF2',
+};
 
 const MEALS = [
   { value: 'breakfast', label: 'Snídaně' },
@@ -26,12 +36,14 @@ const MEALS = [
 export default function NutritionV2Page() {
   const [data, setData] = useState<NutritionToday | null>(null);
   const [foods, setFoods] = useState<QuickFood[]>([]);
+  const [tips, setTips] = useState<NutritionTip[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [meal, setMeal] = useState('breakfast');
 
   const reload = () => {
     getNutritionToday().then(setData).catch(console.error);
     getQuickFoods().then(setFoods).catch(console.error);
+    getNutritionTips().then((r) => setTips(r.tips)).catch(console.error);
   };
   useEffect(reload, []);
 
@@ -78,6 +90,27 @@ export default function NutritionV2Page() {
         <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="#A8FF00" label="Sacharidy" unit="g" />
         <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} color="#00E5FF" label="Tuky" unit="g" />
       </section>
+
+      {/* AI nutrition tips */}
+      {tips.length > 0 && (
+        <section className="mb-24">
+          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          <div className="space-y-1">
+            {tips.map((t, i) => (
+              <div key={i} className="border-b border-white/8 py-6">
+                <div
+                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+                  style={{ color: nutritionTipColors[t.category] || '#FFF' }}
+                >
+                  {t.category} · {t.priority}
+                </div>
+                <V2Display size="md">{t.title}</V2Display>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">{t.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Meals */}
       <section className="space-y-16">

@@ -16,4 +16,9 @@ export class AiInsightsController {
   weeklyReview(@Request() req: any) {
     return this.service.getWeeklyReview(req.user.id);
   }
+
+  @Get('nutrition-tips')
+  nutritionTips(@Request() req: any) {
+    return this.service.getNutritionTips(req.user.id);
+  }
 }

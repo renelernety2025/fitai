@@ -5,7 +5,16 @@ import {
   getQuickFoods,
   addFoodLog,
   deleteFoodLog,
+  getNutritionTips,
 } from '../lib/api';
+
+const tipColors: Record<string, string> = {
+  protein: '#FF375F',
+  hydration: '#0A84FF',
+  timing: '#FF9500',
+  macros: '#A8FF00',
+  quality: '#BF5AF2',
+};
 import {
   V2Screen,
   V2Display,
@@ -25,12 +34,14 @@ const MEALS = [
 export function VyzivaScreen() {
   const [data, setData] = useState<any>(null);
   const [foods, setFoods] = useState<any[]>([]);
+  const [tips, setTips] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [meal, setMeal] = useState('breakfast');
 
   const reload = () => {
     getNutritionToday().then(setData).catch(console.error);
     getQuickFoods().then(setFoods).catch(console.error);
+    getNutritionTips().then((r: any) => setTips(r.tips || [])).catch(console.error);
   };
   useEffect(reload, []);
 
@@ -65,6 +76,22 @@ export function VyzivaScreen() {
         <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} size={100} color={v2.green} label="Sacharidy" />
         <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} size={100} color={v2.blue} label="Tuky" />
       </View>
+
+      {/* AI tips */}
+      {tips.length > 0 && (
+        <View style={{ marginBottom: 32 }}>
+          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          {tips.map((t, i) => (
+            <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 14 }}>
+              <Text style={{ color: tipColors[t.category] || '#FFF', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
+                {String(t.category || '').toUpperCase()} · {String(t.priority || '').toUpperCase()}
+              </Text>
+              <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>{t.title}</Text>
+              <Text style={{ color: v2.muted, fontSize: 13, lineHeight: 20, marginTop: 4 }}>{t.body}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Meals */}
       {grouped.map((m) => (

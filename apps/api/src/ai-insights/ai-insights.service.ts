@@ -8,6 +8,13 @@ export interface RecoveryTip {
   priority: 'high' | 'medium' | 'low';
 }
 
+export interface NutritionTip {
+  category: 'protein' | 'hydration' | 'timing' | 'macros' | 'quality';
+  title: string;
+  body: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
 export interface WeeklyReview {
   summary: string;
   highlights: string[];
@@ -25,6 +32,7 @@ export class AiInsightsService {
   private readonly logger = new Logger(AiInsightsService.name);
   private tipsCache = new Map<string, CachedItem<RecoveryTip[]>>();
   private reviewCache = new Map<string, CachedItem<WeeklyReview>>();
+  private nutritionCache = new Map<string, CachedItem<NutritionTip[]>>();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(private prisma: PrismaService) {}
@@ -152,6 +160,96 @@ Pouze JSON, žádný další text.`;
         priority: 'low',
       });
     }
+    return tips.slice(0, 3);
+  }
+
+  async getNutritionTips(userId: string): Promise<{ tips: NutritionTip[]; cached: boolean }> {
+    const cached = this.nutritionCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) return { tips: cached.data, cached: true };
+
+    // Get profile + nutrition goals + recent food logs
+    const [profile, recentLogs] = await Promise.all([
+      this.prisma.fitnessProfile.findUnique({ where: { userId } }),
+      this.prisma.foodLog.findMany({
+        where: { userId },
+        orderBy: { date: 'desc' },
+        take: 30,
+      }),
+    ]);
+
+    if (!profile?.dailyKcal && recentLogs.length === 0) {
+      return {
+        tips: [{
+          category: 'macros',
+          title: 'Nastav cíle výživy',
+          body: 'Otevři Výživu a klikni "Spočítat z profilu". Pak budu moci dát personalizované rady.',
+          priority: 'high',
+        }],
+        cached: false,
+      };
+    }
+
+    // Aggregate last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+    const weekLogs = recentLogs.filter((l) => new Date(l.date) >= sevenDaysAgo);
+    const days = new Set(weekLogs.map((l) => new Date(l.date).toISOString().slice(0, 10))).size || 1;
+    const dailyAvg = (key: 'kcal' | 'proteinG' | 'carbsG' | 'fatG') =>
+      weekLogs.reduce((s, l) => s + ((l[key] as number) || 0) * (l.servings || 1), 0) / days;
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey || weekLogs.length === 0) {
+      return { tips: this.staticNutritionTips(profile, weekLogs.length === 0 ? null : { kcal: dailyAvg('kcal'), protein: dailyAvg('proteinG') }), cached: false };
+    }
+
+    try {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic.default({ apiKey });
+      const prompt = `Jsi AI nutriční kouč. Uživatel v posledních 7 dnech jí v průměru:
+- Kalorie: ${Math.round(dailyAvg('kcal'))} kcal (cíl ${profile?.dailyKcal || '?'})
+- Protein: ${Math.round(dailyAvg('proteinG'))}g (cíl ${profile?.dailyProteinG || '?'}g)
+- Sacharidy: ${Math.round(dailyAvg('carbsG'))}g (cíl ${profile?.dailyCarbsG || '?'}g)
+- Tuky: ${Math.round(dailyAvg('fatG'))}g (cíl ${profile?.dailyFatG || '?'}g)
+Cíl uživatele: ${profile?.goal || 'GENERAL_FITNESS'}
+
+Vytvoř 3 konkrétní nutriční tipy v češtině. Vrať JSON pole:
+[{"category":"protein|hydration|timing|macros|quality","title":"krátký nadpis (max 6 slov)","body":"konkrétní rada (max 25 slov)","priority":"high|medium|low"}]
+
+Pouze JSON, žádný další text.`;
+
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error('No JSON');
+      const tips: NutritionTip[] = JSON.parse(jsonMatch[0]);
+      this.nutritionCache.set(userId, { data: tips, expiresAt: Date.now() + this.CACHE_TTL_MS });
+      return { tips, cached: false };
+    } catch (e: any) {
+      this.logger.warn(`Claude nutrition tips failed: ${e.message}`);
+      return { tips: this.staticNutritionTips(profile, { kcal: dailyAvg('kcal'), protein: dailyAvg('proteinG') }), cached: false };
+    }
+  }
+
+  private staticNutritionTips(profile: any, avg: { kcal: number; protein: number } | null): NutritionTip[] {
+    const tips: NutritionTip[] = [];
+    if (!avg) {
+      tips.push({ category: 'quality', title: 'Začni logovat jídlo', body: 'Bez záznamů nemůžu dát konkrétní rady. Loguj alespoň protein.', priority: 'high' });
+      return tips;
+    }
+    if (profile?.dailyProteinG && avg.protein < profile.dailyProteinG * 0.85) {
+      tips.push({ category: 'protein', title: 'Přidej protein', body: `Tvůj průměr je ${Math.round(avg.protein)}g, cíl ${profile.dailyProteinG}g. Přidej shake, tvaroh nebo vajíčka.`, priority: 'high' });
+    }
+    if (profile?.dailyKcal && avg.kcal < profile.dailyKcal * 0.85) {
+      tips.push({ category: 'macros', title: 'Jíš málo kalorií', body: `Průměr ${Math.round(avg.kcal)} vs cíl ${profile.dailyKcal}. Rizik podvýživy a ztráty svalů.`, priority: 'high' });
+    }
+    if (profile?.dailyKcal && avg.kcal > profile.dailyKcal * 1.15) {
+      tips.push({ category: 'macros', title: 'Mírný přebytek kalorií', body: `Průměr ${Math.round(avg.kcal)} vs cíl ${profile.dailyKcal}. Hlídej porce, hlavně večer.`, priority: 'medium' });
+    }
+    tips.push({ category: 'hydration', title: 'Pij vodu mezi jídly', body: '2-3 litry denně. Hydratace ovlivňuje výkon, koncentraci i regeneraci.', priority: 'low' });
     return tips.slice(0, 3);
   }
 

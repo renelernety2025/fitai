@@ -25,6 +25,7 @@ import { HomeTrainingModule } from './home-training/home-training.module';
 import { NutritionModule } from './nutrition/nutrition.module';
 import { HabitsModule } from './habits/habits.module';
 import { AiInsightsModule } from './ai-insights/ai-insights.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AiInsightsModule } from './ai-insights/ai-insights.module';
     NutritionModule,
     HabitsModule,
     AiInsightsModule,
+    AchievementsModule,
   ],
 })
 export class AppModule {}

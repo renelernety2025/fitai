@@ -778,3 +778,40 @@ export function getRecoveryTips() {
 export function getWeeklyReview() {
   return request<{ review: WeeklyReview; cached: boolean }>('/ai-insights/weekly-review');
 }
+
+// ── Achievements (Section J) ──
+export interface Achievement {
+  id: string;
+  code: string;
+  title: string;
+  titleCs: string;
+  description: string;
+  descriptionCs: string;
+  category: string;
+  icon: string;
+  xpReward: number;
+  threshold: number | null;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export function getAchievements() {
+  return request<Achievement[]>('/achievements');
+}
+export function checkAchievements() {
+  return request<{ newlyUnlocked: any[]; total: number }>('/achievements/check', { method: 'POST' });
+}
+export function unlockAchievement(code: string) {
+  return request<any>('/achievements/unlock', { method: 'POST', body: JSON.stringify({ code }) });
+}
+
+// ── AI Nutrition Tips ──
+export interface NutritionTip {
+  category: 'protein' | 'hydration' | 'timing' | 'macros' | 'quality';
+  title: string;
+  body: string;
+  priority: 'high' | 'medium' | 'low';
+}
+export function getNutritionTips() {
+  return request<{ tips: NutritionTip[]; cached: boolean }>('/ai-insights/nutrition-tips');
+}
