@@ -1,0 +1,129 @@
+# FitAI Changelog
+
+Lidsky čitelná historie změn. Aktualizovat při každém deployi.
+
+---
+
+## [Regression Prevention] 2026-04-07
+### Added
+- `CONTRACTS.md` — zámčená API, DB modely, frontend routes, core soubory
+- `REGRESSION_TESTS.md` — checklist co testovat
+- `test-production.sh` — bash script, jeden příkaz otestuje vše
+- `CHANGELOG.md` — tento soubor
+- `CLAUDE.md` — sekce "Regression Prevention Rules"
+
+**Why:** Uživatel se obával že Claude bude přepisovat fungující funkce při dalším vývoji.
+
+---
+
+## [Section D — Education] 2026-04-07
+### Added
+- 8 lekcí (technique, nutrition, recovery, mindset)
+- 16 termínů ve slovníku
+- Lekce týdne widget na dashboardu
+- Pre-workout briefing a post-workout debrief endpointy
+- Stránky `/lekce`, `/lekce/[slug]`, `/slovnik`
+- Header navigace: Lekce, Slovník
+
+### Files
+- `apps/api/src/education/` (module, service, controller)
+- `apps/api/prisma/schema.prisma` (+ EducationLesson, GlossaryTerm)
+- `apps/api/prisma/seed.ts` (+ lessons + glossary)
+- `apps/web/src/app/(app)/lekce/page.tsx`
+- `apps/web/src/app/(app)/lekce/[slug]/page.tsx`
+- `apps/web/src/app/(app)/slovnik/page.tsx`
+
+---
+
+## [Section C — Onboarding + 1RM] 2026-04-07
+### Added
+- 3-step onboarding wizard (measurements, fitness test, review)
+- 1RM test s Epley formulí
+- `OneRepMax` model
+- `FitnessProfile` rozšíření: age, weightKg, heightCm, onboardingDone
+- Stránka `/onboarding`
+
+---
+
+## [Section B — Adaptive Intelligence] 2026-04-07
+### Added
+- `intelligence` modul: plateau detekce, recovery score, weak points, asymmetry
+- Endpointy `/api/intelligence/*`
+- `FitnessProfile.priorityMuscles`
+
+---
+
+## [Section A — Fitness Intelligence] 2026-04-07
+### Added
+- `Exercise.category` (compound/isolation/accessory)
+- `Exercise.instructions` (JSON s detailními instrukcemi)
+- `ExerciseSet.rpe`, `isWarmup`, `tempoSeconds`
+- `WeeklyVolume` model
+- Warmup recommendations, RPE tracking, volume tracking, exercise ordering
+
+---
+
+## [Phase 10 — Content Pipeline] 2026
+### Added
+- `content` modul (URL import, marketplace) — backend ready, mock import
+
+## [Phase 9 — Wearables] 2026
+### Added
+- `wearables` modul (HR sync, recovery score) — backend ready, no mobile bridge yet
+
+## [Phase 8 — 3D Pose] 2026
+### Status
+- Library ready, not wired into pipeline
+
+## [Phase 7 — CV 2.0] 2026
+### Added
+- `vision` modul (rule-based equipment detection)
+
+## [Phase 6 — Mobile RN] 2026
+### Added
+- React Native + Expo app
+- 8 obrazovek
+- Bez kamery zatím
+
+## [Phase 5 — Social] 2026
+### Added
+- `social` modul: follow, feed, challenges, leaderboard
+- Stránka `/community`
+
+## [Phase 4 — PWA + Push] 2026
+### Added
+- Service Worker, Web App Manifest
+- VAPID push notifications
+- `notifications` modul
+
+## [Phase 3 — Monetization] SKIPPED
+Uživatel se rozhodl Stripe vynechat.
+
+## [Phase 2 — Adaptive Intelligence] 2026
+### Added
+- `ai-planner` modul (Claude Haiku → AI plány)
+- Break recovery
+- Plan generation
+
+## [Phase 1 — Smart Coach] 2026
+### Added
+- `coaching` modul: Claude Haiku real-time feedback
+- ElevenLabs Czech voice synthesis
+- Safety checker (real-time alerts)
+- Fallback na Web Speech API
+
+---
+
+## [Initial Setup] 2026
+### Added
+- Monorepo (apps/api, apps/web, apps/mobile, packages/shared, infrastructure)
+- NestJS + Prisma + PostgreSQL backend
+- Next.js 14 + Tailwind frontend
+- AWS infrastruktura: ECS Fargate, RDS, ElastiCache, S3, ALB (Terraform, 68 resources)
+- CodeBuild CI/CD
+- JWT auth
+- MediaPipe pose detection
+- Gym rep counter state machine
+- XP / streak / level systém
+- 8 cviků v knihovně
+- Demo accounts: admin@fitai.com, demo@fitai.com

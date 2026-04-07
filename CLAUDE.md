@@ -164,6 +164,34 @@ NEXT_PUBLIC_API_URL=http://fitai-production-alb-...amazonaws.com
 - Mock fallbacks when API keys missing (so dev/demo works without real costs)
 - AWS infra: ~$60-80/month baseline + AI usage
 
+## Regression Prevention Rules
+
+**PŘED každou změnou:**
+1. PŘEČTI `CONTRACTS.md` — zkontroluj jestli změna nezasahuje do zámčených věcí (API shapes, DB pole, core soubory, routes)
+2. Pokud ano → ZASTAV a zeptej se uživatele s vysvětlením proč a co by se rozbilo
+
+**PO každé větší změně / před deployem:**
+1. SPUSŤ `bash test-production.sh` — všechny testy musí projít
+2. AKTUALIZUJ `CHANGELOG.md` — přidej sekci s datem a popisem
+3. AKTUALIZUJ `ROADMAP.md` — označ co je hotové
+4. AKTUALIZUJ `ARCHITECTURE.md` — pokud přibyl modul/endpoint/model
+5. AKTUALIZUJ `memory/project_state.md`
+
+**NIKDY bez explicitního souhlasu:**
+- Měnit shape existujícího API endpointu (jen přidávat nová pole)
+- Mazat / přejmenovávat DB sloupce
+- Přejmenovávat frontend route (rozbije bookmarks)
+- Modifikovat auth flow nebo `apps/api/src/auth/*`
+- Přepisovat `feedback-engine.ts`, `rep-counter.ts`, `safety-checker.ts`, `smart-voice.ts` (jádro pose detection)
+- Měnit ALB routing pravidla nebo `setGlobalPrefix('api', ...)`
+
+**Auto-update workflow při dokončení feature:**
+1. Implementuj feature
+2. Spusť `test-production.sh`
+3. Pokud projde → commit + push + CodeBuild deploy
+4. Aktualizuj CHANGELOG.md, ROADMAP.md, memory/project_state.md
+5. Pokud nový modul → aktualizuj ARCHITECTURE.md
+
 ## Common Pitfalls (Lessons Learned)
 1. **Don't use `prisma migrate dev`** in production — use `prisma db push`
 2. **Don't run Docker locally** — Docker Desktop is broken on user's Mac, use CodeBuild
