@@ -618,3 +618,31 @@ export function searchUsers(query: string) {
     `/social/search?q=${encodeURIComponent(query)}`,
   );
 }
+
+// ── Home Training (Section E) ──
+export interface HomeWorkoutData {
+  mode: 'home' | 'travel' | 'quick';
+  title: string;
+  durationMin: number;
+  rounds: number;
+  rest: string;
+  exercises: Array<{
+    id: string;
+    name: string;
+    nameCs: string;
+    muscleGroups: string[];
+    reps: number | string;
+    duration?: number;
+    instructions?: any;
+  }>;
+}
+
+export function getQuickWorkout() {
+  return request<HomeWorkoutData>('/home-training/quick');
+}
+export function getHomeWorkout() {
+  return request<HomeWorkoutData>('/home-training/home');
+}
+export function getTravelWorkout() {
+  return request<HomeWorkoutData>('/home-training/travel');
+}

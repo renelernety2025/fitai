@@ -21,6 +21,7 @@ import { ContentModule } from './content/content.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { EducationModule } from './education/education.module';
+import { HomeTrainingModule } from './home-training/home-training.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { EducationModule } from './education/education.module';
     IntelligenceModule,
     OnboardingModule,
     EducationModule,
+    HomeTrainingModule,
   ],
 })
 export class AppModule {}

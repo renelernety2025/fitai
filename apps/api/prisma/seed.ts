@@ -290,11 +290,160 @@ async function main() {
     },
   ];
 
-  for (const ex of exercises) {
+  // Equipment map for existing + bodyweight exercises (Section E)
+  const equipmentMap: Record<string, string[]> = {
+    'Barbell Squat': ['barbell'],
+    'Bench Press': ['barbell', 'bench'],
+    'Deadlift': ['barbell'],
+    'Bicep Curl': ['dumbbell'],
+    'Overhead Press': ['barbell'],
+    'Barbell Row': ['barbell'],
+    'Plank': [],
+    'Lunges': [],
+    'Push-up': [],
+    'Bodyweight Squat': [],
+    'Glute Bridge': [],
+    'Mountain Climbers': [],
+    'Burpees': [],
+    'Jumping Jacks': [],
+    'High Knees': [],
+  };
+
+  // Bodyweight exercises for home / travel / quick workouts (Section E)
+  const bodyweightExercises = [
+    {
+      name: 'Push-up', nameCs: 'Klik',
+      description: 'Bodyweight push exercise targeting chest, shoulders, and triceps.',
+      descriptionCs: 'Klik — prsa, ramena, tricepsy. Bez vybavení.',
+      muscleGroups: ['CHEST', 'SHOULDERS', 'TRICEPS', 'CORE'],
+      difficulty: 'BEGINNER' as const,
+      category: 'compound',
+      instructions: {
+        steps: ['Lehni si na břicho, ruce pod rameny.', 'Zatlač se do plank pozice — tělo rovná linie.', 'Pomalu spouštěj hrudník k zemi (lokty 45°).', 'Tlač zpět nahoru.'],
+        commonMistakes: ['Propadlé boky.', 'Lokty 90° od těla.', 'Neúplný rozsah.'],
+        targetMuscles: { primary: ['Pectoralis major'], secondary: ['Triceps', 'Přední deltoid', 'Core'] },
+        breathing: 'NADECH dolů, VÝDECH nahoru.',
+        tempo: '2-1-1',
+        warmup: '1×10 lehkých kliků na kolenou.',
+        tips: ['Pro snazší variantu klečte na kolenech.', 'Drž core zpevněný.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Plank', nameCs: 'Plank', rules: [{ joint: 'left_elbow', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Propni ruce', feedback_correct: 'Připraven', minDurationMs: 200 },
+        { phase: 'ECCENTRIC', name: 'Lowering', nameCs: 'Spouštění', rules: [{ joint: 'left_elbow', angle_min: 70, angle_max: 140 }], feedback_wrong: 'Kontroluj sestup', feedback_correct: 'Dolů', minDurationMs: 200 },
+        { phase: 'CONCENTRIC', name: 'Pressing', nameCs: 'Tlak', rules: [{ joint: 'left_elbow', angle_min: 100, angle_max: 170 }], feedback_wrong: 'Tlač', feedback_correct: 'Nahoru!', minDurationMs: 200 },
+      ],
+    },
+    {
+      name: 'Bodyweight Squat', nameCs: 'Dřep bez váhy',
+      description: 'Bodyweight squat for legs and glutes.',
+      descriptionCs: 'Dřep bez vybavení — nohy, hýždě, core.',
+      muscleGroups: ['QUADRICEPS', 'GLUTES'],
+      difficulty: 'BEGINNER' as const,
+      category: 'compound',
+      instructions: {
+        steps: ['Stoj na šířku ramen.', 'Klesni dolů — kyčle dozadu, kolena ven.', 'Stehna paralelně se zemí.', 'Tlač z pat zpět nahoru.'],
+        commonMistakes: ['Kolena dovnitř.', 'Mělká hloubka.', 'Záda zaoblená.'],
+        targetMuscles: { primary: ['Quadriceps', 'Gluteus maximus'], secondary: ['Core', 'Hamstringy'] },
+        breathing: 'NADECH dolů, VÝDECH nahoru.',
+        tempo: '2-1-2',
+        warmup: '10 dřepů s vlastní vahou.',
+        tips: ['Ruce před tělem pro rovnováhu.', 'Pohled dopředu.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Stůj', feedback_correct: 'Připraven', minDurationMs: 200 },
+        { phase: 'ECCENTRIC', name: 'Down', nameCs: 'Dolů', rules: [{ joint: 'left_knee', angle_min: 80, angle_max: 140 }], feedback_wrong: 'Klesej', feedback_correct: 'Dolů', minDurationMs: 200 },
+        { phase: 'CONCENTRIC', name: 'Up', nameCs: 'Nahoru', rules: [{ joint: 'left_knee', angle_min: 100, angle_max: 170 }], feedback_wrong: 'Tlač', feedback_correct: 'Nahoru!', minDurationMs: 200 },
+      ],
+    },
+    {
+      name: 'Glute Bridge', nameCs: 'Glute bridge',
+      description: 'Hip thrust on the ground for glutes.',
+      descriptionCs: 'Most na hýždě — leh na zádech, zvedání pánve.',
+      muscleGroups: ['GLUTES', 'HAMSTRINGS', 'CORE'],
+      difficulty: 'BEGINNER' as const,
+      category: 'isolation',
+      instructions: {
+        steps: ['Lehni si na záda, kolena pokrčená.', 'Chodidla na zemi pod koleny.', 'Zvedni pánev nahoru — stiskni hýždě.', 'Drž 1s nahoře, pak pomalu dolů.'],
+        commonMistakes: ['Hyperextenze v zádech.', 'Neúplný rozsah.'],
+        targetMuscles: { primary: ['Gluteus maximus'], secondary: ['Hamstringy', 'Core'] },
+        breathing: 'VÝDECH nahoru, NADECH dolů.',
+        tempo: '2-1-2',
+        warmup: 'Žádný.',
+        tips: ['Stiskni hýždě tak silně, jak jen umíš.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Down', nameCs: 'Dolů', rules: [{ joint: 'left_hip', angle_min: 90, angle_max: 130 }], feedback_wrong: 'Lehni si', feedback_correct: 'Připraven', minDurationMs: 200 },
+        { phase: 'CONCENTRIC', name: 'Up', nameCs: 'Nahoru', rules: [{ joint: 'left_hip', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Stiskni hýždě', feedback_correct: 'Nahoru!', minDurationMs: 200 },
+      ],
+    },
+    {
+      name: 'Mountain Climbers', nameCs: 'Horolezec',
+      description: 'Cardio core exercise from plank position.',
+      descriptionCs: 'Kardio cvik v plank pozici — střídání kolen k hrudi.',
+      muscleGroups: ['CORE', 'SHOULDERS', 'QUADRICEPS'],
+      difficulty: 'INTERMEDIATE' as const,
+      category: 'accessory',
+      instructions: {
+        steps: ['Začni v high plank pozici.', 'Přitáhni jedno koleno k hrudi.', 'Rychle vyměň nohy.', 'Pokračuj v rychlém tempu.'],
+        commonMistakes: ['Zvednutý zadek.', 'Pomalé tempo.'],
+        targetMuscles: { primary: ['Core', 'Hip flexors'], secondary: ['Ramena', 'Quadriceps'] },
+        breathing: 'Pravidelně, rychle.',
+        tempo: 'Rychlé tempo, 30-45s série.',
+        warmup: 'Žádný.',
+        tips: ['Drž boky nízko.', 'Začni pomalu, zrychluj.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Plank', nameCs: 'Plank', rules: [{ joint: 'left_elbow', angle_min: 150, angle_max: 180 }], feedback_wrong: 'Plank pozice', feedback_correct: 'Připraven', minDurationMs: 200 },
+      ],
+    },
+    {
+      name: 'Burpees', nameCs: 'Burpees',
+      description: 'Full body cardio explosive exercise.',
+      descriptionCs: 'Plnotělový kardio cvik — dřep, plank, klik, výskok.',
+      muscleGroups: ['FULL_BODY'],
+      difficulty: 'ADVANCED' as const,
+      category: 'compound',
+      instructions: {
+        steps: ['Stoj.', 'Dřep — ruce na zem.', 'Vyhoď nohy dozadu do plank.', 'Klik (volitelně).', 'Skoč nohy zpět k rukám.', 'Výskok s rukama nad hlavou.'],
+        commonMistakes: ['Propadlá záda v planku.', 'Bez výskoku.'],
+        targetMuscles: { primary: ['Plné tělo'], secondary: [] },
+        breathing: 'Pravidelně.',
+        tempo: 'Stálé tempo, 30-60s série.',
+        warmup: '5 pomalých burpees.',
+        tips: ['Začni bez kliku/výskoku jako varianta.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Stůj', feedback_correct: 'Připraven', minDurationMs: 200 },
+      ],
+    },
+    {
+      name: 'Jumping Jacks', nameCs: 'Jumping Jacks',
+      description: 'Full body warm-up cardio.',
+      descriptionCs: 'Klasický rozcvičovací kardio cvik.',
+      muscleGroups: ['FULL_BODY'],
+      difficulty: 'BEGINNER' as const,
+      category: 'accessory',
+      instructions: {
+        steps: ['Stoj, ruce u boků.', 'Vyskoč — nohy do stran, ruce nad hlavu.', 'Vrať se zpět do stoje.', 'Opakuj rytmicky.'],
+        commonMistakes: ['Příliš pomalé tempo.'],
+        targetMuscles: { primary: ['Plné tělo'], secondary: [] },
+        breathing: 'Pravidelně.',
+        tempo: 'Rychlé, 30-60s série.',
+        warmup: 'Žádný — toto je warm-up.',
+        tips: ['Skvělé pro zahřátí na začátku tréninku.'],
+      },
+      phases: [
+        { phase: 'START', name: 'Standing', nameCs: 'Stoj', rules: [{ joint: 'left_knee', angle_min: 160, angle_max: 180 }], feedback_wrong: 'Stůj', feedback_correct: 'Připraven', minDurationMs: 200 },
+      ],
+    },
+  ];
+
+  for (const ex of [...exercises, ...bodyweightExercises]) {
+    const equipment = equipmentMap[ex.name] ?? [];
     await prisma.exercise.upsert({
       where: { name: ex.name },
-      update: { phases: ex.phases, instructions: (ex as any).instructions, category: (ex as any).category },
-      create: ex as any,
+      update: { phases: ex.phases, instructions: (ex as any).instructions, category: (ex as any).category, equipment },
+      create: { ...(ex as any), equipment },
     });
   }
 
