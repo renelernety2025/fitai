@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY apps/web ./apps/web
 WORKDIR /app/apps/web
 RUN npm run build
 
-FROM node:20-alpine
+FROM public.ecr.aws/docker/library/node:20-alpine
 
 RUN apk add --no-cache curl
 

@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 
 RUN apk add --no-cache ffmpeg openssl
 
@@ -17,7 +17,7 @@ WORKDIR /app/apps/api
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:20-alpine
+FROM public.ecr.aws/docker/library/node:20-alpine
 
 RUN apk add --no-cache ffmpeg curl openssl
 
