@@ -65,7 +65,11 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 
 ### Notifications
 - `POST /api/notifications/subscribe` (web push VAPID)
-- `POST /api/notifications/unsubscribe`
+- `POST /api/notifications/expo-subscribe` (mobile push token)
+- `GET  /api/notifications/preferences`
+- `PUT  /api/notifications/preferences`
+- `POST /api/notifications/test`
+- `POST /api/notifications/send-streak-reminders` (admin)
 
 ### Social
 - `POST /api/social/follow/:userId`

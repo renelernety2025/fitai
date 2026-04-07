@@ -4,6 +4,33 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Push notifications + HTTPS hardening] 2026-04-08
+### Added
+- `User.expoPushToken` field
+- `POST /api/notifications/expo-subscribe` — registrace Expo push tokenu
+- `notification.service.sendExpoToUser()` — push přes Expo Push API (https://exp.host/--/api/v2/push/send)
+- `sendStreakReminders` posílá teď i přes Expo push
+- Mobile auto-registrace tokenu v `auth-context` (login + existing session)
+- Mobile Profile: tlačítko "Otestovat push notifikace"
+- ALB HTTP listener: default action = HTTP 301 → HTTPS (path + query preserved)
+- Mobile API client default URL → `https://fitai.bfevents.cz`
+
+### Why
+- Mobile uživatel dostane reminder když ztratí streak nebo nezacvičil
+- HTTPS redirect — žádný plain HTTP traffic, security best practice
+- Mobile teď konzistentně volá HTTPS API (žádná mixed content varování v budoucnu)
+
+### Files
+- `apps/api/prisma/schema.prisma` (+expoPushToken)
+- `apps/api/src/notifications/notification.{service,controller}.ts`
+- `apps/mobile/src/lib/{api,auth-context}.ts`
+- `apps/mobile/src/screens/ProfileScreen.tsx`
+
+### Skipping
+- VAPID web push — keys nejsou v Secrets, web push zatím nefunguje. Příští krok pokud bude potřeba.
+
+---
+
 ## [Section G — Habits & daily check-in] 2026-04-08
 ### Added
 - `DailyCheckIn` model (sleep, hydration, steps, mood, energy, soreness, stress, notes)
