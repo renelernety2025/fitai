@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface RecoveryTip {
+export interface RecoveryTip {
   category: 'sleep' | 'nutrition' | 'recovery' | 'stress' | 'training';
   title: string;
   body: string;
   priority: 'high' | 'medium' | 'low';
 }
 
-interface WeeklyReview {
+export interface WeeklyReview {
   summary: string;
   highlights: string[];
   improvements: string[];
