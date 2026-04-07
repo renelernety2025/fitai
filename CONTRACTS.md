@@ -93,6 +93,10 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### AI Insights (Section H)
+- `GET /api/ai-insights/recovery-tips`
+- `GET /api/ai-insights/weekly-review`
+
 ### Habits (Section G)
 - `GET /api/habits/today`
 - `PUT /api/habits/today`

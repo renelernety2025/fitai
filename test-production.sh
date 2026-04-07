@@ -104,6 +104,8 @@ api_endpoints=(
   "/api/habits/today"
   "/api/habits/stats"
   "/api/habits/history"
+  "/api/ai-insights/recovery-tips"
+  "/api/ai-insights/weekly-review"
 )
 for ep in "${api_endpoints[@]}"; do
   check "GET $ep" "200" "$(http_status "$ALB$ep" "$AUTH")"

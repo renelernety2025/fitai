@@ -4,6 +4,28 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section H — AI Brain] 2026-04-08
+### Added
+- Modul `ai-insights` s endpointy `/recovery-tips`, `/weekly-review`
+- Claude Haiku generuje **personalizované recovery tipy** podle 7-day habits průměru (sleep, energy, soreness, stress)
+- Claude Haiku generuje **weekly review** podle 7-day workouts + check-ins (summary, highlights, improvements, next week focus)
+- 1h in-memory cache aby Claude nebyl volán pro každý request
+- Static fallback pokud Claude API nedostupné nebo žádná data
+- Web `/habity` page — sekce "AI doporučení" před daily check-in formem
+- Web `/dashboard` — "AI Týdenní review" widget před lekcí týdne
+- Mobile `HabityScreen` + `DashboardScreen` — totéž
+
+### Why
+Uzavírá smyčku habits → AI insights → akce. Uživatel vidí konkrétní personalizované rady místo obecných statistik.
+
+### Files
+- `apps/api/src/ai-insights/{module,controller,service}.ts`
+- `apps/web/src/app/(app)/{habity,dashboard}/page.tsx`
+- `apps/mobile/src/screens/{HabityScreen,DashboardScreen}.tsx`
+- `apps/web/src/lib/api.ts`, `apps/mobile/src/lib/api.ts`
+
+---
+
 ## [Push notifications + HTTPS hardening] 2026-04-08
 ### Added
 - `User.expoPushToken` field
