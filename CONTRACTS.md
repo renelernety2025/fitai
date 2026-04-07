@@ -89,6 +89,16 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### Nutrition (Section F)
+- `GET    /api/nutrition/goals`
+- `PUT    /api/nutrition/goals`
+- `POST   /api/nutrition/goals/auto`
+- `GET    /api/nutrition/today`
+- `GET    /api/nutrition/log?date=`
+- `POST   /api/nutrition/log`
+- `DELETE /api/nutrition/log/:id`
+- `GET    /api/nutrition/quick-foods`
+
 ### Home Training (Section E)
 - `GET  /api/home-training/quick`
 - `GET  /api/home-training/home`
@@ -116,7 +126,8 @@ Nemazat ani nepřejmenovávat tato pole:
 | Model | Zámčená pole |
 |-------|--------------|
 | `User` | `id`, `email`, `passwordHash`, `isAdmin`, `createdAt` |
-| `FitnessProfile` | `userId`, `priorityMuscles`, `age`, `weightKg`, `heightCm`, `onboardingDone` |
+| `FitnessProfile` | `userId`, `priorityMuscles`, `age`, `weightKg`, `heightCm`, `onboardingDone`, `dailyKcal`, `dailyProteinG`, `dailyCarbsG`, `dailyFatG` |
+| `FoodLog` | `id`, `userId`, `date`, `mealType`, `name`, `kcal`, `proteinG`, `carbsG`, `fatG`, `servings` |
 | `Video` | `id`, `title`, `s3Key`, `duration` |
 | `Session` | `id`, `userId`, `videoId`, `startedAt`, `completedAt` |
 | `Exercise` | `id`, `name`, `phases`, `instructions`, `category`, `equipment` |

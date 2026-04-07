@@ -4,6 +4,23 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section F — Nutrition Tracking] 2026-04-07
+### Added
+- `FoodLog` model + `FitnessProfile.dailyKcal/Protein/Carbs/Fat` fields
+- Modul `nutrition` s endpointy: `/goals`, `/goals/auto`, `/today`, `/log` (CRUD), `/quick-foods`
+- TDEE výpočet (Mifflin-St Jeor + activity multiplier + goal úprava)
+- 16 quick foods databáze (kuřecí, vejce, tvaroh, rýže, ovesné vločky, whey...)
+- Stránka `/vyziva` — makro kruhy, jídelníček po jídlech, quick add modal, auto-výpočet z profilu
+- Header link "Výživa"
+
+### Files
+- `apps/api/prisma/schema.prisma` (+ FoodLog, +daily macro fields)
+- `apps/api/src/nutrition/{module,controller,service}.ts`
+- `apps/web/src/app/(app)/vyziva/page.tsx`
+- `apps/web/src/lib/api.ts` (+ nutrition functions)
+
+---
+
 ## [Section E — Training Outside Gym] 2026-04-07
 ### Added
 - `Exercise.equipment String[]` field — bodyweight = `[]`

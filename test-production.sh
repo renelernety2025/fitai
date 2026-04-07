@@ -98,6 +98,9 @@ api_endpoints=(
   "/api/home-training/quick"
   "/api/home-training/home"
   "/api/home-training/travel"
+  "/api/nutrition/goals"
+  "/api/nutrition/today"
+  "/api/nutrition/quick-foods"
 )
 for ep in "${api_endpoints[@]}"; do
   check "GET $ep" "200" "$(http_status "$ALB$ep" "$AUTH")"
@@ -134,6 +137,7 @@ pages=(
   "/community"
   "/progress"
   "/doma"
+  "/vyziva"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"
