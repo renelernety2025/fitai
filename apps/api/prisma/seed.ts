@@ -293,7 +293,7 @@ async function main() {
   for (const ex of exercises) {
     await prisma.exercise.upsert({
       where: { name: ex.name },
-      update: { phases: ex.phases, instructions: (ex as any).instructions },
+      update: { phases: ex.phases, instructions: (ex as any).instructions, category: (ex as any).category },
       create: ex as any,
     });
   }
