@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface PlateauReport {
+export interface PlateauReport {
   exerciseId: string;
   exerciseName: string;
   weeksStagnant: number;
@@ -10,7 +10,7 @@ interface PlateauReport {
   suggestedAction: 'deload' | 'change_rep_range' | 'add_volume' | 'change_exercise' | 'continue';
 }
 
-interface RecoveryReport {
+export interface RecoveryReport {
   formTrend: 'improving' | 'stable' | 'declining';
   rpeTrend: 'manageable' | 'high' | 'overreaching';
   volumeTrend: 'progressive' | 'stable' | 'declining';
@@ -18,7 +18,7 @@ interface RecoveryReport {
   recommendation: string;
 }
 
-interface WeakPointReport {
+export interface WeakPointReport {
   weakMuscleGroups: { muscle: string; reason: string; suggestedExercises: string[] }[];
   asymmetries: { joint: string; severity: number; recommendation: string }[];
 }
