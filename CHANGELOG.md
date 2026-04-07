@@ -4,6 +4,32 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [v2 Design System — celá platforma] 2026-04-07
+### Added
+Kompletní redesign celé platformy v jednotném "Apple Music + Activity Rings" stylu (Jonny Ive era B+C). Stará v1 zůstává živá vedle.
+
+**Sdílené komponenty:**
+- `apps/web/src/components/v2/V2Layout.tsx` — V2Layout, V2SectionLabel, V2Display, V2Stat, V2Ring
+- `apps/web/src/components/v2/V2AuthLayout.tsx` — V2AuthLayout, V2Input, V2Button
+
+**19 nových v2 stránek:**
+- `/v2` (landing), `/login-v2`, `/register-v2`, `/onboarding-v2`
+- `/dashboard-v2`, `/gym-v2`, `/vyziva-v2`, `/lekce-v2`, `/progress-v2`
+- `/lekce-v2/[slug]`, `/slovnik-v2`, `/exercises-v2`, `/exercises-v2/[id]`, `/plans-v2/[id]`
+- `/doma-v2`, `/ai-coach-v2`, `/videos-v2`, `/videos-v2/[id]`, `/community-v2`
+- `/gym-v2/[sessionId]` (gym session in-progress, reskin, logic 1:1)
+- `/workout-v2/[videoId]` (video workout s pose detection, reskin, logic 1:1)
+
+**Princip:** reskin only — žádné změny v API, žádné změny v auth flow, žádné změny v pose detection / rep counter / smart voice / safety checker. Pouze JSX + Tailwind.
+
+**Infrastruktura:**
+- Dockerfile přepnut na AWS Public ECR (`public.ecr.aws/docker/library/node:20-alpine`) — žádné Docker Hub rate limity
+
+### Files added
+17× `apps/web/src/app/(app)/*-v2/...`, 2× `apps/web/src/components/v2/*`, 1× `apps/web/src/app/v2/page.tsx`, 2× `apps/web/src/app/(auth)/*-v2/page.tsx`
+
+---
+
 ## [Section F — Nutrition Tracking] 2026-04-07
 ### Added
 - `FoodLog` model + `FitnessProfile.dailyKcal/Protein/Carbs/Fat` fields
