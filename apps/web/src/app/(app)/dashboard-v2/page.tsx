@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { V2Layout } from '@/components/v2/V2Layout';
 import {
   getMyStats,
   getInsights,
@@ -98,31 +99,8 @@ export default function DashboardV2Page() {
   const firstName = user?.name?.split(' ')[0] || 'Athlete';
 
   return (
-    <div className="min-h-screen bg-black text-white antialiased">
-      {/* Ambient gradient background */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 20%, rgba(255, 55, 95, 0.08) 0%, rgba(0, 0, 0, 1) 60%)',
-        }}
-      />
-
-      {/* Top navigation */}
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <Link href="/dashboard-v2" className="text-sm font-bold tracking-tight">
-          FitAI
-        </Link>
-        <nav className="hidden gap-7 text-[13px] font-medium text-white/55 sm:flex">
-          <Link href="/gym/start" className="transition hover:text-white">Trénink</Link>
-          <Link href="/vyziva" className="transition hover:text-white">Výživa</Link>
-          <Link href="/lekce" className="transition hover:text-white">Lekce</Link>
-          <Link href="/progress" className="transition hover:text-white">Pokrok</Link>
-        </nav>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-6 pb-32">
+    <V2Layout>
+      <>
         {/* ── HERO ── */}
         <section className="flex flex-col items-center pt-12 pb-24 text-center">
           <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
@@ -250,8 +228,8 @@ export default function DashboardV2Page() {
         <div className="text-center text-[9px] font-semibold uppercase tracking-[0.4em] text-white/20">
           FitAI
         </div>
-      </main>
-    </div>
+      </>
+    </V2Layout>
   );
 }
 
