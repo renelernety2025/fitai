@@ -30,6 +30,7 @@ import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
 import { PlanDetailScreen } from '../screens/PlanDetailScreen';
 import { VideoDetailScreen } from '../screens/VideoDetailScreen';
 import { CameraWorkoutScreen } from '../screens/CameraWorkoutScreen';
+import { HabityScreen } from '../screens/HabityScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -92,6 +93,11 @@ function MainTabs() {
         name="Vyziva"
         component={VyzivaScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon label="Výživa" focused={focused} /> }}
+      />
+      <Tab.Screen
+        name="Habity"
+        component={HabityScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Habity" focused={focused} /> }}
       />
       <Tab.Screen
         name="Lekce"

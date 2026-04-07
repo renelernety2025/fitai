@@ -154,3 +154,11 @@ export function deleteFoodLog(id: string) {
   return request<any>(`/nutrition/log/${id}`, { method: 'DELETE' });
 }
 export function getQuickFoods() { return request<any[]>('/nutrition/quick-foods'); }
+
+// ── Habits (Section G) ──
+export function getHabitsToday() { return request<any>('/habits/today'); }
+export function updateHabitsToday(body: any) {
+  return request<any>('/habits/today', { method: 'PUT', body: JSON.stringify(body) });
+}
+export function getHabitsHistory(days = 30) { return request<any[]>(`/habits/history?days=${days}`); }
+export function getHabitsStats() { return request<any>('/habits/stats'); }

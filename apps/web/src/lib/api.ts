@@ -720,3 +720,40 @@ export function deleteFoodLog(id: string) {
 export function getQuickFoods() {
   return request<QuickFood[]>('/nutrition/quick-foods');
 }
+
+// ── Habits (Section G) ──
+export interface DailyCheckIn {
+  id?: string;
+  date?: string;
+  sleepHours: number | null;
+  sleepQuality: number | null;
+  hydrationL: number | null;
+  steps: number | null;
+  mood: number | null;
+  energy: number | null;
+  soreness: number | null;
+  stress: number | null;
+  notes: string | null;
+}
+export interface HabitsStats {
+  recoveryScore: number | null;
+  avgSleep: number | null;
+  avgEnergy: number | null;
+  avgSoreness: number | null;
+  avgStress: number | null;
+  streakDays: number;
+  totalCheckIns: number;
+}
+
+export function getHabitsToday() {
+  return request<DailyCheckIn>('/habits/today');
+}
+export function updateHabitsToday(body: Partial<DailyCheckIn>) {
+  return request<DailyCheckIn>('/habits/today', { method: 'PUT', body: JSON.stringify(body) });
+}
+export function getHabitsHistory(days = 30) {
+  return request<DailyCheckIn[]>(`/habits/history?days=${days}`);
+}
+export function getHabitsStats() {
+  return request<HabitsStats>('/habits/stats');
+}

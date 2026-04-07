@@ -7,6 +7,7 @@ const NAV = [
   { href: '/dashboard', label: 'Dnes' },
   { href: '/gym', label: 'Trénink' },
   { href: '/vyziva', label: 'Výživa' },
+  { href: '/habity', label: 'Habity' },
   { href: '/lekce', label: 'Lekce' },
   { href: '/progress', label: 'Pokrok' },
 ];
