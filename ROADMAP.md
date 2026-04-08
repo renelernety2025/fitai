@@ -59,7 +59,7 @@
 | Real AI keys (Claude, ElevenLabs, OpenAI) v Secrets Manager | ✅ |
 | ECS task def s injektovanými secrets | ✅ revision 3 |
 | Push notifications (Expo) | ✅ Mobile auto-register, sendStreakReminders sends both |
-| VAPID web push keys | ❌ TODO |
+| VAPID web push keys | ✅ (2026-04-08, fitai-api:4) |
 | Mobile API URL → HTTPS default | ✅ |
 | Regression test suite (54/54) | ✅ `test-production.sh` |
 
@@ -95,12 +95,7 @@
    - Port `feedback-engine.ts`, `rep-counter.ts`, `safety-checker.ts` do RN
    - ~1 den práce, ale otevírá plný experience na telefonu
 
-2. **VAPID web push keys**
-   - `npx web-push generate-vapid-keys`
-   - Add do Secrets Manager + ECS task def
-   - Web push reminder funguje pro desktop uživatele
-
-3. **TestFlight / EAS Build distribuce**
+2. **TestFlight / EAS Build distribuce**
    - Apple Developer účet ($99/rok)
    - `eas build --platform ios`
    - Beta tester invites
@@ -154,10 +149,10 @@
 - ~~Real AI keys~~ → ✅ Secrets Manager
 - ~~Mobile bez kamery~~ → 🟡 lite verze, full v Phase 6 part 2
 - ~~CodeBuild manual trigger~~ → ✅ GitHub Actions auto-deploy přes OIDC (2026-04-08)
+- ~~VAPID web push keys missing~~ → ✅ Secrets Manager + ECS task def rev 4 (2026-04-08)
 
 ### Aktivní
 - **TypeScript decorators relaxed** — `strictNullChecks: false` (NestJS interop)
-- **VAPID web push keys missing** — push funguje jen na mobile
 - **No real seed videos** — pouze 3 picsum placeholdery
 - **S3Service AWS credentials warning** — task role asi má perms ale SDK to neví
 - **Weekly volume aggregation** — bez ECS scheduled task na reset/agregaci

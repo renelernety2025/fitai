@@ -4,6 +4,28 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [VAPID web push keys live] 2026-04-08
+### Added
+- VAPID keypair vygenerován přes `npx web-push generate-vapid-keys`
+- AWS Secrets Manager: `fitai/vapid-public-key`, `fitai/vapid-private-key`
+- ECS task definition `fitai-api:4` injektuje `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` jako env vars
+- ECS service `fitai-api-service` přepnut na revizi 4
+
+### Result
+- `GET https://fitai.bfevents.cz/api/notifications/vapid-public-key` vrací reálný klíč (předtím `""`)
+- Backend boot log: `VAPID keys configured` (předtím `WARN: No VAPID keys`)
+- Web push subscribe na `https://fitai.bfevents.cz` teď funguje end-to-end
+- `sendStreakReminders()` posílá web push paralelně s Expo push (mobile)
+
+### Code
+- **Žádná změna v kódu** — `notification.service.ts` byl už hotový, čekal jen na env vars
+- `notification.service.ts:14` volá `webpush.setVapidDetails('mailto:admin@fitai.com', ...)` automaticky když existují
+
+### Why
+Uzavírá poslední ❌ v ROADMAP Infrastructure tabulce. Web push reminders pro desktop uživatele, kteří nemají mobile app.
+
+---
+
 ## [CI/CD GitHub Actions auto-deploy] 2026-04-08
 ### Added
 - `.github/workflows/deploy.yml` — auto-deploy při push na `main`:
