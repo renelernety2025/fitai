@@ -53,6 +53,7 @@
 | AWS S3 + CloudFront | ✅ |
 | AWS CodeBuild (API + Web) | ✅ |
 | AWS Public ECR base images | ✅ (no Docker Hub rate limits) |
+| **GitHub Actions auto-deploy** (OIDC, paths-filter, smoke test) | ✅ |
 | **HTTPS** přes ACM + ALB 443 listener | ✅ `fitai.bfevents.cz` |
 | HTTP → HTTPS 301 redirect | ✅ |
 | Real AI keys (Claude, ElevenLabs, OpenAI) v Secrets Manager | ✅ |
@@ -152,10 +153,10 @@
 - ~~Local Docker broken~~ → ✅ AWS Public ECR
 - ~~Real AI keys~~ → ✅ Secrets Manager
 - ~~Mobile bez kamery~~ → 🟡 lite verze, full v Phase 6 part 2
+- ~~CodeBuild manual trigger~~ → ✅ GitHub Actions auto-deploy přes OIDC (2026-04-08)
 
 ### Aktivní
 - **TypeScript decorators relaxed** — `strictNullChecks: false` (NestJS interop)
-- **CodeBuild manual trigger** — TODO: GitHub webhook
 - **VAPID web push keys missing** — push funguje jen na mobile
 - **No real seed videos** — pouze 3 picsum placeholdery
 - **S3Service AWS credentials warning** — task role asi má perms ale SDK to neví

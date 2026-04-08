@@ -4,6 +4,44 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [CI/CD GitHub Actions auto-deploy] 2026-04-08
+### Added
+- `.github/workflows/deploy.yml` — auto-deploy při push na `main`:
+  - `dorny/paths-filter@v3` detekuje co se změnilo (api/web/schema)
+  - Paralelní `aws codebuild start-build` pro `fitai-api-build` + `fitai-web-build`
+  - Auto-spuštění `fitai-migrate:2` ECS task při změně `schema.prisma`
+  - Smoke test `test-production.sh` po deployi
+  - Concurrency lock `deploy-production` (žádné souběžné deploye)
+  - `workflow_dispatch` pro manuální spuštění
+- `.github/workflows/ci.yml` — PR lint + typecheck (nedeployuje)
+- `docs/GITHUB_ACTIONS_SETUP.md` — referenční návod (OIDC, IAM)
+
+### AWS Infrastructure
+- **OIDC provider** `token.actions.githubusercontent.com` v account 326334468637
+- **IAM role** `fitai-github-actions` s trust policy omezenou na repo `renelernety2025/fitai`
+- **Permissions policy** `fitai-deploy-policy`:
+  - `codebuild:StartBuild` jen na 2 projekty
+  - `ecs:RunTask` pro migrační task
+  - `iam:PassRole` jen na ECS task role
+- **Žádné long-lived AWS klíče** v GitHub secrets — short-lived OIDC tokeny
+
+### Verified end-to-end
+- Run #1 (commit `acc1f2c`): jen workflow soubory → všechny build joby skipnuté ✅
+- Run #2 (commit `64bc938`): change v `health.controller.ts` → `build-api` projel CodeBuildem, smoke test 54/54 ✅
+- `GET https://fitai.bfevents.cz/health` vrací nový `{ status, timestamp }` shape
+
+### Why
+Před: každý deploy = ruční `aws codebuild start-build` × 2 + ruční migrace + ruční test.
+Po: `git push origin main` = automatický build + deploy + migrace + test.
+
+### Files
+- `.github/workflows/deploy.yml`
+- `.github/workflows/ci.yml`
+- `docs/GITHUB_ACTIONS_SETUP.md`
+- `apps/api/src/health/health.controller.ts` (+timestamp pro end-to-end test)
+
+---
+
 ## [Section J — Gamification + AI Nutrition Tips] 2026-04-08
 ### Added
 - **Achievements system**: `Achievement` + `AchievementUnlock` modely, 17 seed achievements ve 6 kategoriích
