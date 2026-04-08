@@ -157,7 +157,7 @@ Nemazat ani nepřejmenovávat tato pole:
 | `GymSession` | `id`, `userId`, `planDayId`, `startedAt`, `completedAt` |
 | `WorkoutPlan` | `id`, `name`, `days` |
 | `WeeklyVolume` | `userId`, `weekStart`, `muscleGroup`, `sets` |
-| `OneRepMax` | `userId`, `exerciseId`, `value`, `testedAt` |
+| `OneRepMax` | `profileId` (→ FitnessProfile), `exerciseId`, `estimatedKg`, `testReps`, `testWeight`, `source`, `createdAt` |
 | `Progress` | `userId`, `xp`, `level`, `streak` |
 | `EducationLesson` | `id`, `slug`, `title`, `content`, `category` |
 | `GlossaryTerm` | `id`, `term`, `definition` |

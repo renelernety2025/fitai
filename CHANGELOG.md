@@ -4,6 +4,37 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [CI hardening — smoke test waits for ECS stability] 2026-04-08
+### Fixed
+- `.github/workflows/deploy.yml` smoke-test job nyní volá `aws ecs wait services-stable`
+  pro `fitai-api-service` + `fitai-web-service` místo blind `sleep 60`
+- Důvod: ECS rolling deploy může trvat 90-180s (start tasku + health checks +
+  ALB target group registrace). Předchozí 60s sleep selhával u pomalejších deployů,
+  smoke test trefil starý kontejner a vrátil 404 na nové endpointy
+- 15s grace sleep po `services-stable` pro ALB target group registraci
+- Run #8 (commit `76feb20`) — první deploy s opraveným pipelinem prošel zelený
+
+### Files
+- `.github/workflows/deploy.yml`
+
+---
+
+## [fix: AI Coach Daily Brief — OneRepMax schema mismatch] 2026-04-08
+### Fixed
+- `getDailyBrief()` v `ai-insights.service.ts` selhával s `TS2353` v CodeBuildu
+  protože dotazoval `OneRepMax` přes `userId` a `testedAt`
+- Reálné schema: `OneRepMax` je keyovaný `profileId` (přes `FitnessProfile`),
+  ne `userId`, a má `createdAt`/`updatedAt`, ne `testedAt`
+- **Restrukturováno na 2-stage parallel load:**
+  - Stage 1: `Promise.all([User, FitnessProfile])`
+  - Stage 2: `Promise.all([checkIns, recentSessions, oneRepMaxes(profile.id), weeklyVolumes])`
+- Fallback `Promise.resolve([])` když uživatel nemá profil
+
+### Files
+- `apps/api/src/ai-insights/ai-insights.service.ts`
+
+---
+
 ## [AI Coach Daily Brief — flagship hero] 2026-04-08
 ### Added
 - **Backend:** Nový endpoint `GET /api/ai-insights/daily-brief`

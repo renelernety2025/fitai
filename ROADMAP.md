@@ -61,7 +61,7 @@
 | Push notifications (Expo) | ✅ Mobile auto-register, sendStreakReminders sends both |
 | VAPID web push keys | ✅ (2026-04-08, fitai-api:4) |
 | Mobile API URL → HTTPS default | ✅ |
-| Regression test suite (54/54) | ✅ `test-production.sh` |
+| Regression test suite (55/55) | ✅ `test-production.sh` |
 
 ### Web (Next.js 14)
 - ✅ Kompletní v2 design system (Apple Music + Activity Rings, Jonny Ive era B+C)
@@ -186,4 +186,5 @@
 - **16 glossary terms**
 - **15 quick foods**
 - **3 home workout modes** (quick/home/travel)
-- **54/54 regression tests passing**
+- **55/55 regression tests passing**
+- **AI Coach Daily Brief** (flagship hero, mood-driven)
