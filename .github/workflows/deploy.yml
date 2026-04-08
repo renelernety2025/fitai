@@ -1,0 +1,174 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  AWS_ACCOUNT_ID: "326334468637"
+  ECS_CLUSTER: fitai-production
+  API_SERVICE: fitai-api-service
+  WEB_SERVICE: fitai-web-service
+
+jobs:
+  detect-changes:
+    name: Detect what changed
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      schema: ${{ steps.filter.outputs.schema }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'packages/**'
+            web:
+              - 'apps/web/**'
+              - 'packages/**'
+            schema:
+              - 'apps/api/prisma/schema.prisma'
+
+  build-api:
+    name: Build API (CodeBuild)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Start fitai-api-build and wait
+        run: |
+          BUILD_ID=$(aws codebuild start-build \
+            --project-name fitai-api-build \
+            --region $AWS_REGION \
+            --query 'build.id' --output text)
+          echo "Build started: $BUILD_ID"
+          echo "build_id=$BUILD_ID" >> $GITHUB_ENV
+          while true; do
+            STATUS=$(aws codebuild batch-get-builds --ids "$BUILD_ID" \
+              --region $AWS_REGION --query 'builds[0].buildStatus' --output text)
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "SUCCEEDED" ]; then break; fi
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "FAULT" ] || \
+               [ "$STATUS" = "STOPPED" ] || [ "$STATUS" = "TIMED_OUT" ]; then
+              echo "::error::Build $BUILD_ID finished with status $STATUS"
+              exit 1
+            fi
+            sleep 15
+          done
+
+  build-web:
+    name: Build Web (CodeBuild)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Start fitai-web-build and wait
+        run: |
+          BUILD_ID=$(aws codebuild start-build \
+            --project-name fitai-web-build \
+            --region $AWS_REGION \
+            --query 'build.id' --output text)
+          echo "Build started: $BUILD_ID"
+          while true; do
+            STATUS=$(aws codebuild batch-get-builds --ids "$BUILD_ID" \
+              --region $AWS_REGION --query 'builds[0].buildStatus' --output text)
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "SUCCEEDED" ]; then break; fi
+            if [ "$STATUS" = "FAILED" ] || [ "$STATUS" = "FAULT" ] || \
+               [ "$STATUS" = "STOPPED" ] || [ "$STATUS" = "TIMED_OUT" ]; then
+              echo "::error::Build $BUILD_ID finished with status $STATUS"
+              exit 1
+            fi
+            sleep 15
+          done
+
+  migrate:
+    name: Run Prisma migrate
+    needs: [detect-changes, build-api]
+    if: needs.detect-changes.outputs.schema == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Run fitai-migrate task
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --task-definition fitai-migrate:2 \
+            --launch-type FARGATE \
+            --region $AWS_REGION \
+            --network-configuration "awsvpcConfiguration={subnets=[subnet-0bd0a6c5d4eadd609,subnet-0d261214e57e14fba],securityGroups=[sg-0bfd908240d06c541]}" \
+            --query 'tasks[0].taskArn' --output text)
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped \
+            --cluster $ECS_CLUSTER \
+            --tasks "$TASK_ARN" \
+            --region $AWS_REGION
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster $ECS_CLUSTER \
+            --tasks "$TASK_ARN" \
+            --region $AWS_REGION \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          echo "Migration exit code: $EXIT_CODE"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migration failed with exit code $EXIT_CODE"
+            exit 1
+          fi
+
+  smoke-test:
+    name: Smoke test production
+    needs: [build-api, build-web, migrate]
+    if: always() && !cancelled() && !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for ECS deploy to stabilize
+        run: sleep 60
+      - name: Run test-production.sh
+        run: |
+          if [ -f test-production.sh ]; then
+            bash test-production.sh
+          else
+            echo "::warning::test-production.sh not found — skipping"
+          fi
+
+  summary:
+    name: Deploy summary
+    needs: [detect-changes, build-api, build-web, migrate, smoke-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print summary
+        run: |
+          echo "## Deploy Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- API build: ${{ needs.build-api.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Web build: ${{ needs.build-web.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Migration: ${{ needs.migrate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke test: ${{ needs.smoke-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Production: https://fitai.bfevents.cz" >> $GITHUB_STEP_SUMMARY
