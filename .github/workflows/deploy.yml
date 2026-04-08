@@ -148,8 +148,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Wait for ECS deploy to stabilize
-        run: sleep 60
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Wait for ECS services to stabilize
+        run: |
+          echo "Waiting for fitai-api-service to reach steady state..."
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $API_SERVICE \
+            --region $AWS_REGION || echo "::warning::API service wait timed out"
+          echo "Waiting for fitai-web-service to reach steady state..."
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $WEB_SERVICE \
+            --region $AWS_REGION || echo "::warning::Web service wait timed out"
+          echo "Both services stable. Sleeping 15s for ALB target group to register..."
+          sleep 15
       - name: Run test-production.sh
         run: |
           if [ -f test-production.sh ]; then
