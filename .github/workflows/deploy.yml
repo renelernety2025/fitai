@@ -109,7 +109,11 @@ jobs:
   migrate:
     name: Run Prisma migrate
     needs: [detect-changes, build-api]
-    if: needs.detect-changes.outputs.schema == 'true'
+    # Always run after a successful API build. `prisma db push` is idempotent —
+    # no-op (~5s) if schema already matches DB, ~15-20s when migrating.
+    # Prevents the failure mode where a previous commit introduced a schema
+    # change but the build failed before migration ran, leaving DB out of
+    # sync with the new code. See 2026-04-08 incident (commit 8e0c071 → 4aac844).
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4

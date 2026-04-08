@@ -4,6 +4,35 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [CI hardening — migrate runs on every deploy] 2026-04-08
+### Fixed
+Incident root cause: dvě kaskádové chyby v deploy cyklu Section L:
+1. Commit `8e0c071` (Section L) měl TypeScript bug v `nutrition.service.ts`.
+   API build selhal, `migrate` job s `needs: [build-api]` neběžel, i když commit
+   přidal `MealPlan` model do `schema.prisma`.
+2. Fix commit `4aac844` opravil jen kód, neměnil schema.prisma. `dorny/paths-filter@v3`
+   porovnává `HEAD` vs `HEAD~1` → `schema: false` → `migrate` skipped.
+3. Build API zelený, ECS deploy úspěšný, ale DB pořád neměla `MealPlan` tabulku.
+4. Smoke test volal `/api/nutrition/meal-plan/current` → 500 `The table public.MealPlan does not exist`.
+
+### Change
+`.github/workflows/deploy.yml` — migrate job teď běží **vždy** po úspěšném
+build-api, nezávisle na paths-filter. `prisma db push --accept-data-loss`
+je idempotent by design: no-op za ~5s pokud schema už matches DB.
+
+- Odstraněno: `if: needs.detect-changes.outputs.schema == 'true'`
+- Přidán komentář vysvětlující rozhodnutí + odkaz na incident
+
+### Trade-off
+- **+15-20s** per deploy (běžně ~5s no-op)
+- **-100%** riziko "chybějící tabulka" incidentů
+- Bezpečnost > 15s
+
+### Files
+- `.github/workflows/deploy.yml`
+
+---
+
 ## [Section L — Generative Meal Planning] 2026-04-08
 ### Added
 - **Schema:** `MealPlan` model s `@@unique([userId, weekStart])` — jeden plán per týden per uživatel,
