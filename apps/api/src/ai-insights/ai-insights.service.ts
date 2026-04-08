@@ -415,35 +415,40 @@ Pouze JSON, žádný další text.`;
       return { brief: cached.data, cached: true };
     }
 
-    // Gather full context in parallel.
+    // Stage 1: load user + profile (small, needed for downstream queries).
+    // Stage 2: parallel-load all heavy data using profile.id where required.
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
     sevenDaysAgo.setUTCHours(0, 0, 0, 0);
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setUTCDate(fourteenDaysAgo.getUTCDate() - 14);
 
-    const [user, profile, checkIns, recentSessions, oneRepMaxes, weeklyVolumes] =
-      await Promise.all([
-        this.prisma.user.findUnique({ where: { id: userId } }),
-        this.prisma.fitnessProfile.findUnique({ where: { userId } }),
-        this.prisma.dailyCheckIn.findMany({
-          where: { userId, date: { gte: sevenDaysAgo } },
-          orderBy: { date: 'desc' },
-        }),
-        this.prisma.workoutSession.findMany({
-          where: { userId, completedAt: { gte: fourteenDaysAgo } },
-          orderBy: { completedAt: 'desc' },
-          take: 10,
-        }),
-        this.prisma.oneRepMax.findMany({
-          where: { userId },
-          orderBy: { testedAt: 'desc' },
-          take: 5,
-        }),
-        this.prisma.weeklyVolume.findMany({
-          where: { userId, weekStart: { gte: sevenDaysAgo } },
-        }),
-      ]);
+    const [user, profile] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.fitnessProfile.findUnique({ where: { userId } }),
+    ]);
+
+    const [checkIns, recentSessions, oneRepMaxes, weeklyVolumes] = await Promise.all([
+      this.prisma.dailyCheckIn.findMany({
+        where: { userId, date: { gte: sevenDaysAgo } },
+        orderBy: { date: 'desc' },
+      }),
+      this.prisma.workoutSession.findMany({
+        where: { userId, completedAt: { gte: fourteenDaysAgo } },
+        orderBy: { completedAt: 'desc' },
+        take: 10,
+      }),
+      profile
+        ? this.prisma.oneRepMax.findMany({
+            where: { profileId: profile.id },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+          })
+        : Promise.resolve([] as any[]),
+      this.prisma.weeklyVolume.findMany({
+        where: { userId, weekStart: { gte: sevenDaysAgo } },
+      }),
+    ]);
 
     const recoveryScore = this.calcRecoveryScore(checkIns);
     const recoveryStatus = this.classifyRecovery(recoveryScore, recentSessions.length);
