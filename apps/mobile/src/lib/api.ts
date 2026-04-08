@@ -180,3 +180,22 @@ export function getAchievements() { return request<any[]>('/achievements'); }
 export function checkAchievements() { return request<any>('/achievements/check', { method: 'POST' }); }
 export function getNutritionTips() { return request<any>('/ai-insights/nutrition-tips'); }
 export function getDailyBrief() { return request<any>('/ai-insights/daily-brief'); }
+
+// ── Section K: Body Progress Photos ──
+export function getProgressPhotos(side?: 'FRONT'|'SIDE'|'BACK') {
+  const q = side ? `?side=${side}` : '';
+  return request<any[]>(`/progress-photos${q}`);
+}
+export function getProgressPhotoStats() { return request<any>('/progress-photos/stats'); }
+export function getProgressPhotoUploadUrl(opts: any) {
+  return request<{ uploadUrl: string; photoId: string; s3Key: string }>(
+    '/progress-photos/upload-url',
+    { method: 'POST', body: JSON.stringify(opts) },
+  );
+}
+export function analyzeProgressPhoto(id: string) {
+  return request<any>(`/progress-photos/${id}/analyze`, { method: 'POST' });
+}
+export function deleteProgressPhoto(id: string) {
+  return request<{ deleted: true }>(`/progress-photos/${id}`, { method: 'DELETE' });
+}

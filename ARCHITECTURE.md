@@ -154,6 +154,14 @@ Achievement (code, titleCs, category, icon, xpReward, threshold)
 AchievementUnlock (userId, achievementId, unlockedAt)
 ```
 
+### Body Progress (Section K)
+```
+BodyPhoto (userId, s3Key, side: FRONT|SIDE|BACK, takenAt, weightKg?, bodyFatPct?, notes?, isAnalyzed)
+BodyAnalysis (bodyPhotoId 1:1, estimatedBodyFatPct?, estimatedMuscleMass?,
+              postureNotes?, visibleStrengths[], areasToWork[], comparisonNotes?,
+              modelUsed: claude-haiku-4-5)
+```
+
 ### Social
 ```
 Follow (followerId, followedId)
@@ -205,6 +213,7 @@ GlossaryTerm (termCs, definitionCs, category)
 | 24 | Habits | /habits/today, /habits/history, /habits/stats | Daily check-in + recovery score (Section G) |
 | 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips, /ai-insights/daily-brief | Claude-powered insights (Section H), 1h cache; daily-brief is flagship hero with 24h cache |
 | 26 | Achievements | /achievements, /achievements/check, /achievements/unlock | Gamification (Section J), 17 seed badges |
+| 27 | ProgressPhotos | /progress-photos, /progress-photos/upload-url, /progress-photos/stats, /progress-photos/:id, /progress-photos/:id/analyze, DELETE /progress-photos/:id | Body progress (Section K), Claude Vision body composition, presigned S3 |
 | — | Prisma | (internal) | Database client |
 
 ## Frontend Architecture
@@ -317,6 +326,18 @@ GlossaryTerm (termCs, definitionCs, category)
 - Auto-unlock via `POST /api/achievements/check` reading UserProgress + sessions + check-ins
 - XP reward on unlock (50-1000 XP per achievement)
 - Manual unlock by code for exploration-style achievements
+
+### 8. Body Progress Photos (Section K)
+- **Upload flow:** client → `POST /upload-url` → presigned S3 PUT URL + DB row pre-created
+  → client uploads JPEG/PNG directly to `s3://fitai-assets-production/progress-photos/{userId}/{id}.jpg`
+- **Privacy:** photos are user-only; service enforces ownership on every read/delete/analyze
+- **Claude Vision analysis:** sends current photo (and previous of same angle if exists)
+  as base64 to `claude-haiku-4-5`, returns structured `{estimatedBodyFatPct, estimatedMuscleMass,
+  postureNotes, visibleStrengths[], areasToWork[], comparisonNotes}` in Czech
+- **Before/after comparison:** web UI has interactive scrubber slider component
+- **Mobile:** `expo-image-picker` → fetch as blob → presigned S3 PUT
+- **IAM:** task role `fitai-production-ecs-task` has S3 Get/Put/Delete/ListBucket
+  on `fitai-assets-production`
 
 ## Pose Detection Pipeline
 

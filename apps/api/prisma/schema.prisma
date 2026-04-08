@@ -95,6 +95,7 @@ model User {
   foodLogs          FoodLog[]
   dailyCheckIns     DailyCheckIn[]
   achievementUnlocks AchievementUnlock[]
+  bodyPhotos        BodyPhoto[]
 }
 
 model UserProgress {
@@ -659,6 +660,54 @@ model ContentImport {
 
   @@index([userId])
 }
+
+// ─── Section K: Body Progress Photos ─────────────────────────────────
+// Private body composition tracking. Photos are user-only by default,
+// optional Claude Vision analysis estimates body fat % and visible
+// changes vs previous photo of the same angle.
+
+enum PhotoSide {
+  FRONT
+  SIDE
+  BACK
+}
+
+model BodyPhoto {
+  id          String     @id @default(uuid())
+  userId      String
+  s3Key       String     // s3://fitai-assets-production/progress-photos/{userId}/{id}.jpg
+  side        PhotoSide  @default(FRONT)
+  takenAt     DateTime   @default(now())
+  weightKg    Float?     // optional metadata at time of photo
+  bodyFatPct  Float?     // user-entered, may be different from analysis
+  notes       String?
+  isAnalyzed  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis BodyAnalysis?
+
+  @@index([userId, takenAt(sort: Desc)])
+  @@index([userId, side, takenAt(sort: Desc)])
+}
+
+model BodyAnalysis {
+  id                  String   @id @default(uuid())
+  bodyPhotoId         String   @unique
+  estimatedBodyFatPct Float?   // Claude Vision estimate
+  estimatedMuscleMass String?  // qualitative: "low|moderate|high|elite"
+  postureNotes        String?  // anterior pelvic tilt, kyphosis, etc.
+  visibleStrengths    String[] @default([])
+  areasToWork         String[] @default([])
+  comparisonNotes     String?  // vs previous photo of same angle
+  rawClaudeResponse   String?  // full text for debugging
+  modelUsed           String   @default("claude-haiku-4-5")
+  createdAt           DateTime @default(now())
+
+  bodyPhoto BodyPhoto @relation(fields: [bodyPhotoId], references: [id], onDelete: Cascade)
+}
+
+// ─── /Section K ──────────────────────────────────────────────────────
 
 model MarketplaceItem {
   id          String   @id @default(uuid())

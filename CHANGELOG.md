@@ -4,6 +4,91 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section K — Body Progress Photos] 2026-04-08
+### Added
+- **Schema:** `BodyPhoto` model + `BodyAnalysis` model + `PhotoSide` enum
+  (FRONT/SIDE/BACK), 1:1 relace, indexy na `userId+takenAt` a `userId+side+takenAt`
+- **Backend modul `progress-photos`** (NestJS):
+  - `POST /api/progress-photos/upload-url` — presigned S3 PUT URL + pre-create DB row
+  - `GET /api/progress-photos?side=` — list všech fotek s presigned GET urly + analýzou
+  - `GET /api/progress-photos/stats` — celkem, by angle, daysTracked
+  - `GET /api/progress-photos/:id` — jedna fotka s analýzou
+  - `POST /api/progress-photos/:id/analyze` — Claude Vision body composition
+  - `DELETE /api/progress-photos/:id` — smaže S3 objekt + DB row
+- **Claude Vision integration:**
+  - Pošle aktuální + předchozí foto stejného úhlu jako base64
+  - Vrací `estimatedBodyFatPct`, `estimatedMuscleMass`, `postureNotes`,
+    `visibleStrengths[]`, `areasToWork[]`, `comparisonNotes`
+  - Model `claude-haiku-4-5`, max 800 tokens
+  - Static fallback když není API key
+- **S3Service fix** (`apps/api/src/videos/s3.service.ts`): odstraněn AWS_ACCESS_KEY_ID
+  check, klient se vytváří unconditionally — ECS Fargate task role auto-discover funguje
+- **AWS IAM:** task role `fitai-production-ecs-task` rozšířena o:
+  - S3 přístup k `fitai-assets-production` bucket (Get/Put/Delete/ListBucket)
+  - `s3:DeleteObject` action pro mazání fotek
+- **Web UI** `apps/web/src/app/(app)/progres-fotky/page.tsx`:
+  - Hero "Tvoje cesta." + popis privacy
+  - Stats grid (4 ringy: total, days tracked, front, bok+zezadu)
+  - 3 upload zóny (FRONT/SIDE/BACK) — drag & file input
+  - Filter chips (Vše/Zepředu/Z boku/Zezadu)
+  - **Before/After slider** — interactive scrubber pro porovnání 2 fotek
+  - Photo grid s hover overlay (Smazat / Porovnat / AI analýza)
+  - Analysis ribbon na spodu karty (% tělesný tuk, svalová hmota)
+- **Web nav:** `V2Layout.tsx` přidán link "Fotky" → `/progres-fotky`
+- **Mobile screen** `ProgressPhotosScreen.tsx`:
+  - Hero + stats + 3 upload buttony (přes `expo-image-picker`)
+  - Filter chips + foto grid + AI analýza + delete
+- **Mobile nav:** `AppNavigator.tsx` přidán Stack screen, Profile menu link "Progress fotky"
+- **Mobile dependency:** `expo-image-picker@~17.0.10` přidán do `package.json`
+  (uživatel musí spustit `pnpm install` v `apps/mobile`)
+- **Regression:** `test-production.sh` přidává:
+  - `/api/progress-photos`
+  - `/api/progress-photos/stats`
+  - `/progres-fotky` web page
+  → 55 → 58 testů
+
+### Privacy & Security
+- Fotky **jen pro vlastníka** — controller čte `req.user.id` a service ověřuje
+  ownership na každém get/delete/analyze (`ForbiddenException` jinak)
+- S3 klíče pod `progress-photos/{userId}/{photoId}.{ext}` — žádný admin endpoint
+- Žádné sociální sdílení by default
+- Presigned GET urly mají TTL 1h
+
+### Why
+**Největší retention boost** podle ROADMAP. Před/po fotky jsou emocionálně
+nejsilnější metric — uživatel vidí svůj progres vizuálně, ne jen jako čísla.
+Claude Vision přidává profesionální feedback bez nutnosti najmout trenéra.
+
+### Migrace
+Schema změna spustí auto-migrate task v GH Actions deploy workflow.
+Nový enum `PhotoSide` + 2 modely + 1 nová relace na User.
+
+### Files (nové i editované)
+**Backend:**
+- `apps/api/prisma/schema.prisma` (+BodyPhoto, +BodyAnalysis, +PhotoSide enum, +User.bodyPhotos)
+- `apps/api/src/progress-photos/{service,controller,module}.ts` (NEW, ~410 řádků)
+- `apps/api/src/app.module.ts` (+ProgressPhotosModule)
+- `apps/api/src/videos/s3.service.ts` (fix init)
+
+**AWS:**
+- IAM role `fitai-production-ecs-task` policy `task-permissions` (rozšíření)
+
+**Web:**
+- `apps/web/src/lib/api.ts` (+typy + 6 endpoint funkcí)
+- `apps/web/src/app/(app)/progres-fotky/page.tsx` (NEW, ~357 řádků)
+- `apps/web/src/components/v2/V2Layout.tsx` (+nav)
+
+**Mobile:**
+- `apps/mobile/src/lib/api.ts` (+endpoint funkce)
+- `apps/mobile/src/screens/ProgressPhotosScreen.tsx` (NEW, ~274 řádků)
+- `apps/mobile/src/screens/ProfileScreen.tsx` (+menu link)
+- `apps/mobile/src/navigation/AppNavigator.tsx` (+Stack screen)
+- `apps/mobile/package.json` (+expo-image-picker)
+
+**Tests:** `test-production.sh` (+3 položky)
+
+---
+
 ## [CI hardening — smoke test waits for ECS stability] 2026-04-08
 ### Fixed
 - `.github/workflows/deploy.yml` smoke-test job nyní volá `aws ecs wait services-stable`

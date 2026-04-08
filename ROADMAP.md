@@ -43,6 +43,7 @@
 | H. AI Brain | ✅ | Claude recovery tips + weekly review + nutrition tips, 1h cache |
 | I. *(přeskočeno, použito jako obecná infra)* | — | — |
 | J. Gamification | ✅ | 17 achievements, auto-unlock + XP rewards, /uspechy, mobile screen |
+| K. Body Progress Photos | ✅ | BodyPhoto + BodyAnalysis modely, S3 upload, Claude Vision analýza, before/after slider, /progres-fotky web + mobile |
 
 ### Infrastructure & DevOps
 | Co | Status |
@@ -61,7 +62,7 @@
 | Push notifications (Expo) | ✅ Mobile auto-register, sendStreakReminders sends both |
 | VAPID web push keys | ✅ (2026-04-08, fitai-api:4) |
 | Mobile API URL → HTTPS default | ✅ |
-| Regression test suite (55/55) | ✅ `test-production.sh` |
+| Regression test suite (58/58) | ✅ `test-production.sh` |
 
 ### Web (Next.js 14)
 - ✅ Kompletní v2 design system (Apple Music + Activity Rings, Jonny Ive era B+C)
@@ -107,11 +108,9 @@
    - Recovery score se zlepší
    - Vyžaduje EAS Build
 
-5. **Section K — Body progress photos**
-   - Před/po fotky
-   - S3 upload (vyžaduje fix S3Service)
-   - Claude Vision body composition analysis
-   - Galerie s před/po sliderem
+5. ~~**Section K — Body progress photos**~~ ✅ HOTOVO 2026-04-08
+   (BodyPhoto + BodyAnalysis modely, Claude Vision, before/after slider,
+   web + mobile parita, S3Service fix, IAM task role rozšířena)
 
 6. ~~**AI workout suggestion of the day**~~ ✅ HOTOVO 2026-04-08 (AI Coach Daily Brief, V2DailyBrief hero)
 
@@ -151,7 +150,7 @@
 ### Aktivní
 - **TypeScript decorators relaxed** — `strictNullChecks: false` (NestJS interop)
 - **No real seed videos** — pouze 3 picsum placeholdery
-- **S3Service AWS credentials warning** — task role asi má perms ale SDK to neví
+- ~~S3Service AWS credentials warning~~ → ✅ Fixed 2026-04-08 (init unconditional, task role auto-discover)
 - **Weekly volume aggregation** — bez ECS scheduled task na reset/agregaci
 
 ---
@@ -186,5 +185,6 @@
 - **16 glossary terms**
 - **15 quick foods**
 - **3 home workout modes** (quick/home/travel)
-- **55/55 regression tests passing**
+- **58/58 regression tests passing**
+- **Section K Body Progress Photos** (Claude Vision, before/after slider)
 - **AI Coach Daily Brief** (flagship hero, mood-driven)

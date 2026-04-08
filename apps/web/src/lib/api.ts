@@ -857,3 +857,69 @@ export interface DailyBrief {
 export function getDailyBrief() {
   return request<{ brief: DailyBrief; cached: boolean }>('/ai-insights/daily-brief');
 }
+
+// ── Section K: Body Progress Photos ──
+export type PhotoSide = 'FRONT' | 'SIDE' | 'BACK';
+
+export interface BodyPhotoAnalysis {
+  estimatedBodyFatPct: number | null;
+  estimatedMuscleMass: string | null;
+  postureNotes: string | null;
+  visibleStrengths: string[];
+  areasToWork: string[];
+  comparisonNotes: string | null;
+}
+
+export interface BodyPhoto {
+  id: string;
+  side: PhotoSide;
+  takenAt: string;
+  weightKg: number | null;
+  bodyFatPct: number | null;
+  notes: string | null;
+  isAnalyzed: boolean;
+  url: string;
+  analysis?: BodyPhotoAnalysis | null;
+}
+
+export interface BodyPhotoStats {
+  total: number;
+  byAngle: { front: number; side: number; back: number };
+  firstTakenAt: string | null;
+  latestTakenAt: string | null;
+  daysTracked: number;
+}
+
+export function getProgressPhotos(side?: PhotoSide) {
+  const q = side ? `?side=${side}` : '';
+  return request<BodyPhoto[]>(`/progress-photos${q}`);
+}
+
+export function getProgressPhoto(id: string) {
+  return request<BodyPhoto>(`/progress-photos/${id}`);
+}
+
+export function getProgressPhotoStats() {
+  return request<BodyPhotoStats>('/progress-photos/stats');
+}
+
+export function getProgressPhotoUploadUrl(opts: {
+  contentType: string;
+  side: PhotoSide;
+  weightKg?: number;
+  bodyFatPct?: number;
+  notes?: string;
+}) {
+  return request<{ uploadUrl: string; photoId: string; s3Key: string }>(
+    '/progress-photos/upload-url',
+    { method: 'POST', body: JSON.stringify(opts) },
+  );
+}
+
+export function analyzeProgressPhoto(id: string) {
+  return request<BodyPhotoAnalysis>(`/progress-photos/${id}/analyze`, { method: 'POST' });
+}
+
+export function deleteProgressPhoto(id: string) {
+  return request<{ deleted: true }>(`/progress-photos/${id}`, { method: 'DELETE' });
+}

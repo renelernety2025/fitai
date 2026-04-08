@@ -93,6 +93,14 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### Body Progress Photos (Section K)
+- `POST /api/progress-photos/upload-url` — `{contentType, side, weightKg?, bodyFatPct?, notes?}` → `{uploadUrl, photoId, s3Key}`
+- `GET  /api/progress-photos?side=FRONT|SIDE|BACK` → `BodyPhoto[]` with presigned `url` + `analysis`
+- `GET  /api/progress-photos/stats` → `{total, byAngle{front,side,back}, firstTakenAt, latestTakenAt, daysTracked}`
+- `GET  /api/progress-photos/:id` → `BodyPhoto`
+- `POST /api/progress-photos/:id/analyze` → triggers Claude Vision, returns `BodyAnalysis`
+- `DELETE /api/progress-photos/:id` → `{deleted: true}` (S3 + DB)
+
 ### Achievements (Section J)
 - `GET  /api/achievements` — list all + unlock state
 - `GET  /api/achievements/unlocked` — only unlocked, with timestamps
@@ -164,6 +172,8 @@ Nemazat ani nepřejmenovávat tato pole:
 | `DailyCheckIn` | `id`, `userId`, `date`, `sleepHours`, `sleepQuality`, `hydrationL`, `steps`, `mood`, `energy`, `soreness`, `stress` |
 | `Achievement` | `id`, `code`, `titleCs`, `category`, `icon`, `xpReward`, `threshold` |
 | `AchievementUnlock` | `id`, `userId`, `achievementId`, `unlockedAt` |
+| `BodyPhoto` | `id`, `userId`, `s3Key`, `side` (PhotoSide enum), `takenAt`, `weightKg`, `bodyFatPct`, `notes`, `isAnalyzed` |
+| `BodyAnalysis` | `id`, `bodyPhotoId`, `estimatedBodyFatPct`, `estimatedMuscleMass`, `postureNotes`, `visibleStrengths[]`, `areasToWork[]`, `comparisonNotes`, `modelUsed` |
 
 **Schema změny vždy přes `prisma db push --accept-data-loss` + seed task.**
 

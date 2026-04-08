@@ -10,14 +10,17 @@ export class S3Service {
   private bucket: string;
 
   constructor() {
-    this.bucket = process.env.S3_BUCKET_VIDEOS || 'fitai-videos';
+    this.bucket = process.env.S3_BUCKET_VIDEOS || 'fitai-videos-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
 
-    if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    // ECS Fargate provides credentials via task role (no env vars needed).
+    // SDK auto-discovers from container metadata. Local dev with explicit
+    // env vars also works — both paths handled.
+    try {
       this.client = new S3Client({ region });
-      this.logger.log('S3 client initialized');
-    } else {
-      this.logger.warn('AWS credentials not configured — S3 uploads will return mock URLs');
+      this.logger.log(`S3 client initialized (bucket=${this.bucket}, region=${region})`);
+    } catch (e: any) {
+      this.logger.error(`S3 client init failed: ${e.message}`);
     }
   }
 
