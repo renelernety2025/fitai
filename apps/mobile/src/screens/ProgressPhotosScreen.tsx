@@ -230,17 +230,23 @@ export function ProgressPhotosScreen({ navigation }: any) {
                 </View>
                 {p.analysis ? (
                   <View>
-                    {p.analysis.estimatedBodyFatPct != null && (
-                      <Text style={{ color: '#A8FF00', fontSize: 13, fontWeight: '600' }}>
-                        ~{p.analysis.estimatedBodyFatPct.toFixed(1)}% tělesný tuk
+                    {p.analysis.estimatedBodyFatPct != null ? (
+                      <>
+                        <Text style={{ color: '#A8FF00', fontSize: 13, fontWeight: '600' }}>
+                          ~{p.analysis.estimatedBodyFatPct.toFixed(1)}% tělesný tuk
+                        </Text>
+                        {p.analysis.estimatedMuscleMass && (
+                          <Text style={{ color: v2.muted, fontSize: 11 }}>
+                            Svalová hmota: {p.analysis.estimatedMuscleMass}
+                          </Text>
+                        )}
+                      </>
+                    ) : (
+                      <Text style={{ color: '#FF9F0A', fontSize: 12 }}>
+                        ⚠ AI nemohla analyzovat — {p.analysis.postureNotes || 'nevhodný snímek'}
                       </Text>
                     )}
-                    {p.analysis.estimatedMuscleMass && (
-                      <Text style={{ color: v2.muted, fontSize: 11 }}>
-                        Svalová hmota: {p.analysis.estimatedMuscleMass}
-                      </Text>
-                    )}
-                    {p.analysis.postureNotes && (
+                    {p.analysis.estimatedBodyFatPct != null && p.analysis.postureNotes && (
                       <Text style={{ color: v2.muted, fontSize: 11, marginTop: 4 }}>
                         {p.analysis.postureNotes}
                       </Text>

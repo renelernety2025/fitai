@@ -296,13 +296,19 @@ function PhotoCard({
       {/* analysis ribbon */}
       {photo.analysis && (
         <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-black/85 px-3 py-2 text-[10px]">
-          {photo.analysis.estimatedBodyFatPct != null && (
-            <div className="font-semibold text-[#A8FF00]">
-              ~{photo.analysis.estimatedBodyFatPct.toFixed(1)}% tělesný tuk
+          {photo.analysis.estimatedBodyFatPct != null ? (
+            <>
+              <div className="font-semibold text-[#A8FF00]">
+                ~{photo.analysis.estimatedBodyFatPct.toFixed(1)}% tělesný tuk
+              </div>
+              {photo.analysis.estimatedMuscleMass && (
+                <div className="text-white/55">Svalová hmota: {photo.analysis.estimatedMuscleMass}</div>
+              )}
+            </>
+          ) : (
+            <div className="text-[#FF9F0A]" title={photo.analysis.postureNotes || ''}>
+              ⚠ AI nemohla analyzovat — {photo.analysis.postureNotes?.slice(0, 60) || 'nevhodný snímek'}
             </div>
-          )}
-          {photo.analysis.estimatedMuscleMass && (
-            <div className="text-white/55">Svalová hmota: {photo.analysis.estimatedMuscleMass}</div>
           )}
         </div>
       )}
