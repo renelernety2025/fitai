@@ -61,8 +61,17 @@ CodeBuild (base: public.ecr.aws/docker/library/node:20-alpine — no DockerHub r
 
 ### CI/CD
 - ECR: `fitai-api`, `fitai-web` (10-image lifecycle)
-- CodeBuild: `fitai-api-build`, `fitai-web-build` (manual trigger via CLI)
+- CodeBuild: `fitai-api-build`, `fitai-web-build`
 - ECS task definition: `fitai-migrate:2` runs `prisma db push && prisma db seed`
+- **GitHub Actions auto-deploy** (`.github/workflows/deploy.yml`):
+  - Trigger: `push` na `main` (+ `workflow_dispatch` pro manuální)
+  - OIDC federation → IAM role `fitai-github-actions` (žádné long-lived AWS keys)
+  - `dorny/paths-filter@v3` detekuje api/web/schema změny
+  - Paralelní `aws codebuild start-build` pro relevantní projekty
+  - Auto-spuštění `fitai-migrate:2` task při změně `prisma/schema.prisma`
+  - Smoke test `test-production.sh` (54/54) po deployi
+  - Concurrency lock `deploy-production`
+- **CI** (`.github/workflows/ci.yml`): PR lint + typecheck (nedeployuje)
 
 ### Monitoring
 - CloudWatch alarms: API CPU/memory >80%, RDS CPU >70%, ALB 5xx >10/5min

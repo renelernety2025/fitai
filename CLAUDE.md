@@ -20,7 +20,7 @@ FitAI je AI-powered fitness platforma s real-time pose detection, gym workout tr
 ```
 fitai/
 ├── apps/
-│   ├── api/            NestJS backend (27 modules)
+│   ├── api/            NestJS backend (26 modules)
 │   ├── web/            Next.js frontend
 │   └── mobile/         React Native (Expo)
 ├── packages/
@@ -50,14 +50,22 @@ fitai/
 - CodeBuild uses `nest build` (works because Docker container has clean TS env)
 
 ### Build & Deploy
-**Local Docker is broken.** Deploy ONLY via AWS CodeBuild:
+**Auto-deploy přes GitHub Actions** (od 2026-04-08, viz `docs/GITHUB_ACTIONS_SETUP.md`):
 ```bash
-git add -A && git commit -m "..." && git push
+git add -A && git commit -m "..." && git push origin main
+# Hotovo. Sleduj: https://github.com/renelernety2025/fitai/actions
+```
+Workflow `.github/workflows/deploy.yml` automaticky:
+- detekuje co se změnilo (api/web/schema přes `dorny/paths-filter`)
+- spustí relevantní CodeBuild projekty paralelně
+- spustí migrační task pokud se měnila `prisma/schema.prisma`
+- proběhne smoke test `test-production.sh` (54/54)
+
+**Manuální fallback** (pokud GH Actions vypadne):
+```bash
 export AWS_PROFILE=fitai
 aws codebuild start-build --project-name fitai-api-build --region eu-west-1
 aws codebuild start-build --project-name fitai-web-build --region eu-west-1
-# Wait until SUCCEEDED, then ECS auto-deploys (force-new-deployment in buildspec)
-# For schema changes:
 aws ecs run-task --cluster fitai-production --task-definition fitai-migrate:2 \
   --launch-type FARGATE --region eu-west-1 \
   --network-configuration "awsvpcConfiguration={subnets=[subnet-0bd0a6c5d4eadd609,subnet-0d261214e57e14fba],securityGroups=[sg-0bfd908240d06c541]}"
@@ -77,7 +85,7 @@ Pages like `/exercises`, `/plans`, `/videos` exist as Next.js routes AND used to
 
 ## Key Files
 
-### Backend Modules (22)
+### Backend Modules (26)
 | Module | Path | Purpose |
 |--------|------|---------|
 | Auth | `src/auth/` | JWT login/register |
@@ -100,6 +108,11 @@ Pages like `/exercises`, `/plans`, `/videos` exist as Next.js routes AND used to
 | Intelligence | `src/intelligence/` | Plateaus, recovery, weak points (Section B) |
 | Onboarding | `src/onboarding/` | 1RM test, fitness assessment (Section C) |
 | Education | `src/education/` | Lessons, glossary, briefings (Section D) |
+| HomeTraining | `src/home-training/` | Bodyweight quick/home/travel workouts (Section E) |
+| Nutrition | `src/nutrition/` | Food log, TDEE, macro goals (Section F) |
+| Habits | `src/habits/` | Daily check-in, recovery score (Section G) |
+| AiInsights | `src/ai-insights/` | Claude recovery/weekly/nutrition tips, 1h cache (Section H) |
+| Achievements | `src/achievements/` | 17 seed badges, auto-unlock + XP rewards (Section J) |
 
 ### Frontend Pages
 ```
@@ -121,6 +134,10 @@ Pages like `/exercises`, `/plans`, `/videos` exist as Next.js routes AND used to
 /slovnik              Glossary (16 terms)
 /community            Social: feed, challenges, people
 /progress             Stats, weekly volume, streak calendar
+/doma                 Home/travel/quick bodyweight workouts (Section E)
+/vyziva               Nutrition: macro rings + AI tips (Section F + H)
+/habity               Daily check-in + recovery score + AI tips (Section G + H)
+/uspechy              17 achievements badges grid (Section J)
 /admin/upload         Admin panel
 ```
 
@@ -146,7 +163,7 @@ OPENAI_API_KEY=                                             # Empty = mock fallb
 ELEVENLABS_API_KEY=                                         # Empty = Web Speech fallback
 VAPID_PUBLIC_KEY=BM_Uf2t3hZuC...
 VAPID_PRIVATE_KEY=sLWzDnRNgd8d...
-NEXT_PUBLIC_API_URL=http://fitai-production-alb-...amazonaws.com
+NEXT_PUBLIC_API_URL=https://fitai.bfevents.cz
 ```
 
 ## Working Style — User Preferences
