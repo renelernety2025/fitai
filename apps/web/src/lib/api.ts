@@ -815,3 +815,45 @@ export interface NutritionTip {
 export function getNutritionTips() {
   return request<{ tips: NutritionTip[]; cached: boolean }>('/ai-insights/nutrition-tips');
 }
+
+// ── AI Coach Daily Brief (flagship) ──
+export type DailyBriefMood = 'push' | 'maintain' | 'recover';
+export type RecoveryStatus = 'fresh' | 'normal' | 'fatigued' | 'overreached';
+
+export interface DailyBriefExercise {
+  name: string;
+  nameCs: string;
+  sets: number;
+  reps: string;
+  weightKg: number | null;
+  rpe: number;
+  restSeconds: number;
+  rationale: string;
+}
+
+export interface DailyBriefWorkout {
+  title: string;
+  estimatedMinutes: number;
+  warmup: string;
+  exercises: DailyBriefExercise[];
+  finisher?: string;
+}
+
+export interface DailyBrief {
+  date: string;
+  greeting: string;
+  headline: string;
+  mood: DailyBriefMood;
+  recoveryStatus: RecoveryStatus;
+  recoveryScore: number;
+  workout: DailyBriefWorkout;
+  rationale: string;
+  motivationalHook: string;
+  nutritionTip: string;
+  alternativeIfTired: string;
+  source: 'claude' | 'rules';
+}
+
+export function getDailyBrief() {
+  return request<{ brief: DailyBrief; cached: boolean }>('/ai-insights/daily-brief');
+}

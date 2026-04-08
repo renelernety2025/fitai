@@ -4,6 +4,55 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [AI Coach Daily Brief — flagship hero] 2026-04-08
+### Added
+- **Backend:** Nový endpoint `GET /api/ai-insights/daily-brief`
+  - Čte 6 zdrojů paralelně: User, FitnessProfile, posledních 7 dní DailyCheckIn, posledních 14 dní WorkoutSession, OneRepMax × 5, WeeklyVolume
+  - Spočítá `recoveryScore` (0-100) z spánku, energie, soreness, stresu
+  - Klasifikuje `recoveryStatus` (`fresh|normal|fatigued|overreached`)
+  - Claude Haiku 4.5 generuje strukturovaný workout (4-6 cviků se sety/reps/RPE/rationale)
+  - **Mood-driven generation:** push (RPE 8-9) / maintain (RPE 7) / recover (RPE 5-6)
+  - Cache 24h per user, klíč `${userId}:${YYYY-MM-DD}` (Europe/Prague)
+  - Static rules-based fallback s 3 rotujícími splity (push/pull/legs) podle dne v roce
+  - Output má 11 polí: `greeting`, `headline`, `mood`, `recoveryStatus`, `recoveryScore`,
+    `workout {title, estimatedMinutes, warmup, exercises[], finisher}`, `rationale`,
+    `motivationalHook`, `nutritionTip`, `alternativeIfTired`, `source`
+- **Web flagship UI:** `apps/web/src/components/v2/V2DailyBrief.tsx`
+  - Mood-driven gradient hero card (push=red, maintain=green, recover=cyan)
+  - Recovery score meter top-right
+  - Hero headline (2-3rem clamp), workout meta, rationale, dual CTA
+  - Třísloupcová sekce: Rozcvička / Nutriční tip / Alternativa když nemáš energii
+  - Strukturovaný plán cviků s set×reps × RPE × rationale per cvik
+  - Motivační quote s mood-colored border
+  - Source watermark (Claude vs rules)
+- **Web napojení:** `dashboard/page.tsx` načte `getDailyBrief()` a renderuje `<V2DailyBrief>` jako první sekci hned pod hero ringy
+- **Mobile parita:** `DashboardScreen.tsx`
+  - Mood-colored card s recovery score, headline, rationale, CTA
+  - Plán cviků pod kartou (čísla 01..n, název, rationale, sets×reps × RPE)
+- **Regression test:** `test-production.sh` přidává `/api/ai-insights/daily-brief` (54 → 55 testů)
+
+### Files
+- `apps/api/src/ai-insights/ai-insights.service.ts` (+450 řádků: types, getDailyBrief, helpers, rulesDailyBrief)
+- `apps/api/src/ai-insights/ai-insights.controller.ts` (+`@Get('daily-brief')`)
+- `apps/web/src/lib/api.ts` (+typy DailyBrief* + getDailyBrief)
+- `apps/web/src/components/v2/V2DailyBrief.tsx` (NEW)
+- `apps/web/src/app/(app)/dashboard/page.tsx` (+ V2DailyBrief integration)
+- `apps/mobile/src/lib/api.ts` (+ getDailyBrief)
+- `apps/mobile/src/screens/DashboardScreen.tsx` (+ Daily Brief card + exercises list)
+- `test-production.sh` (+ endpoint)
+
+### Why
+**Flagship hero feature.** Místo pasivního dashboardu (statistiky + lekce + insights) má uživatel
+jasné, konkrétní AI doporučení **přesně pro dnešek** — jaký workout, proč, kolik kg, RPE,
+rationale per cvik. Tohle propojuje vše hotové (Section A volume, B intelligence, C 1RM,
+G habits, H AI brain) do jednoho akčního brífinku.
+
+### Cost
+Claude Haiku ~2000 tokens / call, cache 24h → ~1 call/user/den → cca $0.0005/user/den.
+Pro 1000 DAU = $0.50/den = $15/měsíc.
+
+---
+
 ## [VAPID web push keys live] 2026-04-08
 ### Added
 - VAPID keypair vygenerován přes `npx web-push generate-vapid-keys`

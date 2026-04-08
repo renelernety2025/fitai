@@ -179,3 +179,4 @@ export function getWeeklyReview() { return request<any>('/ai-insights/weekly-rev
 export function getAchievements() { return request<any[]>('/achievements'); }
 export function checkAchievements() { return request<any>('/achievements/check', { method: 'POST' }); }
 export function getNutritionTips() { return request<any>('/ai-insights/nutrition-tips'); }
+export function getDailyBrief() { return request<any>('/ai-insights/daily-brief'); }

@@ -103,6 +103,7 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `GET /api/ai-insights/recovery-tips`
 - `GET /api/ai-insights/weekly-review`
 - `GET /api/ai-insights/nutrition-tips`
+- `GET /api/ai-insights/daily-brief` — flagship: structured workout for today (greeting, headline, mood, recoveryStatus, recoveryScore, workout{title,estimatedMinutes,warmup,exercises[],finisher}, rationale, motivationalHook, nutritionTip, alternativeIfTired, source)
 
 ### Habits (Section G)
 - `GET /api/habits/today`

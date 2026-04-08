@@ -7,6 +7,7 @@ import {
   getLessonOfTheWeek,
   getNutritionToday,
   getWeeklyReview,
+  getDailyBrief,
 } from '../lib/api';
 import {
   V2Screen,
@@ -25,6 +26,7 @@ export function DashboardScreen({ navigation }: any) {
   const [lesson, setLesson] = useState<any>(null);
   const [nutrition, setNutrition] = useState<any>(null);
   const [weekly, setWeekly] = useState<any>(null);
+  const [brief, setBrief] = useState<any>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -32,7 +34,19 @@ export function DashboardScreen({ navigation }: any) {
     getLessonOfTheWeek().then(setLesson).catch(console.error);
     getNutritionToday().then(setNutrition).catch(console.error);
     getWeeklyReview().then((r: any) => setWeekly(r.review)).catch(console.error);
+    getDailyBrief().then((r: any) => setBrief(r.brief)).catch(console.error);
   }, []);
+
+  const moodColor: Record<string, string> = {
+    push: v2.red,
+    maintain: v2.green,
+    recover: v2.blue,
+  };
+  const moodLabelMap: Record<string, string> = {
+    push: 'PUSH DAY',
+    maintain: 'MAINTAIN',
+    recover: 'RECOVER',
+  };
 
   const move = stats && stats.totalSessions > 0 ? Math.min(1, stats.totalSessions / 5) : 0.15;
   const exercise = stats ? Math.min(1, (stats.currentStreak || 0) / 7) : 0.25;
@@ -101,6 +115,115 @@ export function DashboardScreen({ navigation }: any) {
           <V2Stat value={stats.totalSessions || 0} label="Cvičení" />
           <V2Stat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hodin" />
           <V2Stat value={stats.totalXP || 0} label="XP" />
+        </View>
+      )}
+
+      {/* Daily Brief — AI Coach flagship */}
+      {brief && (
+        <View
+          style={{
+            marginBottom: 32,
+            borderRadius: 24,
+            borderWidth: 1,
+            borderColor: v2.border,
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            padding: 24,
+            overflow: 'hidden',
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: moodColor[brief.mood] + '55',
+                backgroundColor: moodColor[brief.mood] + '22',
+              }}
+            >
+              <Text style={{ color: moodColor[brief.mood], fontSize: 9, fontWeight: '700', letterSpacing: 2 }}>
+                {moodLabelMap[brief.mood] || 'TODAY'}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>RECOVERY</Text>
+              <Text style={{ color: v2.text, fontSize: 22, fontWeight: '700', letterSpacing: -1 }}>
+                {brief.recoveryScore}
+                <Text style={{ color: v2.ghost, fontSize: 12 }}>/100</Text>
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              color: v2.text,
+              fontSize: 24,
+              fontWeight: '700',
+              letterSpacing: -0.6,
+              lineHeight: 30,
+              marginBottom: 12,
+            }}
+          >
+            {brief.headline}
+          </Text>
+
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            <Text style={{ color: v2.text, fontSize: 13, fontWeight: '600' }}>{brief.workout.title}</Text>
+            <Text style={{ color: v2.muted, fontSize: 13 }}>· {brief.workout.estimatedMinutes} min</Text>
+            <Text style={{ color: v2.muted, fontSize: 13 }}>· {brief.workout.exercises.length} cviků</Text>
+          </View>
+
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 22, marginBottom: 16 }}>
+            {brief.rationale}
+          </Text>
+
+          <Pressable
+            onPress={() => navigation.navigate('Plans')}
+            style={{
+              backgroundColor: '#FFF',
+              paddingVertical: 14,
+              paddingHorizontal: 24,
+              borderRadius: 999,
+              alignSelf: 'flex-start',
+            }}
+          >
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>Začít trénink →</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Daily Brief — exercises */}
+      {brief && brief.workout.exercises.length > 0 && (
+        <View style={{ marginBottom: 48 }}>
+          <V2SectionLabel>Plán cviků</V2SectionLabel>
+          {brief.workout.exercises.map((ex: any, i: number) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                paddingVertical: 14,
+                borderBottomWidth: i < brief.workout.exercises.length - 1 ? 1 : 0,
+                borderColor: v2.border,
+              }}
+            >
+              <Text style={{ color: v2.ghost, fontSize: 11, fontWeight: '700', width: 28 }}>
+                {String(i + 1).padStart(2, '0')}
+              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: v2.text, fontSize: 15, fontWeight: '600' }}>{ex.nameCs}</Text>
+                {ex.rationale ? (
+                  <Text style={{ color: v2.muted, fontSize: 11, marginTop: 2 }}>{ex.rationale}</Text>
+                ) : null}
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ color: v2.text, fontSize: 13, fontWeight: '700' }}>
+                  {ex.sets}×{ex.reps}
+                </Text>
+                <Text style={{ color: v2.ghost, fontSize: 11 }}>RPE {ex.rpe}</Text>
+              </View>
+            </View>
+          ))}
         </View>
       )}
 

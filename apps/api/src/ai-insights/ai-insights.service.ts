@@ -22,6 +22,43 @@ export interface WeeklyReview {
   nextWeekFocus: string;
 }
 
+export type RecoveryStatus = 'fresh' | 'normal' | 'fatigued' | 'overreached';
+export type DailyBriefMood = 'push' | 'maintain' | 'recover';
+
+export interface DailyBriefExercise {
+  name: string;
+  nameCs: string;
+  sets: number;
+  reps: string; // "5-6" or "8-10" or "AMRAP"
+  weightKg: number | null; // null for bodyweight
+  rpe: number; // 1-10
+  restSeconds: number;
+  rationale: string; // why this exercise today (max ~15 words)
+}
+
+export interface DailyBriefWorkout {
+  title: string; // "Push (síla)" / "Pull (objem)"
+  estimatedMinutes: number;
+  warmup: string;
+  exercises: DailyBriefExercise[];
+  finisher?: string; // optional conditioning piece
+}
+
+export interface DailyBrief {
+  date: string; // YYYY-MM-DD (Europe/Prague)
+  greeting: string;
+  headline: string; // single power line for hero (max 60 chars)
+  mood: DailyBriefMood; // tells UI what color/energy to use
+  recoveryStatus: RecoveryStatus;
+  recoveryScore: number; // 0-100
+  workout: DailyBriefWorkout;
+  rationale: string; // 2-3 sentences why this workout, ties data together
+  motivationalHook: string; // 1 sentence, action-oriented
+  nutritionTip: string; // single sentence pre/post workout fueling tip
+  alternativeIfTired: string; // 1 sentence light-day fallback
+  source: 'claude' | 'rules'; // which path generated this
+}
+
 interface CachedItem<T> {
   data: T;
   expiresAt: number;
@@ -33,6 +70,7 @@ export class AiInsightsService {
   private tipsCache = new Map<string, CachedItem<RecoveryTip[]>>();
   private reviewCache = new Map<string, CachedItem<WeeklyReview>>();
   private nutritionCache = new Map<string, CachedItem<NutritionTip[]>>();
+  private dailyBriefCache = new Map<string, CachedItem<DailyBrief>>();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(private prisma: PrismaService) {}
@@ -359,6 +397,395 @@ Pouze JSON, žádný další text.`;
         sessionCount < 3
           ? 'Cíl: 3+ tréninky příští týden.'
           : 'Cíl: udrž rytmus a přidej regeneraci.',
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // AI Coach Daily Brief — flagship hero feature
+  // Reads everything we know about the user (recovery, weekly volume,
+  // plateau, injuries, profile, history) and generates a structured
+  // workout plan for today + the rationale that ties it all together.
+  // Cache: 24h per user, keyed by Europe/Prague date.
+  // ─────────────────────────────────────────────────────────────────
+  async getDailyBrief(userId: string): Promise<{ brief: DailyBrief; cached: boolean }> {
+    const todayKey = this.localDateKey();
+    const cacheKey = `${userId}:${todayKey}`;
+    const cached = this.dailyBriefCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return { brief: cached.data, cached: true };
+    }
+
+    // Gather full context in parallel.
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setUTCDate(fourteenDaysAgo.getUTCDate() - 14);
+
+    const [user, profile, checkIns, recentSessions, oneRepMaxes, weeklyVolumes] =
+      await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId } }),
+        this.prisma.fitnessProfile.findUnique({ where: { userId } }),
+        this.prisma.dailyCheckIn.findMany({
+          where: { userId, date: { gte: sevenDaysAgo } },
+          orderBy: { date: 'desc' },
+        }),
+        this.prisma.workoutSession.findMany({
+          where: { userId, completedAt: { gte: fourteenDaysAgo } },
+          orderBy: { completedAt: 'desc' },
+          take: 10,
+        }),
+        this.prisma.oneRepMax.findMany({
+          where: { userId },
+          orderBy: { testedAt: 'desc' },
+          take: 5,
+        }),
+        this.prisma.weeklyVolume.findMany({
+          where: { userId, weekStart: { gte: sevenDaysAgo } },
+        }),
+      ]);
+
+    const recoveryScore = this.calcRecoveryScore(checkIns);
+    const recoveryStatus = this.classifyRecovery(recoveryScore, recentSessions.length);
+    const greeting = this.greeting(user?.name);
+
+    // Decide focus split based on what we trained recently
+    const recentMuscles = recentSessions
+      .map((s: any) => s.workoutType || '')
+      .filter(Boolean)
+      .slice(0, 3);
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      try {
+        const Anthropic = require('@anthropic-ai/sdk');
+        const client = new Anthropic.default({ apiKey });
+        const goal = profile?.goal || 'GENERAL_FITNESS';
+        const exp = profile?.experienceMonths ?? 0;
+        const equipment = profile?.equipment?.join(', ') || 'gym';
+        const injuries = profile?.injuries?.length
+          ? profile.injuries.join(', ')
+          : 'žádná';
+        const weeklyVolStr = weeklyVolumes.length
+          ? weeklyVolumes
+              .map((v: any) => `${v.muscleGroup}: ${v.totalSets || 0} setů`)
+              .join('; ')
+          : 'žádná data';
+        const oneRMStr = oneRepMaxes.length
+          ? oneRepMaxes.map((o: any) => `${o.exerciseId}: ${Math.round(o.estimatedKg)}kg`).join('; ')
+          : 'neznámé';
+
+        const prompt = `Jsi elitní AI fitness trenér. Dnes (${todayKey}) generuješ osobní BRIÉFINK pro uživatele.
+
+PROFIL:
+- Jméno: ${user?.name || 'Athlete'}
+- Cíl: ${goal}
+- Zkušenosti: ${exp} měsíců
+- Vybavení: ${equipment}
+- Zranění: ${injuries}
+- Priority svaly: ${profile?.priorityMuscles?.join(', ') || 'žádné'}
+
+REGENERACE (posledních 7 dní):
+- Recovery score: ${recoveryScore}/100 (status: ${recoveryStatus})
+- Check-iny: ${checkIns.length}/7
+${
+  checkIns.length > 0
+    ? `- Průměr spánku: ${this.avg(checkIns, 'sleepHours')?.toFixed(1) || '?'}h
+- Průměr energie: ${this.avg(checkIns, 'energy')?.toFixed(1) || '?'}/5
+- Průměr soreness: ${this.avg(checkIns, 'soreness')?.toFixed(1) || '?'}/5
+- Průměr stresu: ${this.avg(checkIns, 'stress')?.toFixed(1) || '?'}/5`
+    : '- Žádná data, použij konzervativní RPE'
+}
+
+POSLEDNÍ TRÉNINKY (posledních 14 dní):
+- Počet sessions: ${recentSessions.length}
+- Recent typy: ${recentMuscles.join(', ') || 'neznámé'}
+
+WEEKLY VOLUME:
+${weeklyVolStr}
+
+1RM:
+${oneRMStr}
+
+ÚKOL: Vygeneruj DNEŠNÍ workout. Vyber správný split (push/pull/legs nebo full body), zohledni:
+1. Co poslední 3 dny netrénoval = dej tomu prioritu
+2. Pokud recovery < 50 → mood: "recover", lehké RPE 5-6
+3. Pokud recovery 50-75 → mood: "maintain", RPE 7
+4. Pokud recovery > 75 → mood: "push", RPE 8-9
+5. Vyhni se cvikům co dráždí zranění
+
+Vrať POUZE JSON, žádný další text:
+{
+  "headline": "krátká motivační věta (max 60 znaků)",
+  "mood": "push|maintain|recover",
+  "workout": {
+    "title": "krátký název (např. 'Push (síla)')",
+    "estimatedMinutes": 45,
+    "warmup": "1 věta — co před tréninkem",
+    "exercises": [
+      {
+        "name": "Bench Press",
+        "nameCs": "Bench press",
+        "sets": 4,
+        "reps": "5-6",
+        "weightKg": 60,
+        "rpe": 8,
+        "restSeconds": 180,
+        "rationale": "krátký důvod (max 12 slov)"
+      }
+    ],
+    "finisher": "volitelně — krátký kondiční prvek"
+  },
+  "rationale": "2-3 věty — proč tento workout dnes, propoj data",
+  "motivationalHook": "1 silná motivační věta",
+  "nutritionTip": "1 věta — co jíst/pít okolo tréninku",
+  "alternativeIfTired": "1 věta — co dělat pokud nemáš energii"
+}
+
+Pravidla:
+- 4-6 cviků (kromě recover dnů: 3-4)
+- waitKg = null pro bodyweight
+- rpe odpovídá mood
+- vše v češtině`;
+
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        const text = response.content[0].type === 'text' ? response.content[0].text : '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON in response');
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        const brief: DailyBrief = {
+          date: todayKey,
+          greeting,
+          headline: parsed.headline || 'Připraven na dnešek?',
+          mood: this.normalizeMood(parsed.mood),
+          recoveryStatus,
+          recoveryScore,
+          workout: this.normalizeWorkout(parsed.workout),
+          rationale: parsed.rationale || '',
+          motivationalHook: parsed.motivationalHook || '',
+          nutritionTip: parsed.nutritionTip || '',
+          alternativeIfTired: parsed.alternativeIfTired || '',
+          source: 'claude',
+        };
+        this.dailyBriefCache.set(cacheKey, {
+          data: brief,
+          expiresAt: this.endOfTodayMs(),
+        });
+        return { brief, cached: false };
+      } catch (e: any) {
+        this.logger.warn(`Claude daily brief failed: ${e.message}`);
+        // fall through to rules
+      }
+    }
+
+    // Rules-based fallback
+    const brief = this.rulesDailyBrief({
+      todayKey,
+      greeting,
+      recoveryScore,
+      recoveryStatus,
+      profile,
+      recentSessions,
+    });
+    this.dailyBriefCache.set(cacheKey, {
+      data: brief,
+      expiresAt: this.endOfTodayMs(),
+    });
+    return { brief, cached: false };
+  }
+
+  // ── helpers ──
+  private localDateKey(): string {
+    // Europe/Prague — same offset as user's primary tz
+    const now = new Date();
+    const tz = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Europe/Prague',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+    return tz; // already YYYY-MM-DD in sv-SE
+  }
+
+  private endOfTodayMs(): number {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return end.getTime();
+  }
+
+  private greeting(name?: string | null): string {
+    const hour = new Date().getHours();
+    const first = name?.split(' ')[0] || 'Athlete';
+    if (hour < 11) return `Dobré ráno, ${first}.`;
+    if (hour < 17) return `Dobré odpoledne, ${first}.`;
+    return `Dobrý večer, ${first}.`;
+  }
+
+  private avg(items: any[], key: string): number | null {
+    const vals = items.map((i) => i[key]).filter((v): v is number => typeof v === 'number');
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+
+  private calcRecoveryScore(checkIns: any[]): number {
+    if (!checkIns.length) return 60; // unknown → neutral
+    const sleep = this.avg(checkIns, 'sleepHours');
+    const energy = this.avg(checkIns, 'energy');
+    const soreness = this.avg(checkIns, 'soreness');
+    const stress = this.avg(checkIns, 'stress');
+    let score = 50;
+    if (sleep != null) score += Math.max(-15, Math.min(20, (sleep - 6.5) * 6));
+    if (energy != null) score += (energy - 3) * 8;
+    if (soreness != null) score += (3 - soreness) * 6;
+    if (stress != null) score += (3 - stress) * 5;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  private classifyRecovery(score: number, recentSessions: number): RecoveryStatus {
+    if (score >= 80) return 'fresh';
+    if (score >= 55) return 'normal';
+    if (score >= 35 || recentSessions <= 2) return 'fatigued';
+    return 'overreached';
+  }
+
+  private normalizeMood(m: any): DailyBriefMood {
+    if (m === 'push' || m === 'maintain' || m === 'recover') return m;
+    return 'maintain';
+  }
+
+  private normalizeWorkout(w: any): DailyBriefWorkout {
+    return {
+      title: typeof w?.title === 'string' ? w.title : 'Trénink',
+      estimatedMinutes: Number(w?.estimatedMinutes) || 45,
+      warmup: typeof w?.warmup === 'string' ? w.warmup : '5 min lehké kardio + dynamický strečink.',
+      exercises: Array.isArray(w?.exercises)
+        ? w.exercises.slice(0, 8).map((e: any) => ({
+            name: String(e?.name || 'Cvik'),
+            nameCs: String(e?.nameCs || e?.name || 'Cvik'),
+            sets: Number(e?.sets) || 3,
+            reps: String(e?.reps || '8-10'),
+            weightKg: e?.weightKg != null ? Number(e.weightKg) : null,
+            rpe: Number(e?.rpe) || 7,
+            restSeconds: Number(e?.restSeconds) || 90,
+            rationale: String(e?.rationale || ''),
+          }))
+        : [],
+      finisher: typeof w?.finisher === 'string' ? w.finisher : undefined,
+    };
+  }
+
+  private rulesDailyBrief(ctx: {
+    todayKey: string;
+    greeting: string;
+    recoveryScore: number;
+    recoveryStatus: RecoveryStatus;
+    profile: any;
+    recentSessions: any[];
+  }): DailyBrief {
+    const { recoveryScore, recoveryStatus, profile } = ctx;
+    const mood: DailyBriefMood =
+      recoveryScore >= 75 ? 'push' : recoveryScore >= 50 ? 'maintain' : 'recover';
+    const rpe = mood === 'push' ? 8 : mood === 'maintain' ? 7 : 5;
+
+    // Pick a rotating split based on day-of-year (simple but stable)
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+    const splits = [
+      {
+        title: 'Push (hrudník + ramena + triceps)',
+        exercises: [
+          { name: 'Bench Press', nameCs: 'Bench press', sets: 4, reps: '5-8', weightKg: null, rpe, restSeconds: 150, rationale: 'Hlavní compound — vytváří sílu' },
+          { name: 'Overhead Press', nameCs: 'Tlaky nad hlavu', sets: 3, reps: '6-8', weightKg: null, rpe, restSeconds: 120, rationale: 'Ramena — stability + síla' },
+          { name: 'Incline DB Press', nameCs: 'Šikmé tlaky s činkami', sets: 3, reps: '8-10', weightKg: null, rpe: rpe - 1, restSeconds: 90, rationale: 'Horní hrudník — objem' },
+          { name: 'Triceps Pushdown', nameCs: 'Triceps na kladce', sets: 3, reps: '10-12', weightKg: null, rpe: rpe - 1, restSeconds: 60, rationale: 'Izolace — pump' },
+        ],
+      },
+      {
+        title: 'Pull (záda + biceps)',
+        exercises: [
+          { name: 'Deadlift', nameCs: 'Mrtvý tah', sets: 3, reps: '5', weightKg: null, rpe, restSeconds: 180, rationale: 'Total body síla' },
+          { name: 'Pull-up', nameCs: 'Shyby', sets: 4, reps: '6-8', weightKg: null, rpe, restSeconds: 120, rationale: 'Široká záda' },
+          { name: 'Barbell Row', nameCs: 'Veslování s činkou', sets: 3, reps: '8-10', weightKg: null, rpe: rpe - 1, restSeconds: 90, rationale: 'Tloušťka středu zad' },
+          { name: 'Barbell Curl', nameCs: 'Bicepsové zdvihy', sets: 3, reps: '10', weightKg: null, rpe: rpe - 1, restSeconds: 60, rationale: 'Biceps' },
+        ],
+      },
+      {
+        title: 'Legs (nohy + jádro)',
+        exercises: [
+          { name: 'Back Squat', nameCs: 'Dřep s činkou', sets: 4, reps: '5-6', weightKg: null, rpe, restSeconds: 180, rationale: 'King of legs' },
+          { name: 'Romanian Deadlift', nameCs: 'Rumunský mrtvý tah', sets: 3, reps: '8', weightKg: null, rpe: rpe - 1, restSeconds: 120, rationale: 'Hamstringy + glutea' },
+          { name: 'Walking Lunge', nameCs: 'Chůze s výpady', sets: 3, reps: '12/noha', weightKg: null, rpe: rpe - 1, restSeconds: 90, rationale: 'Unilaterální stability' },
+          { name: 'Plank', nameCs: 'Plank', sets: 3, reps: '45s', weightKg: null, rpe: 6, restSeconds: 45, rationale: 'Core endurance' },
+        ],
+      },
+    ];
+    let split = splits[dayOfYear % splits.length];
+
+    if (mood === 'recover') {
+      split = {
+        title: 'Aktivní regenerace',
+        exercises: [
+          { name: 'Light Cardio', nameCs: 'Lehké kardio', sets: 1, reps: '20 min', weightKg: null, rpe: 4, restSeconds: 0, rationale: 'Krevní oběh, žádná zátěž' },
+          { name: 'Mobility Flow', nameCs: 'Mobility flow', sets: 1, reps: '10 min', weightKg: null, rpe: 3, restSeconds: 0, rationale: 'Otevři kyčle a ramena' },
+          { name: 'Foam Roll', nameCs: 'Foam roller', sets: 1, reps: '10 min', weightKg: null, rpe: 2, restSeconds: 0, rationale: 'Self-massage' },
+        ],
+      };
+    }
+
+    const headlineMap: Record<DailyBriefMood, string> = {
+      push: 'Dnes přidáme. Recovery je tvůj parťák.',
+      maintain: 'Drž tempo. Konzistence vyhrává.',
+      recover: 'Dnes regenerace. Zítra zase tlačíme.',
+    };
+
+    return {
+      date: ctx.todayKey,
+      greeting: ctx.greeting,
+      headline: headlineMap[mood],
+      mood,
+      recoveryStatus,
+      recoveryScore,
+      workout: {
+        title: split.title,
+        estimatedMinutes: mood === 'recover' ? 30 : 50,
+        warmup:
+          mood === 'recover'
+            ? 'Začni pomalu, žádný strečink ze studených svalů.'
+            : '5 min rotoped/skipping + dynamický strečink ramen a kyčlí.',
+        exercises: split.exercises,
+        finisher: mood === 'push' ? 'Volitelně: 2× 30s plank navíc.' : undefined,
+      },
+      rationale:
+        recoveryScore >= 75
+          ? `Tvoje recovery score ${recoveryScore}/100 ukazuje, že jsi svěží — máš zelenou pro tvrdší trénink. Vybrali jsme split, který poslední dny nedostal pozornost.`
+          : recoveryScore >= 50
+          ? `Recovery ${recoveryScore}/100 — průměrný stav. Dnes drž standardní RPE 7 a soustřeď se na techniku, ne PR pokusy.`
+          : `Recovery ${recoveryScore}/100 je nízké. Tělo říká „brzdi". Dnes regeneruj, zítra budeš silnější než kdybys to dnes přepálil.`,
+      motivationalHook:
+        mood === 'push'
+          ? 'Jeden set navíc dnes = jeden krok blíž k tvému cíli.'
+          : mood === 'maintain'
+          ? 'Show up je 80% výsledku. Jdi tam.'
+          : 'Regenerace není slabost — je to investice.',
+      nutritionTip:
+        mood === 'push'
+          ? '30g sacharidů 30 min před tréninkem (banán nebo rýžová placka).'
+          : mood === 'maintain'
+          ? 'Hlídej protein — 1.6g/kg váhy denně, rozloženo do 4 jídel.'
+          : 'Dnes přidej hydrataci a 1 navíc porci zeleniny.',
+      alternativeIfTired:
+        mood === 'recover'
+          ? 'Pokud jsi vyčerpaný, vynech mobility a jen 20 min chůze.'
+          : 'Cítíš se hůř? Sniž weight o 20% a udělej jen 3 cviky.',
+      source: 'rules',
     };
   }
 }

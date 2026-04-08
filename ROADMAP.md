@@ -113,10 +113,7 @@
    - Claude Vision body composition analysis
    - Galerie s před/po sliderem
 
-6. **AI workout suggestion of the day**
-   - Claude analyzuje recovery + fatigue + weekly volume
-   - Vygeneruje konkrétní doporučený workout pro dnešek
-   - Integrace na dashboard hero
+6. ~~**AI workout suggestion of the day**~~ ✅ HOTOVO 2026-04-08 (AI Coach Daily Brief, V2DailyBrief hero)
 
 7. **Generative meal planning**
    - Claude vygeneruje weekly meal plan podle goal + nutrition goals

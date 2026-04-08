@@ -203,7 +203,7 @@ GlossaryTerm (termCs, definitionCs, category)
 | 22 | HomeTraining | /home-training/quick, /home-training/home, /home-training/travel | Bodyweight workouts (Section E) |
 | 23 | Nutrition | /nutrition/goals, /nutrition/goals/auto, /nutrition/today, /nutrition/log, /nutrition/quick-foods | Food log + TDEE (Section F) |
 | 24 | Habits | /habits/today, /habits/history, /habits/stats | Daily check-in + recovery score (Section G) |
-| 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips | Claude-powered insights (Section H), 1h cache |
+| 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips, /ai-insights/daily-brief | Claude-powered insights (Section H), 1h cache; daily-brief is flagship hero with 24h cache |
 | 26 | Achievements | /achievements, /achievements/check, /achievements/unlock | Gamification (Section J), 17 seed badges |
 | — | Prisma | (internal) | Database client |
 
@@ -299,7 +299,12 @@ GlossaryTerm (termCs, definitionCs, category)
 - **Recovery tips** (`/api/ai-insights/recovery-tips`): analyzes 7-day habits (sleep/energy/soreness/stress) → 3 personalized tips in JSON
 - **Weekly review** (`/api/ai-insights/weekly-review`): summary + highlights + improvements + next week focus
 - **Nutrition tips** (`/api/ai-insights/nutrition-tips`): analyzes 7-day food logs vs goals → 3 tips
-- **In-memory cache** 1h per user per endpoint
+- **Daily Brief — flagship hero** (`/api/ai-insights/daily-brief`): full context (User + FitnessProfile + 7d DailyCheckIn + 14d WorkoutSession + OneRepMax + WeeklyVolume) → structured workout for today
+  - Computes `recoveryScore` 0-100 from sleep, energy, soreness, stress
+  - Mood-driven RPE: push (8-9) / maintain (7) / recover (5-6)
+  - Cache 24h per user, key `${userId}:${YYYY-MM-DD}` (Europe/Prague)
+  - Rules-based fallback with 3 rotating splits when Claude unavailable
+- **In-memory cache** 1h per user (24h for daily-brief)
 - Static fallbacks when Claude API unavailable
 
 ### 6. Habits & Recovery Score (Section G)

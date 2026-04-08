@@ -11,17 +11,20 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { V2Layout } from '@/components/v2/V2Layout';
+import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
 import {
   getMyStats,
   getInsights,
   getLessonOfTheWeek,
   getNutritionToday,
   getWeeklyReview,
+  getDailyBrief,
   type StatsData,
   type Insights,
   type Lesson,
   type NutritionToday,
   type WeeklyReview,
+  type DailyBrief,
 } from '@/lib/api';
 
 function TripleRing({
@@ -78,6 +81,7 @@ export default function DashboardV2Page() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [nutrition, setNutrition] = useState<NutritionToday | null>(null);
   const [weekly, setWeekly] = useState<WeeklyReview | null>(null);
+  const [brief, setBrief] = useState<DailyBrief | null>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -85,6 +89,7 @@ export default function DashboardV2Page() {
     getLessonOfTheWeek().then(setLesson).catch(console.error);
     getNutritionToday().then(setNutrition).catch(console.error);
     getWeeklyReview().then((r) => setWeekly(r.review)).catch(console.error);
+    getDailyBrief().then((r) => setBrief(r.brief)).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -149,6 +154,9 @@ export default function DashboardV2Page() {
             </span>
           </div>
         </section>
+
+        {/* ── DAILY BRIEF (AI Coach flagship) ── */}
+        {brief && <V2DailyBrief brief={brief} />}
 
         {/* ── STATS ── */}
         <section className="mb-32 grid grid-cols-3 gap-6 border-y border-white/10 py-16 text-center">

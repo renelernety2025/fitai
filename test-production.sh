@@ -107,6 +107,7 @@ api_endpoints=(
   "/api/ai-insights/recovery-tips"
   "/api/ai-insights/weekly-review"
   "/api/ai-insights/nutrition-tips"
+  "/api/ai-insights/daily-brief"
   "/api/achievements"
 )
 for ep in "${api_endpoints[@]}"; do
