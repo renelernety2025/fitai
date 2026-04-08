@@ -208,7 +208,7 @@ export class NutritionService {
           daysPerWeek: profile.daysPerWeek,
           goal: profile.goal,
         })
-      : { kcal: 2200, proteinG: 140, carbsG: 250, fatG: 75 };
+      : { dailyKcal: 2200, dailyProteinG: 140, dailyCarbsG: 250, dailyFatG: 70 };
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     let payload: any;
@@ -230,10 +230,10 @@ export class NutritionService {
 KLIENT: ${user?.name || 'Athlete'}
 CÍL: ${profile?.goal || 'GENERAL_FITNESS'}
 DENNÍ MAKRA:
-- Kalorie: ${targets.kcal} kcal
-- Protein: ${targets.proteinG} g
-- Sacharidy: ${targets.carbsG} g
-- Tuky: ${targets.fatG} g
+- Kalorie: ${targets.dailyKcal} kcal
+- Protein: ${targets.dailyProteinG} g
+- Sacharidy: ${targets.dailyCarbsG} g
+- Tuky: ${targets.dailyFatG} g
 
 ALERGIE: ${allergiesStr}
 KUCHYNĚ: ${cuisine}
@@ -276,7 +276,7 @@ Vrať POUZE JSON:
 }
 
 Pravidla:
-- Každý den ~ ${targets.kcal} kcal ±100, protein ~ ${targets.proteinG}g ±10
+- Každý den ~ ${targets.dailyKcal} kcal ±100, protein ~ ${targets.dailyProteinG}g ±10
 - Variabilita — neopakuj jídla 2 dny po sobě
 - Realistická česká kuchyně
 - Nákupní seznam přesně z ingrediencí všech 28 jídel
@@ -345,7 +345,10 @@ Pravidla:
     return dates;
   }
 
-  private rulesMealPlan(monday: Date, targets: { kcal: number; proteinG: number; carbsG: number; fatG: number }) {
+  private rulesMealPlan(
+    monday: Date,
+    targets: { dailyKcal: number; dailyProteinG: number; dailyCarbsG: number; dailyFatG: number },
+  ) {
     const dates = this.weekDates(monday);
     const dayNames = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
     const breakfasts = [
