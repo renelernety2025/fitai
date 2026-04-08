@@ -170,4 +170,303 @@ export class NutritionService {
       { name: 'Losos (100g)', kcal: 208, proteinG: 20, carbsG: 0, fatG: 13 },
     ];
   }
+
+  // ─── Section L: Generative Meal Planning ──────────────────────────
+  // Claude Haiku generates a personalized 7-day meal plan respecting
+  // user goals, allergies, daily macro targets and equipment.
+  // Result is stored in MealPlan with @@unique([userId, weekStart]) so
+  // each Monday gets one plan; calling generate again upserts it.
+
+  async getCurrentMealPlan(userId: string) {
+    const weekStart = this.mondayOfWeek(new Date());
+    return (this.prisma as any).mealPlan.findUnique({
+      where: { userId_weekStart: { userId, weekStart } },
+    });
+  }
+
+  async listMealPlans(userId: string, limit = 8) {
+    return (this.prisma as any).mealPlan.findMany({
+      where: { userId },
+      orderBy: { weekStart: 'desc' },
+      take: limit,
+    });
+  }
+
+  async generateMealPlan(
+    userId: string,
+    opts: { weekStart?: string; preferences?: string; allergies?: string[]; cuisine?: string } = {},
+  ) {
+    const weekStart = this.mondayOfWeek(opts.weekStart ? new Date(opts.weekStart) : new Date());
+    const profile = await this.prisma.fitnessProfile.findUnique({ where: { userId } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    const targets = profile
+      ? this.calculateTargets({
+          age: profile.age,
+          weightKg: profile.weightKg,
+          heightCm: profile.heightCm,
+          daysPerWeek: profile.daysPerWeek,
+          goal: profile.goal,
+        })
+      : { kcal: 2200, proteinG: 140, carbsG: 250, fatG: 75 };
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    let payload: any;
+    let source: 'claude' | 'rules' = 'rules';
+
+    if (apiKey) {
+      try {
+        const Anthropic = require('@anthropic-ai/sdk');
+        const client = new Anthropic.default({ apiKey });
+        const allergiesStr = opts.allergies?.length
+          ? opts.allergies.join(', ')
+          : profile?.injuries?.join(', ') || 'žádné';
+        const cuisine = opts.cuisine || 'česká + středomořská';
+        const prefs = opts.preferences || 'vyvážené, snadné na přípravu';
+        const dates = this.weekDates(weekStart);
+
+        const prompt = `Jsi expert nutriční terapeut. Vygeneruj personalizovaný JÍDELNÍČEK na 7 dní.
+
+KLIENT: ${user?.name || 'Athlete'}
+CÍL: ${profile?.goal || 'GENERAL_FITNESS'}
+DENNÍ MAKRA:
+- Kalorie: ${targets.kcal} kcal
+- Protein: ${targets.proteinG} g
+- Sacharidy: ${targets.carbsG} g
+- Tuky: ${targets.fatG} g
+
+ALERGIE: ${allergiesStr}
+KUCHYNĚ: ${cuisine}
+PREFERENCE: ${prefs}
+TÝDEN: ${dates[0]} až ${dates[6]}
+
+Vygeneruj 7 dní × 4 jídla (snídaně, svačina, oběd, večeře). Realistická česká kuchyně.
+Také agreguj nákupní seznam pro celý týden po kategoriích.
+
+Vrať POUZE JSON:
+{
+  "weekStart": "${dates[0]}",
+  "totalKcal": 15400,
+  "avgKcalPerDay": 2200,
+  "avgProteinG": 140,
+  "days": [
+    {
+      "date": "${dates[0]}",
+      "dayName": "Pondělí",
+      "totals": {"kcal": 2200, "proteinG": 140, "carbsG": 250, "fatG": 75},
+      "meals": [
+        {
+          "type": "breakfast",
+          "name": "Ovesná kaše s borůvkami",
+          "kcal": 450, "proteinG": 25, "carbsG": 60, "fatG": 12,
+          "ingredients": ["80g ovesné vločky", "200ml mléko", "1 banán"],
+          "prepMinutes": 10,
+          "notes": "Volitelně skořice"
+        }
+      ]
+    }
+  ],
+  "shoppingList": [
+    {"category": "Ovoce a zelenina", "items": [{"name": "Banány", "qty": 7, "unit": "ks"}]},
+    {"category": "Maso a ryby", "items": []},
+    {"category": "Mléčné výrobky a vejce", "items": []},
+    {"category": "Pečivo a obiloviny", "items": []},
+    {"category": "Ostatní", "items": []}
+  ]
+}
+
+Pravidla:
+- Každý den ~ ${targets.kcal} kcal ±100, protein ~ ${targets.proteinG}g ±10
+- Variabilita — neopakuj jídla 2 dny po sobě
+- Realistická česká kuchyně
+- Nákupní seznam přesně z ingrediencí všech 28 jídel
+- Vše v češtině`;
+
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        const text = response.content[0].type === 'text' ? response.content[0].text : '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON in response');
+        payload = JSON.parse(jsonMatch[0]);
+        source = 'claude';
+      } catch (e: any) {
+        console.error('Meal plan Claude failed:', e.message);
+        payload = this.rulesMealPlan(weekStart, targets);
+      }
+    } else {
+      payload = this.rulesMealPlan(weekStart, targets);
+    }
+
+    return (this.prisma as any).mealPlan.upsert({
+      where: { userId_weekStart: { userId, weekStart } },
+      update: {
+        payload,
+        source,
+        modelUsed: source === 'claude' ? 'claude-haiku-4-5' : 'rules',
+        generatedAt: new Date(),
+      },
+      create: {
+        userId,
+        weekStart,
+        payload,
+        source,
+        modelUsed: source === 'claude' ? 'claude-haiku-4-5' : 'rules',
+      },
+    });
+  }
+
+  async deleteMealPlan(userId: string, planId: string) {
+    const plan = await (this.prisma as any).mealPlan.findUnique({ where: { id: planId } });
+    if (!plan || plan.userId !== userId) return { deleted: false };
+    await (this.prisma as any).mealPlan.delete({ where: { id: planId } });
+    return { deleted: true };
+  }
+
+  // ── helpers for meal planning ──
+  private mondayOfWeek(date: Date): Date {
+    const d = new Date(date);
+    d.setUTCHours(0, 0, 0, 0);
+    const day = d.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setUTCDate(d.getUTCDate() + diff);
+    return d;
+  }
+
+  private weekDates(monday: Date): string[] {
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setUTCDate(monday.getUTCDate() + i);
+      dates.push(d.toISOString().slice(0, 10));
+    }
+    return dates;
+  }
+
+  private rulesMealPlan(monday: Date, targets: { kcal: number; proteinG: number; carbsG: number; fatG: number }) {
+    const dates = this.weekDates(monday);
+    const dayNames = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+    const breakfasts = [
+      { name: 'Ovesná kaše s borůvkami a mandlemi', kcal: 450, proteinG: 25, carbsG: 60, fatG: 12, ingredients: ['80g ovesné vločky', '200ml mléko', '30g bobule', '20g mandle', '1 lžička medu'], prepMinutes: 10 },
+      { name: 'Vajíčková omeleta s avokádem', kcal: 480, proteinG: 28, carbsG: 12, fatG: 35, ingredients: ['3 vejce', '1/2 avokáda', '50g špenát', '30g sýr', '1 lžíce másla'], prepMinutes: 12 },
+      { name: 'Tvaroh s ovocem a granolou', kcal: 420, proteinG: 32, carbsG: 45, fatG: 10, ingredients: ['200g tvaroh', '1 banán', '50g granola', '20g vlašské ořechy'], prepMinutes: 5 },
+      { name: 'Žitný chléb s lososem a vejcem', kcal: 460, proteinG: 30, carbsG: 35, fatG: 18, ingredients: ['2 plátky chleba', '80g uzený losos', '2 vejce', '1 lžíce másla'], prepMinutes: 8 },
+    ];
+    const lunches = [
+      { name: 'Kuřecí prsa s rýží a brokolicí', kcal: 650, proteinG: 50, carbsG: 70, fatG: 15, ingredients: ['200g kuřecí prsa', '100g rýže', '200g brokolice', '1 lžíce olivového oleje'], prepMinutes: 25 },
+      { name: 'Hovězí stroganoff s těstovinami', kcal: 720, proteinG: 45, carbsG: 65, fatG: 28, ingredients: ['180g hovězí maso', '120g těstoviny', '100g žampiony', '50ml smetana', 'cibule'], prepMinutes: 30 },
+      { name: 'Losos s quinoa a špenátem', kcal: 680, proteinG: 42, carbsG: 60, fatG: 25, ingredients: ['180g losos', '80g quinoa', '200g špenát', 'cherry rajčata', 'citron'], prepMinutes: 20 },
+      { name: 'Kuřecí kari s basmati', kcal: 700, proteinG: 48, carbsG: 75, fatG: 18, ingredients: ['200g kuřecí prsa', '100g basmati', '200ml kokosové mléko', 'kari koření'], prepMinutes: 25 },
+    ];
+    const dinners = [
+      { name: 'Tuňákový salát s vejci', kcal: 480, proteinG: 38, carbsG: 25, fatG: 22, ingredients: ['1 plech. tuňák', '2 vejce', 'míchaný salát', '1/2 avokáda', 'olivový olej'], prepMinutes: 10 },
+      { name: 'Krocaní steak se sladkými brambory', kcal: 550, proteinG: 45, carbsG: 50, fatG: 15, ingredients: ['180g krocaní prsa', '200g sladké brambory', 'zelené fazolky'], prepMinutes: 25 },
+      { name: 'Tofu stir-fry se zeleninou', kcal: 470, proteinG: 28, carbsG: 45, fatG: 18, ingredients: ['200g tofu', 'paprika, cuketa, brokolice', 'sojová omáčka', '1 lžíce sezamový olej'], prepMinutes: 15 },
+      { name: 'Cottage cheese s pomerančem a oříšky', kcal: 380, proteinG: 32, carbsG: 30, fatG: 14, ingredients: ['250g cottage cheese', '1 pomeranč', '20g vlašské ořechy', 'med'], prepMinutes: 5 },
+    ];
+    const snacks = [
+      { name: 'Whey shake s banánem', kcal: 280, proteinG: 30, carbsG: 35, fatG: 3, ingredients: ['30g whey protein', '1 banán', '200ml mléko'], prepMinutes: 2 },
+      { name: 'Řecký jogurt s medem a mandlemi', kcal: 220, proteinG: 18, carbsG: 25, fatG: 5, ingredients: ['200g řecký jogurt 0%', '1 lžíce medu', '20g mandle'], prepMinutes: 2 },
+      { name: 'Hummus s mrkví a celerem', kcal: 240, proteinG: 8, carbsG: 25, fatG: 12, ingredients: ['80g hummus', '2 mrkve', '2 stonky celeru'], prepMinutes: 3 },
+    ];
+
+    const days = dates.map((date, i) => {
+      const b = breakfasts[i % breakfasts.length];
+      const l = lunches[i % lunches.length];
+      const d = dinners[i % dinners.length];
+      const s = snacks[i % snacks.length];
+      const totals = {
+        kcal: b.kcal + l.kcal + d.kcal + s.kcal,
+        proteinG: b.proteinG + l.proteinG + d.proteinG + s.proteinG,
+        carbsG: b.carbsG + l.carbsG + d.carbsG + s.carbsG,
+        fatG: b.fatG + l.fatG + d.fatG + s.fatG,
+      };
+      return {
+        date,
+        dayName: dayNames[i],
+        totals,
+        meals: [
+          { type: 'breakfast', ...b },
+          { type: 'snack', ...s },
+          { type: 'lunch', ...l },
+          { type: 'dinner', ...d },
+        ],
+      };
+    });
+
+    const totalKcal = days.reduce((sum, day) => sum + day.totals.kcal, 0);
+    const avgProtein = Math.round(days.reduce((sum, day) => sum + day.totals.proteinG, 0) / 7);
+
+    const shoppingList = [
+      {
+        category: 'Maso a ryby',
+        items: [
+          { name: 'Kuřecí prsa', qty: 1.4, unit: 'kg' },
+          { name: 'Hovězí maso', qty: 0.4, unit: 'kg' },
+          { name: 'Losos', qty: 0.4, unit: 'kg' },
+          { name: 'Krocaní prsa', qty: 0.4, unit: 'kg' },
+          { name: 'Tuňák ve vlastní šťávě', qty: 2, unit: 'plechovky' },
+          { name: 'Uzený losos', qty: 0.2, unit: 'kg' },
+        ],
+      },
+      {
+        category: 'Mléčné výrobky a vejce',
+        items: [
+          { name: 'Vejce', qty: 14, unit: 'ks' },
+          { name: 'Tvaroh', qty: 0.4, unit: 'kg' },
+          { name: 'Řecký jogurt 0%', qty: 0.4, unit: 'kg' },
+          { name: 'Cottage cheese', qty: 0.5, unit: 'kg' },
+          { name: 'Mléko', qty: 1.5, unit: 'l' },
+        ],
+      },
+      {
+        category: 'Ovoce a zelenina',
+        items: [
+          { name: 'Banány', qty: 7, unit: 'ks' },
+          { name: 'Pomeranče', qty: 4, unit: 'ks' },
+          { name: 'Avokádo', qty: 3, unit: 'ks' },
+          { name: 'Borůvky / bobule', qty: 0.3, unit: 'kg' },
+          { name: 'Brokolice', qty: 0.5, unit: 'kg' },
+          { name: 'Špenát', qty: 0.4, unit: 'kg' },
+          { name: 'Mrkve', qty: 1, unit: 'kg' },
+          { name: 'Paprika, cuketa', qty: 1, unit: 'kg' },
+        ],
+      },
+      {
+        category: 'Pečivo a obiloviny',
+        items: [
+          { name: 'Ovesné vločky', qty: 0.5, unit: 'kg' },
+          { name: 'Rýže basmati', qty: 0.5, unit: 'kg' },
+          { name: 'Quinoa', qty: 0.3, unit: 'kg' },
+          { name: 'Těstoviny', qty: 0.3, unit: 'kg' },
+          { name: 'Žitný chléb', qty: 1, unit: 'bochník' },
+          { name: 'Granola', qty: 0.3, unit: 'kg' },
+        ],
+      },
+      {
+        category: 'Ostatní',
+        items: [
+          { name: 'Whey protein', qty: 0.2, unit: 'kg' },
+          { name: 'Mandle', qty: 0.2, unit: 'kg' },
+          { name: 'Vlašské ořechy', qty: 0.15, unit: 'kg' },
+          { name: 'Hummus', qty: 0.3, unit: 'kg' },
+          { name: 'Olivový olej', qty: 1, unit: 'lahev' },
+          { name: 'Tofu', qty: 0.2, unit: 'kg' },
+          { name: 'Med', qty: 1, unit: 'sklenice' },
+          { name: 'Sladké brambory', qty: 0.5, unit: 'kg' },
+        ],
+      },
+    ];
+
+    return {
+      weekStart: dates[0],
+      totalKcal,
+      avgKcalPerDay: Math.round(totalKcal / 7),
+      avgProteinG: avgProtein,
+      days,
+      shoppingList,
+    };
+  }
 }

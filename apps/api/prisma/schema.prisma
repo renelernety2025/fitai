@@ -96,6 +96,7 @@ model User {
   dailyCheckIns     DailyCheckIn[]
   achievementUnlocks AchievementUnlock[]
   bodyPhotos        BodyPhoto[]
+  mealPlans         MealPlan[]
 }
 
 model UserProgress {
@@ -660,6 +661,30 @@ model ContentImport {
 
   @@index([userId])
 }
+
+// ─── Section L: Generative Meal Planning ────────────────────────────
+// Claude generates a 7-day personalized meal plan based on user goals,
+// allergies, dietary preferences, and macro targets. Each plan stores
+// the full structured payload (days × meals + shopping list) as JSON
+// so we can iterate without schema migrations.
+
+model MealPlan {
+  id           String   @id @default(uuid())
+  userId       String
+  weekStart    DateTime @db.Date // Monday of the week
+  generatedAt  DateTime @default(now())
+  source       String   @default("claude") // claude | rules
+  modelUsed    String   @default("claude-haiku-4-5")
+  payload      Json     // { days: [{date, meals: [{type, name, kcal, protein, carbs, fat, ingredients[], prepMinutes, notes?}]}], shoppingList: [{item, qty, unit, category}], totalKcal, avgProtein, ... }
+  notes        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart(sort: Desc)])
+}
+
+// ─── /Section L ──────────────────────────────────────────────────────
 
 // ─── Section K: Body Progress Photos ─────────────────────────────────
 // Private body composition tracking. Photos are user-only by default,

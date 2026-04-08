@@ -44,6 +44,7 @@
 | I. *(přeskočeno, použito jako obecná infra)* | — | — |
 | J. Gamification | ✅ | 17 achievements, auto-unlock + XP rewards, /uspechy, mobile screen |
 | K. Body Progress Photos | ✅ | BodyPhoto + BodyAnalysis modely, S3 upload, Claude Vision analýza, before/after slider, /progres-fotky web + mobile |
+| L. Generative Meal Planning | ✅ | MealPlan model, Claude Haiku 7-day jídelníček + shopping list, /jidelnicek web + mobile, day picker, regenerate s preferences |
 
 ### Infrastructure & DevOps
 | Co | Status |
@@ -114,10 +115,7 @@
 
 6. ~~**AI workout suggestion of the day**~~ ✅ HOTOVO 2026-04-08 (AI Coach Daily Brief, V2DailyBrief hero)
 
-7. **Generative meal planning**
-   - Claude vygeneruje weekly meal plan podle goal + nutrition goals
-   - Shopping list per týden
-   - Recept storage
+7. ~~**Generative meal planning**~~ ✅ HOTOVO 2026-04-08 (Section L, MealPlan model, Claude Haiku, web + mobile, shopping list)
 
 ### Nízká priorita / nice to have
 8. **Apple Watch app** — quick rep counter + heart rate stream
@@ -185,6 +183,7 @@
 - **16 glossary terms**
 - **15 quick foods**
 - **3 home workout modes** (quick/home/travel)
-- **58/58 regression tests passing**
+- **61/61 regression tests passing**
 - **Section K Body Progress Photos** (Claude Vision, before/after slider)
+- **Section L Generative Meal Planning** (Claude Haiku, 7-day plan, shopping list)
 - **AI Coach Daily Brief** (flagship hero, mood-driven)

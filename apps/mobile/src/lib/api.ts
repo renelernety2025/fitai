@@ -199,3 +199,13 @@ export function analyzeProgressPhoto(id: string) {
 export function deleteProgressPhoto(id: string) {
   return request<{ deleted: true }>(`/progress-photos/${id}`, { method: 'DELETE' });
 }
+
+// ── Section L: Generative Meal Planning ──
+export function getCurrentMealPlan() { return request<any>('/nutrition/meal-plan/current'); }
+export function getMealPlanHistory(limit = 8) { return request<any[]>(`/nutrition/meal-plan/history?limit=${limit}`); }
+export function generateMealPlan(opts: any = {}) {
+  return request<any>('/nutrition/meal-plan/generate', { method: 'POST', body: JSON.stringify(opts) });
+}
+export function deleteMealPlan(id: string) {
+  return request<{ deleted: boolean }>(`/nutrition/meal-plan/${id}`, { method: 'DELETE' });
+}

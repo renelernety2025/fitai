@@ -4,6 +4,73 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section L — Generative Meal Planning] 2026-04-08
+### Added
+- **Schema:** `MealPlan` model s `@@unique([userId, weekStart])` — jeden plán per týden per uživatel,
+  payload jako Json (days × meals + shopping list + agregované makra)
+- **Backend** (`nutrition` modul, rozšíření):
+  - `GET /api/nutrition/meal-plan/current` — plán pro tento týden (Pondělí-Neděle)
+  - `GET /api/nutrition/meal-plan/history?limit=N` — historie posledních N plánů
+  - `POST /api/nutrition/meal-plan/generate` — vygeneruj/regeneruj (upsert) s body
+    `{weekStart?, preferences?, allergies?[], cuisine?}`
+  - `DELETE /api/nutrition/meal-plan/:id`
+- **Claude Haiku integration:**
+  - Prompt obsahuje user profile (cíl, makro targets, alergie, kuchyně)
+  - Generuje 7 dní × 4 jídla (snídaně/svačina/oběd/večeře)
+  - Každé jídlo: název, kcal, makra, ingredients[], prepMinutes, optional notes
+  - Agreguje shopping list po 5 kategoriích (Maso/Mléčné/Ovoce-Zelenina/Pečivo/Ostatní)
+  - Max 8000 tokens, model `claude-haiku-4-5`
+- **Rules-based fallback** (~28 jídel z 12 šablon, rotace přes týden) když Claude nedostupný
+- **Web UI** `apps/web/src/app/(app)/jidelnicek/page.tsx`:
+  - Hero "Tvůj jídelníček."
+  - 4-stat strip (kcal/den, protein/den, týdně, jídel celkem)
+  - Action bar: Nákupní seznam toggle / Preference toggle / Regenerate
+  - **Preference panel** — input pole pro preferences, alergie, cuisine
+  - **Shopping list grid** — 5 kategorií s qty + unit, aggregated přes celý týden
+  - **Day picker** — horizontální scroll s Po..Ne, kcal per den, active state
+  - **Meal cards** — barevné chip per type, kcal/protein/sacharidy/tuky, ingredients list, notes
+  - Source watermark (Claude vs rules) + datum generování
+- **Web nav:** přidán "Jídelníček" do `V2Layout`
+- **Mobile screen** `JidelnicekScreen.tsx` — parita (stats, day picker, meal cards, shopping list, generate)
+- **Mobile nav:** `AppNavigator` Stack screen + ProfileScreen menu link "Jídelníček (AI)"
+- **Regression:** `test-production.sh` přidává:
+  - `/api/nutrition/meal-plan/current`
+  - `/api/nutrition/meal-plan/history`
+  - `/jidelnicek` web page
+  → 58 → 61 testů
+
+### Why
+**Uzavírá Section F (Nutrition) plně + propojuje s Daily Brief (Section H).**
+Uživatel teď má **kompletní AI coach loop**:
+- **Daily Brief:** AI workout pro dnešek (recovery + volume → cviky)
+- **Meal Plan:** AI jídelníček na týden (makro cíle → 28 jídel + shopping list)
+= Full personalized fitness + nutrition coach.
+
+### Cost
+Claude Haiku ~5000 input + 5000 output tokens / generation, called typically
+1× per týden per user → cca $0.005/user/týden = $20/měsíc pro 1000 active users.
+
+### Files
+**Backend:**
+- `apps/api/prisma/schema.prisma` (+MealPlan model + User.mealPlans relation)
+- `apps/api/src/nutrition/nutrition.service.ts` (+5 metod, +rules fallback ~150 řádků)
+- `apps/api/src/nutrition/nutrition.controller.ts` (+4 endpointy)
+
+**Web:**
+- `apps/web/src/lib/api.ts` (+typy MealPlan*, +4 endpoint funkce)
+- `apps/web/src/app/(app)/jidelnicek/page.tsx` (NEW, ~332 řádků)
+- `apps/web/src/components/v2/V2Layout.tsx` (+nav)
+
+**Mobile:**
+- `apps/mobile/src/lib/api.ts` (+4 endpoint funkce)
+- `apps/mobile/src/screens/JidelnicekScreen.tsx` (NEW, ~323 řádků)
+- `apps/mobile/src/navigation/AppNavigator.tsx` (+Stack screen)
+- `apps/mobile/src/screens/ProfileScreen.tsx` (+menu link)
+
+**Tests:** `test-production.sh` (+3 položky)
+
+---
+
 ## [fix: Section K — S3 upload CORS + SDK v3 auto-checksum] 2026-04-08
 ### Fixed
 Browser upload na `/progres-fotky` selhával s `Failed to fetch`. Dvě root causes:

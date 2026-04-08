@@ -57,4 +57,38 @@ export class NutritionController {
   quickFoods() {
     return this.service.getQuickFoods();
   }
+
+  // ── Section L: Generative Meal Planning ──
+
+  /** Get current week's meal plan or null */
+  @Get('meal-plan/current')
+  currentMealPlan(@Request() req: any) {
+    return this.service.getCurrentMealPlan(req.user.id);
+  }
+
+  /** List recent meal plans */
+  @Get('meal-plan/history')
+  mealPlanHistory(@Request() req: any, @Query('limit') limit?: string) {
+    return this.service.listMealPlans(req.user.id, limit ? parseInt(limit, 10) : 8);
+  }
+
+  /** Generate (or regenerate) plan for current week. Pass preferences/allergies/cuisine in body. */
+  @Post('meal-plan/generate')
+  generateMealPlan(
+    @Request() req: any,
+    @Body()
+    body: {
+      weekStart?: string;
+      preferences?: string;
+      allergies?: string[];
+      cuisine?: string;
+    } = {},
+  ) {
+    return this.service.generateMealPlan(req.user.id, body);
+  }
+
+  @Delete('meal-plan/:id')
+  deleteMealPlan(@Request() req: any, @Param('id') id: string) {
+    return this.service.deleteMealPlan(req.user.id, id);
+  }
 }

@@ -214,6 +214,7 @@ GlossaryTerm (termCs, definitionCs, category)
 | 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips, /ai-insights/daily-brief | Claude-powered insights (Section H), 1h cache; daily-brief is flagship hero with 24h cache |
 | 26 | Achievements | /achievements, /achievements/check, /achievements/unlock | Gamification (Section J), 17 seed badges |
 | 27 | ProgressPhotos | /progress-photos, /progress-photos/upload-url, /progress-photos/stats, /progress-photos/:id, /progress-photos/:id/analyze, DELETE /progress-photos/:id | Body progress (Section K), Claude Vision body composition, presigned S3 |
+| 23+ | Nutrition (extended) | /nutrition/meal-plan/current, /nutrition/meal-plan/history, /nutrition/meal-plan/generate, DELETE /nutrition/meal-plan/:id | Generative meal planning (Section L), Claude Haiku 7-day plan + shopping list |
 | — | Prisma | (internal) | Database client |
 
 ## Frontend Architecture
@@ -326,6 +327,15 @@ GlossaryTerm (termCs, definitionCs, category)
 - Auto-unlock via `POST /api/achievements/check` reading UserProgress + sessions + check-ins
 - XP reward on unlock (50-1000 XP per achievement)
 - Manual unlock by code for exploration-style achievements
+
+### 9. Generative Meal Planning (Section L)
+- **Endpoint:** `POST /api/nutrition/meal-plan/generate` reads FitnessProfile (goals, age, weight, height, daysPerWeek) → computes Mifflin-St Jeor TDEE → builds Claude Haiku prompt with macro targets, allergies, cuisine
+- **Output:** structured JSON with 7 days × 4 meals (breakfast/snack/lunch/dinner), each with name, kcal, macros, ingredients[], prepMinutes, optional notes
+- **Aggregated shopping list** across all 28 meals, organized into 5 categories (meat/dairy/produce/bakery/other)
+- **Storage:** `MealPlan` model with `@@unique([userId, weekStart])` — one plan per Monday-week per user, upserts on regenerate
+- **Caching:** None at API level (full plan stored in DB; UI calls `/current` for the week)
+- **Rules-based fallback** with 12 meal templates rotating across the week
+- **Used by:** `/jidelnicek` web page + `JidelnicekScreen` mobile
 
 ### 8. Body Progress Photos (Section K)
 - **Upload flow:** client → `POST /upload-url` → presigned S3 PUT URL + DB row pre-created

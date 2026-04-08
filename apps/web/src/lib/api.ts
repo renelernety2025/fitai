@@ -923,3 +923,72 @@ export function analyzeProgressPhoto(id: string) {
 export function deleteProgressPhoto(id: string) {
   return request<{ deleted: true }>(`/progress-photos/${id}`, { method: 'DELETE' });
 }
+
+// ── Section L: Generative Meal Planning ──
+export interface MealPlanMeal {
+  type: 'breakfast' | 'snack' | 'lunch' | 'dinner';
+  name: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  ingredients: string[];
+  prepMinutes: number;
+  notes?: string;
+}
+
+export interface MealPlanDay {
+  date: string;
+  dayName: string;
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  meals: MealPlanMeal[];
+}
+
+export interface ShoppingListCategory {
+  category: string;
+  items: { name: string; qty: number; unit: string }[];
+}
+
+export interface MealPlanPayload {
+  weekStart: string;
+  totalKcal: number;
+  avgKcalPerDay: number;
+  avgProteinG: number;
+  days: MealPlanDay[];
+  shoppingList: ShoppingListCategory[];
+}
+
+export interface MealPlan {
+  id: string;
+  userId: string;
+  weekStart: string;
+  generatedAt: string;
+  source: 'claude' | 'rules';
+  modelUsed: string;
+  payload: MealPlanPayload;
+  notes: string | null;
+}
+
+export function getCurrentMealPlan() {
+  return request<MealPlan | null>('/nutrition/meal-plan/current');
+}
+
+export function getMealPlanHistory(limit = 8) {
+  return request<MealPlan[]>(`/nutrition/meal-plan/history?limit=${limit}`);
+}
+
+export function generateMealPlan(opts: {
+  weekStart?: string;
+  preferences?: string;
+  allergies?: string[];
+  cuisine?: string;
+} = {}) {
+  return request<MealPlan>('/nutrition/meal-plan/generate', {
+    method: 'POST',
+    body: JSON.stringify(opts),
+  });
+}
+
+export function deleteMealPlan(id: string) {
+  return request<{ deleted: boolean }>(`/nutrition/meal-plan/${id}`, { method: 'DELETE' });
+}

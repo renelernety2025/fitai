@@ -111,6 +111,8 @@ api_endpoints=(
   "/api/achievements"
   "/api/progress-photos"
   "/api/progress-photos/stats"
+  "/api/nutrition/meal-plan/current"
+  "/api/nutrition/meal-plan/history"
 )
 for ep in "${api_endpoints[@]}"; do
   check "GET $ep" "200" "$(http_status "$ALB$ep" "$AUTH")"
@@ -151,6 +153,7 @@ pages=(
   "/habity"
   "/uspechy"
   "/progres-fotky"
+  "/jidelnicek"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"

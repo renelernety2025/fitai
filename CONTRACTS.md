@@ -93,6 +93,13 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### Generative Meal Planning (Section L)
+- `GET    /api/nutrition/meal-plan/current` → `MealPlan | null` for current week (Mon-Sun)
+- `GET    /api/nutrition/meal-plan/history?limit=N` → `MealPlan[]`
+- `POST   /api/nutrition/meal-plan/generate` — `{weekStart?, preferences?, allergies?[], cuisine?}` → `MealPlan` (upsert)
+- `DELETE /api/nutrition/meal-plan/:id` → `{deleted: boolean}`
+- MealPlan.payload shape: `{weekStart, totalKcal, avgKcalPerDay, avgProteinG, days[{date, dayName, totals, meals[{type, name, kcal, proteinG, carbsG, fatG, ingredients[], prepMinutes, notes?}]}], shoppingList[{category, items[{name, qty, unit}]}]}`
+
 ### Body Progress Photos (Section K)
 - `POST /api/progress-photos/upload-url` — `{contentType, side, weightKg?, bodyFatPct?, notes?}` → `{uploadUrl, photoId, s3Key}`
 - `GET  /api/progress-photos?side=FRONT|SIDE|BACK` → `BodyPhoto[]` with presigned `url` + `analysis`
@@ -174,6 +181,7 @@ Nemazat ani nepřejmenovávat tato pole:
 | `AchievementUnlock` | `id`, `userId`, `achievementId`, `unlockedAt` |
 | `BodyPhoto` | `id`, `userId`, `s3Key`, `side` (PhotoSide enum), `takenAt`, `weightKg`, `bodyFatPct`, `notes`, `isAnalyzed` |
 | `BodyAnalysis` | `id`, `bodyPhotoId`, `estimatedBodyFatPct`, `estimatedMuscleMass`, `postureNotes`, `visibleStrengths[]`, `areasToWork[]`, `comparisonNotes`, `modelUsed` |
+| `MealPlan` | `id`, `userId`, `weekStart` (Date, Mon), `generatedAt`, `source`, `modelUsed`, `payload` (Json: days × meals + shoppingList), `notes` |
 
 **Schema změny vždy přes `prisma db push --accept-data-loss` + seed task.**
 
