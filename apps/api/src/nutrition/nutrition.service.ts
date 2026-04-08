@@ -284,13 +284,33 @@ Pravidla:
 
         const response = await client.messages.create({
           model: 'claude-haiku-4-5',
-          max_tokens: 8000,
+          max_tokens: 16000, // 28 meals + shopping list + ingredients is heavy
           messages: [{ role: 'user', content: prompt }],
         });
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('No JSON in response');
-        payload = JSON.parse(jsonMatch[0]);
+        // Balanced-brace extraction: find first `{` and walk to matching `}`.
+        // Safer than greedy regex for long responses that might contain
+        // nested braces or even be truncated.
+        const startIdx = text.indexOf('{');
+        if (startIdx < 0) throw new Error('No JSON in response');
+        let depth = 0;
+        let endIdx = -1;
+        let inString = false;
+        let escape = false;
+        for (let i = startIdx; i < text.length; i++) {
+          const ch = text[i];
+          if (escape) { escape = false; continue; }
+          if (ch === '\\') { escape = true; continue; }
+          if (ch === '"') { inString = !inString; continue; }
+          if (inString) continue;
+          if (ch === '{') depth++;
+          else if (ch === '}') {
+            depth--;
+            if (depth === 0) { endIdx = i; break; }
+          }
+        }
+        if (endIdx < 0) throw new Error(`JSON response truncated (depth=${depth}, length=${text.length})`);
+        payload = JSON.parse(text.slice(startIdx, endIdx + 1));
         source = 'claude';
       } catch (e: any) {
         console.error('Meal plan Claude failed:', e.message);
