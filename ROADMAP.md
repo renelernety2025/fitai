@@ -88,19 +88,57 @@
 
 ---
 
+## 📏 Scale Readiness
+
+Plán jak připravit platformu na **1M+ DAU** bez plýtvání. Kompletní systematika v [`SCALING.md`](./SCALING.md).
+
+**4 vrstvy podle ROI:**
+1. **Vrstva 1** — FREE quick wins: caching, indexy, rate limiting, autoscaling (~1 den, +$20/mo, 100× capacity)
+2. **Vrstva 2** — Observability: CloudWatch, Sentry, structured logging (~půl dne, +$26/mo)
+3. **Vrstva 3** — Load testing: k6, 4 scenarios, data-driven bottleneck detection (~1 den, $0)
+4. **Vrstva 4** — Paid upgrades: RDS r6g.large, read replicas, Fargate Spot (jen podle load test dat)
+
+**Aktuální stage:** Launch (0-100 DAU). Vrstvy 1-3 plánovány na tento týden.
+
+---
+
 ## 🚧 Co dál (priorita)
 
-### Vysoká priorita
-1. **Phase 6 part 2 — Native MediaPipe pose detection na mobilu**
-   - EAS Build (custom dev build, mimo Expo Go)
-   - `react-native-vision-camera` + frame processor plugin
-   - Port `feedback-engine.ts`, `rep-counter.ts`, `safety-checker.ts` do RN
-   - ~1 den práce, ale otevírá plný experience na telefonu
+### Vysoká priorita — Scale Readiness Week (2026-04-08 až 04-12)
 
-2. **TestFlight / EAS Build distribuce**
-   - Apple Developer účet ($99/rok)
-   - `eas build --platform ios`
-   - Beta tester invites
+**Week plan:** 5 dní práce, připravit platformu na alpha launch.
+
+1. **Den 1 (Dnes)** — Phase 6 part 2 — Native MediaPipe pose detection na mobilu
+   - EAS Build (custom dev build, mimo Expo Go)
+   - `react-native-vision-camera` + Google ML Kit Pose plugin
+   - Port `feedback-engine.ts`, `rep-counter.ts`, `safety-checker.ts` z webu do RN
+   - TestFlight ready (Apple Developer účet už je)
+
+2. **Den 2** — SCALING.md Vrstva 1: FREE quick wins
+   - Aggressive caching (Redis) pro 10 klíčových endpointů
+   - Database indexy audit + fix chybějících
+   - Rate limiting per endpoint (`@nestjs/throttler`)
+   - ECS autoscaling 1-3 → 2-20 s CPU target tracking
+   - ALB timeout tuning + Prisma connection pooling
+
+3. **Den 3** — SCALING.md Vrstva 2: Observability
+   - CloudWatch dashboard (API/Web/RDS/Redis/ALB metriky)
+   - CloudWatch alarmy + SNS email (10 alarmů)
+   - Sentry integration (backend + mobile + web)
+   - Structured JSON logging (nestjs-pino)
+   - AI usage custom metrics (Claude tokens/den)
+
+4. **Den 4** — SCALING.md Vrstva 3: Load testing
+   - k6 install + 4 test scenarios
+   - Baseline run proti produkci
+   - Identifikace top 3 bottlenecks
+   - První optimalizace + re-test
+
+5. **Den 5** — Polish + produkce ready
+   - Bug fixes ze Sentry
+   - Performance regression guards
+   - Backup/restore test
+   - Alpha launch go/no-go decision
 
 ### Střední priorita
 4. **Apple HealthKit + Google Fit integrace**

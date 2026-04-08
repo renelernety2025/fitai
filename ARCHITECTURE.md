@@ -2,6 +2,8 @@
 
 > Aktualizováno: 2026-04-08
 
+> **Scale readiness:** Plán jak připravit platformu na 1M+ DAU je v [`SCALING.md`](./SCALING.md) — 4 vrstvy podle ROI (free quick wins → observability → load test → paid upgrades).
+
 ## High-Level
 
 ```

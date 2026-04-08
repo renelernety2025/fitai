@@ -4,6 +4,36 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Scale Readiness Playbook] 2026-04-08
+### Added
+- **`SCALING.md`** — kompletní systematika škálování z Launch → 1M+ DAU
+- 4 vrstvy podle ROI:
+  - **Vrstva 1** (free quick wins): caching, indexy, rate limiting, autoscaling, ALB tuning, connection pooling (~1 den, +$20/mo, 100× capacity)
+  - **Vrstva 2** (observability): CloudWatch dashboard + alarmy, Sentry, structured logging, AI usage metrics (~půl dne, +$26/mo)
+  - **Vrstva 3** (load testing): k6, 4 test scenarios (dashboard rush, gym sustained, AI burst, mixed), data-driven bottleneck detection (~1 den, $0)
+  - **Vrstva 4** (paid upgrades): RDS upgrade path, ElastiCache cluster, Fargate Spot, CloudFront API cache, Anthropic tier, read replicas
+- **Growth stages tabulka:** Launch (0-100) → Alpha (100-1k) → Beta (1k-10k) → Growth (10k-100k) → Scale (100k-1M) → Hyperscale (1M+)
+- **Co NEDĚLAT:** 12 overengineering patternů ke vyhnutí (K8s migrace, microservices, GraphQL, event sourcing, ...)
+- **Runbook:** Incident response pro 4 typické scénáře
+- **Cost projections:** ~$540/mo při 50k DAU, ~$3500-6000/mo při 500k DAU
+- **Success metrics** per stage
+
+### Updated
+- `ROADMAP.md` — přidána Scale Readiness sekce + Week plan (5 dní práce)
+- `ARCHITECTURE.md` — cross-reference na SCALING.md
+
+### Why
+Uživatel chce být **ready** na 1M+ DAU ale nechce overengineering. Playbook
+stanoví **pořadí** (Vrstva 1 → 2 → 3 → 4) — nikdy neskip Vrstvu 3 (load test),
+bez měření jsou všechny decisions hazard.
+
+### Files
+- `SCALING.md` (NEW, ~940 řádků)
+- `ROADMAP.md`
+- `ARCHITECTURE.md`
+
+---
+
 ## [CI hardening — migrate runs on every deploy] 2026-04-08
 ### Fixed
 Incident root cause: dvě kaskádové chyby v deploy cyklu Section L:
