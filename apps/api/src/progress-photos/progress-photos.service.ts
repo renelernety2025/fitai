@@ -34,7 +34,15 @@ export class ProgressPhotosService {
   constructor(private prisma: PrismaService) {
     this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
-    this.client = new S3Client({ region });
+    // Disable AWS SDK v3 auto-checksum middleware. Otherwise the SDK signs an
+    // empty-body CRC32 checksum into the presigned URL, browser PUT then sends
+    // a real body and S3 returns 400 BadDigest. Cast to any because option is
+    // only typed in @aws-sdk/client-s3 v3.730+; older runtimes ignore it safely.
+    this.client = new S3Client({
+      region,
+      requestChecksumCalculation: 'WHEN_REQUIRED' as any,
+      responseChecksumValidation: 'WHEN_REQUIRED' as any,
+    } as any);
     this.logger.log(`Progress photos S3 ready (bucket=${this.bucket})`);
   }
 

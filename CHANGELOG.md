@@ -4,6 +4,29 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [fix: Section K — S3 upload CORS + SDK v3 auto-checksum] 2026-04-08
+### Fixed
+Browser upload na `/progres-fotky` selhával s `Failed to fetch`. Dvě root causes:
+
+**1. Bucket `fitai-assets-production` neměl CORS policy.**
+- Browser dělal CORS preflight `OPTIONS` před PUT, S3 vrátil chybu (žádný `Access-Control-Allow-Origin`), prohlížeč zablokoval request.
+- **Fix:** Aplikována CORS policy s `https://fitai.bfevents.cz`, `http://localhost:3000`, `http://localhost:8081` v allowed origins. Allowed methods: GET/HEAD/PUT/DELETE. ExposeHeaders: ETag.
+
+**2. AWS SDK v3 auto-checksum middleware.**
+- SDK v3.730+ automaticky podepisoval `x-amz-checksum-crc32=AAAAAA==` (empty body checksum) do presigned URL.
+- Když browser PUT poslal reálné tělo (blob), S3 počítal jiný checksum a vracel 400 BadDigest.
+- **Fix:** `S3Client` v `progress-photos.service.ts` inicializován s `requestChecksumCalculation: 'WHEN_REQUIRED'` + `responseChecksumValidation: 'WHEN_REQUIRED'`. Cast `as any` pro safety pokud SDK verze nemá tyto typy (runtime ignoruje).
+
+### Verified
+- `OPTIONS` preflight returns `200 + Access-Control-Allow-Origin: https://fitai.bfevents.cz`
+- `aws s3api get-bucket-cors --bucket fitai-assets-production` shows the new policy
+
+### Files
+- `apps/api/src/progress-photos/progress-photos.service.ts` (S3Client init)
+- AWS bucket `fitai-assets-production` CORS configuration
+
+---
+
 ## [Section K — Body Progress Photos] 2026-04-08
 ### Added
 - **Schema:** `BodyPhoto` model + `BodyAnalysis` model + `PhotoSide` enum
