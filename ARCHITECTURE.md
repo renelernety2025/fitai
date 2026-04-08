@@ -1,25 +1,38 @@
 # FitAI — Architecture
 
+> Aktualizováno: 2026-04-08
+
 ## High-Level
 
 ```
-USER (browser/mobile)
+USER (browser / mobile / Expo Go)
     ↓
-ALB (HTTP, port 80) — fitai-production-alb-1685369378.eu-west-1.elb.amazonaws.com
+DNS (Active24): fitai.bfevents.cz CNAME → ALB
     ↓
-    ├── /api/* + /health    → API Target Group → ECS Fargate (NestJS, port 3001)
-    └── /*                   → Web Target Group → ECS Fargate (Next.js, port 3000)
+ALB
+    ├── HTTPS 443 (ACM cert pro fitai.bfevents.cz)
+    │     ├── /api/* + /health → API Target Group → ECS Fargate (NestJS, port 3001)
+    │     └── /*               → Web Target Group → ECS Fargate (Next.js, port 3000)
+    └── HTTP 80
+          ├── /api/* + /health → API (compat)
+          └── default          → 301 → https://fitai.bfevents.cz/...
 
-ECS API
-    ├── PostgreSQL RDS (db.t3.micro, 26 tables, private subnet)
-    ├── Redis ElastiCache (cache.t3.micro, private subnet)
-    ├── S3 (videos, choreography, assets)
-    ├── CloudFront CDN (https://d2xm0s90jjozt9.cloudfront.net)
-    ├── Secrets Manager (DB password, JWT secret, API keys)
+ECS API (26 NestJS modules)
+    ├── PostgreSQL RDS (30+ tables, private subnet)
+    ├── Redis ElastiCache (private subnet)
+    ├── S3 + CloudFront (videos, choreography, assets)
+    ├── Secrets Manager (DB, JWT, Anthropic, OpenAI, ElevenLabs)
     └── External APIs:
-        ├── Claude Haiku — real-time coaching, AI plan generation
-        ├── ElevenLabs — Czech voice synthesis (cached)
-        └── OpenAI Whisper — video audio transcription
+        ├── Claude Haiku — coaching, AI plans, recovery/weekly/nutrition tips
+        ├── ElevenLabs Multilingual v2 — Czech voice synthesis
+        ├── OpenAI Whisper — video preprocessing
+        └── Expo Push API — mobile push notifications
+
+ECS Web (Next.js 14, NEXT_PUBLIC_API_URL=https://fitai.bfevents.cz)
+
+CodeBuild (base: public.ecr.aws/docker/library/node:20-alpine — no DockerHub rate limits)
+    ├── fitai-api-build
+    └── fitai-web-build
 ```
 
 ## AWS Infrastructure (Terraform)
@@ -31,8 +44,9 @@ ECS API
 ### Compute
 - ECS Cluster: `fitai-production` (Fargate, Container Insights enabled)
 - 2 services: `fitai-api-service`, `fitai-web-service` (each 1 task, autoscale 1-3)
-- ALB: HTTP only on port 80 (no SSL yet)
-- 1 listener rule: `/api/*` + `/health` → API, default → Web
+- **ALB: HTTP 80 (compat + redirect) + HTTPS 443 (ACM cert pro `fitai.bfevents.cz`)**
+- HTTPS listener rule: `/api/*` + `/health` → API, default → Web
+- HTTP listener: redirects default → HTTPS (kept rule for `/api/*` + `/health` for compat)
 
 ### Data Layer
 - **RDS PostgreSQL 16:** db.t3.micro, 20GB gp3 → autoscale 100GB, 7-day backup
@@ -55,15 +69,20 @@ ECS API
 - SNS topic for alerts (email subscription)
 - Dashboard: `fitai-production`
 
-## Database Schema (26 models)
+## Database Schema (30+ models)
 
 ### Core
 ```
-User (id, email, name, isAdmin, level)
+User (id, email, name, isAdmin, level, expoPushToken)
   ├── UserProgress (totalXP, currentStreak, longestStreak, totalSessions, totalMinutes)
   ├── FitnessProfile (goal, experienceMonths, daysPerWeek, equipment[], injuries[],
-  │                   age, weightKg, heightCm, onboardingDone, priorityMuscles[])
-  └── OneRepMax (exerciseId, estimatedKg, source) — Section C
+  │                   age, weightKg, heightCm, onboardingDone, priorityMuscles[],
+  │                   dailyKcal, dailyProteinG, dailyCarbsG, dailyFatG)
+  ├── OneRepMax (exerciseId, estimatedKg, source) — Section C
+  ├── DailyCheckIn (date, sleepHours, sleepQuality, hydrationL, steps,
+  │                 mood, energy, soreness, stress, notes) — Section G
+  ├── FoodLog (date, mealType, name, kcal, proteinG, carbsG, fatG, servings) — Section F
+  └── AchievementUnlock (achievementId, unlockedAt) — Section J
 ```
 
 ### Video Workouts
@@ -102,9 +121,28 @@ AIGeneratedPlan (userId, workoutPlanId?, goal, weekNumber, totalWeeks, isDeloadW
 
 ### PWA / Notifications
 ```
-PushSubscription (userId, endpoint, p256dh, auth)
+PushSubscription (userId, endpoint, p256dh, auth)  — VAPID web push
 NotificationPreference (userId, workoutReminder, streakWarning, achievements,
                         quietHoursStart, quietHoursEnd)
+User.expoPushToken — Expo Push API for mobile (Section J)
+```
+
+### Habits (Section G)
+```
+DailyCheckIn (userId, date, sleepHours, sleepQuality, hydrationL, steps,
+              mood, energy, soreness, stress, notes)
+```
+
+### Nutrition (Section F)
+```
+FoodLog (userId, date, mealType, name, kcal, proteinG, carbsG, fatG, servings)
+FitnessProfile.dailyKcal/dailyProteinG/dailyCarbsG/dailyFatG — TDEE-based goals
+```
+
+### Achievements (Section J)
+```
+Achievement (code, titleCs, category, icon, xpReward, threshold)
+AchievementUnlock (userId, achievementId, unlockedAt)
 ```
 
 ### Social
@@ -128,7 +166,7 @@ EducationLesson (slug, titleCs, category, bodyCs, durationMin, isPublished)
 GlossaryTerm (termCs, definitionCs, category)
 ```
 
-## Backend Modules (22)
+## Backend Modules (26)
 
 | # | Module | Endpoints (under `/api`) | Purpose |
 |---|--------|--------------------------|---------|
@@ -153,32 +191,36 @@ GlossaryTerm (termCs, definitionCs, category)
 | 19 | Intelligence | /intelligence/insights, /intelligence/plateaus, /intelligence/recovery, /intelligence/weak-points, /intelligence/priority-muscles | Adaptive learning (Section B) |
 | 20 | Onboarding | /onboarding/status, /onboarding/test-exercises, /onboarding/measurements, /onboarding/fitness-test, /onboarding/suggested-weights, /onboarding/complete | 1RM test wizard (Section C) |
 | 21 | Education | /education/lessons, /education/lessons/of-the-week, /education/lessons/:slug, /education/glossary, /education/briefing/:gymSessionId, /education/debrief/:gymSessionId | Lessons + glossary (Section D) |
-| 22 | Prisma | (internal) | Database client |
+| 22 | HomeTraining | /home-training/quick, /home-training/home, /home-training/travel | Bodyweight workouts (Section E) |
+| 23 | Nutrition | /nutrition/goals, /nutrition/goals/auto, /nutrition/today, /nutrition/log, /nutrition/quick-foods | Food log + TDEE (Section F) |
+| 24 | Habits | /habits/today, /habits/history, /habits/stats | Daily check-in + recovery score (Section G) |
+| 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips | Claude-powered insights (Section H), 1h cache |
+| 26 | Achievements | /achievements, /achievements/check, /achievements/unlock | Gamification (Section J), 17 seed badges |
+| — | Prisma | (internal) | Database client |
 
 ## Frontend Architecture
 
-### Pages (App Router)
+### Pages (App Router) — vše v jednotném v2 designu
 ```
-/                          Landing page
-/login, /register          Auth pages
-/(app)/dashboard           Stats, Lesson of the Week, AI Insights, weekly chart, recommended videos
+/                          Landing (v2 hero, "Trénink, který tě opravdu sleduje")
+/login, /register          Auth (V2AuthLayout)
+/(app)/dashboard           Triple Activity Ring + AI Týdenní review + Lekce týdne + Nutrition + AI Insights
 /(app)/onboarding          3-step wizard
-/(app)/videos              Video catalog
-/(app)/videos/[id]         Video detail
-/(app)/workout/[videoId]   Video workout (split: video + camera + skeleton overlay)
-/(app)/exercises           Exercise library
-/(app)/exercises/[id]      Exercise detail with full instructions
-/(app)/plans               Workout plans
-/(app)/plans/[id]          Plan detail with days
-/(app)/plans/create        Plan builder
-/(app)/gym/start           Plan day selection
-/(app)/gym/[sessionId]     Gym workout (instructions + camera + rep counter + RPE modal + rest timer)
+/(app)/videos, /[id]       Video catalog + detail (Section 1)
+/(app)/workout/[videoId]   Video workout — kamera + MediaPipe + Claude voice
+/(app)/exercises, /[id]    Exercise library + detail (Section A)
+/(app)/plans, /[id]        Workout plan templates + detail (redirect /plans → /gym)
+/(app)/gym                 Plan list + quick start cards
+/(app)/gym/[sessionId]     Gym workout — kamera + rep counter + RPE + rest timer
 /(app)/ai-coach            AI Trainer profile + plan generation
-/(app)/lekce               Lessons listing
-/(app)/lekce/[slug]        Lesson detail
-/(app)/slovnik             Glossary
-/(app)/community           Social: feed, challenges, people
-/(app)/progress            Stats, streak calendar, weekly volume per muscle
+/(app)/lekce, /[slug]      Lessons listing + detail (Section D)
+/(app)/slovnik             Glossary (Section D)
+/(app)/community           Social: feed, challenges, people (Section 5)
+/(app)/progress            Stats, streak, weekly volume, plateaus, weak points
+/(app)/doma                Home/travel/quick workouts (Section E)
+/(app)/vyziva              Nutrition: macros + AI tips (Section F + H)
+/(app)/habity              Daily check-in + recovery score + AI tips (Section G + H)
+/(app)/uspechy             17 achievements badges grid (Section J)
 /admin/upload              Admin video upload
 ```
 
@@ -198,7 +240,9 @@ GlossaryTerm (termCs, definitionCs, category)
 - `lib/push-notifications.ts` — VAPID subscription helper
 
 ### Components
-- `components/layout/Header.tsx` — Main nav (8 links)
+- `components/v2/V2Layout.tsx` — sdílený v2 layout: V2Layout, V2SectionLabel, V2Display, V2Stat, V2Ring (Apple Watch Activity Rings)
+- `components/v2/V2AuthLayout.tsx` — login/register/landing layout: V2AuthLayout, V2Input, V2Button
+- `components/layout/Header.tsx` — *(legacy v1, dead code, není importované)*
 - `components/layout/ServiceWorkerRegistrar.tsx` — PWA SW registration
 - `components/workout/VideoPlayer.tsx` — HLS player with timeUpdate callback
 - `components/workout/CameraView.tsx` — getUserMedia + MediaPipe overlay
@@ -241,6 +285,24 @@ GlossaryTerm (termCs, definitionCs, category)
 - **Recovery analysis:** form trend + RPE + volume → status (fresh/normal/fatigued/overreached)
 - **Weak points:** muscle groups with avg form <65% → accessory exercise suggestions
 - **Asymmetry:** left vs right safety event count → unilateral exercise recommendations
+
+### 5. AI Brain (Section H — Claude long-form insights)
+- **Recovery tips** (`/api/ai-insights/recovery-tips`): analyzes 7-day habits (sleep/energy/soreness/stress) → 3 personalized tips in JSON
+- **Weekly review** (`/api/ai-insights/weekly-review`): summary + highlights + improvements + next week focus
+- **Nutrition tips** (`/api/ai-insights/nutrition-tips`): analyzes 7-day food logs vs goals → 3 tips
+- **In-memory cache** 1h per user per endpoint
+- Static fallbacks when Claude API unavailable
+
+### 6. Habits & Recovery Score (Section G)
+- DailyCheckIn data → recovery score 0-100
+- Score combines: sleep distance from 8h, energy 1-5, low soreness, low stress
+- Streak counter for consecutive check-in days
+
+### 7. Achievements (Section J)
+- 17 seed achievements in 6 categories (training, streak, milestone, habits, exploration, nutrition)
+- Auto-unlock via `POST /api/achievements/check` reading UserProgress + sessions + check-ins
+- XP reward on unlock (50-1000 XP per achievement)
+- Manual unlock by code for exploration-style achievements
 
 ## Pose Detection Pipeline
 
@@ -306,3 +368,46 @@ For each frame:
    - Endurance: 60% × 15 reps
 5. **First week:** 60% of recommended (gentle ramp)
 6. POST /api/onboarding/complete → onboardingDone: true → redirect to dashboard
+
+## Mobile Architecture (React Native + Expo SDK 54)
+
+### Screens (18 total v2 design)
+```
+Auth stack:
+  LoginScreen, RegisterScreen, OnboardingScreen
+
+Main tabs (6):
+  Dashboard (Triple Activity Ring + AI Týdenní review)
+  Plans (Trénink — quick start + plan list)
+  Vyziva (macro rings + AI nutrition tips + meals + modal)
+  Habity (recovery score ring + AI doporučení + 1-5 scale form)
+  Lekce (cards listing + filter by category)
+  Progress (stats + plateaus + weak points)
+
+Stack screens (přístupné z Profile menu / Plans / Dashboard):
+  ProfileScreen (Více menu → Úspěchy, Cviky, Videa, Doma, AI Trenér, Komunita, Slovník)
+  CameraWorkoutScreen (Phase 6 part 1: expo-camera + manual rep counter + RPE + rest)
+  UspechyScreen (17 achievements grid)
+  ExerciseDetail, PlanDetail, VideoDetail, LessonDetail
+  Doma, AICoach, Videos, Exercises, Slovnik, Community
+```
+
+### Mobile-specific
+- **Camera:** `expo-camera` mirror mode + `expo-haptics` feedback
+- **Push notifications:** `expo-notifications` Expo Push Service, auto-register in `auth-context`
+- **Storage:** `expo-secure-store` for JWT
+- **SVG:** `react-native-svg` for V2Ring + V2TripleRing
+- **Navigation:** `@react-navigation/bottom-tabs` + `native-stack`
+- **Theme:** custom v2 theme tokens via `v2.tsx` (V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, V2Input, V2Ring, V2TripleRing, V2Loading, V2Row)
+- **Metro config:** monorepo dedupe via blockList (prevents React 18 hoist conflict)
+- **API URL:** default `https://fitai.bfevents.cz` (env override `EXPO_PUBLIC_API_URL`)
+
+### Mobile vs Web parity
+| Feature | Web | Mobile |
+|---------|-----|--------|
+| Pose detection (MediaPipe) | ✅ | ❌ TODO Phase 6 part 2 (EAS Build + native plugin) |
+| Manual rep counter | — | ✅ |
+| AI coaching | ✅ | ❌ depends on pose detection |
+| Voice (ElevenLabs) | ✅ | ❌ TODO native TTS player |
+| Push notifications | ❌ VAPID keys missing | ✅ Expo Push |
+| All non-pose features | ✅ | ✅ Parita |

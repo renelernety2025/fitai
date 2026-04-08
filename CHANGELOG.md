@@ -4,6 +4,41 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Section J — Gamification + AI Nutrition Tips] 2026-04-08
+### Added
+- **Achievements system**: `Achievement` + `AchievementUnlock` modely, 17 seed achievements ve 6 kategoriích
+  - Training: first_workout, workouts_5/25/100
+  - Streak: streak_3/7/30
+  - Milestone: time_10h/50h, xp_1000/5000/10000
+  - Habits: first_checkin, checkin_7
+  - Exploration: tried_home_workout, tried_ai_coach, read_5_lessons
+- Auto-unlock při check (`POST /api/achievements/check`) — počítá z UserProgress + sessions + check-ins
+- Auto XP reward při unlock (50-1000 XP per achievement)
+- Manual unlock přes code (`POST /api/achievements/unlock` s `{code}`) pro exploration achievements
+- Web `/uspechy` page — 17 badges grid s category filtrem, locked/unlocked stavy
+- Mobile `UspechyScreen` — 2-col grid, accessible přes Profile menu
+- Achievement seed na app boot (idempotent — `OnApplicationBootstrap`)
+
+### AI Nutrition Tips
+- Nový endpoint `GET /api/ai-insights/nutrition-tips`
+- Claude Haiku analyzuje 7-day food logs + nutrition goals + fitness goal → 3 personalizované tipy
+- Kategorie: protein, hydration, timing, macros, quality
+- 1h cache, static fallback
+- Web `/vyziva` integrace — sekce "AI doporučení" před meals
+- Mobile `VyzivaScreen` totéž
+
+### Files
+- `apps/api/prisma/schema.prisma` (+Achievement, +AchievementUnlock)
+- `apps/api/src/achievements/{module,controller,service}.ts`
+- `apps/api/src/ai-insights/ai-insights.{service,controller}.ts` (+nutrition tips)
+- `apps/web/src/app/(app)/uspechy/page.tsx`
+- `apps/web/src/app/(app)/vyziva/page.tsx` (+AI tips)
+- `apps/web/src/components/v2/V2Layout.tsx` (+nav)
+- `apps/mobile/src/screens/{UspechyScreen,VyzivaScreen,ProfileScreen}.tsx`
+- `apps/mobile/src/navigation/AppNavigator.tsx` (+route)
+
+---
+
 ## [Section H — AI Brain] 2026-04-08
 ### Added
 - Modul `ai-insights` s endpointy `/recovery-tips`, `/weekly-review`

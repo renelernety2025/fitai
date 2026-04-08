@@ -93,9 +93,16 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/onboarding/complete`
 - `GET  /api/onboarding/status`
 
+### Achievements (Section J)
+- `GET  /api/achievements` — list all + unlock state
+- `GET  /api/achievements/unlocked` — only unlocked, with timestamps
+- `POST /api/achievements/check` — auto-detect newly unlocked
+- `POST /api/achievements/unlock` — manual unlock by code
+
 ### AI Insights (Section H)
 - `GET /api/ai-insights/recovery-tips`
 - `GET /api/ai-insights/weekly-review`
+- `GET /api/ai-insights/nutrition-tips`
 
 ### Habits (Section G)
 - `GET /api/habits/today`
@@ -153,6 +160,9 @@ Nemazat ani nepřejmenovávat tato pole:
 | `Progress` | `userId`, `xp`, `level`, `streak` |
 | `EducationLesson` | `id`, `slug`, `title`, `content`, `category` |
 | `GlossaryTerm` | `id`, `term`, `definition` |
+| `DailyCheckIn` | `id`, `userId`, `date`, `sleepHours`, `sleepQuality`, `hydrationL`, `steps`, `mood`, `energy`, `soreness`, `stress` |
+| `Achievement` | `id`, `code`, `titleCs`, `category`, `icon`, `xpReward`, `threshold` |
+| `AchievementUnlock` | `id`, `userId`, `achievementId`, `unlockedAt` |
 
 **Schema změny vždy přes `prisma db push --accept-data-loss` + seed task.**
 

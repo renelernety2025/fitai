@@ -3,7 +3,7 @@
 ## Project Overview
 FitAI je AI-powered fitness platforma s real-time pose detection, gym workout trackingem a personalizovaným AI coachingem. Cíl: transformovat platformu z "fitness trackeru" na inteligentního AI trenéra.
 
-**Produkce:** http://fitai-production-alb-1685369378.eu-west-1.elb.amazonaws.com
+**Produkce:** https://fitai.bfevents.cz (HTTPS přes ACM cert + ALB 443)
 **GitHub:** https://github.com/renelernety2025/fitai (public)
 **AWS:** eu-west-1, profile `fitai`, account 326334468637
 
@@ -20,7 +20,7 @@ FitAI je AI-powered fitness platforma s real-time pose detection, gym workout tr
 ```
 fitai/
 ├── apps/
-│   ├── api/            NestJS backend (22 modules)
+│   ├── api/            NestJS backend (27 modules)
 │   ├── web/            Next.js frontend
 │   └── mobile/         React Native (Expo)
 ├── packages/
