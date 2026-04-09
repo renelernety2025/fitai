@@ -1,0 +1,123 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "app/fitai-production-alb/271bba2a979b92bd", { "stat": "Sum" }],
+          [".", "HTTPCode_Target_2XX_Count", ".", ".", { "stat": "Sum" }],
+          [".", "HTTPCode_Target_4XX_Count", ".", ".", { "stat": "Sum" }],
+          [".", "HTTPCode_Target_5XX_Count", ".", ".", { "stat": "Sum", "color": "#d62728" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "API Traffic (5 min)",
+        "yAxis": { "left": { "min": 0 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 0, "width": 12, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "app/fitai-production-alb/271bba2a979b92bd", { "stat": "p50", "label": "p50" }],
+          ["...", { "stat": "p95", "label": "p95" }],
+          ["...", { "stat": "p99", "label": "p99" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "API Latency (p50/p95/p99)",
+        "yAxis": { "left": { "min": 0, "label": "seconds" } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ClusterName", "fitai-production", "ServiceName", "fitai-api-service", { "label": "API CPU %" }],
+          [".", "MemoryUtilization", ".", ".", ".", ".", { "label": "API Memory %" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "API ECS Resources",
+        "yAxis": { "left": { "min": 0, "max": 100 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/ECS", "CPUUtilization", "ClusterName", "fitai-production", "ServiceName", "fitai-web-service", { "label": "Web CPU %" }],
+          [".", "MemoryUtilization", ".", ".", ".", ".", { "label": "Web Memory %" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "Web ECS Resources",
+        "yAxis": { "left": { "min": 0, "max": 100 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16, "y": 6, "width": 8, "height": 6,
+      "properties": {
+        "metrics": [
+          ["ECS/ContainerInsights", "RunningTaskCount", "ClusterName", "fitai-production", "ServiceName", "fitai-api-service", { "label": "API Tasks" }],
+          ["...", "fitai-web-service", { "label": "Web Tasks" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "Running Tasks (autoscale proof)",
+        "yAxis": { "left": { "min": 0 } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 12, "width": 12, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "fitai-production-db", { "label": "RDS CPU %" }],
+          [".", "DatabaseConnections", ".", ".", { "label": "Connections", "yAxis": "right" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "RDS PostgreSQL",
+        "yAxis": { "left": { "min": 0, "max": 100, "label": "CPU %" }, "right": { "min": 0, "label": "Conn" } }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12, "y": 12, "width": 12, "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "ReadIOPS", "DBInstanceIdentifier", "fitai-production-db"],
+          [".", "WriteIOPS", ".", "."],
+          [".", "FreeStorageSpace", ".", ".", { "yAxis": "right" }]
+        ],
+        "period": 300,
+        "region": "eu-west-1",
+        "title": "RDS I/O + Storage"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0, "y": 18, "width": 24, "height": 6,
+      "properties": {
+        "metrics": [
+          ["FitAI/AI", "ClaudeTokens", "Endpoint", "daily-brief", { "stat": "Sum" }],
+          ["...", "meal-plan-generate", { "stat": "Sum" }],
+          ["...", "recovery-tips", { "stat": "Sum" }],
+          ["...", "weekly-review", { "stat": "Sum" }],
+          ["...", "nutrition-tips", { "stat": "Sum" }],
+          ["...", "progress-photos-analyze", { "stat": "Sum" }]
+        ],
+        "period": 3600,
+        "region": "eu-west-1",
+        "title": "Claude Token Usage (hourly)",
+        "yAxis": { "left": { "min": 0, "label": "tokens" } }
+      }
+    }
+  ]
+}

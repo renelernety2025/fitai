@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -42,6 +45,31 @@ import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
  */
 @Module({
   imports: [
+    // Sentry integration — automatically captures unhandled exceptions
+    // across all NestJS routes/services. DSN via SENTRY_DSN env var.
+    SentryModule.forRoot(),
+    // Structured JSON logging — every log line queryable in CloudWatch Insights
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL || 'info',
+        // In production, emit raw JSON (parseable by log aggregators).
+        // In dev, pretty-print for humans.
+        transport:
+          process.env.NODE_ENV === 'production'
+            ? undefined
+            : { target: 'pino-pretty', options: { singleLine: true } },
+        // Add userId to every log if present in request
+        customProps: (req: any) => ({
+          userId: req?.user?.id,
+          requestId: req?.id,
+        }),
+        // Auto-redact sensitive fields
+        redact: {
+          paths: ['req.headers.authorization', 'req.headers.cookie', '*.password'],
+          censor: '[REDACTED]',
+        },
+      },
+    }),
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 10 },
       { name: 'medium', ttl: 60_000, limit: 200 },
@@ -49,6 +77,7 @@ import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
     ]),
     PrismaModule,
     CacheModule,
+    MetricsModule,
     HealthModule,
     AuthModule,
     UsersModule,

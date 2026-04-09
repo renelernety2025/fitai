@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 export interface RecoveryTip {
   category: 'sleep' | 'nutrition' | 'recovery' | 'stress' | 'training';
@@ -73,7 +74,10 @@ export class AiInsightsService {
   private dailyBriefCache = new Map<string, CachedItem<DailyBrief>>();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private metrics: MetricsService,
+  ) {}
 
   async getRecoveryTips(userId: string): Promise<{ tips: RecoveryTip[]; cached: boolean }> {
     const cached = this.tipsCache.get(userId);
@@ -558,6 +562,14 @@ Pravidla:
           max_tokens: 2000,
           messages: [{ role: 'user', content: prompt }],
         });
+        // Record Claude token usage for cost tracking
+        const usage = (response as any).usage || {};
+        this.metrics.recordClaudeTokens(
+          'daily-brief',
+          usage.input_tokens || 0,
+          usage.output_tokens || 0,
+        ).catch(() => {});
+
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error('No JSON in response');

@@ -4,6 +4,118 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Scale Readiness — Vrstva 2: observability] 2026-04-09
+### Added
+**SCALING.md Vrstva 2 completed.** Platforma má teď plnou viditelnost.
+
+### 1. CloudWatch dashboard (AWS)
+**Dashboard name:** `fitai-production`
+**URL:** https://eu-west-1.console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=fitai-production
+
+**8 widgetů:**
+- API Traffic (RequestCount, 2XX, 4XX, 5XX)
+- API Latency (p50, p95, p99)
+- API ECS Resources (CPU + Memory)
+- Web ECS Resources (CPU + Memory)
+- Running Tasks (autoscale proof)
+- RDS PostgreSQL (CPU + connections)
+- RDS I/O + Storage (Read/Write IOPS, FreeStorage)
+- **Claude Token Usage** (hourly, per endpoint — custom metric)
+
+**Config:** `infrastructure/monitoring/cloudwatch-dashboard.json` (committed)
+
+### 2. CloudWatch alarmy (10 nových)
+SNS topic: `arn:aws:sns:eu-west-1:326334468637:fitai-production-alerts`
+Subscription: `chlubnyrene@gmail.com` (pending confirmation — user musí kliknout v emailu)
+
+| # | Alarm | Threshold |
+|---|---|---|
+| 1 | `fitai-api-5xx-errors` | >10 per 5 min |
+| 2 | `fitai-api-cpu-high` | >80% for 5 min |
+| 3 | `fitai-api-memory-high` | >85% for 5 min |
+| 4 | `fitai-rds-cpu-high` | >70% for 10 min |
+| 5 | `fitai-rds-storage-low` | <5 GB |
+| 6 | `fitai-rds-connections-high` | >60 of 87 max |
+| 7 | `fitai-alb-unhealthy-targets` | >0 for 3 min |
+| 8 | `fitai-alb-p95-latency-high` | >3s for 10 min |
+| 9 | `fitai-web-cpu-high` | >80% for 5 min |
+| 10 | `fitai-api-request-surge` | >1000 req/5min |
+
+### 3. Sentry error tracking
+- **Package:** `@sentry/nestjs@^10.47.0`
+- **Init v `main.ts`** před NestJS bootstrapem (Sentry hookuje Node internals)
+- **SentryModule.forRoot()** v `app.module.ts` — auto-capture exceptions napříč routes
+- **DSN přes env var:** `SENTRY_DSN` (user musí vytvořit projekt na sentry.io a přidat secret)
+- **`beforeSend` filter:** drop `BadRequestException` (validační errory, user input noise)
+- **Sample rate:** 10% traces
+
+### 4. Structured JSON logging (`nestjs-pino`)
+- **Package:** `nestjs-pino@^4.6.1` + `pino-http` + `pino-pretty`
+- **Production:** raw JSON (queryable v CloudWatch Logs Insights)
+- **Development:** pretty-print (single-line)
+- **Auto-propagation `userId` + `requestId`** přes custom props
+- **Redakce sensitive fields:** `authorization`, `cookie`, `*.password` → `[REDACTED]`
+- **Global Logger** přes `app.useLogger(app.get(Logger))` v `main.ts`
+
+**Query patterns pro CloudWatch Logs Insights:**
+```
+fields @timestamp, msg, userId, level
+| filter level >= 50
+| stats count() by msg
+| sort count desc
+```
+
+### 5. Custom metrics — Claude AI usage tracking
+- **`apps/api/src/metrics/metrics.service.ts`** — `MetricsService` s AWS CloudWatch SDK
+- **`MetricsModule`** (@Global) — injectable všude
+- **Metriky do namespace `FitAI/AI`:**
+  - `ClaudeTokens` (input + output total, per endpoint)
+  - `ClaudeInputTokens`, `ClaudeOutputTokens` (cost analysis)
+  - `ElevenLabsCharacters`
+  - `CacheHit` / `CacheMiss` (per key prefix)
+  - Generic `recordEvent(name, dims)` pro auth failures, throttle hits
+- **Graceful degradation** — selhání CloudWatch SDK nikdy neblokuje business logiku
+- **1% sampling na warning logs** aby se nelogovalo 1000× stejná chyba
+- **Integrace do AI Coach Daily Brief** — po každém Claude call
+  `metrics.recordClaudeTokens('daily-brief', input, output)` (first endpoint hooked)
+- Dashboard widget "Claude Token Usage (hourly)" zobrazuje tyto metriky
+
+### Files
+**Nové:**
+- `apps/api/src/metrics/metrics.service.ts`
+- `apps/api/src/metrics/metrics.module.ts`
+- `infrastructure/monitoring/cloudwatch-dashboard.json`
+
+**Editované:**
+- `apps/api/src/main.ts` — Sentry init + pino Logger
+- `apps/api/src/app.module.ts` — SentryModule + LoggerModule + MetricsModule
+- `apps/api/src/ai-insights/ai-insights.service.ts` — metrics.recordClaudeTokens()
+- `apps/api/package.json` — `@sentry/nestjs`, `nestjs-pino`, `pino-http`, `pino-pretty`, `@aws-sdk/client-cloudwatch`
+
+**AWS (bez commit):**
+- SNS topic `fitai-production-alerts`
+- 10 CloudWatch alarms
+- CloudWatch dashboard `fitai-production`
+
+### TODO před full funkčností
+1. **Potvrdit email subscription** — uživatel musí kliknout confirmation link v mailu od AWS SNS
+2. **Sentry DSN** — vytvořit projekt na sentry.io → DSN → přidat jako ECS env var
+3. **Napojit metrics.recordClaudeTokens()** na dalších 5 Claude endpointů (recovery-tips, weekly-review, nutrition-tips, meal-plan/generate, progress-photos/analyze)
+
+### Cost
+- **SNS + CloudWatch alarms:** ~$1/month
+- **Sentry free tier:** $0 (5k events/month)
+- **Custom metrics:** $0.30 per metric per month × ~10 metrics = $3/month
+- **CloudWatch Logs:** $0.50/GB ingested, ~$5-10/month při start
+- **Total Vrstva 2:** ~$10-15/month
+
+### Why
+Po Vrstvě 1 máme kapacitu, ale **bez observability jedeme naslepo**. Vrstva 2
+dává real-time viditelnost, proactive alerty před incidenty, crash reporty
+a data-driven tracking AI nákladů.
+
+---
+
 ## [Scale Readiness — Vrstva 1: caching + throttling + autoscaling] 2026-04-09
 ### Added
 **Kompletní implementace SCALING.md Vrstvy 1** — připravuje backend na 100k+ DAU.
