@@ -55,10 +55,6 @@
           "enableMicrophonePermission": false,
           "enableCodeScanner": false
         }
-      ],
-      [
-        "react-native-worklets-core",
-        {}
       ]
     ],
     "extra": {
