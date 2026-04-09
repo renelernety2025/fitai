@@ -185,39 +185,36 @@ EducationLesson (slug, titleCs, category, bodyCs, durationMin, isPublished)
 GlossaryTerm (termCs, definitionCs, category)
 ```
 
-## Backend Modules (26)
+## Backend Modules (28)
 
-| # | Module | Endpoints (under `/api`) | Purpose |
-|---|--------|--------------------------|---------|
-| 1 | Auth | /auth/login, /auth/register, /auth/me | JWT auth |
-| 2 | Users | /users/me/reminder-status | Profile, reminders |
-| 3 | Health | /health (NO prefix) | ALB health check |
-| 4 | Videos | /videos, /videos/upload-url, /videos/:id, /videos/admin/all, /videos/:id/publish, /videos/:id/reprocess | Video CRUD |
-| 5 | Preprocessing | /preprocessing/start, /preprocessing/status/:videoId | Whisper + Claude pipeline |
-| 6 | Sessions | /sessions/start, /sessions/:id/end, /sessions/:id/pose-snap, /sessions/my, /sessions/my/stats | Video workout tracking |
-| 7 | Progress | (internal service) | XP/streak/levels |
-| 8 | Exercises | /exercises, /exercises/:id, POST/PUT/DELETE | Exercise library |
-| 9 | WorkoutPlans | /workout-plans, /workout-plans/:id, /workout-plans/:id/clone | Plan templates |
-| 10 | GymSessions | /gym-sessions/start, /gym-sessions/:id/set/complete, /gym-sessions/:id/end, /gym-sessions/my, /gym-sessions/my/weekly-volume | Gym tracking |
-| 11 | Adaptive | /adaptive/recommendations/:exerciseId | Weight recommendations |
-| 12 | Coaching | /coaching/feedback, /coaching/tts, /coaching/safety-event, /coaching/precache | Real-time AI coaching |
-| 13 | AIPlanner | /ai-planner/profile, /ai-planner/generate, /ai-planner/break-recovery, /ai-planner/asymmetry, /ai-planner/home-alternative | AI plan generation |
-| 14 | Notifications | /notifications/vapid-public-key, /notifications/subscribe, /notifications/preferences, /notifications/test | Web push (VAPID) |
-| 15 | Social | /social/follow/:userId, /social/feed, /social/challenges, /social/search | Social features |
-| 16 | Vision | /vision/detect-exercise, /vision/analyze, /vision/estimate-weight | Exercise detection |
-| 17 | Wearables | /wearables/sync, /wearables/heart-rate/:sessionId, /wearables/recovery, /wearables/calories/:sessionId | HR data, recovery |
-| 18 | Content | /content/import, /content/marketplace, /content/my-imports | URL import, marketplace |
-| 19 | Intelligence | /intelligence/insights, /intelligence/plateaus, /intelligence/recovery, /intelligence/weak-points, /intelligence/priority-muscles | Adaptive learning (Section B) |
-| 20 | Onboarding | /onboarding/status, /onboarding/test-exercises, /onboarding/measurements, /onboarding/fitness-test, /onboarding/suggested-weights, /onboarding/complete | 1RM test wizard (Section C) |
-| 21 | Education | /education/lessons, /education/lessons/of-the-week, /education/lessons/:slug, /education/glossary, /education/briefing/:gymSessionId, /education/debrief/:gymSessionId | Lessons + glossary (Section D) |
-| 22 | HomeTraining | /home-training/quick, /home-training/home, /home-training/travel | Bodyweight workouts (Section E) |
-| 23 | Nutrition | /nutrition/goals, /nutrition/goals/auto, /nutrition/today, /nutrition/log, /nutrition/quick-foods | Food log + TDEE (Section F) |
-| 24 | Habits | /habits/today, /habits/history, /habits/stats | Daily check-in + recovery score (Section G) |
-| 25 | AiInsights | /ai-insights/recovery-tips, /ai-insights/weekly-review, /ai-insights/nutrition-tips, /ai-insights/daily-brief | Claude-powered insights (Section H), 1h cache; daily-brief is flagship hero with 24h cache |
-| 26 | Achievements | /achievements, /achievements/check, /achievements/unlock | Gamification (Section J), 17 seed badges |
-| 27 | ProgressPhotos | /progress-photos, /progress-photos/upload-url, /progress-photos/stats, /progress-photos/:id, /progress-photos/:id/analyze, DELETE /progress-photos/:id | Body progress (Section K), Claude Vision body composition, presigned S3 |
-| 23+ | Nutrition (extended) | /nutrition/meal-plan/current, /nutrition/meal-plan/history, /nutrition/meal-plan/generate, DELETE /nutrition/meal-plan/:id | Generative meal planning (Section L), Claude Haiku 7-day plan + shopping list |
-| — | Prisma | (internal) | Database client |
+Všechny endpointy jsou pod prefixem `/api/*` (kromě `/health`). Pro aktuální seznam všech modulů + endpointů čti přímo kód — markdown kopie zastarává:
+
+```bash
+# Seznam všech modulů:
+ls apps/api/src/                          # directory per module
+
+# Seznam všech endpointů v konkrétním modulu:
+grep -rn "@Get\|@Post\|@Put\|@Delete\|@Patch" apps/api/src/<module>/*.controller.ts
+
+# Všechny endpointy napříč projektem:
+grep -rn "@Get\|@Post\|@Put\|@Delete\|@Patch" apps/api/src/**/*.controller.ts
+```
+
+### Přehled modulů podle domény
+
+| Doména | Moduly | Hlavní účel |
+|---|---|---|
+| **Auth & Users** | `auth`, `users` | JWT login/register, profile |
+| **Video workouts** | `videos`, `preprocessing`, `sessions`, `vision` | Video catalog, Whisper+Claude choreography, pose tracking |
+| **Gym workouts** | `exercises`, `workout-plans`, `gym-sessions`, `adaptive` | Exercise library, plans, rep counting, weight recommendations |
+| **AI coaching** | `coaching`, `ai-planner`, `ai-insights` | Real-time Claude feedback, plan generation, Daily Brief / recovery / weekly review / nutrition tips |
+| **Nutrition** | `nutrition` | Food log, TDEE, meal plan generation (Section F + L) |
+| **Habits & Progress** | `habits`, `intelligence`, `progress`, `progress-photos` | Daily check-in, plateau detection, weak points, body photos + Claude Vision |
+| **Content** | `education`, `home-training` | Lessons, glossary, bodyweight workouts |
+| **Social & Gamification** | `social`, `achievements` | Follow, feed, challenges, 17 badges |
+| **Infrastructure** | `notifications`, `wearables`, `content`, `onboarding`, `health` | Web push (VAPID), HR sync, URL import, 1RM wizard, ALB health |
+
+**Canonical list** viz `apps/api/src/app.module.ts` (imports array) — 28 modulů + Prisma internal.
 
 ## Frontend Architecture
 
