@@ -41,13 +41,6 @@
           "cameraPermission": "FitAI potřebuje kameru pro sledování formy."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#16a34a"
-        }
-      ],
       "expo-secure-store",
       [
         "react-native-vision-camera",
