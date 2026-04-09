@@ -4,6 +4,60 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [fix(mobile): remove expo-notifications to unblock EAS dev build] 2026-04-09
+### Fixed
+EAS iOS dev build failed twice on Xcode archive step:
+```
+Provisioning profile '*[expo] cz.bfevents.fitai AdHoc 1775739084844'
+  doesn't support the Push Notifications capability.
+  doesn't include the aps-environment entitlement.
+```
+
+**Root cause:** `expo-notifications` package auto-links via Expo Prebuild,
+generates `aps-environment` entitlement into Xcode project. This requires
+Push Notifications capability in provisioning profile. Current profile
+doesn't have it because APNs key setup was skipped earlier (blocked by
+unrelated Czech keyboard `@` + fastlane auth issues).
+
+Previous fix (commit `efae9d1`) removed the plugin from `app.json` only
+but left the package in dependencies — autolinking still kicked in.
+
+### Changes
+- **`apps/mobile/package.json`**: removed `expo-notifications@~0.32.16` from deps
+- **`apps/mobile/src/lib/auth-context.tsx`**: stubbed `registerForPushNotificationsAsync()`
+  to return `null` (no-op). Removed `import * as Notifications from 'expo-notifications'`
+  and `import { Platform }` from react-native.
+- Root `package-lock.json` regenerated via `npm install`
+
+### Impact
+- ✅ Mobile dev build **should now build cleanly** (no aps-environment entitlement requested)
+- 🟡 Mobile push notifications **temporarily disabled**
+- ✅ Web push (VAPID) **continues working** — this only affects mobile
+- ✅ Backend `/api/notifications/expo-subscribe` endpoint unchanged
+- ✅ ProfileScreen "Test push" button still works — calls backend which routes
+  to web push, just skips mobile recipient (no expoPushToken registered)
+
+### How to restore mobile push (future, ~30 min)
+1. Generate APNs `.p8` key at https://developer.apple.com/account/resources/authkeys/list
+2. `npx eas credentials` → iOS → Push Notifications → Set up → upload .p8
+3. `cd apps/mobile && npm install expo-notifications@~0.32.16`
+4. Re-add `expo-notifications` to `app.json` plugins array
+5. Restore real `registerForPushNotificationsAsync` implementation
+   (revert this commit's auth-context.tsx changes)
+6. `npx eas build --clear-cache --profile development --platform ios`
+
+### User action required
+```bash
+cd /Users/renechlubny/Desktop/fitai/apps/mobile
+git pull origin main
+npx eas build --profile development --platform ios --clear-cache
+```
+
+Note `--clear-cache` flag forces EAS to regenerate iOS project fingerprint
+so removed native module unlinks cleanly.
+
+---
+
 ## [Scale Readiness — Vrstva 2: observability] 2026-04-09
 ### Added
 **SCALING.md Vrstva 2 completed.** Platforma má teď plnou viditelnost.

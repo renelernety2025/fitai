@@ -1,29 +1,26 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { authMe, getToken, setToken as saveToken, removeToken, registerExpoPushToken } from './api';
 
+/**
+ * Mobile push notifications temporarily disabled.
+ *
+ * The `expo-notifications` package was removed to unblock EAS dev build —
+ * its autolinking adds `aps-environment` entitlement which requires Push
+ * Notifications capability in the provisioning profile. That capability
+ * isn't set up because APNs key upload was blocked by unrelated keyboard/
+ * auth issues.
+ *
+ * TODO: Restore by:
+ * 1. Upload APNs .p8 via `npx eas credentials` → iOS → Push Notifications
+ * 2. `npm install expo-notifications@~0.32.16 --workspace=@fitai/mobile`
+ * 3. Re-add `expo-notifications` to `app.json` plugins array
+ * 4. Restore the real implementation from git history (commit before this fix)
+ * 5. `npx eas build --clear-cache --profile development --platform ios`
+ *
+ * Web push (VAPID) continues to work — this only affects mobile.
+ */
 async function registerForPushNotificationsAsync(): Promise<string | null> {
-  try {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') return null;
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
-    const tokenData = await Notifications.getExpoPushTokenAsync();
-    return tokenData.data;
-  } catch (e) {
-    console.warn('Push registration failed:', e);
-    return null;
-  }
+  return null;
 }
 
 interface AuthContextType {
