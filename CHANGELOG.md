@@ -4,6 +4,97 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Scale Readiness — Vrstva 1: caching + throttling + autoscaling] 2026-04-09
+### Added
+**Kompletní implementace SCALING.md Vrstvy 1** — připravuje backend na 100k+ DAU.
+
+### 1. Redis caching layer
+- **`apps/api/src/cache/cache.service.ts`** — `CacheService` s `ioredis`
+  - `getOrSet(key, ttl, fetcher)` read-through pattern
+  - `get`, `set`, `del`, `invalidate(pattern)` s SCAN (ne KEYS, non-blocking)
+  - Graceful degradation: pokud Redis padne, fallthrough k fetcheru
+  - Connection health + auto-reconnect
+- **`cache.module.ts`** — `@Global()` modul, CacheService dostupný všude bez importu
+- **Registrováno v `app.module.ts`**
+
+### 2. Cached endpoints (read-through)
+Integrace do 3 key read-heavy services:
+
+| Service | Cached key | TTL | Invalidace |
+|---|---|---|---|
+| `ExercisesService.findAll()` | `exercises:all` | 7 dní | Při create/update/delete |
+| `ExercisesService.findById()` | `exercises:{id}` | 7 dní | Při update/delete |
+| `EducationService.getAllLessons()` | `education:lessons:all` nebo `:{category}` | 24h | Manual |
+| `EducationService.getLessonBySlug()` | `education:lesson:{slug}` | 24h | Manual |
+| `EducationService.getLessonOfTheWeek()` | `education:lesson-of-week` | 1h | Auto |
+| `EducationService.getGlossary()` | `education:glossary:all` | 24h | Manual |
+| `AchievementsService.getAll()` | `achievements:definitions` | 24h | Manual |
+
+**Efekt:** ~70-80% read traffic do těchto endpointů přestane sahat do RDS.
+
+### 3. Rate limiting (`@nestjs/throttler`)
+- **Globální limity** v `app.module.ts`:
+  - `short`: 10 req/s (burst protection)
+  - `medium`: 200 req/min (sustained)
+  - `long`: 3000 req/hour (abuse)
+- **ThrottlerGuard jako APP_GUARD** — aplikuje se automaticky na všechny endpointy
+- **Per-endpoint limity** pro drahé AI endpointy:
+
+| Endpoint | Limit | Důvod |
+|---|---|---|
+| `GET /ai-insights/daily-brief` | 5/hour | 24h cache, 5× je na debug dost |
+| `GET /ai-insights/recovery-tips` | 10/hour | 1h cache |
+| `GET /ai-insights/weekly-review` | 10/hour | 1h cache |
+| `GET /ai-insights/nutrition-tips` | 10/hour | 1h cache |
+| `POST /nutrition/meal-plan/generate` | 3/day | Heavy Claude, 1×/týden reálně |
+| `POST /progress-photos/:id/analyze` | 20/day | Claude Vision expensive |
+| `POST /auth/login` | 10/min per IP | Brute force protection |
+| `POST /auth/register` | 5/hour per IP | Spam protection |
+
+**Efekt:** 1 zlý user nemůže vygenerovat 10k Claude calls = **chrání Claude budget**.
+
+### 4. ECS autoscaling expansion
+AWS CLI commands (viz CHANGELOG git log pro přesné příkazy):
+
+| Service | Before | After |
+|---|---|---|
+| `fitai-api-service` | min 1, max 3, CPU target 70% | **min 2, max 20, CPU target 60%** |
+| `fitai-web-service` | min 1, max 3, žádná policy | **min 2, max 10, CPU target 60%** |
+
+- Scale-out cooldown: 60s (rychlá reakce na burst)
+- Scale-in cooldown: 300s (pomalé scale-in aby se zbytečně neoscilovalo)
+- Min 2 tasky = **HA (high availability)** už od nule
+
+### 5. ALB timeout tuning
+- `fitai-production-alb` idle timeout: 60s → **120s**
+- Důvod: Claude Haiku requesty pro meal plan trvají 10-20s, pro vision až 15s
+- Při 60s občas selhávaly mid-request
+
+### Trade-offs
+- **+$20/mo** (min 2 tasks místo 1, +1 Fargate task vCPU + RAM za měsíc)
+- **Prep capacity: ~100× current** podle předběžných výpočtů (ověříme ve Vrstvě 3 load test)
+- **Zero downtime** — všechny změny aplikované na běžící systém
+
+### Why
+Uživatel chce být ready na 1M+ DAU. Vrstva 1 je **nejlepší ROI v SCALING.md**:
+~1 den práce → +$20/mo → ~100× capacity + chránění Claude budget.
+
+### Files
+- `apps/api/package.json` (+@nestjs/throttler)
+- `apps/api/src/cache/cache.service.ts` (NEW)
+- `apps/api/src/cache/cache.module.ts` (NEW)
+- `apps/api/src/app.module.ts` (ThrottlerModule + CacheModule + APP_GUARD)
+- `apps/api/src/exercises/exercises.service.ts` (cached)
+- `apps/api/src/education/education.service.ts` (cached)
+- `apps/api/src/achievements/achievements.service.ts` (+CacheService dep)
+- `apps/api/src/ai-insights/ai-insights.controller.ts` (@Throttle)
+- `apps/api/src/nutrition/nutrition.controller.ts` (@Throttle meal plan)
+- `apps/api/src/progress-photos/progress-photos.controller.ts` (@Throttle analyze)
+- `apps/api/src/auth/auth.controller.ts` (@Throttle login/register)
+- AWS: ECS autoscaling targets + policies, ALB idle timeout
+
+---
+
 ## [Phase 6 part 2 — Native pose detection on mobile] 2026-04-09
 ### Added
 - **EAS project:** `@renechlubny/fitai` (Project ID `bc34dec6-ec92-46fd-8cc0-21e05783214a`)

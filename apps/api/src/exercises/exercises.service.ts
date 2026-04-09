@@ -1,12 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { MuscleGroup, VideoDifficulty } from '@prisma/client';
+
+/**
+ * Exercises are semi-static content — edited only via seed or admin panel.
+ * Caching aggressively reduces RDS load; invalidation on write operations.
+ */
+const CACHE_TTL_EXERCISES = 7 * 24 * 60 * 60; // 7 days
 
 @Injectable()
 export class ExercisesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async findAll(filters?: { muscleGroup?: MuscleGroup; difficulty?: VideoDifficulty }) {
+    // Unfiltered list is heavily cached; filtered queries bypass cache
+    // (lower volume, and it would require per-filter cache keys).
+    if (!filters?.muscleGroup && !filters?.difficulty) {
+      return this.cache.getOrSet(
+        'exercises:all',
+        CACHE_TTL_EXERCISES,
+        () => this.prisma.exercise.findMany({ orderBy: { name: 'asc' } }),
+      );
+    }
     const where: any = {};
     if (filters?.muscleGroup) where.muscleGroups = { has: filters.muscleGroup };
     if (filters?.difficulty) where.difficulty = filters.difficulty;
@@ -14,22 +33,35 @@ export class ExercisesService {
   }
 
   async findById(id: string) {
-    const ex = await this.prisma.exercise.findUnique({ where: { id } });
-    if (!ex) throw new NotFoundException('Exercise not found');
-    return ex;
+    return this.cache.getOrSet(`exercises:${id}`, CACHE_TTL_EXERCISES, async () => {
+      const ex = await this.prisma.exercise.findUnique({ where: { id } });
+      if (!ex) throw new NotFoundException('Exercise not found');
+      return ex;
+    });
   }
 
   async create(data: any) {
-    return this.prisma.exercise.create({ data });
+    const created = await this.prisma.exercise.create({ data });
+    await this.invalidate();
+    return created;
   }
 
   async update(id: string, data: any) {
     await this.findById(id);
-    return this.prisma.exercise.update({ where: { id }, data });
+    const updated = await this.prisma.exercise.update({ where: { id }, data });
+    await this.invalidate(id);
+    return updated;
   }
 
   async delete(id: string) {
     await this.findById(id);
-    return this.prisma.exercise.delete({ where: { id } });
+    const deleted = await this.prisma.exercise.delete({ where: { id } });
+    await this.invalidate(id);
+    return deleted;
+  }
+
+  private async invalidate(id?: string) {
+    await this.cache.del('exercises:all');
+    if (id) await this.cache.del(`exercises:${id}`);
   }
 }

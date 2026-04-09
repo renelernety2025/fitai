@@ -1,46 +1,69 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+
+// Lessons + glossary are semi-static (edited via seed). Cache aggressively.
+const CACHE_TTL_LESSONS = 24 * 60 * 60; // 24 hours
+const CACHE_TTL_GLOSSARY = 24 * 60 * 60;
+const CACHE_TTL_LESSON_OF_WEEK = 60 * 60; // 1 hour (for week transition safety)
 
 @Injectable()
 export class EducationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   // ── Lessons ──
   async getAllLessons(category?: string) {
-    return this.prisma.educationLesson.findMany({
-      where: { isPublished: true, ...(category ? { category } : {}) },
-      orderBy: { publishedAt: 'desc' },
-    });
+    const key = category ? `education:lessons:${category}` : 'education:lessons:all';
+    return this.cache.getOrSet(key, CACHE_TTL_LESSONS, () =>
+      this.prisma.educationLesson.findMany({
+        where: { isPublished: true, ...(category ? { category } : {}) },
+        orderBy: { publishedAt: 'desc' },
+      }),
+    );
   }
 
   async getLessonBySlug(slug: string) {
-    const lesson = await this.prisma.educationLesson.findUnique({ where: { slug } });
-    if (!lesson) throw new NotFoundException('Lekce nenalezena');
-    return lesson;
+    return this.cache.getOrSet(`education:lesson:${slug}`, CACHE_TTL_LESSONS, async () => {
+      const lesson = await this.prisma.educationLesson.findUnique({ where: { slug } });
+      if (!lesson) throw new NotFoundException('Lekce nenalezena');
+      return lesson;
+    });
   }
 
   /** Get lesson of the week — rotates by week number */
   async getLessonOfTheWeek() {
-    const lessons = await this.prisma.educationLesson.findMany({
-      where: { isPublished: true },
-      orderBy: { publishedAt: 'asc' },
+    return this.cache.getOrSet('education:lesson-of-week', CACHE_TTL_LESSON_OF_WEEK, async () => {
+      const lessons = await this.prisma.educationLesson.findMany({
+        where: { isPublished: true },
+        orderBy: { publishedAt: 'asc' },
+      });
+      if (lessons.length === 0) return null;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const week = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      const idx = week % lessons.length;
+      return lessons[idx];
     });
-    if (lessons.length === 0) return null;
-
-    // Pick by week number
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    const week = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    const idx = week % lessons.length;
-    return lessons[idx];
   }
 
   // ── Glossary ──
   async getGlossary(query?: string) {
+    // Only cache the unfiltered list — search queries bypass cache
+    if (!query) {
+      return this.cache.getOrSet('education:glossary:all', CACHE_TTL_GLOSSARY, () =>
+        this.prisma.glossaryTerm.findMany({ orderBy: { termCs: 'asc' } }),
+      );
+    }
     return this.prisma.glossaryTerm.findMany({
-      where: query
-        ? { OR: [{ termCs: { contains: query, mode: 'insensitive' } }, { definitionCs: { contains: query, mode: 'insensitive' } }] }
-        : undefined,
+      where: {
+        OR: [
+          { termCs: { contains: query, mode: 'insensitive' } },
+          { definitionCs: { contains: query, mode: 'insensitive' } },
+        ],
+      },
       orderBy: { termCs: 'asc' },
     });
   }

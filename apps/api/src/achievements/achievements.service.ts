@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 
 interface AchievementSeed {
   code: string;
@@ -45,7 +46,10 @@ const SEED_ACHIEVEMENTS: AchievementSeed[] = [
 @Injectable()
 export class AchievementsService {
   private readonly logger = new Logger(AchievementsService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   /** Idempotent — seed all achievements on app start. */
   async seedIfNeeded() {
@@ -61,10 +65,14 @@ export class AchievementsService {
     this.logger.log(`Seeded ${SEED_ACHIEVEMENTS.length} achievements`);
   }
 
-  /** Get all achievements + which ones the user unlocked. */
+  /** Get all achievements + which ones the user unlocked.
+   * Achievement definitions are cached (seed-based, rarely change).
+   * Per-user unlocks are not cached (frequent writes + cheap query). */
   async getAll(userId: string) {
     const [all, unlocks] = await Promise.all([
-      this.prisma.achievement.findMany({ orderBy: { createdAt: 'asc' } }),
+      this.cache.getOrSet('achievements:definitions', 24 * 60 * 60, () =>
+        this.prisma.achievement.findMany({ orderBy: { createdAt: 'asc' } }),
+      ),
       this.prisma.achievementUnlock.findMany({ where: { userId } }),
     ]);
     const unlockMap = new Map(unlocks.map((u) => [u.achievementId, u.unlockedAt]));

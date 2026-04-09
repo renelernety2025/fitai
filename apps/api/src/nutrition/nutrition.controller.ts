@@ -10,6 +10,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NutritionService } from './nutrition.service';
 
@@ -72,8 +73,10 @@ export class NutritionController {
     return this.service.listMealPlans(req.user.id, limit ? parseInt(limit, 10) : 8);
   }
 
-  /** Generate (or regenerate) plan for current week. Pass preferences/allergies/cuisine in body. */
+  /** Generate (or regenerate) plan for current week. Pass preferences/allergies/cuisine in body.
+   * Heavy Claude call — ~10k tokens. Real use case is 1x/week, 3/day is debug safety. */
   @Post('meal-plan/generate')
+  @Throttle({ default: { limit: 3, ttl: seconds(86400) } }) // 3/day
   generateMealPlan(
     @Request() req: any,
     @Body()

@@ -9,6 +9,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProgressPhotosService } from './progress-photos.service';
 
@@ -52,8 +53,10 @@ export class ProgressPhotosController {
     return this.service.getOne(req.user.id, id);
   }
 
-  /** Trigger Claude Vision analysis */
+  /** Trigger Claude Vision analysis. Vision calls are expensive (~2k tokens
+   * + image data). Reasonable upper bound is 20/day per user. */
   @Post(':id/analyze')
+  @Throttle({ default: { limit: 20, ttl: seconds(86400) } }) // 20/day
   analyze(@Request() req: any, @Param('id') id: string) {
     return this.service.analyze(req.user.id, id);
   }

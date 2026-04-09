@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
+import { CacheModule } from './cache/cache.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -28,9 +31,24 @@ import { AiInsightsModule } from './ai-insights/ai-insights.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
 
+/**
+ * Global throttler config — layered limits:
+ *   - short:  burst protection (10 req/sec)
+ *   - medium: sustained protection (200 req/min)
+ *   - long:   abuse protection (3000 req/hour)
+ *
+ * Individual endpoints can override via @Throttle() decorator (e.g. AI endpoints
+ * which are expensive get much tighter limits like 5 requests per hour).
+ */
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 10 },
+      { name: 'medium', ttl: 60_000, limit: 200 },
+      { name: 'long', ttl: 3_600_000, limit: 3000 },
+    ]),
     PrismaModule,
+    CacheModule,
     HealthModule,
     AuthModule,
     UsersModule,
@@ -58,6 +76,12 @@ import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
     AiInsightsModule,
     AchievementsModule,
     ProgressPhotosModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
