@@ -14,14 +14,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fitai.app",
+      "bundleIdentifier": "cz.bfevents.fitai",
       "infoPlist": {
-        "NSCameraUsageDescription": "FitAI potřebuje kameru pro sledování správné formy při cvičení.",
-        "NSMotionUsageDescription": "FitAI sleduje pohyb pro přesnější počítání opakování."
+        "NSCameraUsageDescription": "FitAI potřebuje kameru pro real-time pose detection a sledování formy při cvičení.",
+        "NSMotionUsageDescription": "FitAI sleduje pohyb pro přesnější počítání opakování.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.fitai.app",
+      "package": "cz.bfevents.fitai",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
