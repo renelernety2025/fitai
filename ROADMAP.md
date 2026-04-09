@@ -102,6 +102,25 @@ Plán jak připravit platformu na **1M+ DAU** bez plýtvání. Kompletní system
 
 ---
 
+## 📱 Mobile App Store Launch Plan (2026-04-09 +2 týdny)
+
+**Kompletní 8-fázový plán v CHANGELOG.md** — od dnešního dev buildu po veřejné vydání v App Store.
+
+| Fáze | Čas | Co |
+|---|---|---|
+| 1. Dev build | Dnes | Expo-camera switch, test na iPhonu |
+| 2. Bug fixes | Zítra | Oprava QA issues |
+| 3. TestFlight preview | Den 3 | 5-10 beta testerů |
+| 4. TestFlight iterace | Dny 4-7 | Feedback → fixy → new builds |
+| 5. App Store compliance | Dny 8-9 | Privacy policy, TOS, AI disclaimer, account deletion, metadata |
+| 6. Production build + submit | Den 10 | `eas submit --profile production` |
+| 7. Apple Review | Dny 11-13 | Čekání, možná 1 round rejection fixes |
+| 8. 🚀 Release | Den 14 | Veřejně v App Store |
+
+**Timeline: ~2 týdny od teď.**
+
+---
+
 ## 🚧 Co dál (priorita)
 
 ### Vysoká priorita — Scale Readiness Week (2026-04-08 až 04-12)

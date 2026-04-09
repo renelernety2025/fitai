@@ -1,44 +1,25 @@
 /**
- * CameraWorkoutProScreen — Phase 6 part 2 (camera-only mode)
+ * CameraWorkoutProScreen — camera workout (manual tap mode)
  *
- * CURRENT STATE: Camera preview + manual rep counter + manual safety checks.
- * Uses react-native-vision-camera v4 for camera feed.
+ * Uses `expo-camera` for a reliable, Expo-managed camera preview.
+ * Tap anywhere on the camera view to count a rep.
  *
- * AUTOMATIC POSE DETECTION: TEMPORARILY DISABLED.
- * The `react-native-vision-camera-v3-pose-detection` plugin we tried is
- * incompatible with vision-camera v4 — it imports `VisionCamera/VisionCameraProxy.h`
- * which v4 renamed. Compile fails with "file not found".
+ * History: This screen was originally planned to use react-native-vision-camera
+ * + ML Kit Pose frame processor for automatic pose detection, but we hit
+ * dead-end babel plugin issues in that stack (vision-camera v4 + Expo SDK 54 +
+ * React 19 + npm workspaces). Switched to expo-camera — zero build/runtime
+ * issues, works in Expo Go and any EAS build profile.
  *
- * TODO: Restore automatic pose detection via v4-compatible alternative:
- *   Option 1 — `react-native-fast-tflite` + MoveNet/BlazePose TFLite model
- *     (v4-compatible frame processor, actively maintained)
- *   Option 2 — Custom Swift bridge to Google ML Kit Pose
- *     (more work, identical to iOS native approach)
- *   Option 3 — Wait for upstream plugin to support v4
- *
- * The pose-pipeline lib (feedback-engine, rep-counter, safety-checker,
- * mlkit-adapter) remains in apps/mobile/src/lib/pose/ — ready to wire up
- * once we have a working frame processor.
- *
- * REQUIRES DEV BUILD — will NOT run in Expo Go.
+ * Pose pipeline (feedback-engine, rep-counter, safety-checker, mlkit-adapter)
+ * remains in apps/mobile/src/lib/pose/ as dead code — ready to be wired up
+ * when we revisit automatic pose detection via a v4-compatible stack like
+ * react-native-fast-tflite + MoveNet TFLite model.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-
-// Vision Camera v4 — guarded import so Expo Go doesn't crash on startup.
-let Camera: any = null;
-let useCameraDevice: any = null;
-let useCameraPermission: any = null;
-try {
-  const vc = require('react-native-vision-camera');
-  Camera = vc.Camera;
-  useCameraDevice = vc.useCameraDevice;
-  useCameraPermission = vc.useCameraPermission;
-} catch (e) {
-  // Running in Expo Go — native modules unavailable
-}
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 import { SAMPLE_EXERCISES } from '../lib/pose/sample-exercises';
 
@@ -46,41 +27,46 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const exerciseKey: 'squat' | 'pushup' = route?.params?.exercise || 'squat';
   const exercise = SAMPLE_EXERCISES[exerciseKey];
 
-  // Native module availability check
-  const nativeAvailable = Camera !== null;
-
-  if (!nativeAvailable) {
-    return <ExpoGoFallback />;
-  }
-
-  const { hasPermission, requestPermission } = useCameraPermission();
-  const device = useCameraDevice('front');
-
+  const [permission, requestPermission] = useCameraPermissions();
   const [reps, setReps] = useState(0);
   const [currentPhase, setCurrentPhase] = useState(0);
   const [running, setRunning] = useState(false);
   const lastTapAt = useRef(0);
 
   useEffect(() => {
-    if (!hasPermission) requestPermission();
-  }, [hasPermission, requestPermission]);
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   /** Tap anywhere on camera to count a rep (manual mode). */
   const handleTap = () => {
     if (!running) return;
     const now = Date.now();
-    if (now - lastTapAt.current < 400) return; // debounce
+    if (now - lastTapAt.current < 400) return; // 400ms debounce
     lastTapAt.current = now;
     setReps((r) => r + 1);
     setCurrentPhase((p) => (p + 1) % exercise.phases.length);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  if (!hasPermission) {
+  // Permission not yet resolved
+  if (!permission) {
+    return (
+      <View style={styles.overlay}>
+        <Text style={styles.overlayText}>Načítám…</Text>
+      </View>
+    );
+  }
+
+  // Permission denied
+  if (!permission.granted) {
     return (
       <View style={styles.overlay}>
         <Text style={styles.overlayTitle}>Kamera — povolení</Text>
-        <Text style={styles.overlayText}>FitAI potřebuje přístup ke kameře pro sledování formy.</Text>
+        <Text style={styles.overlayText}>
+          FitAI potřebuje přístup ke kameře pro sledování formy při cvičení.
+        </Text>
         <Pressable style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>Povolit kameru</Text>
         </Pressable>
@@ -88,27 +74,18 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
     );
   }
 
-  if (!device) {
-    return (
-      <View style={styles.overlay}>
-        <Text style={styles.overlayTitle}>Kamera nedostupná</Text>
-        <Text style={styles.overlayText}>Nepodařilo se najít přední kameru.</Text>
-      </View>
-    );
-  }
-
   return (
     <Pressable style={styles.container} onPress={handleTap}>
-      {/* Camera preview (no frame processor — manual rep counter) */}
-      <Camera
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-      />
+      {/* Camera preview */}
+      <CameraView style={StyleSheet.absoluteFill} facing="front" />
 
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.closeBtn}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.closeBtn}
+          hitSlop={16}
+        >
           <Text style={styles.closeBtnText}>✕</Text>
         </Pressable>
         <View style={{ flex: 1 }}>
@@ -117,7 +94,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         </View>
       </View>
 
-      {/* Big rep counter center-right */}
+      {/* Big rep counter */}
       <View style={styles.repCounterBox}>
         <Text style={styles.repNumber}>{reps}</Text>
         <Text style={styles.repLabel}>REPS</Text>
@@ -130,7 +107,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       </View>
 
       {/* Start/Stop button */}
-      <View style={styles.bottomBar}>
+      <View style={styles.bottomBar} pointerEvents="box-none">
         <Pressable
           style={[styles.primaryBtn, running && styles.primaryBtnActive]}
           onPress={(e: any) => {
@@ -144,6 +121,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             }
           }}
+          hitSlop={10}
         >
           <Text style={[styles.primaryBtnText, running && styles.primaryBtnTextActive]}>
             {running ? 'STOP' : 'START SET'}
@@ -152,29 +130,6 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       </View>
     </Pressable>
   );
-}
-
-/** Fallback when running in Expo Go without native modules. */
-function ExpoGoFallback() {
-  return (
-    <View style={styles.overlay}>
-      <Text style={styles.overlayTitle}>Vyžaduje Dev Build</Text>
-      <Text style={styles.overlayText}>
-        Tato obrazovka používá react-native-vision-camera + ML Kit Pose Detection,
-        které nefungují v Expo Go.
-      </Text>
-      <Text style={styles.overlayHint}>
-        Spusť: npx eas build --profile development --platform ios
-      </Text>
-    </View>
-  );
-}
-
-function formScoreColor(score: number): string {
-  if (score >= 85) return '#A8FF00';
-  if (score >= 70) return '#FFD60A';
-  if (score >= 50) return '#FF9F0A';
-  return '#FF375F';
 }
 
 const styles = StyleSheet.create({
@@ -198,12 +153,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
-  },
-  overlayHint: {
-    color: 'rgba(255,255,255,0.4)',
-    fontSize: 12,
-    marginTop: 24,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   button: {
     marginTop: 24,
@@ -233,15 +182,11 @@ const styles = StyleSheet.create({
   },
   closeBtnText: { color: '#fff', fontSize: 18 },
   topTitle: { color: '#fff', fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  topSubtitle: { color: 'rgba(255,255,255,0.5)', fontSize: 10, letterSpacing: 1, marginTop: 2 },
-
-  visibilityDot: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  topSubtitle: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 2,
   },
 
   repCounterBox: {
@@ -275,22 +220,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
     padding: 16,
     borderRadius: 16,
-    minWidth: 110,
+    minWidth: 140,
   },
-  formScore: { fontSize: 40, fontWeight: '800', letterSpacing: -1 },
-  phaseName: { color: 'rgba(255,255,255,0.65)', fontSize: 11, marginTop: 4 },
-
-  safetyBox: {
-    position: 'absolute',
-    top: '25%',
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
+  phaseName: { color: '#fff', fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+  phaseHint: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 10,
+    letterSpacing: 1,
+    marginTop: 4,
   },
-  safetyText: { fontSize: 14, fontWeight: '600', marginVertical: 2 },
 
   bottomBar: {
     position: 'absolute',
@@ -308,16 +246,4 @@ const styles = StyleSheet.create({
   primaryBtnActive: { backgroundColor: '#FF375F' },
   primaryBtnText: { color: '#000', fontSize: 16, fontWeight: '700', letterSpacing: 1 },
   primaryBtnTextActive: { color: '#fff' },
-
-  hintBox: {
-    position: 'absolute',
-    bottom: 130,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    padding: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  hintText: { color: '#FFD60A', fontSize: 13, fontWeight: '600' },
 });

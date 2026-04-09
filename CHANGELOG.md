@@ -4,6 +4,151 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [fix(mobile): switch camera from vision-camera to expo-camera] 2026-04-09
+### Fixed
+Metro bundler byl v nekonečné smyčce "Cannot find module" chyb při každém reload:
+- `babel-preset-expo` not found → fix install
+- `@babel/plugin-proposal-optional-chaining` not found → fix install
+- `@babel/plugin-proposal-nullish-coalescing-operator` not found → fix install
+- předpovídáno dalších 6-8 plugins ...
+
+**Root cause:** `react-native-vision-camera@4.7.3` references legacy
+`@babel/plugin-proposal-*` names (renamed to `plugin-transform-*` in newer
+babel). Metro resolver hledá je jako explicit deps. Vision-camera
+neinstaluje jako peer deps → nekonečný hon.
+
+### Fix
+Přepnul jsem `CameraWorkoutProScreen.tsx` z `react-native-vision-camera`
+na `expo-camera` (už v deps, používá ho Phase 6 part 1).
+- Zero babel issues
+- Funguje v Expo Go i v EAS buildech
+- Identické UX (camera preview + manual tap rep counter)
+- Pose detection pipeline (feedback-engine, rep-counter, safety-checker,
+  mlkit-adapter) zůstává v `apps/mobile/src/lib/pose/` pro budoucí
+  restoraci přes TFLite + MoveNet
+
+### Removed
+- `react-native-vision-camera@4.7.3`
+- `react-native-worklets-core@1.6.3`
+- `@babel/plugin-proposal-optional-chaining` (už není potřeba)
+- `babel.config.js` (back to Expo defaults)
+- `react-native-vision-camera` expo plugin z `app.json`
+
+### User action
+```bash
+cd apps/mobile
+git pull origin main
+npx expo start --dev-client --clear
+```
+Pak na iPhonu tap "Reload JS" v error obrazovce.
+
+### Files
+- `apps/mobile/src/screens/CameraWorkoutProScreen.tsx` — rewritten with expo-camera
+- `apps/mobile/package.json` — removed 2 deps + 1 legacy devDep
+- `apps/mobile/app.json` — removed vision-camera plugin
+- `apps/mobile/babel.config.js` — deleted
+
+---
+
+## [ROADMAP — Mobile launch plan] 2026-04-09
+**Saved for reference — full path from dev build to App Store release.**
+
+### Phase 1 — Dev build (TODAY) ⭐
+- ✅ Expo-camera switch (this commit)
+- 🟡 User: `npx expo start --dev-client --clear` → test on iPhone
+- 🟡 QA session (~30 min): walk through every screen, note bugs
+
+### Phase 2 — Bug fixes from QA (TOMORROW) 🔧
+- Fix all issues found in QA session
+- Re-test each fix
+- Ensure all mobile screens work: login, dashboard, daily brief, habity,
+  výživa, jídelníček, progress fotky, trénink, pokrok, úspěchy,
+  pose detection pro, onboarding, logout
+
+### Phase 3 — TestFlight preview build (DAY 3) 🚀
+- `eas build --profile preview --platform ios`
+- `eas submit --platform ios --latest`
+- Apple screening check (~24h)
+- Invite 5-10 beta testers via TestFlight email
+- Testers install via TestFlight app, provide feedback
+
+### Phase 4 — TestFlight iterations (DAYS 4-7) 🔄
+- Collect feedback from testers via TestFlight
+- Fix critical bugs (crashes first, then UX)
+- Ship new preview builds iteratively (~15 min each)
+- Target: stable, bug-free experience
+
+### Phase 5 — App Store compliance prep (DAYS 8-9) 📝
+Before production submission, we MUST have:
+- [ ] **Privacy policy** URL (required by Apple)
+- [ ] **Terms of Service** URL
+- [ ] **AI disclaimer** in Daily Brief, meal plan, progress photo analysis
+      ("This is AI-generated guidance, not medical advice")
+- [ ] **Account deletion flow** in-app (GDPR + Apple requirement)
+- [ ] **Remove demo credentials** from production build
+      (gate behind `NODE_ENV === 'development'`)
+- [ ] **Error boundaries** — friendly error screens, no white screens
+- [ ] **App Store metadata:**
+  - App name: FitAI
+  - Subtitle: AI personal trainer
+  - Category: Health & Fitness
+  - Keywords (100 chars): fitness, tréninky, AI, pose detection, jídelníček
+  - Description (4000 chars)
+  - Support URL, marketing URL
+- [ ] **Screenshots** for each iPhone size (3-5 per size):
+  - 6.7" (iPhone 15 Pro Max)
+  - 6.5" (iPhone 14 Plus)
+  - 5.5" (iPhone 8 Plus) — optional but recommended
+
+### Phase 6 — Production build + Apple Review submission (DAY 10) 🎯
+- `eas build --profile production --platform ios`
+- `eas submit --profile production`
+- Open App Store Connect
+- Upload metadata + screenshots
+- Select "Manually release" (don't auto-release)
+- **Submit for Review**
+
+### Phase 7 — Apple Review (DAYS 11-13) ⏳
+Apple human reviewer tests the app. Possible outcomes:
+- ✅ **Approved** (~70% first-time success if Phase 5 was done well)
+- ⚠️ **Need info** — respond to reviewer question
+- ❌ **Rejected** — fix and resubmit (+1-3 days)
+
+Common rejection reasons:
+- Missing screenshots
+- AI features without disclaimer
+- Demo credentials exposed
+- Crash on edge case
+- Unclear onboarding
+
+### Phase 8 — Release Day 🚀
+- Click "Release to App Store" in App Store Connect
+- FitAI is live on App Store within ~1 hour
+
+### Future: Pose detection v2 (post-launch)
+After App Store launch, we can add automatic pose detection:
+- **Option A (recommended):** `react-native-fast-tflite` + MoveNet TFLite
+  model. V4-compatible frame processor, actively maintained,
+  different landmark format → new adapter needed.
+- **Option B:** Custom Swift bridge to Google ML Kit Pose. Most work,
+  most control.
+- **Wire up into:** existing `apps/mobile/src/lib/pose/` code (kept as
+  dead code exactly for this purpose).
+
+### Cost projection
+- **Apple Developer:** $99/year (already paid)
+- **Expo Starter:** $19/month (already subscribed, priority queue)
+- **TestFlight:** $0 (included with Apple Developer)
+- **App Store listing:** $0 (included)
+- **AWS infra running:** ~$120-160/month (baseline)
+- **Claude API:** variable by usage (~$5-20/month at low DAU)
+- **Total baseline:** ~$140-200/month at Phase 8 launch
+
+### Timeline estimate
+**From today to App Store launch: ~2 weeks** (assuming focused work)
+
+---
+
 ## [fix(mobile): remove expo-notifications to unblock EAS dev build] 2026-04-09
 ### Fixed
 EAS iOS dev build failed twice on Xcode archive step:
