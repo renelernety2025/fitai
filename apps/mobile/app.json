@@ -28,7 +28,9 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -45,12 +47,25 @@
           "color": "#16a34a"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "FitAI potřebuje kameru pro real-time pose detection a sledování formy při cvičení.",
+          "enableMicrophonePermission": false,
+          "enableCodeScanner": false
+        }
+      ],
+      [
+        "react-native-worklets-core",
+        {}
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "bc34dec6-ec92-46fd-8cc0-21e05783214a"
       }
-    }
+    },
+    "owner": "renechlubny"
   }
 }

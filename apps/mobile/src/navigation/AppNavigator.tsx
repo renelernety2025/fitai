@@ -34,6 +34,7 @@ import { HabityScreen } from '../screens/HabityScreen';
 import { UspechyScreen } from '../screens/UspechyScreen';
 import { ProgressPhotosScreen } from '../screens/ProgressPhotosScreen';
 import { JidelnicekScreen } from '../screens/JidelnicekScreen';
+import { CameraWorkoutProScreen } from '../screens/CameraWorkoutProScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -149,6 +150,7 @@ export function AppNavigator() {
             <Stack.Screen name="Uspechy" component={UspechyScreen} />
             <Stack.Screen name="ProgressPhotos" component={ProgressPhotosScreen} />
             <Stack.Screen name="Jidelnicek" component={JidelnicekScreen} />
+            <Stack.Screen name="CameraWorkoutPro" component={CameraWorkoutProScreen} options={{ gestureEnabled: false }} />
           </>
         ) : (
           <>

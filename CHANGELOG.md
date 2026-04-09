@@ -4,6 +4,58 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Phase 6 part 2 — Native pose detection on mobile] 2026-04-09
+### Added
+- **EAS project:** `@renechlubny/fitai` (Project ID `bc34dec6-ec92-46fd-8cc0-21e05783214a`)
+- **`eas.json`** — 3 build profily: development (dev client), preview (TestFlight), production (App Store)
+- **Dependencies:**
+  - `eas-cli@18.5.0` (devDep v apps/mobile, žádný sudo potřeba)
+  - `react-native-vision-camera@4.7.3` (v4 API + frame processors)
+  - `react-native-worklets-core@1.6.3` (required by vision-camera pro worklet runtime)
+  - `react-native-vision-camera-v3-pose-detection@1.1.3` (Google ML Kit Pose plugin)
+- **`babel.config.js`** — worklets-core plugin
+- **`app.json`** — přidány plugins: `react-native-vision-camera` (permissions), `react-native-worklets-core`
+- **Pose detection pipeline v mobile** (`apps/mobile/src/lib/pose/`):
+  - `types.ts` — standalone types (33-landmark, rules, phases, safety alerts)
+  - `feedback-engine.ts` — port z webu, worklet-safe `calculateAngle`, JOINT_MAP, checkPose
+  - `rep-counter.ts` — state machine (START → ECCENTRIC → BOTTOM → CONCENTRIC → rep)
+  - `safety-checker.ts` — knee hyperextension, rounded back, shoulder impingement
+  - `mlkit-adapter.ts` — ML Kit Pose `PoseType` → MediaPipe 33-landmark array
+  - `sample-exercises.ts` — SQUAT + PUSHUP phase definitions pro první test
+- **`CameraWorkoutProScreen.tsx`** — flagship native pose detection screen
+  - VisionCamera frame processor → ML Kit Pose → landmarks → rep counter + safety
+  - Real-time UI: rep counter, form score %, current phase, safety alerts, landmark visibility dot
+  - Haptic feedback (success on rep, warning on critical safety alert)
+  - Start/Stop set button, close button
+  - **Expo Go fallback screen** — graceful degradation pokud native moduly chybí
+- **Navigation:** Stack screen `CameraWorkoutPro`, Profile menu link "Pose Detection (Pro)"
+
+### Build requirements
+Tento screen **vyžaduje EAS dev build**, NEfunguje v Expo Go.
+```bash
+cd apps/mobile
+npx eas build --profile development --platform ios
+```
+Stáhnout .ipa přes QR z Expo dashboardu, nainstalovat na iPhone.
+
+### Why
+Flagship mobile experience. Web už měl pose detection (MediaPipe web SDK),
+mobile do teď jen mirror mode + manual rep counter. Tenhle krok přináší
+**plnou parity** s webem — real-time form feedback + automatický rep
+counter + safety alerts — přímo na telefonu uživatele.
+
+### Files
+- `apps/mobile/package.json` (+4 deps)
+- `apps/mobile/app.json` (+plugins)
+- `apps/mobile/babel.config.js` (NEW)
+- `apps/mobile/eas.json` (NEW)
+- `apps/mobile/src/lib/pose/*.ts` (6 souborů, NEW)
+- `apps/mobile/src/screens/CameraWorkoutProScreen.tsx` (NEW, ~350 řádků)
+- `apps/mobile/src/navigation/AppNavigator.tsx` (+Stack screen)
+- `apps/mobile/src/screens/ProfileScreen.tsx` (+menu link)
+
+---
+
 ## [Scale Readiness Playbook] 2026-04-08
 ### Added
 - **`SCALING.md`** — kompletní systematika škálování z Launch → 1M+ DAU

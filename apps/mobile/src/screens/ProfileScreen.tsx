@@ -8,6 +8,7 @@ const SECONDARY = [
   { screen: 'Uspechy', label: 'Úspěchy', color: v2.yellow },
   { screen: 'ProgressPhotos', label: 'Progress fotky', color: v2.purple },
   { screen: 'Jidelnicek', label: 'Jídelníček (AI)', color: v2.yellow },
+  { screen: 'CameraWorkoutPro', label: 'Pose Detection (Pro)', color: v2.red },
   { screen: 'Exercises', label: 'Cviky', color: v2.green },
   { screen: 'Videos', label: 'Videa', color: v2.blue },
   { screen: 'Doma', label: 'Doma', color: v2.green },

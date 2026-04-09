@@ -24,7 +24,7 @@
 | 3. Monetization | ❌ SKIPPED | Stripe vynechán uživatelem |
 | 4. PWA + Push | ✅ | Service worker, manifest, VAPID model + Expo push (Section J part) |
 | 5. Social | ✅ | Follow, feed, challenges, leaderboard |
-| 6. Mobile RN | ✅ + 🟡 | 18 obrazovek v v2 designu, camera workout lite. Native MediaPipe pose detection = part 2 (TODO) |
+| 6. Mobile RN | ✅ | 18+ obrazovek v v2 designu, camera workout lite + **Native pose detection (Phase 6 part 2)** — ML Kit Pose + VisionCamera + EAS dev build |
 | 7. Vision (CV 2.0) | 🟡 | Rule-based pose detection. YOLO ne |
 | 8. 3D Pose | 🟡 | Library ready, ne v live workoutu |
 | 9. Wearables | 🟡 | Backend ready, no HealthKit/Fit bridge |
