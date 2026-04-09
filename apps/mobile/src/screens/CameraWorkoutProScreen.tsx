@@ -1,50 +1,53 @@
 /**
- * CameraWorkoutProScreen — native pose detection workout (Phase 6 part 2)
+ * CameraWorkoutProScreen — Phase 6 part 2 (camera-only mode)
  *
- * Uses react-native-vision-camera v4 + ML Kit Pose plugin to run real-time
- * pose detection at ~30 fps. Maps plugin output → MediaPipe 33-landmark
- * standard → feeds into ported feedback-engine / rep-counter / safety-checker.
+ * CURRENT STATE: Camera preview + manual rep counter + manual safety checks.
+ * Uses react-native-vision-camera v4 for camera feed.
+ *
+ * AUTOMATIC POSE DETECTION: TEMPORARILY DISABLED.
+ * The `react-native-vision-camera-v3-pose-detection` plugin we tried is
+ * incompatible with vision-camera v4 — it imports `VisionCamera/VisionCameraProxy.h`
+ * which v4 renamed. Compile fails with "file not found".
+ *
+ * TODO: Restore automatic pose detection via v4-compatible alternative:
+ *   Option 1 — `react-native-fast-tflite` + MoveNet/BlazePose TFLite model
+ *     (v4-compatible frame processor, actively maintained)
+ *   Option 2 — Custom Swift bridge to Google ML Kit Pose
+ *     (more work, identical to iOS native approach)
+ *   Option 3 — Wait for upstream plugin to support v4
+ *
+ * The pose-pipeline lib (feedback-engine, rep-counter, safety-checker,
+ * mlkit-adapter) remains in apps/mobile/src/lib/pose/ — ready to wire up
+ * once we have a working frame processor.
  *
  * REQUIRES DEV BUILD — will NOT run in Expo Go.
- * Run via: npx eas build --profile development --platform ios
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useAuth } from '../lib/auth-context';
 
-// Vision Camera + ML Kit Pose plugin — only imported when dev build
-// Guarded imports so Expo Go doesn't crash on startup.
+// Vision Camera v4 — guarded import so Expo Go doesn't crash on startup.
 let Camera: any = null;
 let useCameraDevice: any = null;
 let useCameraPermission: any = null;
-let PoseCamera: any = null;
 try {
   const vc = require('react-native-vision-camera');
   Camera = vc.Camera;
   useCameraDevice = vc.useCameraDevice;
   useCameraPermission = vc.useCameraPermission;
-  const poseLib = require('react-native-vision-camera-v3-pose-detection');
-  PoseCamera = poseLib.Camera;
 } catch (e) {
   // Running in Expo Go — native modules unavailable
 }
 
-import { createRepCounter } from '../lib/pose/rep-counter';
-import { checkSafety } from '../lib/pose/safety-checker';
-import { mlkitToLandmarks, hasVisiblePose } from '../lib/pose/mlkit-adapter';
 import { SAMPLE_EXERCISES } from '../lib/pose/sample-exercises';
-import type { PoseLandmarks, SafetyAlert } from '../lib/pose/types';
-import type { RepFrameResult } from '../lib/pose/rep-counter';
 
 export function CameraWorkoutProScreen({ route, navigation }: any) {
-  const { user } = useAuth();
   const exerciseKey: 'squat' | 'pushup' = route?.params?.exercise || 'squat';
   const exercise = SAMPLE_EXERCISES[exerciseKey];
 
   // Native module availability check
-  const nativeAvailable = Camera !== null && PoseCamera !== null;
+  const nativeAvailable = Camera !== null;
 
   if (!nativeAvailable) {
     return <ExpoGoFallback />;
@@ -54,57 +57,30 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const device = useCameraDevice('front');
 
   const [reps, setReps] = useState(0);
-  const [formScore, setFormScore] = useState(100);
-  const [currentPhase, setCurrentPhase] = useState(exercise.phases[0].nameCs);
-  const [safetyAlerts, setSafetyAlerts] = useState<SafetyAlert[]>([]);
-  const [landmarksVisible, setLandmarksVisible] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState(0);
   const [running, setRunning] = useState(false);
-
-  const repCounterRef = useRef(createRepCounter(exercise.phases));
-  const lastSafetyHapticAt = useRef(0);
-  const lastRepAt = useRef(0);
+  const lastTapAt = useRef(0);
 
   useEffect(() => {
     if (!hasPermission) requestPermission();
   }, [hasPermission, requestPermission]);
 
-  /** Callback called from worklet when pose detected on a frame. */
-  const onPoseDetected = (rawPose: any) => {
-    try {
-      const landmarks: PoseLandmarks = mlkitToLandmarks(rawPose);
-      const visible = hasVisiblePose(landmarks);
-      setLandmarksVisible(visible);
-      if (!visible || !running) return;
-
-      const now = Date.now();
-      const result: RepFrameResult = repCounterRef.current.processFrame(landmarks, now);
-
-      setFormScore(result.formScore);
-      setCurrentPhase(result.currentPhase.nameCs);
-
-      if (result.repJustCompleted && result.completedReps !== lastRepAt.current) {
-        lastRepAt.current = result.completedReps;
-        setReps(result.completedReps);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-
-      // Safety check — throttled to avoid haptic spam
-      const alerts = checkSafety(landmarks, exercise.nameCs);
-      setSafetyAlerts(alerts);
-      if (alerts.some((a) => a.severity === 'critical') && now - lastSafetyHapticAt.current > 2000) {
-        lastSafetyHapticAt.current = now;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      }
-    } catch (e) {
-      // Silent — worklet errors would otherwise crash the camera
-    }
+  /** Tap anywhere on camera to count a rep (manual mode). */
+  const handleTap = () => {
+    if (!running) return;
+    const now = Date.now();
+    if (now - lastTapAt.current < 400) return; // debounce
+    lastTapAt.current = now;
+    setReps((r) => r + 1);
+    setCurrentPhase((p) => (p + 1) % exercise.phases.length);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   if (!hasPermission) {
     return (
       <View style={styles.overlay}>
         <Text style={styles.overlayTitle}>Kamera — povolení</Text>
-        <Text style={styles.overlayText}>FitAI potřebuje přístup ke kameře pro pose detection.</Text>
+        <Text style={styles.overlayText}>FitAI potřebuje přístup ke kameře pro sledování formy.</Text>
         <Pressable style={styles.button} onPress={requestPermission}>
           <Text style={styles.buttonText}>Povolit kameru</Text>
         </Pressable>
@@ -122,18 +98,13 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Camera view with pose detection frame processor */}
-      <PoseCamera
+    <Pressable style={styles.container} onPress={handleTap}>
+      {/* Camera preview (no frame processor — manual rep counter) */}
+      <Camera
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={true}
-        callback={onPoseDetected}
-        options={{ mode: 'stream', performanceMode: 'min' }}
       />
-
-      {/* Pose visibility indicator */}
-      <View style={[styles.visibilityDot, { backgroundColor: landmarksVisible ? '#A8FF00' : '#FF375F' }]} />
 
       {/* Top bar */}
       <View style={styles.topBar}>
@@ -142,7 +113,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.topTitle}>{exercise.nameCs}</Text>
-          <Text style={styles.topSubtitle}>Phase 6 part 2 · Native pose detection</Text>
+          <Text style={styles.topSubtitle}>Camera workout · manual mode</Text>
         </View>
       </View>
 
@@ -152,39 +123,21 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         <Text style={styles.repLabel}>REPS</Text>
       </View>
 
-      {/* Form score + phase */}
+      {/* Current phase hint */}
       <View style={styles.infoBox}>
-        <Text style={[styles.formScore, { color: formScoreColor(formScore) }]}>
-          {formScore}%
-        </Text>
-        <Text style={styles.phaseName}>{currentPhase}</Text>
+        <Text style={styles.phaseName}>{exercise.phases[currentPhase]?.nameCs || ''}</Text>
+        <Text style={styles.phaseHint}>Klepni na kameru pro rep</Text>
       </View>
-
-      {/* Safety alerts */}
-      {safetyAlerts.length > 0 && (
-        <View style={styles.safetyBox}>
-          {safetyAlerts.map((alert, i) => (
-            <Text
-              key={i}
-              style={[
-                styles.safetyText,
-                { color: alert.severity === 'critical' ? '#FF375F' : '#FF9F0A' },
-              ]}
-            >
-              ⚠ {alert.messageCs}
-            </Text>
-          ))}
-        </View>
-      )}
 
       {/* Start/Stop button */}
       <View style={styles.bottomBar}>
         <Pressable
           style={[styles.primaryBtn, running && styles.primaryBtnActive]}
-          onPress={() => {
+          onPress={(e: any) => {
+            e.stopPropagation?.();
             if (running) {
-              repCounterRef.current.reset();
               setReps(0);
+              setCurrentPhase(0);
               setRunning(false);
             } else {
               setRunning(true);
@@ -197,14 +150,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
           </Text>
         </Pressable>
       </View>
-
-      {/* Landmark visibility hint */}
-      {!landmarksVisible && running && (
-        <View style={styles.hintBox}>
-          <Text style={styles.hintText}>⚠ Postav se celý do záběru kamery</Text>
-        </View>
-      )}
-    </View>
+    </Pressable>
   );
 }
 
