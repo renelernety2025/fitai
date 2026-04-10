@@ -1,107 +1,90 @@
 /**
- * Expo config plugin: injects custom VisionCamera v4 ML Kit Pose frame processor.
+ * Expo config plugin: ML Kit Pose Detection via local CocoaPod.
  *
- * 1. Copies ObjC plugin into iOS project
- * 2. Adds it to the Xcode project (.pbxproj)
- * 3. Adds GoogleMLKit/PoseDetection pod to Podfile
- * 4. Adds VisionCamera header search path via Podfile post_install
+ * Creates a local pod (FitAIPoseDetection) that depends on VisionCamera
+ * and GoogleMLKit/PoseDetection. This ensures headers are resolved
+ * correctly through CocoaPods dependency graph — no manual header
+ * search path hacking needed.
  */
-const {
-  withDangerousMod,
-  withXcodeProject,
-} = require('expo/config-plugins');
+const { withDangerousMod } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
-const OBJC_FILE = 'PoseDetectionPlugin.m';
-
 function withMlkitPose(config) {
-  // Step 1: Copy native file + modify Podfile
   config = withDangerousMod(config, [
     'ios',
     async (cfg) => {
       const projectRoot = cfg.modRequest.projectRoot;
       const pluginIosDir = path.join(projectRoot, 'plugins', 'ios');
-      const targetDir = path.join(
-        cfg.modRequest.platformProjectRoot,
-        cfg.modRequest.projectName,
-      );
+      const iosDir = cfg.modRequest.platformProjectRoot;
 
-      // Copy ObjC file
-      const src = path.join(pluginIosDir, OBJC_FILE);
-      const dst = path.join(targetDir, OBJC_FILE);
-      if (fs.existsSync(src)) {
-        fs.copyFileSync(src, dst);
-        console.log(`[with-mlkit-pose] Copied ${OBJC_FILE}`);
+      // Copy plugin source + podspec into ios/ directory
+      const localPodDir = path.join(iosDir, 'FitAIPoseDetection');
+      if (!fs.existsSync(localPodDir)) {
+        fs.mkdirSync(localPodDir, { recursive: true });
       }
 
-      // Modify Podfile: add ML Kit pod + header search path in post_install
-      const podfilePath = path.join(
-        cfg.modRequest.platformProjectRoot,
-        'Podfile',
-      );
+      // Copy .m file
+      const srcM = path.join(pluginIosDir, 'PoseDetectionPlugin.m');
+      const dstM = path.join(localPodDir, 'PoseDetectionPlugin.m');
+      if (fs.existsSync(srcM)) {
+        fs.copyFileSync(srcM, dstM);
+        console.log('[with-mlkit-pose] Copied PoseDetectionPlugin.m to local pod');
+      }
+
+      // Copy podspec
+      const srcSpec = path.join(pluginIosDir, 'FitAIPoseDetection.podspec');
+      const dstSpec = path.join(localPodDir, 'FitAIPoseDetection.podspec');
+      if (fs.existsSync(srcSpec)) {
+        fs.copyFileSync(srcSpec, dstSpec);
+        console.log('[with-mlkit-pose] Copied FitAIPoseDetection.podspec');
+      }
+
+      // Add local pod to Podfile
+      const podfilePath = path.join(iosDir, 'Podfile');
       if (fs.existsSync(podfilePath)) {
         let podfile = fs.readFileSync(podfilePath, 'utf8');
-
-        // Add ML Kit pod after use_expo_modules!
-        if (!podfile.includes('GoogleMLKit/PoseDetection')) {
+        if (!podfile.includes('FitAIPoseDetection')) {
           const marker = 'use_expo_modules!';
           const idx = podfile.indexOf(marker);
           if (idx !== -1) {
             const insertAt = podfile.indexOf('\n', idx) + 1;
             podfile =
               podfile.slice(0, insertAt) +
-              "  pod 'GoogleMLKit/PoseDetection'\n" +
+              "  pod 'FitAIPoseDetection', :path => './FitAIPoseDetection'\n" +
               podfile.slice(insertAt);
-            console.log('[with-mlkit-pose] Added ML Kit pod to Podfile');
+            console.log('[with-mlkit-pose] Added local pod to Podfile');
           }
-        }
 
-        // Add VisionCamera header search path in post_install
-        if (!podfile.includes('VisionCamera header search')) {
-          const postInstallMarker = 'react_native_post_install(';
-          const idx = podfile.indexOf(postInstallMarker);
-          if (idx !== -1) {
-            const insertAt = podfile.lastIndexOf('\n', idx) + 1;
-            const snippet = `    # VisionCamera header search path for PoseDetectionPlugin
-    installer.pods_project.targets.each do |target|
-      if target.name == 'FitAI'
-        target.build_configurations.each do |config|
-          config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
-          unless config.build_settings['HEADER_SEARCH_PATHS'].include?('"$(PODS_ROOT)/Headers/Public/VisionCamera"')
-            config.build_settings['HEADER_SEARCH_PATHS'] << '"$(PODS_ROOT)/Headers/Public/VisionCamera"'
-          end
-        end
-      end
-    end
-`;
+          // Add header search paths for FitAIPoseDetection target in post_install
+          const postInstallMarker = 'post_install do |installer|';
+          const piIdx = podfile.indexOf(postInstallMarker);
+          if (piIdx !== -1) {
+            const piInsert = podfile.indexOf('\n', piIdx) + 1;
             podfile =
-              podfile.slice(0, insertAt) + snippet + podfile.slice(insertAt);
-            console.log('[with-mlkit-pose] Added VisionCamera header search path to post_install');
+              podfile.slice(0, piInsert) +
+              "    # Add VisionCamera headers to FitAIPoseDetection\n" +
+              "    installer.pods_project.targets.each do |target|\n" +
+              "      if target.name == 'FitAIPoseDetection'\n" +
+              "        target.build_configurations.each do |config|\n" +
+              "          hsp = config.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'\n" +
+              "          unless hsp.include?('VisionCamera')\n" +
+              "            config.build_settings['HEADER_SEARCH_PATHS'] = hsp + ' \"${PODS_ROOT}/Headers/Public/VisionCamera\"'\n" +
+              "          end\n" +
+              "        end\n" +
+              "      end\n" +
+              "    end\n" +
+              podfile.slice(piInsert);
+            console.log('[with-mlkit-pose] Added VisionCamera header paths in post_install');
           }
-        }
 
-        fs.writeFileSync(podfilePath, podfile, 'utf8');
+          fs.writeFileSync(podfilePath, podfile, 'utf8');
+        }
       }
 
       return cfg;
     },
   ]);
-
-  // Step 2: Add source file to Xcode project (no header search path changes here)
-  config = withXcodeProject(config, (cfg) => {
-    const project = cfg.modResults;
-    const projectName = cfg.modRequest.projectName;
-    const appGroupKey = project.findPBXGroupKey({ name: projectName });
-
-    const filePath = `${projectName}/${OBJC_FILE}`;
-    if (!project.hasFile(filePath)) {
-      project.addSourceFile(filePath, { target: project.getFirstTarget().uuid }, appGroupKey);
-      console.log(`[with-mlkit-pose] Added ${OBJC_FILE} to Xcode project`);
-    }
-
-    return cfg;
-  });
 
   return config;
 }
