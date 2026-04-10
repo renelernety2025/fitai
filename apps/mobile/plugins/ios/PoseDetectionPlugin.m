@@ -29,10 +29,10 @@
 }
 
 - (id)callback:(Frame *)frame withArguments:(NSDictionary *)arguments {
-  CMSampleBufferRef buffer = frame.buffer;
-  UIImageOrientation orientation = frame.orientation;
+  CMSampleBufferRef buffer = [frame buffer];
+  UIImageOrientation orientation = [frame orientation];
 
-  VisionImage *image = [[VisionImage alloc] initWithBuffer:buffer];
+  MLKVisionImage *image = [[MLKVisionImage alloc] initWithBuffer:buffer];
   image.orientation = orientation;
 
   NSError *error = nil;
