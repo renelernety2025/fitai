@@ -52,7 +52,7 @@ function withMlkitPose(config) {
             const insertAt = podfile.indexOf('\n', idx) + 1;
             podfile =
               podfile.slice(0, insertAt) +
-              "  pod 'GoogleMLKit/PoseDetection', '~> 7.0.0'\n" +
+              "  pod 'GoogleMLKit/PoseDetection'\n" +
               podfile.slice(insertAt);
             fs.writeFileSync(podfilePath, podfile, 'utf8');
             console.log('[with-mlkit-pose] Added ML Kit pod to Podfile');
