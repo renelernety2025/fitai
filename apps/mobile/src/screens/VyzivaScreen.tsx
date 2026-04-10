@@ -78,6 +78,13 @@ export function VyzivaScreen() {
       });
 
       const analysis = await analyzeFoodPhoto(s3Key);
+      if (analysis.confidence < 30) {
+        Alert.alert(
+          'Nerozpoznáno',
+          'Jídlo se nepodařilo spolehlivě rozpoznat. Zkus lepší fotku nebo přidej ručně.',
+        );
+        return;
+      }
       setPhotoResult({
         name: analysis.name,
         kcal: analysis.kcal,

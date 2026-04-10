@@ -32,7 +32,9 @@ import { createRepCounter, type RepFrameResult } from '../lib/pose/rep-counter';
 import { checkSafety } from '../lib/pose/safety-checker';
 import { detectPose } from '../lib/pose/frame-processor';
 import { PoseOverlay } from '../components/PoseOverlay';
-import type { PoseLandmarks, SafetyAlert } from '../lib/pose/types';
+import { PoseGuide } from '../components/PoseGuide';
+import type { PoseLandmarks, SafetyAlert, ExercisePhaseDefinition } from '../lib/pose/types';
+import { speak, stopVoice } from '../lib/voice-coach';
 
 export function CameraWorkoutProScreen({ route, navigation }: any) {
   const initialKey: string = route?.params?.exercise || '';
@@ -49,6 +51,9 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const [reps, setReps] = useState(0);
   const [formScore, setFormScore] = useState(100);
   const [phaseName, setPhaseName] = useState(exercise?.phases[0]?.nameCs ?? '');
+  const [currentPhaseObj, setCurrentPhaseObj] = useState<ExercisePhaseDefinition | null>(
+    exercise?.phases[0] ?? null,
+  );
   const [phaseFeedback, setPhaseFeedback] = useState('');
   const [landmarks, setLandmarks] = useState<PoseLandmarks | null>(null);
   const [safetyAlerts, setSafetyAlerts] = useState<SafetyAlert[]>([]);
@@ -83,6 +88,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
 
       setFormScore(result.formScore);
       setPhaseName(result.currentPhase.nameCs);
+      setCurrentPhaseObj(result.currentPhase);
       setPhaseFeedback(
         result.feedback.isCorrect
           ? result.currentPhase.feedback_correct
@@ -93,13 +99,23 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         lastRepCount.current = result.completedReps;
         setReps(result.completedReps);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Voice: announce rep count
+        const n = result.completedReps;
+        const praise = n % 5 === 0 ? 'Výborně! ' : '';
+        speak(`${praise}${n}`);
       }
 
       if (frameCount.current % 5 === 0) {
         const alerts = checkSafety(lm, exercise.name);
         setSafetyAlerts(alerts);
-        if (alerts.some((a) => a.severity === 'critical')) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        if (alerts.length > 0) {
+          const critical = alerts.find((a) => a.severity === 'critical');
+          if (critical) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            speak(critical.messageCs);
+          } else {
+            speak(alerts[0].messageCs);
+          }
         }
       }
     },
@@ -142,6 +158,8 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
     setRunning(false);
     setLandmarks(null);
     setPoseVisible(false);
+    stopVoice();
+    speak('Set hotový!');
   }, []);
 
   // Exercise picker
@@ -168,11 +186,11 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
               <Text style={styles.pickerIcon}>{ex.icon}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.pickerName}>{ex.nameCs}</Text>
-                <Text style={styles.pickerEn}>{ex.name}</Text>
+                <Text style={styles.pickerDesc}>{ex.description}</Text>
+                <Text style={styles.pickerMuscles}>
+                  {ex.muscles.join(' · ')}
+                </Text>
               </View>
-              <Text style={styles.pickerPhases}>
-                {ex.phases.length} fází
-              </Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -223,6 +241,16 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         mirrored
       />
 
+      {/* Technogym-style guide dots at target joints */}
+      <PoseGuide
+        landmarks={landmarks}
+        currentPhase={currentPhaseObj}
+        formScore={formScore}
+        width={width}
+        height={height}
+        mirrored
+      />
+
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable
@@ -264,6 +292,9 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         <Text style={[styles.phaseHint, { color: scoreColor }]}>
           {running ? `Form: ${formScore}%` : 'Připraven'}
         </Text>
+        {currentPhaseObj?.coachingHint && (
+          <Text style={styles.coachingHint}>{currentPhaseObj.coachingHint}</Text>
+        )}
         {phaseFeedback !== '' && (
           <Text style={styles.feedbackText}>{phaseFeedback}</Text>
         )}
@@ -353,15 +384,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.3,
   },
-  pickerEn: {
-    color: 'rgba(255,255,255,0.4)',
+  pickerDesc: {
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 4,
+    lineHeight: 17,
   },
-  pickerPhases: {
-    color: 'rgba(255,255,255,0.3)',
-    fontSize: 11,
+  pickerMuscles: {
+    color: '#6c63ff',
+    fontSize: 10,
     letterSpacing: 0.5,
+    marginTop: 4,
   },
 
   // Camera workout
@@ -487,10 +520,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 4,
   },
+  coachingHint: {
+    color: 'rgba(108,99,255,0.8)',
+    fontSize: 11,
+    marginTop: 6,
+    lineHeight: 16,
+  },
   feedbackText: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
-    marginTop: 6,
+    marginTop: 4,
   },
   alertBox: {
     position: 'absolute',

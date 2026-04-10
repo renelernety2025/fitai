@@ -164,6 +164,14 @@ export function analyzeFoodPhoto(s3Key: string) {
   );
 }
 
+// ── Coaching (Voice) ──
+export function synthesizeVoice(text: string) {
+  return request<{ text: string; audioBase64: string | null; fallbackToWebSpeech: boolean }>(
+    '/coaching/synthesize',
+    { method: 'POST', body: JSON.stringify({ text }) },
+  );
+}
+
 // ── Habits (Section G) ──
 export function getHabitsToday() { return request<any>('/habits/today'); }
 export function updateHabitsToday(body: any) {

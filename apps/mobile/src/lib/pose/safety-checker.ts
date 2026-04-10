@@ -17,14 +17,16 @@ interface SafetyRule {
 }
 
 const RULES: SafetyRule[] = [
-  { joint: 'left_knee', exercisePattern: /.*/, dangerMin: 0, dangerMax: 15, severity: 'critical', messageCs: 'Pozor! Nepřepínej koleno!' },
-  { joint: 'right_knee', exercisePattern: /.*/, dangerMin: 0, dangerMax: 15, severity: 'critical', messageCs: 'Pozor! Nepřepínej koleno!' },
-  { joint: 'left_knee', exercisePattern: /squat|dřep|výpad/i, dangerMin: 0, dangerMax: 50, severity: 'warning', messageCs: 'Kolena tlač ven!' },
-  { joint: 'right_knee', exercisePattern: /squat|dřep|výpad/i, dangerMin: 0, dangerMax: 50, severity: 'warning', messageCs: 'Kolena tlač ven!' },
+  { joint: 'left_knee', exercisePattern: /squat|dřep|výpad|lunge|deadlift|mrtvý|calf/i, dangerMin: 0, dangerMax: 15, severity: 'critical', messageCs: 'Pozor! Nepřepínej koleno!' },
+  { joint: 'right_knee', exercisePattern: /squat|dřep|výpad|lunge|deadlift|mrtvý|calf/i, dangerMin: 0, dangerMax: 15, severity: 'critical', messageCs: 'Pozor! Nepřepínej koleno!' },
+  { joint: 'left_knee', exercisePattern: /squat|dřep|výpad|lunge/i, dangerMin: 0, dangerMax: 50, severity: 'warning', messageCs: 'Kolena tlač ven!' },
+  { joint: 'right_knee', exercisePattern: /squat|dřep|výpad|lunge/i, dangerMin: 0, dangerMax: 50, severity: 'warning', messageCs: 'Kolena tlač ven!' },
   { joint: 'left_hip', exercisePattern: /deadlift|mrtvý|přítah|row/i, dangerMin: 0, dangerMax: 30, severity: 'critical', messageCs: 'Narovnej záda!' },
   { joint: 'right_hip', exercisePattern: /deadlift|mrtvý|přítah|row/i, dangerMin: 0, dangerMax: 30, severity: 'critical', messageCs: 'Narovnej záda!' },
   { joint: 'left_shoulder', exercisePattern: /press|tlak|overhead/i, dangerMin: 0, dangerMax: 40, severity: 'warning', messageCs: 'Chraň ramena, lokty ven!' },
   { joint: 'right_shoulder', exercisePattern: /press|tlak|overhead/i, dangerMin: 0, dangerMax: 40, severity: 'warning', messageCs: 'Chraň ramena, lokty ven!' },
+  { joint: 'left_elbow', exercisePattern: /curl|bicep|zdvih/i, dangerMin: 0, dangerMax: 20, severity: 'warning', messageCs: 'Nepřepínej lokty!' },
+  { joint: 'right_elbow', exercisePattern: /curl|bicep|zdvih/i, dangerMin: 0, dangerMax: 20, severity: 'warning', messageCs: 'Nepřepínej lokty!' },
 ];
 
 export function checkSafety(landmarks: PoseLandmarks, exerciseName: string): SafetyAlert[] {

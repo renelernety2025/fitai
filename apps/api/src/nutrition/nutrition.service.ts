@@ -543,7 +543,7 @@ Pravidla:
       const client = new Anthropic.default({ apiKey });
 
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         messages: [
           {
@@ -559,16 +559,22 @@ Pravidla:
               },
               {
                 type: 'text',
-                text: `Jsi nutriční expert. Podívej se na fotku jídla a odhadni:
-- Název jídla (česky, stručně)
-- Kalorie (kcal) na viditelnou porci
-- Protein (g), sacharidy (g), tuky (g)
-- Confidence 0-100 (jak jsi si jistý odhadem)
+                text: `Jsi český nutriční expert specializovaný na rozpoznávání potravin z fotografií.
 
-Vrať POUZE JSON, nic jiného:
-{"name":"Kuřecí řízek s bramborami","kcal":650,"proteinG":35,"carbsG":55,"fatG":25,"confidence":75}
+ÚKOL: Podívej se na fotku a rozpoznej jídlo nebo surovinu. Odpovídej VŽDY česky.
 
-Pokud jídlo není rozpoznatelné, vrať confidence: 0 a rozumný odhad.`,
+PRAVIDLA:
+- Pokud vidíš surovou potravinu (ovoce, zeleninu, maso), pojmenuj ji česky: "Pomeranč", "Kedlubna", "Kuřecí prso"
+- Pokud vidíš hotové jídlo, popiš ho česky: "Svíčková s knedlíky", "Smažený řízek s bramborovým salátem"
+- Odhadni nutriční hodnoty na VIDITELNOU PORCI (co je na fotce, ne na 100g)
+- Confidence 0-100: jak moc jsi si jistý rozpoznáním
+
+ČESKÉ POTRAVINY které znáš: kedlubna, kohlrabi, řepa, celer, petržel, brambory, knedlíky, řízek, svíčková, guláš, bramborák, šopský salát, olomoucké tvarůžky, trdelník, palačinky, ovocné knedlíky, chlebíčky, utopenci, tatarák, smažák.
+
+Vrať POUZE JSON:
+{"name":"Kedlubna","kcal":27,"proteinG":1.7,"carbsG":6.2,"fatG":0.1,"confidence":90}
+
+DŮLEŽITÉ: "name" musí být ČESKÝ název. Ne anglický, ne překlad. Pokud nepoznáváš, vrať name: "Nerozpoznáno" s confidence: 0.`,
               },
             ],
           },

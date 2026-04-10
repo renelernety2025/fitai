@@ -36,6 +36,7 @@ export interface ExercisePhaseDefinition {
   feedback_correct: string;
   feedback_wrong: string;
   minDurationMs?: number;
+  coachingHint?: string;
 }
 
 export interface RepDataEntry {
