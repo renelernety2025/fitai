@@ -1,22 +1,21 @@
 /**
  * Expo config plugin: injects custom VisionCamera v4 ML Kit Pose frame processor.
  *
- * 1. Copies Swift plugin + ObjC registerer + bridging header into iOS project
+ * 1. Copies Swift plugin + ObjC registerer into iOS project
  * 2. Adds them to the Xcode project (.pbxproj)
  * 3. Adds GoogleMLKit/PoseDetection pod to Podfile
- * 4. Sets bridging header in build settings
+ *
+ * No bridging header needed — Swift uses `import VisionCamera` (module import),
+ * ObjC uses `#import <VisionCamera/...>` (framework import after pod install).
  */
 const {
   withDangerousMod,
   withXcodeProject,
-  IOSConfig,
 } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
-const SWIFT_FILE = 'PoseDetectionPlugin.swift';
-const OBJC_FILE = 'PoseDetectionPluginRegisterer.m';
-const BRIDGING_HEADER = 'PoseDetectionPlugin-Bridging-Header.h';
+const OBJC_FILE = 'PoseDetectionPlugin.m';
 
 function withMlkitPose(config) {
   // Step 1: Copy native files + add ML Kit pod
@@ -30,7 +29,7 @@ function withMlkitPose(config) {
         cfg.modRequest.projectName,
       );
 
-      for (const file of [SWIFT_FILE, OBJC_FILE, BRIDGING_HEADER]) {
+      for (const file of [OBJC_FILE]) {
         const src = path.join(pluginIosDir, file);
         const dst = path.join(targetDir, file);
         if (fs.existsSync(src)) {
@@ -65,16 +64,13 @@ function withMlkitPose(config) {
     },
   ]);
 
-  // Step 2: Add files to Xcode project + bridging header
+  // Step 2: Add source files to Xcode project + header search paths
   config = withXcodeProject(config, (cfg) => {
     const project = cfg.modResults;
     const projectName = cfg.modRequest.projectName;
-
-    // Find the app group key by name
     const appGroupKey = project.findPBXGroupKey({ name: projectName });
 
-    // Add source files
-    for (const file of [SWIFT_FILE, OBJC_FILE]) {
+    for (const file of [OBJC_FILE]) {
       const filePath = `${projectName}/${file}`;
       if (!project.hasFile(filePath)) {
         project.addSourceFile(filePath, { target: project.getFirstTarget().uuid }, appGroupKey);
@@ -82,23 +78,20 @@ function withMlkitPose(config) {
       }
     }
 
-    // Add header file (not compiled)
-    const headerPath = `${projectName}/${BRIDGING_HEADER}`;
-    if (!project.hasFile(headerPath)) {
-      project.addHeaderFile(headerPath, {}, appGroupKey);
-      console.log(`[with-mlkit-pose] Added ${BRIDGING_HEADER}`);
-    }
-
-    // Set bridging header in all build configurations
+    // Add VisionCamera headers to search path so #import works
     const buildConfigs = project.pbxXCBuildConfigurationSection();
     for (const key in buildConfigs) {
       const bc = buildConfigs[key];
       if (bc.buildSettings && bc.buildSettings.PRODUCT_NAME) {
-        bc.buildSettings.SWIFT_OBJC_BRIDGING_HEADER =
-          `"${projectName}/${BRIDGING_HEADER}"`;
+        const existing = bc.buildSettings.HEADER_SEARCH_PATHS || ['$(inherited)'];
+        const paths = Array.isArray(existing) ? existing : [existing];
+        if (!paths.some((p) => typeof p === 'string' && p.includes('VisionCamera'))) {
+          paths.push('"${PODS_ROOT}/Headers/Public/VisionCamera"');
+          bc.buildSettings.HEADER_SEARCH_PATHS = paths;
+        }
       }
     }
-    console.log('[with-mlkit-pose] Set bridging header');
+    console.log('[with-mlkit-pose] Added VisionCamera header search paths');
 
     return cfg;
   });
