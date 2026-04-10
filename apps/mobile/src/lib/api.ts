@@ -154,6 +154,15 @@ export function deleteFoodLog(id: string) {
   return request<any>(`/nutrition/log/${id}`, { method: 'DELETE' });
 }
 export function getQuickFoods() { return request<any[]>('/nutrition/quick-foods'); }
+export function getFoodPhotoUploadUrl() {
+  return request<{ uploadUrl: string; s3Key: string }>('/nutrition/photo-upload-url', { method: 'POST' });
+}
+export function analyzeFoodPhoto(s3Key: string) {
+  return request<{ name: string; kcal: number; proteinG: number; carbsG: number; fatG: number; confidence: number; note?: string }>(
+    '/nutrition/analyze-photo',
+    { method: 'POST', body: JSON.stringify({ s3Key }) },
+  );
+}
 
 // ── Habits (Section G) ──
 export function getHabitsToday() { return request<any>('/habits/today'); }

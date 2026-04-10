@@ -36,12 +36,28 @@
     },
     "plugins": [
       [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "FitAI potřebuje kameru pro sledování formy."
         }
       ],
-      "expo-secure-store"
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermission": "FitAI potřebuje kameru pro real-time pose detection a sledování formy při cvičení.",
+          "enableMicrophonePermission": false
+        }
+      ],
+      "expo-secure-store",
+      "./plugins/with-mlkit-pose"
     ],
     "extra": {
       "eas": {

@@ -33,18 +33,23 @@ export interface RepFrameResult {
 function scorePhase(landmarks: PoseLandmarks, rules: ExercisePhaseDefinition['rules']): number {
   if (rules.length === 0) return 100;
   let correct = 0;
+  let evaluated = 0;
   for (const rule of rules) {
     const indices = JOINT_MAP[rule.joint];
-    if (!indices) {
-      correct++;
-      continue;
-    }
+    if (!indices) continue;
+    // Skip rules where landmarks are not visible (partial body)
+    const vis0 = landmarks[indices[0]]?.visibility ?? 0;
+    const vis1 = landmarks[indices[1]]?.visibility ?? 0;
+    const vis2 = landmarks[indices[2]]?.visibility ?? 0;
+    if (vis0 === 0 || vis1 === 0 || vis2 === 0) continue;
+    evaluated++;
     const angle = calculateAngle(landmarks[indices[0]], landmarks[indices[1]], landmarks[indices[2]]);
     if (angle >= rule.angle_min - TOLERANCE && angle <= rule.angle_max + TOLERANCE) {
       correct++;
     }
   }
-  return Math.round((correct / rules.length) * 100);
+  if (evaluated === 0) return 100;
+  return Math.round((correct / evaluated) * 100);
 }
 
 function matchesPhase(landmarks: PoseLandmarks, phase: ExercisePhaseDefinition): boolean {

@@ -1,9 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class NutritionService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NutritionService.name);
+  private readonly s3: S3Client;
+  private readonly bucket: string;
+
+  constructor(private prisma: PrismaService) {
+    this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
+    this.s3 = new S3Client({
+      region: process.env.AWS_REGION || 'eu-west-1',
+      requestChecksumCalculation: 'WHEN_REQUIRED' as any,
+      responseChecksumValidation: 'WHEN_REQUIRED' as any,
+    } as any);
+  }
 
   /** Mifflin-St Jeor BMR + activity multiplier → recommended daily targets */
   private calculateTargets(profile: {
@@ -491,5 +505,112 @@ Pravidla:
       days,
       shoppingList,
     };
+  }
+
+  // ── Photo Food Recognition ──
+
+  async getFoodPhotoUploadUrl(userId: string) {
+    const id = randomUUID();
+    const s3Key = `food-photos/${userId}/${id}.jpg`;
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: s3Key,
+      ContentType: 'image/jpeg',
+    });
+    const uploadUrl = await getSignedUrl(this.s3 as any, command as any, {
+      expiresIn: 900,
+    });
+    return { uploadUrl, s3Key };
+  }
+
+  async analyzeFoodPhoto(s3Key: string) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return {
+        name: 'Neznámé jídlo',
+        kcal: 300,
+        proteinG: 15,
+        carbsG: 40,
+        fatG: 10,
+        confidence: 0,
+        note: 'AI analýza nedostupná — nastav ANTHROPIC_API_KEY.',
+      };
+    }
+
+    try {
+      const base64 = await this.fetchFoodPhotoBase64(s3Key);
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic.default({ apiKey });
+
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: base64,
+                },
+              },
+              {
+                type: 'text',
+                text: `Jsi nutriční expert. Podívej se na fotku jídla a odhadni:
+- Název jídla (česky, stručně)
+- Kalorie (kcal) na viditelnou porci
+- Protein (g), sacharidy (g), tuky (g)
+- Confidence 0-100 (jak jsi si jistý odhadem)
+
+Vrať POUZE JSON, nic jiného:
+{"name":"Kuřecí řízek s bramborami","kcal":650,"proteinG":35,"carbsG":55,"fatG":25,"confidence":75}
+
+Pokud jídlo není rozpoznatelné, vrať confidence: 0 a rozumný odhad.`,
+              },
+            ],
+          },
+        ],
+      });
+
+      const text =
+        response.content[0].type === 'text' ? response.content[0].text : '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON in Claude response');
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        name: parsed.name || 'Neznámé jídlo',
+        kcal: typeof parsed.kcal === 'number' ? parsed.kcal : 300,
+        proteinG: typeof parsed.proteinG === 'number' ? parsed.proteinG : 15,
+        carbsG: typeof parsed.carbsG === 'number' ? parsed.carbsG : 40,
+        fatG: typeof parsed.fatG === 'number' ? parsed.fatG : 10,
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 50,
+      };
+    } catch (e: any) {
+      this.logger.error(`Food photo analysis failed: ${e.message}`);
+      return {
+        name: 'Neznámé jídlo',
+        kcal: 300,
+        proteinG: 15,
+        carbsG: 40,
+        fatG: 10,
+        confidence: 0,
+        note: `Analýza selhala: ${e.message}`,
+      };
+    }
+  }
+
+  private async fetchFoodPhotoBase64(s3Key: string): Promise<string> {
+    const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: s3Key });
+    const res: any = await this.s3.send(cmd);
+    const stream = res.Body as any;
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks).toString('base64');
   }
 }

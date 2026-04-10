@@ -94,4 +94,19 @@ export class NutritionController {
   deleteMealPlan(@Request() req: any, @Param('id') id: string) {
     return this.service.deleteMealPlan(req.user.id, id);
   }
+
+  // ── Photo Food Recognition ──
+
+  /** Get presigned S3 URL for food photo upload */
+  @Post('photo-upload-url')
+  getFoodPhotoUploadUrl(@Request() req: any) {
+    return this.service.getFoodPhotoUploadUrl(req.user.id);
+  }
+
+  /** Analyze uploaded food photo via Claude Vision → return estimated macros */
+  @Post('analyze-photo')
+  @Throttle({ default: { limit: 20, ttl: seconds(86400) } })
+  analyzeFoodPhoto(@Request() req: any, @Body() body: { s3Key: string }) {
+    return this.service.analyzeFoodPhoto(body.s3Key);
+  }
 }
