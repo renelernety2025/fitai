@@ -427,20 +427,28 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         </View>
       )}
 
-      <View style={styles.bottomBar} pointerEvents="box-none">
-        {/* Mic button (during workout or rest) */}
-        {(running || resting) && (
+      <View style={styles.bottomBar}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          {/* Mic button (during workout or rest) */}
+          {(running || resting) && (
+            <Pressable
+              style={[styles.micBtn, voiceInput.listening && styles.micBtnActive]}
+              onPress={() => {
+                console.log('[MIC] Pressed, listening:', voiceInput.listening);
+                if (voiceInput.listening) {
+                  voiceInput.stopListening();
+                } else {
+                  voiceInput.startListening();
+                }
+              }}
+              hitSlop={16}
+            >
+              <Text style={styles.micBtnText}>
+                {voiceInput.listening ? '...' : 'MIC'}
+              </Text>
+            </Pressable>
+          )}
           <Pressable
-            style={[styles.micBtn, voiceInput.listening && styles.micBtnActive]}
-            onPress={voiceInput.listening ? voiceInput.stopListening : voiceInput.startListening}
-            hitSlop={10}
-          >
-            <Text style={styles.micBtnText}>
-              {voiceInput.listening ? '...' : 'MIC'}
-            </Text>
-          </Pressable>
-        )}
-        <Pressable
           style={[styles.primaryBtn, running && styles.primaryBtnActive]}
           onPress={running ? handleStop : resting ? undefined : handleStart}
           hitSlop={10}
@@ -455,6 +463,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
             {running ? 'STOP' : `START SET ${currentSet}`}
           </Text>
         </Pressable>
+        </View>
       </View>
     </View>
   );
