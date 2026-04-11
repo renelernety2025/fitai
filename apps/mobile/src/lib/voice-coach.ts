@@ -135,12 +135,13 @@ async function playNext() {
         );
       }
 
-      // Safety: max 10s per phrase in case listener never fires
-      // (corrupt audio, module error, etc.).
+      // Safety: max 60s per phrase in case listener never fires
+      // (corrupt audio, module error, etc.). Long Claude answers can
+      // comfortably hit 20-25s, so 10s was too aggressive.
       safetyTimer = setTimeout(() => {
         if (!resolved) console.warn('[VoiceCoach] Safety timeout hit for:', text.substring(0, 40));
         done();
-      }, 10000);
+      }, 60000);
     });
   } catch (e: any) {
     console.warn('[VoiceCoach] playNext error:', e.message);

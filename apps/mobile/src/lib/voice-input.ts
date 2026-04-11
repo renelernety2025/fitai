@@ -28,6 +28,14 @@ const MIN_SPEECH_CHARS = 3;
 // continuous mode. Too short → thrash; too long → missed user speech.
 const CONTINUOUS_REARM_MS = 200;
 
+// Post-cancel settle delay before opening the mic. When the user taps
+// MIC while the coach is speaking, we call pauseCoach()/cancelCurrent()
+// which stops playback almost instantly — but the iOS speaker still has
+// ~100-300ms of audio buffered. If we start the mic immediately, it
+// captures that tail and SFSpeechRecognizer produces an echo transcript.
+// Waiting 350ms lets the speaker flush before listening begins.
+const POST_CANCEL_SETTLE_MS = 350;
+
 export type VoiceInputState =
   | 'idle'          // nothing is happening
   | 'listening'     // mic is open, waiting for user speech
@@ -107,6 +115,12 @@ export function useVoiceInput(
       // before pausing, so the coach can keep speaking until interrupted.
       if (!continuousRef.current) {
         pauseCoach();
+        // Let the iOS speaker buffer drain (~100-300ms audio tail) before
+        // the mic starts, otherwise speech recognition captures the tail
+        // of the coach's TTS and produces an echo transcript. Without this
+        // delay, push-to-talk during coach speech sent bogus coach-words
+        // to Claude as if they were the user's question.
+        await new Promise((resolve) => setTimeout(resolve, POST_CANCEL_SETTLE_MS));
       }
 
       let lastTranscript = '';
