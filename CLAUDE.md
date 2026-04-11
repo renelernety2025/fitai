@@ -104,13 +104,20 @@ fitai/
 - Prisma schema fields v `CONTRACTS.md` (API shapes, DB modely)
 
 ## Tech stack details v auto-memory
-Deep knowledge je v `~/.claude/projects/-Users-renechlubny-Desktop-fitai/memory/`:
-- `api_routing.md` — prefix konvence, ALB rules
-- `build_deploy.md` — CodeBuild, deploy příkazy
-- `prisma_conventions.md` — db push workflow, seed patterns
-- `project_state.md` — current hotové věci
-- `tech_debt.md` — známé pitfalls + lessons learned
-- `user_profile.md` — moje preference
-- `working_style.md` — jak spolupracujeme
+Deep knowledge je v `~/.claude/projects/-Users-renechlubny-projekty-fitai/memory/`:
+- `fitai_environment_setup.md` — Claude Code environment plan (skills, rules, hooks)
+- `fitai_coaching_state.md` — Voice coaching current state, echo issue, next steps
+- (další memory soubory se přidávají průběžně)
 
 Auto-memory se načítá automaticky, nečti ho znovu. Využij ho pro context.
+
+## Compact Instructions
+Při `/compact` uchovej:
+- **Native module patterns** — lazy require pro `expo-audio` + `expo-speech-recognition`; `ExpoSpeechRecognitionModule.addListener()` (NE NativeEventEmitter); nikdy nedůvěřovat `NativeModules.X` checkům.
+- **EAS build conventions** — native deps patří do `apps/mobile/package.json` (NE root); žádný root `app.json` ani root `ios/`; prebuild + pod install lokálně PŘED EAS.
+- **Voice coaching architecture** — pipeline `coaching-engine.ts → coaching-phrases.ts → voice-coach.ts → /api/coaching/tts → ElevenLabs (language_code: 'cs') → expo-audio`; MIC echo workaround je `pauseCoach/resumeCoach`.
+- **Claude model convention** — `claude-haiku-4-5` pro coaching / daily brief / weekly review; `claude-sonnet-4-6` pro vision (food recognition, body photos).
+- **API routing** — global prefix `/api/*`, `@Throttle()` na AI endpointech, `@UseGuards(JwtAuthGuard)` všude kde je user-specific data.
+- **Modified files list** + current task context (co se implementovalo, co zbývá).
+- **User preferences** — jazyk čeština pro komunikaci, angličtina pro kód/commity; max 30 řádků/fn, 300/soubor, 3 úrovně zanoření; žádné refactory bez schválení.
+- **Zámčené soubory** (viz výše) jsou chráněné `.claude/hooks/protect-files.sh` — při pokusu o Edit/Write vrací exit 2.
