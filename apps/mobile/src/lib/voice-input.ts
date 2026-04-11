@@ -1,21 +1,27 @@
 /**
- * Voice Input v3 — conversational speech-to-text for coaching.
+ * Voice Input v4 — hardware-AEC speech-to-text via VoiceEngine native module.
  *
- * Supports two modes:
- *   - push-to-talk (legacy) — startListening() / stopListening()
- *   - always-on continuous — toggleContinuous()
+ * Phase A v2 migration: `expo-speech-recognition` has been replaced by our
+ * custom `VoiceEngine` native module. Recognition runs on the same shared
+ * AVAudioEngine whose input node has voiceProcessingEnabled = true, so the
+ * mic tap physically does not receive the coach's own speaker output —
+ * the VoiceProcessingIO audio unit subtracts it in hardware BEFORE the
+ * tap fires. This is what the Voice Coaching v2 software gates
+ * (v1.2-v1.4) could only approximate.
  *
- * In continuous mode the session auto-reloops on the 'end' event so the
- * mic stays effectively always-on (expo-speech-recognition stops after a
- * few seconds of silence by default).
+ * What this file still owns (preserved from v3):
+ * - useVoiceInput() hook signature and return type
+ * - VoiceInputState (idle/listening/user-speaking/answering)
+ * - SessionState object shared between handler factories
+ * - Handler factories (makeSendToCoach, makeResultHandler, makeEndHandler,
+ *   makeErrorHandler)
+ * - continuousRef + useEffect sync
+ * - POST_CANCEL_SETTLE_MS (defensive, can shrink after device test)
+ * - askCoach() fetch to /api/coaching/ask
  *
- * The internalStart() orchestration is split into small helper factories
- * (makeSendToCoach, makeResultHandler, makeEndHandler, makeErrorHandler)
- * so each piece stays under the 30-LOC CLAUDE.md guideline. Session-local
- * state lives in a `SessionState` object shared between the three handlers
- * instead of closure-captured `let` variables.
- *
- * Uses ExpoSpeechRecognitionModule.addListener() (NOT NativeEventEmitter).
+ * What moved to native:
+ * - ExpoSpeechRecognitionModule.start / stop / addListener
+ * - Permission requests (now handled inside VoiceEngine on first call)
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -25,6 +31,15 @@ import {
   resumeCoach,
   isSpeakingOrJustStopped,
 } from './voice-coach';
+import {
+  startRecognition as engineStartRecognition,
+  stopRecognition as engineStopRecognition,
+  onRecognitionResult,
+  onRecognitionEnd,
+  onRecognitionError,
+  isAvailable as isVoiceEngineAvailable,
+  type RecognitionResult,
+} from './voice-engine';
 import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
@@ -37,12 +52,10 @@ const MIN_SPEECH_CHARS = 3;
 // continuous mode. Too short → thrash; too long → missed user speech.
 const CONTINUOUS_REARM_MS = 200;
 
-// Post-cancel settle delay before opening the mic. When the user taps
-// MIC while the coach is speaking, we call pauseCoach()/cancelCurrent()
-// which stops playback almost instantly — but the iOS speaker still has
-// ~100-300ms of audio buffered. If we start the mic immediately, it
-// captures that tail and SFSpeechRecognizer produces an echo transcript.
-// Waiting 350ms lets the speaker flush before listening begins.
+// Post-cancel settle delay before opening the mic. Defensive backstop —
+// with hardware AEC the mic no longer physically hears the coach, so
+// this can likely shrink from 350ms to ~50ms once Phase A v2 is proven
+// stable on device. Keep defensive for the first week.
 const POST_CANCEL_SETTLE_MS = 350;
 
 export type VoiceInputState =
@@ -56,6 +69,9 @@ interface SessionState {
   answered: boolean;
   autopaused: boolean;
 }
+
+/** Type for the handler returned by registerListeners — unsubscribes all. */
+type UnsubscribeAll = () => void;
 
 async function askCoach(
   question: string,
@@ -92,26 +108,25 @@ export function useVoiceInput(
 
   // Refs mirror state so closures in speech-recognition listeners always
   // see the latest value even across multiple start/stop cycles.
-  const subsRef = useRef<any[]>([]);
+  const unsubscribeRef = useRef<UnsubscribeAll | null>(null);
   const continuousRef = useRef(false);
   const userStoppedRef = useRef(false);
 
-  // Keep continuousRef in sync with continuousMode state via useEffect
-  // rather than mutating during render (which is brittle — parent re-renders
-  // could interleave listener closures with state transitions and give
-  // non-deterministic behavior).
+  // Sync continuousRef with continuousMode via useEffect rather than
+  // mutating during render (which is brittle — parent re-renders could
+  // interleave listener closures with state transitions).
   useEffect(() => {
     continuousRef.current = continuousMode;
   }, [continuousMode]);
 
   const cleanup = () => {
-    subsRef.current.forEach((s) => s?.remove?.());
-    subsRef.current = [];
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
   };
 
   // Factory for the "finalize this question and ship it to Claude" closure.
   // Shared between the result listener (on isFinal) and the end listener
-  // (fallback for when iOS doesn't fire isFinal).
+  // (fallback for when the engine doesn't fire isFinal).
   const makeSendToCoach = (session: SessionState) => (text: string) => {
     if (session.answered || text.length <= MIN_SPEECH_CHARS) return;
     session.answered = true;
@@ -125,8 +140,6 @@ export function useVoiceInput(
       resumeCoach();
       speak(result.answer);
 
-      // In continuous mode, re-arm listening so the coach can be
-      // interrupted again after it replays the answer.
       if (continuousRef.current && !userStoppedRef.current) {
         setTimeout(() => internalStart(), CONTINUOUS_REARM_MS);
       } else {
@@ -138,21 +151,19 @@ export function useVoiceInput(
   const makeResultHandler = (
     session: SessionState,
     sendToCoach: (text: string) => void,
-  ) => (event: any) => {
-    // ECHO GATE: if the coach is speaking (or stopped speaking within the
-    // grace window), the mic is almost certainly capturing his own voice
-    // from the speaker. Ignore the transcript entirely. The grace window
-    // covers: iOS speaker output buffer (~300ms), SFSpeechRecognizer
-    // processing latency (~500ms), and spurious early didJustFinish events
-    // from expo-audio. See voice-coach.isSpeakingOrJustStopped.
+  ) => (result: RecognitionResult) => {
+    // ECHO GATE (defensive): with hardware AEC from VoiceEngine, echo
+    // transcripts shouldn't reach us at all. Keep the check as a
+    // backstop — it's cheap and guards against native module regressions.
     if (isSpeakingOrJustStopped()) return;
 
-    const text = event.results?.[0]?.transcript || '';
+    const text = result.transcript || '';
     session.lastTranscript = text;
     setTranscript(text);
 
-    // Auto-pause coach on first interim result with real content. This is
-    // the "interrupt mid-sentence" UX — we don't wait for isFinal.
+    // Auto-pause coach on first interim result with real content.
+    // This is the "interrupt mid-sentence" UX. With hardware AEC this
+    // now works in continuous mode without echo-triggered false positives.
     if (!session.autopaused && text.length > MIN_SPEECH_CHARS) {
       session.autopaused = true;
       pauseCoach();
@@ -160,7 +171,7 @@ export function useVoiceInput(
       console.log('[VoiceInput] Auto-paused coach on user speech');
     }
 
-    if (event.isFinal) sendToCoach(text);
+    if (result.isFinal) sendToCoach(text);
   };
 
   const makeEndHandler = (
@@ -169,8 +180,7 @@ export function useVoiceInput(
   ) => () => {
     console.log('[VoiceInput] Ended, lastTranscript:', session.lastTranscript);
 
-    // ECHO GATE: whatever we captured was echo. Don't sendToCoach the bogus
-    // transcript; just re-arm continuous listening (or go idle).
+    // Defensive echo gate (same reasoning as result handler).
     if (isSpeakingOrJustStopped()) {
       session.lastTranscript = '';
       if (continuousRef.current && !userStoppedRef.current) {
@@ -181,7 +191,7 @@ export function useVoiceInput(
       return;
     }
 
-    // iOS end-event fallback: got transcript but no isFinal, send it now.
+    // End-event fallback: got transcript but no isFinal, send it now.
     if (!session.answered && session.lastTranscript.length > MIN_SPEECH_CHARS) {
       sendToCoach(session.lastTranscript);
       return;
@@ -199,8 +209,8 @@ export function useVoiceInput(
     if (session.autopaused) resumeCoach();
   };
 
-  const makeErrorHandler = (session: SessionState) => (e: any) => {
-    console.warn('[VoiceInput] Error:', JSON.stringify(e));
+  const makeErrorHandler = (session: SessionState) => (e: { message: string }) => {
+    console.warn('[VoiceInput] Error:', e.message);
     if (session.autopaused) resumeCoach();
     // Don't exit continuous mode on transient errors; try to re-arm.
     if (continuousRef.current && !userStoppedRef.current) {
@@ -211,22 +221,15 @@ export function useVoiceInput(
   };
 
   // Core speech-recognition setup. Orchestrator — delegates handler bodies
-  // to the factories above so this stays short and readable. Called
-  // recursively via setTimeout for continuous mode re-arm.
+  // to the factories above. Called recursively via setTimeout for
+  // continuous mode re-arm.
   const internalStart = async () => {
+    if (!isVoiceEngineAvailable()) {
+      console.warn('[VoiceInput] VoiceEngine native module not available');
+      return;
+    }
+
     try {
-      const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
-      if (!ExpoSpeechRecognitionModule) {
-        console.warn('[VoiceInput] Module is undefined');
-        return;
-      }
-
-      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      if (!granted) {
-        console.warn('[VoiceInput] Permission denied');
-        return;
-      }
-
       cleanup();
       setTranscript('');
       setState('listening');
@@ -246,18 +249,18 @@ export function useVoiceInput(
       };
       const sendToCoach = makeSendToCoach(session);
 
-      subsRef.current.push(
-        ExpoSpeechRecognitionModule.addListener('result', makeResultHandler(session, sendToCoach)),
-        ExpoSpeechRecognitionModule.addListener('end', makeEndHandler(session, sendToCoach)),
-        ExpoSpeechRecognitionModule.addListener('error', makeErrorHandler(session)),
-      );
+      // Subscribe to VoiceEngine events. Each subscriber returns an
+      // unsubscribe function; we combine them into one cleanup closure.
+      const unsubResult = onRecognitionResult(makeResultHandler(session, sendToCoach));
+      const unsubEnd = onRecognitionEnd(makeEndHandler(session, sendToCoach));
+      const unsubError = onRecognitionError(makeErrorHandler(session));
+      unsubscribeRef.current = () => {
+        unsubResult();
+        unsubEnd();
+        unsubError();
+      };
 
-      ExpoSpeechRecognitionModule.start({
-        lang: 'cs-CZ',
-        interimResults: true,
-        maxAlternatives: 1,
-        continuous: true,
-      });
+      await engineStartRecognition({ lang: 'cs-CZ', continuous: true });
       console.log(
         '[VoiceInput] Started listening (continuous=',
         continuousRef.current,
@@ -278,10 +281,7 @@ export function useVoiceInput(
   // Explicit stop — used by push-to-talk button release AND continuous off.
   const stopListening = () => {
     userStoppedRef.current = true;
-    try {
-      const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
-      ExpoSpeechRecognitionModule.stop();
-    } catch {}
+    engineStopRecognition();
     setState('idle');
     cleanup();
     resumeCoach();
@@ -291,10 +291,9 @@ export function useVoiceInput(
   // and the coach is auto-paused whenever the user speaks.
   const toggleContinuous = async () => {
     if (continuousRef.current) {
-      // Turning OFF — setState alone is enough; the useEffect above will
-      // sync continuousRef.current on the next render cycle. We also set
-      // the ref immediately so the in-flight stopListening() sees the
-      // correct value synchronously.
+      // Turning OFF — ref is set synchronously so in-flight stopListening
+      // sees the new value immediately; useEffect will sync state on next
+      // render cycle.
       continuousRef.current = false;
       setContinuousMode(false);
       stopListening();

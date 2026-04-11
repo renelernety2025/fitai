@@ -1,66 +1,65 @@
 /**
- * Voice Coach v7 — ElevenLabs TTS via expo-audio.
+ * Voice Coach v8 — hardware-AEC TTS playback via VoiceEngine native module.
  *
- * Listener-based playback completion + external cancellation API so
- * pauseCoach() can interrupt mid-phrase without dropping the rest of
- * the queue. Single-flight drain via `isDraining` prevents re-entry
- * when a recursive playNext() call fires from inside done().
+ * Phase A v2 migration: `expo-audio` has been replaced by our custom
+ * `VoiceEngine` native module which routes playback through a shared
+ * AVAudioEngine with voiceProcessingEnabled = true. The mic physically
+ * no longer hears the coach's own voice from the speaker, so the echo
+ * loop that software gates in v1.4 could only mitigate is now solved
+ * at the hardware level.
  *
- * Public API:
- * - speak(text)      queue a phrase for TTS
- * - pauseCoach()     interrupt current phrase + block new phrases (preserves queue)
- * - resumeCoach()    allow playback again + drain remaining queue
- * - cancelCurrent()  interrupt current phrase only (leaves `paused` untouched)
- * - stopVoice()      full stop: clear queue + cancel current phrase
- * - isSpeaking()     raw boolean
- * - isSpeakingOrJustStopped()  echo gate with grace window — prefer this
+ * What this file still owns (preserved from v7):
+ * - Queue discipline (QUEUE_MAX=2, lastSpokenText dedup)
+ * - isDraining single-flight guard
+ * - paused state machine + paused re-check after TTS fetch
+ * - Grace window logic (isSpeakingOrJustStopped, POST_SPEAKING_GRACE_MS,
+ *   lastSpeakingEndedAt) — still useful as a defensive backstop during
+ *   the first week of device testing, can be shrunk or removed later
+ *
+ * What moved to native:
+ * - Audio playback (was expo-audio's createAudioPlayer)
+ * - Playback completion detection (was playbackStatusUpdate listener)
+ *
+ * Public API unchanged:
+ *   speak / cancelCurrent / pauseCoach / resumeCoach / stopVoice
+ *   isSpeaking / isSpeakingOrJustStopped
  */
 
 import { synthesizeVoice } from './api';
+import {
+  play as enginePlay,
+  stopPlayback as engineStopPlayback,
+  onPlaybackFinished,
+  isAvailable as isVoiceEngineAvailable,
+} from './voice-engine';
 
 // ─── Module state ───────────────────────────────────────────────────────────
 const cache = new Map<string, string>();
 const CACHE_MAX = 30;
 const queue: string[] = [];
 const QUEUE_MAX = 2;
-const SAFETY_TIMEOUT_MS = 60_000;
 const POST_SPEAKING_GRACE_MS = 1200;
+const SAFETY_TIMEOUT_MS = 60_000;
 
-let currentPlayer: any = null;
 let speaking = false;
 let isDraining = false; // single-flight guard for playNext()
 let lastSpeakingEndedAt = 0;
 let lastSpokenText = '';
 let paused = false; // true when MIC is active
-let audioModuleLoaded = false;
-let createPlayer: any = null;
 
 // Holds a callback that interrupts the currently playing phrase. Set inside
-// awaitPlaybackEnd() when a player is actively playing; null otherwise.
+// awaitPlaybackEnd() while a phrase is playing; null otherwise.
 let cancelCurrentPlayback: (() => void) | null = null;
-
-// ─── Native module lazy load ────────────────────────────────────────────────
-function loadAudioModule(): boolean {
-  if (audioModuleLoaded) return !!createPlayer;
-  audioModuleLoaded = true;
-  try {
-    const mod = require('expo-audio');
-    createPlayer = mod.createAudioPlayer;
-    console.log('[VoiceCoach] expo-audio loaded OK');
-    return true;
-  } catch (e: any) {
-    console.warn('[VoiceCoach] expo-audio not available:', e.message);
-    return false;
-  }
-}
 
 // ─── Queue drain loop ───────────────────────────────────────────────────────
 async function playNext(): Promise<void> {
   // Single-flight guard: only one drain loop runs at a time, even if a
-  // recursive call fires from done() → playNext() while we are mid-iteration.
+  // recursive call fires from a completion callback while we are
+  // mid-iteration.
   if (isDraining || queue.length === 0 || speaking || paused) return;
-  if (!loadAudioModule()) {
-    console.warn('[VoiceCoach] No audio module, clearing queue');
+
+  if (!isVoiceEngineAvailable()) {
+    console.warn('[VoiceCoach] VoiceEngine native module not available, clearing queue');
     queue.length = 0;
     return;
   }
@@ -85,10 +84,7 @@ async function playOnePhrase(text: string): Promise<void> {
     if (!base64) return;
 
     // Re-check the paused flag AFTER the fetch: pauseCoach() may have been
-    // called while we were awaiting the TTS response. At that moment
-    // cancelCurrentPlayback was null (no player registered yet), so the
-    // cancel was a no-op. Catching it here prevents a phrase from playing
-    // after the user has already asked for silence. The shifted text goes
+    // called while we were awaiting the TTS response. Unshift the text
     // back to the front of the queue so resumeCoach() replays it.
     if (paused) {
       queue.unshift(text);
@@ -96,12 +92,9 @@ async function playOnePhrase(text: string): Promise<void> {
       return;
     }
 
-    disposeCurrentPlayer();
-    const player = createPlayer(`data:audio/mpeg;base64,${base64}`);
-    currentPlayer = player;
-    player.play();
+    await enginePlay(base64);
     console.log('[VoiceCoach] Playing audio...');
-    await awaitPlaybackEnd(player, text);
+    await awaitPlaybackEnd(text);
   } catch (e: any) {
     console.warn('[VoiceCoach] playOnePhrase error:', e.message);
     // Allow the same phrase to be re-emitted after an error — without this,
@@ -137,27 +130,19 @@ function evictOldestCacheEntry(): void {
   if (k) cache.delete(k);
 }
 
-function disposeCurrentPlayer(): void {
-  if (!currentPlayer) return;
-  try { currentPlayer.remove(); } catch {}
-  currentPlayer = null;
-}
-
 // ─── Playback completion ────────────────────────────────────────────────────
-function awaitPlaybackEnd(player: any, text: string): Promise<void> {
+function awaitPlaybackEnd(text: string): Promise<void> {
   return new Promise<void>((resolve) => {
     let resolved = false;
     let canceled = false;
-    let sub: any = null;
+    let unsubscribe: (() => void) | null = null;
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
 
     const done = () => {
       if (resolved) return;
       resolved = true;
       if (safetyTimer) clearTimeout(safetyTimer);
-      try { sub?.remove?.(); } catch {}
-      try { player.remove(); } catch {}
-      if (currentPlayer === player) currentPlayer = null;
+      unsubscribe?.();
 
       if (canceled) {
         // Allow coaching-engine to re-emit the same phrase after resume
@@ -169,21 +154,29 @@ function awaitPlaybackEnd(player: any, text: string): Promise<void> {
       resolve();
     };
 
-    cancelCurrentPlayback = () => { canceled = true; done(); };
+    // Register external cancel hook so pauseCoach() / cancelCurrent() can
+    // interrupt the in-flight phrase. Invoking the hook triggers a native
+    // stopPlayback(), which fires `playbackFinished` via the subscription
+    // below — but we also call done() immediately so we don't race with
+    // the native event.
+    cancelCurrentPlayback = () => {
+      canceled = true;
+      engineStopPlayback();
+      done();
+    };
 
-    try {
-      sub = player.addListener('playbackStatusUpdate', (status: any) => {
-        if (status?.didJustFinish) done();
-      });
-    } catch (e: any) {
-      console.warn('[VoiceCoach] addListener failed, relying on safety timer:', e.message);
-    }
+    // Subscribe to the `playbackFinished` event from the native module.
+    // VoiceEngine emits this on natural completion OR when stopPlayback()
+    // is called — both paths funnel through here.
+    unsubscribe = onPlaybackFinished(done);
 
-    // Safety: the listener is unreliable in some expo-audio states
-    // (corrupt audio, module error, etc.). 60s comfortably covers long
-    // Claude answers (~25s typical max).
+    // Safety: if the native module never emits playbackFinished (corrupt
+    // audio, module crash), give up after 60s. Long Claude answers can
+    // hit 20-25s comfortably, so 60s has plenty of headroom.
     safetyTimer = setTimeout(() => {
-      if (!resolved) console.warn('[VoiceCoach] Safety timeout hit for:', text.substring(0, 40));
+      if (!resolved) {
+        console.warn('[VoiceCoach] Safety timeout hit for:', text.substring(0, 40));
+      }
       done();
     }, SAFETY_TIMEOUT_MS);
   });
@@ -208,28 +201,22 @@ export function cancelCurrent(): void {
 
 /**
  * Returns true if the coach is currently playing a phrase.
- * Kept for backward compat. Prefer isSpeakingOrJustStopped() for echo gating
- * because it also covers the grace window after playback ends.
+ * Kept for backward compat. Prefer isSpeakingOrJustStopped() for echo
+ * gating because it also covers the grace window after playback ends.
  */
 export function isSpeaking(): boolean {
   return speaking;
 }
 
 /**
- * Returns true if the coach is currently speaking OR stopped speaking within
- * the last POST_SPEAKING_GRACE_MS milliseconds. This is the correct gate for
- * echo filtering in voice-input.ts:
+ * Returns true if the coach is currently speaking OR stopped speaking
+ * within the last POST_SPEAKING_GRACE_MS milliseconds.
  *
- * 1. iOS speaker has a ~100-300ms output buffer — audio keeps physically
- *    playing after cancelCurrent() clears `speaking`.
- * 2. SFSpeechRecognizer has ~200-500ms processing latency — transcripts
- *    arrive at the result listener well after the audio was captured.
- * 3. expo-audio's `playbackStatusUpdate` event is not always reliable —
- *    `didJustFinish` can fire prematurely, clearing `speaking` before the
- *    phrase is actually done. The grace window re-catches that case too.
- *
- * Real hardware echo cancellation (Phase A v2, AVAudioEngine with
- * voiceProcessingEnabled) will make this workaround obsolete.
+ * With hardware AEC via VoiceEngine, this gate is largely redundant —
+ * the mic no longer physically hears the coach, so echo transcripts
+ * shouldn't arrive at all. It's kept as a defensive backstop during the
+ * first week of device testing and can be shrunk or removed later once
+ * continuous mode is proven stable.
  */
 export function isSpeakingOrJustStopped(): boolean {
   if (speaking) return true;
@@ -250,9 +237,9 @@ export function resumeCoach(): void {
 }
 
 /**
- * Full stop: clear queue + cancel current phrase. Delegates to cancelCurrent()
- * so `speaking` and `currentPlayer` are cleared exactly once by the Promise's
- * done() callback — no double-clear or manual teardown needed here.
+ * Full stop: clear queue + cancel current phrase. Delegates to
+ * cancelCurrent() so `speaking` is cleared exactly once by the done()
+ * callback in awaitPlaybackEnd().
  */
 export function stopVoice(): void {
   queue.length = 0;

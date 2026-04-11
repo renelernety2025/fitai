@@ -67,7 +67,7 @@
         }
       ],
       "./plugins/with-mlkit-pose",
-      "./plugins/with-audio-session"
+      "./plugins/with-voice-engine"
     ],
     "extra": {
       "eas": {
