@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { speak, stopVoice } from './voice-coach';
+import { speak, pauseCoach, resumeCoach } from './voice-coach';
 import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
@@ -64,7 +64,7 @@ export function useVoiceInput(
       if (!granted) return;
 
       cleanup();
-      stopVoice(); // Stop coach talking when user starts speaking
+      pauseCoach(); // Stop coach + prevent new speech while MIC active
       setListening(true);
       setTranscript('');
 
@@ -84,6 +84,7 @@ export function useVoiceInput(
           console.log('[VoiceInput] Coach answered:', result.answer);
           setAnswering(false);
           setLastAnswer(result.answer);
+          resumeCoach(); // Resume so answer can play
           speak(result.answer);
         });
       };
@@ -106,10 +107,12 @@ export function useVoiceInput(
             sendToCoach(lastTranscript);
           } else {
             setListening(false);
+            resumeCoach(); // Nothing to send, resume coaching
           }
         }),
         ExpoSpeechRecognitionModule.addListener('error', (e: any) => {
           console.warn('[VoiceInput] Error:', JSON.stringify(e));
+          resumeCoach();
           setListening(false);
         }),
       );

@@ -10,6 +10,7 @@ let currentPlayer: any = null;
 let speaking = false;
 const queue: string[] = [];
 let lastSpokenText = '';
+let paused = false; // true when MIC is active
 let audioModuleLoaded = false;
 let createPlayer: any = null;
 
@@ -111,11 +112,23 @@ async function playNext() {
 }
 
 export async function speak(text: string): Promise<void> {
+  if (paused) return; // Don't queue anything while MIC is active
   if (text === lastSpokenText) return;
   lastSpokenText = text;
-  if (queue.length >= 2) queue.shift(); // Keep queue short
+  if (queue.length >= 2) queue.shift();
   queue.push(text);
-  playNext(); // Fire and forget
+  playNext();
+}
+
+export function pauseCoach(): void {
+  paused = true;
+  stopVoice();
+  console.log('[VoiceCoach] Paused (MIC active)');
+}
+
+export function resumeCoach(): void {
+  paused = false;
+  console.log('[VoiceCoach] Resumed');
 }
 
 export function stopVoice(): void {
