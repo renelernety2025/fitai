@@ -166,6 +166,19 @@ export function cancelCurrent(): void {
   }
 }
 
+/**
+ * Returns true if the coach is currently playing a phrase.
+ * Used by voice-input.ts to gate speech-recognition result processing:
+ * when the coach is speaking, any transcribed audio is almost certainly
+ * mic picking up the coach's own voice from the speaker (echo loop),
+ * so those results must be ignored. Real hardware echo cancellation
+ * will eventually replace this software gate (see Phase A v2 in the
+ * project plan — AVAudioEngine with voiceProcessingEnabled).
+ */
+export function isSpeaking(): boolean {
+  return speaking;
+}
+
 export function pauseCoach(): void {
   paused = true;
   cancelCurrent(); // interrupt mid-phrase, but leave queue intact
