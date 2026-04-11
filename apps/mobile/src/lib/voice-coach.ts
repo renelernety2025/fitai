@@ -1,16 +1,19 @@
 /**
- * Voice Coach — ElevenLabs TTS audio during workouts.
- * Calls /coaching/tts backend → gets base64 MP3 → plays via expo-av.
+ * Voice Coach v2 — ElevenLabs TTS with queue system.
+ * Queues speech requests and plays them sequentially.
+ * Prevents overlapping audio and handles API latency.
  */
 
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { synthesizeVoice } from './api';
 
-const cache = new Map<string, string>();
-let lastSpokenAt = 0;
-const MIN_INTERVAL_MS = 2500;
+const cache = new Map<string, string>(); // text → file URI
 let currentSound: Audio.Sound | null = null;
 let audioConfigured = false;
+let speaking = false;
+const queue: string[] = [];
+let lastSpokenText = '';
 
 async function ensureAudioConfig() {
   if (audioConfigured) return;
@@ -26,27 +29,43 @@ async function ensureAudioConfig() {
   }
 }
 
-export async function speak(text: string): Promise<void> {
-  const now = Date.now();
-  if (now - lastSpokenAt < MIN_INTERVAL_MS) return;
-  lastSpokenAt = now;
+async function playNext() {
+  if (speaking || queue.length === 0) return;
+
+  const text = queue.shift()!;
+  if (!text) return;
+
+  speaking = true;
 
   try {
     await ensureAudioConfig();
 
-    let base64 = cache.get(text);
+    let fileUri = cache.get(text);
 
-    if (!base64) {
+    if (!fileUri) {
       const result = await synthesizeVoice(text);
       if (!result?.audioBase64) {
-        console.warn('[VoiceCoach] No audio from API for:', text);
+        console.warn('[VoiceCoach] No audio for:', text);
+        speaking = false;
+        playNext();
         return;
       }
-      base64 = result.audioBase64;
-      cache.set(text, base64);
-      if (cache.size > 50) {
+
+      // Save base64 to temp file (more reliable than data URI on iOS)
+      const filename = `coach_${Date.now()}.mp3`;
+      fileUri = `${FileSystem.cacheDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, result.audioBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      cache.set(text, fileUri);
+      if (cache.size > 30) {
         const firstKey = cache.keys().next().value;
-        if (firstKey) cache.delete(firstKey);
+        if (firstKey) {
+          const oldUri = cache.get(firstKey);
+          if (oldUri) FileSystem.deleteAsync(oldUri, { idempotent: true }).catch(() => {});
+          cache.delete(firstKey);
+        }
       }
     }
 
@@ -56,23 +75,51 @@ export async function speak(text: string): Promise<void> {
     }
 
     const { sound } = await Audio.Sound.createAsync(
-      { uri: `data:audio/mpeg;base64,${base64}` },
+      { uri: fileUri },
       { shouldPlay: true, volume: 1.0 },
     );
     currentSound = sound;
+    lastSpokenText = text;
 
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if ('didJustFinish' in status && status.didJustFinish) {
-        sound.unloadAsync().catch(() => {});
-        if (currentSound === sound) currentSound = null;
-      }
+    await new Promise<void>((resolve) => {
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if ('didJustFinish' in status && status.didJustFinish) {
+          sound.unloadAsync().catch(() => {});
+          if (currentSound === sound) currentSound = null;
+          speaking = false;
+          resolve();
+          playNext(); // Play next in queue
+        }
+      });
+
+      // Timeout safety — if audio doesn't finish in 8s, move on
+      setTimeout(() => {
+        speaking = false;
+        resolve();
+        playNext();
+      }, 8000);
     });
   } catch (e: any) {
-    console.warn('[VoiceCoach] speak() failed:', e.message);
+    console.warn('[VoiceCoach] playNext failed:', e.message);
+    speaking = false;
+    playNext();
   }
 }
 
+export async function speak(text: string): Promise<void> {
+  // Don't queue duplicates or if queue is too long
+  if (text === lastSpokenText) return;
+  if (queue.length >= 3) {
+    // Drop oldest, keep newest (most relevant)
+    queue.shift();
+  }
+  queue.push(text);
+  playNext();
+}
+
 export function stopVoice(): void {
+  queue.length = 0;
+  speaking = false;
   if (currentSound) {
     currentSound.unloadAsync().catch(() => {});
     currentSound = null;

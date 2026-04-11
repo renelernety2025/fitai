@@ -8,15 +8,19 @@ function pick(arr: string[]): string {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function pickUnused(arr: string[], used: Set<string>): string {
+// Per-category used tracking to prevent repeats within each category
+const usedSets = new Map<string, Set<string>>();
+
+function pickUnused(arr: string[], category: string): string {
+  if (!usedSets.has(category)) usedSets.set(category, new Set());
+  const used = usedSets.get(category)!;
   const unused = arr.filter((s) => !used.has(s));
   const choice = pick(unused.length > 0 ? unused : arr);
   used.add(choice);
-  if (used.size > arr.length * 0.7) used.clear();
+  // Reset when we've used most phrases in this category
+  if (used.size >= arr.length) used.clear();
   return choice;
 }
-
-const usedPhrases = new Set<string>();
 
 // ── Counting ──
 const NUMBERS: Record<number, string> = {
@@ -41,7 +45,7 @@ export function praise(intensity: 'calm' | 'energetic'): string {
     'Nádherné provedení!', 'To je ono!', 'Síla! Pokračuj takhle!',
     'Držíš to perfektně!', 'Mašina!', 'Jako učebnice!',
   ];
-  return pickUnused(intensity === 'calm' ? calm : energetic, usedPhrases);
+  return pickUnused(intensity === 'calm' ? calm : energetic, `praise_${intensity}`);
 }
 
 // ── Push / motivation ──
@@ -49,18 +53,18 @@ export function pushMotivation(repsLeft: number): string {
   if (repsLeft === 1) return pickUnused([
     'Poslední!', 'Ještě jeden!', 'Finále!', 'Poslední rep, dej do toho!',
     'Jeden zbývá! Ukaž co v tobě je!',
-  ], usedPhrases);
+  ], "general");
   if (repsLeft === 2) return pickUnused([
     'Ještě dva!', 'Dva zbývají!', 'Skoro tam!', 'Dva repy a máš to!',
     'Ještě dva, nepolevuj!',
-  ], usedPhrases);
+  ], "general");
   if (repsLeft === 3) return pickUnused([
     'Ještě tři! Zvládneš to!', 'Tři zbývají, drž formu!',
     'Poslední trojka! Jdeme!',
-  ], usedPhrases);
+  ], "general");
   return pickUnused([
     'Nevzdávej!', 'Dej do toho!', 'Pokračuj!', 'Drž tempo!', 'Jsi blízko!',
-  ], usedPhrases);
+  ], "general");
 }
 
 // ── Form warning ──
@@ -71,7 +75,7 @@ export function formWarning(): string {
     'Raději pomalejc ale čistě.', 'Formu hlídej víc než rychlost.',
     'Cítím pokles formy. Soustřeď se.', 'Zpomal a udělej to čistě.',
     'Nehon se. Forma je důležitější.',
-  ], usedPhrases);
+  ], "general");
 }
 
 // ── Per-exercise detailed coaching ──
@@ -291,22 +295,22 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
 
 export function exerciseCorrection(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.corrections || EXERCISE_COACHING.squat.corrections;
-  return pickUnused(c, usedPhrases);
+  return pickUnused(c, `correction_${exerciseKey}`);
 }
 
 export function perRepCoaching(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.perRepFocus || [];
-  return c.length > 0 ? pickUnused(c, usedPhrases) : '';
+  return c.length > 0 ? pickUnused(c, `perRep_${exerciseKey}`) : '';
 }
 
 export function muscleFocus(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.muscleFeel || [];
-  return c.length > 0 ? pickUnused(c, usedPhrases) : '';
+  return c.length > 0 ? pickUnused(c, `muscle_${exerciseKey}`) : '';
 }
 
 export function exerciseMotivation(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.motivation || [];
-  return c.length > 0 ? pickUnused(c, usedPhrases) : praise('energetic');
+  return c.length > 0 ? pickUnused(c, `motivation_${exerciseKey}`) : praise('energetic');
 }
 
 export function deviationWarning(exerciseKey: string): string {
@@ -315,12 +319,12 @@ export function deviationWarning(exerciseKey: string): string {
 
 export function breathingCue(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.breathing || [];
-  return c.length > 0 ? pickUnused(c, usedPhrases) : 'Dýchej plynule. Nezadržuj dech.';
+  return c.length > 0 ? pickUnused(c, `breathing_${exerciseKey}`) : 'Dýchej plynule. Nezadržuj dech.';
 }
 
 export function keyFocusCue(exerciseKey: string): string {
   const c = EXERCISE_COACHING[exerciseKey]?.keyFocus || [];
-  return c.length > 0 ? pickUnused(c, usedPhrases) : 'Soustřeď se na čisté provedení.';
+  return c.length > 0 ? pickUnused(c, `keyFocus_${exerciseKey}`) : 'Soustřeď se na čisté provedení.';
 }
 
 // ── Safety ──
@@ -354,7 +358,7 @@ const REST_TIPS: string[] = [
 ];
 
 export function restTip(): string {
-  return pickUnused(REST_TIPS, usedPhrases);
+  return pickUnused(REST_TIPS, "general");
 }
 
 export function restConversation(setNum: number, avgForm: number, exerciseKey: string): string {
@@ -362,24 +366,24 @@ export function restConversation(setNum: number, avgForm: number, exerciseKey: s
     `Forma byla skvělá. Drž to takhle i v dalším setu.`,
     `Výborná práce. Cítíš ten sval? To je správně.`,
     `Perfektní set. Odpočiň si a jdeme na další.`,
-  ], usedPhrases);
+  ], "general");
   if (avgForm >= 65) return pickUnused([
     `Dobrý set. V dalším zkus zpomalit tempo.`,
     `Solidní práce. Soustřeď se víc na ${perRepCoaching(exerciseKey)}`,
     `Fajn. Příští set bude ještě lepší.`,
-  ], usedPhrases);
+  ], "general");
   return pickUnused([
     `Forma nebyla ideální. V dalším setu zpomal a soustřeď se na provedení.`,
     `Zkus v dalším setu méně váhy a víc kontroly.`,
     `Raději méně repů s čistou formou než víc se špatnou.`,
-  ], usedPhrases);
+  ], "general");
 }
 
 export function restPrepare(): string {
   return pickUnused([
     'Připrav se na další set!', 'Za chvíli jedeme!',
     'Deset sekund. Nastav se do pozice.', 'Skoro čas! Připraven?',
-  ], usedPhrases);
+  ], "general");
 }
 
 // ── Milestone ──
