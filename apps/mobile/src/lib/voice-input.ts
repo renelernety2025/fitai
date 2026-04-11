@@ -1,8 +1,6 @@
 /**
  * Voice Input — speech-to-text for conversational coaching.
- * User asks a question → transcribed → /coaching/ask → Claude answers → ElevenLabs speaks.
- *
- * Uses try/require instead of NativeModules check (module name differs).
+ * Uses ExpoSpeechRecognitionModule.addListener() API.
  */
 
 import { useState, useCallback, useRef } from 'react';
@@ -25,12 +23,7 @@ async function askCoach(
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({
-        question,
-        exerciseName,
-        formScore,
-        completedReps: reps,
-      }),
+      body: JSON.stringify({ question, exerciseName, formScore, completedReps: reps }),
     });
     if (!res.ok) return { answer: 'Soustřeď se na cvik.', audioBase64: null };
     return await res.json();
@@ -59,27 +52,26 @@ export function useVoiceInput(
     console.log('[VoiceInput] startListening called');
 
     try {
-      const SR = require('expo-speech-recognition');
-      console.log('[VoiceInput] expo-speech-recognition loaded, keys:', Object.keys(SR).join(', '));
+      const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
 
-      const mod = SR.ExpoSpeechRecognitionModule;
-      if (!mod) {
-        console.warn('[VoiceInput] ExpoSpeechRecognitionModule is undefined in package');
+      if (!ExpoSpeechRecognitionModule) {
+        console.warn('[VoiceInput] Module is undefined');
         return;
       }
 
-      const { granted } = await mod.requestPermissionsAsync();
-      console.log('[VoiceInput] Permission granted:', granted);
+      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      console.log('[VoiceInput] Permission:', granted);
       if (!granted) return;
 
       cleanup();
       setListening(true);
       setTranscript('');
 
+      // Use module.addListener (correct API)
       subsRef.current.push(
-        SR.addSpeechRecognitionListener('result', (event: any) => {
+        ExpoSpeechRecognitionModule.addListener('result', (event: any) => {
           const text = event.results?.[0]?.transcript || '';
-          console.log('[VoiceInput] Transcript:', text, 'isFinal:', event.isFinal);
+          console.log('[VoiceInput] Transcript:', text, 'final:', event.isFinal);
           setTranscript(text);
 
           if (event.isFinal && text.length > 3) {
@@ -88,25 +80,29 @@ export function useVoiceInput(
             cleanup();
 
             askCoach(text, exerciseKey, formScore, reps).then((result) => {
-              console.log('[VoiceInput] Coach answer:', result.answer);
+              console.log('[VoiceInput] Answer:', result.answer);
               setAnswering(false);
               setLastAnswer(result.answer);
               speak(result.answer);
             });
           }
         }),
-        SR.addSpeechRecognitionListener('end', () => {
-          console.log('[VoiceInput] Speech ended');
+        ExpoSpeechRecognitionModule.addListener('end', () => {
+          console.log('[VoiceInput] Ended');
           setListening(false);
         }),
-        SR.addSpeechRecognitionListener('error', (e: any) => {
-          console.warn('[VoiceInput] Error:', e);
+        ExpoSpeechRecognitionModule.addListener('error', (e: any) => {
+          console.warn('[VoiceInput] Error:', JSON.stringify(e));
           setListening(false);
         }),
       );
 
-      mod.start({ lang: 'cs-CZ', interimResults: true, maxAlternatives: 1 });
-      console.log('[VoiceInput] Recognition started');
+      ExpoSpeechRecognitionModule.start({
+        lang: 'cs-CZ',
+        interimResults: true,
+        maxAlternatives: 1,
+      });
+      console.log('[VoiceInput] Started listening');
     } catch (e: any) {
       console.warn('[VoiceInput] Failed:', e.message);
       setListening(false);
@@ -115,7 +111,8 @@ export function useVoiceInput(
 
   const stopListening = useCallback(() => {
     try {
-      require('expo-speech-recognition').ExpoSpeechRecognitionModule.stop();
+      const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
+      ExpoSpeechRecognitionModule.stop();
     } catch {}
     setListening(false);
     cleanup();
