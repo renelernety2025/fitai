@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { speak } from './voice-coach';
+import { speak, stopVoice } from './voice-coach';
 import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
@@ -64,32 +64,49 @@ export function useVoiceInput(
       if (!granted) return;
 
       cleanup();
+      stopVoice(); // Stop coach talking when user starts speaking
       setListening(true);
       setTranscript('');
 
-      // Use module.addListener (correct API)
+      // Track last transcript for end-event fallback
+      let lastTranscript = '';
+      let answered = false;
+
+      const sendToCoach = (text: string) => {
+        if (answered || text.length <= 3) return;
+        answered = true;
+        console.log('[VoiceInput] Sending to coach:', text);
+        setListening(false);
+        setAnswering(true);
+        cleanup();
+
+        askCoach(text, exerciseKey, formScore, reps).then((result) => {
+          console.log('[VoiceInput] Coach answered:', result.answer);
+          setAnswering(false);
+          setLastAnswer(result.answer);
+          speak(result.answer);
+        });
+      };
+
       subsRef.current.push(
         ExpoSpeechRecognitionModule.addListener('result', (event: any) => {
           const text = event.results?.[0]?.transcript || '';
           console.log('[VoiceInput] Transcript:', text, 'final:', event.isFinal);
+          lastTranscript = text;
           setTranscript(text);
 
-          if (event.isFinal && text.length > 3) {
-            setListening(false);
-            setAnswering(true);
-            cleanup();
-
-            askCoach(text, exerciseKey, formScore, reps).then((result) => {
-              console.log('[VoiceInput] Answer:', result.answer);
-              setAnswering(false);
-              setLastAnswer(result.answer);
-              speak(result.answer);
-            });
+          if (event.isFinal) {
+            sendToCoach(text);
           }
         }),
         ExpoSpeechRecognitionModule.addListener('end', () => {
-          console.log('[VoiceInput] Ended');
-          setListening(false);
+          console.log('[VoiceInput] Ended, lastTranscript:', lastTranscript);
+          // If we got transcript but no isFinal, send it now
+          if (!answered && lastTranscript.length > 3) {
+            sendToCoach(lastTranscript);
+          } else {
+            setListening(false);
+          }
         }),
         ExpoSpeechRecognitionModule.addListener('error', (e: any) => {
           console.warn('[VoiceInput] Error:', JSON.stringify(e));
