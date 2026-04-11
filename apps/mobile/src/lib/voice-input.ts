@@ -2,24 +2,25 @@
  * Voice Input — speech-to-text for conversational coaching.
  * User asks a question → transcribed → sent to Claude → answer via ElevenLabs.
  *
- * Requires expo-speech-recognition (native module, needs EAS build).
- * Gracefully degrades to no-op if not available.
+ * Requires expo-speech-recognition native module.
+ * If not available, startListening is a no-op.
  */
 
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { NativeModules } from 'react-native';
 import { speak } from './voice-coach';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
 
-interface VoiceInputState {
-  listening: boolean;
-  transcript: string;
-  answering: boolean;
-  lastAnswer: string;
+const hasSpeechModule = !!NativeModules.ExpoSpeechRecognition;
+
+async function getToken(): Promise<string | null> {
+  try {
+    const { getToken: gt } = require('./api');
+    return await gt();
+  } catch {
+    return null;
+  }
 }
 
 async function askCoach(
@@ -29,8 +30,7 @@ async function askCoach(
   reps: number,
 ): Promise<string> {
   try {
-    // Use the existing coaching feedback endpoint with the question
-    const token = await (await import('./api')).getToken();
+    const token = await getToken();
     const res = await fetch(`${API_BASE}/api/coaching/feedback`, {
       method: 'POST',
       headers: {
@@ -45,9 +45,9 @@ async function askCoach(
         context: 'voice_question',
       }),
     });
-    if (!res.ok) return 'Promiň, teď nemůžu odpovědět. Soustřeď se na cvik.';
+    if (!res.ok) return 'Soustřeď se na cvik.';
     const data = await res.json();
-    return data.message || data.feedback || 'Pokračuj v cvičení, děláš to dobře.';
+    return data.message || data.feedback || 'Pokračuj, děláš to dobře.';
   } catch {
     return 'Soustřeď se na formu a pokračuj.';
   }
@@ -58,62 +58,76 @@ export function useVoiceInput(
   formScore: number,
   reps: number,
 ) {
-  const [state, setState] = useState<VoiceInputState>({
-    listening: false,
-    transcript: '',
-    answering: false,
-    lastAnswer: '',
-  });
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [answering, setAnswering] = useState(false);
+  const [lastAnswer, setLastAnswer] = useState('');
+  const subRef = useRef<any[]>([]);
+
+  const cleanup = useCallback(() => {
+    subRef.current.forEach((s) => s?.remove?.());
+    subRef.current = [];
+  }, []);
+
+  useEffect(() => cleanup, [cleanup]);
 
   const startListening = useCallback(async () => {
+    if (!hasSpeechModule) {
+      console.warn('[VoiceInput] ExpoSpeechRecognition not available');
+      return;
+    }
+
     try {
-      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const SR = require('expo-speech-recognition');
+      const mod = SR.ExpoSpeechRecognitionModule;
+
+      const { granted } = await mod.requestPermissionsAsync();
       if (!granted) return;
 
-      setState((s) => ({ ...s, listening: true, transcript: '' }));
-      ExpoSpeechRecognitionModule.start({
-        lang: 'cs-CZ',
-        interimResults: true,
-        maxAlternatives: 1,
-      });
-    } catch {
-      setState((s) => ({ ...s, listening: false }));
+      cleanup();
+      setListening(true);
+      setTranscript('');
+
+      subRef.current.push(
+        SR.addSpeechRecognitionListener('result', (event: any) => {
+          const text = event.results?.[0]?.transcript || '';
+          setTranscript(text);
+
+          if (event.isFinal && text.length > 3) {
+            setListening(false);
+            setAnswering(true);
+
+            askCoach(text, exerciseKey, formScore, reps).then((answer) => {
+              setAnswering(false);
+              setLastAnswer(answer);
+              speak(answer);
+            });
+          }
+        }),
+        SR.addSpeechRecognitionListener('end', () => {
+          setListening(false);
+        }),
+        SR.addSpeechRecognitionListener('error', () => {
+          setListening(false);
+        }),
+      );
+
+      mod.start({ lang: 'cs-CZ', interimResults: true, maxAlternatives: 1 });
+    } catch (e: any) {
+      console.warn('[VoiceInput] start failed:', e.message);
+      setListening(false);
     }
-  }, []);
+  }, [exerciseKey, formScore, reps, cleanup]);
 
   const stopListening = useCallback(() => {
+    if (!hasSpeechModule) return;
     try {
-      ExpoSpeechRecognitionModule.stop();
+      const SR = require('expo-speech-recognition');
+      SR.ExpoSpeechRecognitionModule.stop();
     } catch {}
-    setState((s) => ({ ...s, listening: false }));
-  }, []);
+    setListening(false);
+    cleanup();
+  }, [cleanup]);
 
-  // Handle speech recognition results
-  useSpeechRecognitionEvent('result', (event) => {
-    const transcript = event.results[0]?.transcript || '';
-    setState((s) => ({ ...s, transcript }));
-
-    if (event.isFinal && transcript.length > 3) {
-      setState((s) => ({ ...s, listening: false, answering: true }));
-
-      askCoach(transcript, exerciseKey, formScore, reps).then((answer) => {
-        setState((s) => ({ ...s, answering: false, lastAnswer: answer }));
-        speak(answer);
-      });
-    }
-  });
-
-  useSpeechRecognitionEvent('end', () => {
-    setState((s) => ({ ...s, listening: false }));
-  });
-
-  useSpeechRecognitionEvent('error', () => {
-    setState((s) => ({ ...s, listening: false }));
-  });
-
-  return {
-    ...state,
-    startListening,
-    stopListening,
-  };
+  return { listening, transcript, answering, lastAnswer, startListening, stopListening };
 }
