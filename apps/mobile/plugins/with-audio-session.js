@@ -47,11 +47,18 @@
 const { withAppDelegate } = require('expo/config-plugins');
 
 const MARKER = '// FitAI: AVAudioSession PlayAndRecord';
-// Legacy marker substring — the idempotency guard also matches the v1
-// voiceChat marker so re-running prebuild without --clean on an old
-// patched file does not create a duplicate block (the old block is
-// still there; caller is expected to --clean for the new version).
-const LEGACY_MARKER_PREFIX = '// FitAI: AVAudioSession';
+
+// Substrings that identify the v1.0 voiceChat patch. If we see these on a
+// file that is NOT already carrying the current MARKER, it means prebuild
+// was re-run without --clean on top of an old voiceChat-patched
+// AppDelegate.swift. Silently no-oping there would cause the caller to
+// ship the OLD (broken) voiceChat setup even though the plugin file has
+// been updated. We throw an actionable error instead.
+const LEGACY_VOICECHAT_FINGERPRINTS = [
+  '// FitAI: AVAudioSession voiceChat mode',
+  'mode: .voiceChat',
+];
+
 const SWIFT_IMPORT = 'import AVFoundation';
 const ANCHOR = 'let delegate = ReactNativeDelegate()';
 
@@ -78,9 +85,31 @@ const SWIFT_SETUP_BLOCK = `${MARKER}
     `;
 
 function patchSwiftAppDelegate(contents) {
-  if (contents.includes(LEGACY_MARKER_PREFIX)) {
-    console.log('[with-audio-session] Already patched, skipping');
+  // Fast path: already carrying the current MARKER → no-op.
+  if (contents.includes(MARKER)) {
+    console.log('[with-audio-session] Already patched (current version), skipping');
     return contents;
+  }
+
+  // Legacy voiceChat fingerprint detected without the current MARKER →
+  // the file was patched by an older version of this plugin. We must NOT
+  // silently skip (that would ship the broken voiceChat code even though
+  // the plugin has been updated) and we must NOT append a second block
+  // next to the old one. The only safe action is to refuse and tell the
+  // caller to run a clean prebuild, which regenerates AppDelegate.swift
+  // from the Expo template so this plugin can patch it fresh.
+  const legacyHit = LEGACY_VOICECHAT_FINGERPRINTS.find((f) =>
+    contents.includes(f),
+  );
+  if (legacyHit) {
+    throw new Error(
+      `[with-audio-session] Stale voiceChat patch detected in AppDelegate.swift ` +
+        `(marker: "${legacyHit}"). This plugin has been updated since the last ` +
+        `prebuild and cannot safely overlay the new patch on the old one.\n\n` +
+        `Fix: run a clean prebuild to regenerate ios/ from scratch:\n\n` +
+        `  cd apps/mobile && npx expo prebuild --platform ios --clean\n\n` +
+        `Then re-run your build command.`,
+    );
   }
 
   // 1. Add `import AVFoundation` after the existing Expo imports.
