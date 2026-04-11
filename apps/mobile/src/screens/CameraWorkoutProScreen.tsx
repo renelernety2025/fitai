@@ -6,7 +6,7 @@
  * Pipeline: ML Kit → mlkitAdapter → repCounter → feedbackEngine → UI.
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -67,6 +67,10 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const [lastSetSummary, setLastSetSummary] = useState('');
 
   const voiceInput = useVoiceInput(selectedKey, formScore, reps);
+
+  // Stop any in-flight TTS playback when the screen unmounts so audio
+  // doesn't leak past navigation away from the workout.
+  useEffect(() => () => stopVoice(), []);
 
   const repCounterRef = useRef(
     exercise ? createRepCounter(exercise.phases) : null,

@@ -1,6 +1,16 @@
 /**
- * Voice Coach v5 — ElevenLabs TTS via expo-audio.
- * Simple, reliable, verbose logging.
+ * Voice Coach v6 — ElevenLabs TTS via expo-audio.
+ *
+ * Listener-based playback completion (no more 300ms polling) + external
+ * cancellation API so pauseCoach() can interrupt mid-phrase without
+ * dropping the rest of the queue.
+ *
+ * Public API:
+ * - speak(text)      queue a phrase for TTS
+ * - pauseCoach()     interrupt current phrase + block new phrases (preserves queue)
+ * - resumeCoach()    allow playback again + drain remaining queue
+ * - cancelCurrent()  interrupt current phrase only (leaves `paused` untouched)
+ * - stopVoice()      full stop: clear queue + cancel current phrase
  */
 
 import { synthesizeVoice } from './api';
@@ -13,6 +23,11 @@ let lastSpokenText = '';
 let paused = false; // true when MIC is active
 let audioModuleLoaded = false;
 let createPlayer: any = null;
+
+// When a phrase is playing, this holds a callback that interrupts it. Calling
+// it resolves the inner Promise in playNext(), cleans up the player, and lets
+// the queue loop continue (subject to the `paused` flag).
+let cancelCurrentPlayback: (() => void) | null = null;
 
 function loadAudioModule(): boolean {
   if (audioModuleLoaded) return !!createPlayer;
@@ -30,6 +45,7 @@ function loadAudioModule(): boolean {
 
 async function playNext() {
   if (speaking || queue.length === 0) return;
+  if (paused) return; // queue preserved — will resume via resumeCoach()
   if (!loadAudioModule()) {
     console.warn('[VoiceCoach] No audio module, clearing queue');
     queue.length = 0;
@@ -61,7 +77,7 @@ async function playNext() {
       }
     }
 
-    // Stop previous
+    // Stop any previous player (defensive — should already be null here).
     if (currentPlayer) {
       try { currentPlayer.remove(); } catch {}
       currentPlayer = null;
@@ -73,40 +89,63 @@ async function playNext() {
     player.play();
     console.log('[VoiceCoach] Playing audio...');
 
-    // Wait for playback to finish
+    // Listener-based completion: resolve when expo-audio reports
+    // didJustFinish, when an external cancel fires, or after 10s safety.
     await new Promise<void>((resolve) => {
       let resolved = false;
+      let canceled = false;
+      let sub: any = null;
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
       const done = () => {
         if (resolved) return;
         resolved = true;
+        cancelCurrentPlayback = null;
+        if (safetyTimer) clearTimeout(safetyTimer);
+        try { sub?.remove?.(); } catch {}
         try { player.remove(); } catch {}
         if (currentPlayer === player) currentPlayer = null;
         speaking = false;
+
+        if (canceled) {
+          // Allow coaching-engine to re-emit the same phrase after resume
+          // without being deduped by the `text === lastSpokenText` guard.
+          lastSpokenText = '';
+          console.log('[VoiceCoach] Canceled:', text.substring(0, 40));
+        }
+
         resolve();
         playNext();
       };
 
-      const check = setInterval(() => {
-        try {
-          if (!player.playing && player.currentTime > 0) {
-            clearInterval(check);
-            done();
-          }
-        } catch {
-          clearInterval(check);
-          done();
-        }
-      }, 300);
+      // Register external cancel hook. pauseCoach() / cancelCurrent() call this.
+      cancelCurrentPlayback = () => {
+        canceled = true;
+        done();
+      };
 
-      // Safety: max 10s per phrase
-      setTimeout(() => {
-        clearInterval(check);
+      try {
+        sub = player.addListener('playbackStatusUpdate', (status: any) => {
+          if (status?.didJustFinish) done();
+        });
+      } catch (e: any) {
+        console.warn(
+          '[VoiceCoach] addListener failed, relying on safety timer:',
+          e.message,
+        );
+      }
+
+      // Safety: max 10s per phrase in case listener never fires
+      // (corrupt audio, module error, etc.).
+      safetyTimer = setTimeout(() => {
+        if (!resolved) console.warn('[VoiceCoach] Safety timeout hit for:', text.substring(0, 40));
         done();
       }, 10000);
     });
   } catch (e: any) {
     console.warn('[VoiceCoach] playNext error:', e.message);
     speaking = false;
+    cancelCurrentPlayback = null;
     playNext();
   }
 }
@@ -120,19 +159,28 @@ export async function speak(text: string): Promise<void> {
   playNext();
 }
 
+export function cancelCurrent(): void {
+  if (cancelCurrentPlayback) {
+    console.log('[VoiceCoach] cancelCurrent: interrupting in-flight phrase');
+    cancelCurrentPlayback();
+  }
+}
+
 export function pauseCoach(): void {
   paused = true;
-  stopVoice();
+  cancelCurrent(); // interrupt mid-phrase, but leave queue intact
   console.log('[VoiceCoach] Paused (MIC active)');
 }
 
 export function resumeCoach(): void {
   paused = false;
   console.log('[VoiceCoach] Resumed');
+  playNext(); // drain whatever is still in queue
 }
 
 export function stopVoice(): void {
   queue.length = 0;
+  cancelCurrent();
   speaking = false;
   if (currentPlayer) {
     try { currentPlayer.remove(); } catch {}
