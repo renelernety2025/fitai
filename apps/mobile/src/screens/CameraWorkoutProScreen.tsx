@@ -35,7 +35,7 @@ import { PoseOverlay } from '../components/PoseOverlay';
 import { PoseGuide } from '../components/PoseGuide';
 import type { PoseLandmarks, SafetyAlert, ExercisePhaseDefinition } from '../lib/pose/types';
 import { stopVoice } from '../lib/voice-coach';
-import { createCoachingEngine } from '../lib/pose/coaching-engine';
+import { createCoachingEngine, type CoachingCallbacks } from '../lib/pose/coaching-engine';
 
 export function CameraWorkoutProScreen({ route, navigation }: any) {
   const initialKey: string = route?.params?.exercise || '';
@@ -154,7 +154,23 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const handleStart = useCallback(() => {
     if (!exercise) return;
     repCounterRef.current = createRepCounter(exercise.phases);
-    coachRef.current = createCoachingEngine(selectedKey);
+    coachRef.current = createCoachingEngine(selectedKey, {
+      onSetComplete: () => {
+        // Auto-stop when target reps reached
+        setTimeout(() => {
+          setRunning(false);
+          setLandmarks(null);
+          setPoseVisible(false);
+          const avg = coachRef.current?.getState().formScores ?? [];
+          const avgForm = avg.length > 0
+            ? Math.round(avg.reduce((a: number, b: number) => a + b, 0) / avg.length)
+            : 0;
+          setLastSetSummary(`Set ${currentSet}: ${reps + targetReps} repů, forma ${avgForm}%`);
+          setCurrentSet((s) => s + 1);
+          startRest();
+        }, 2000); // 2s delay to let voice finish
+      },
+    });
     lastRepCount.current = 0;
     frameCount.current = 0;
     setReps(0);
