@@ -167,7 +167,7 @@ export function analyzeFoodPhoto(s3Key: string) {
 // ── Coaching (Voice) ──
 export function synthesizeVoice(text: string) {
   return request<{ text: string; audioBase64: string | null; fallbackToWebSpeech: boolean }>(
-    '/coaching/synthesize',
+    '/coaching/tts',
     { method: 'POST', body: JSON.stringify({ text }) },
   );
 }
