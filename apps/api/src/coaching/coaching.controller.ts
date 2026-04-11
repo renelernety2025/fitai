@@ -1,4 +1,5 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { CoachingService } from './coaching.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -34,6 +35,7 @@ export class CoachingController {
   }
 
   /** Voice Q&A — user asks a question during workout, Claude answers */
+  @Throttle({ default: { limit: 30, ttl: seconds(3600) } }) // 30 voice questions/hour/user
   @Post('ask')
   askCoach(
     @Request() req: any,

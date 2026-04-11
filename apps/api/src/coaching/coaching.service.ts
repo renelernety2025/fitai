@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ElevenLabsService } from './elevenlabs.service';
 import { buildCoachingSystemPrompt, buildCoachingUserMessage, type CoachingContext } from './coaching-prompt';
 import { checkSafetyRules } from './safety-rules';
+import { buildUserPromptContext } from '../shared/user-context.builder';
 
 interface FeedbackRequest {
   userId: string;
@@ -171,39 +172,51 @@ Odpověz přímo, konkrétně, bez zbytečných slov. Pokud se ptá na formu, od
     req: FeedbackRequest,
     safetyAlerts: string[],
   ): Promise<CoachingContext> {
-    const user = await this.prisma.user.findUnique({ where: { id: req.userId } });
-    const progress = await this.prisma.userProgress.findUnique({ where: { userId: req.userId } });
+    // Parallel fetches:
+    //   1. Shared user context (User + UserProgress + FitnessProfile)
+    //   2. Recent safety events (for weak joints inference)
+    //   3. Last 5 coaching messages (for dedup in Claude prompt)
+    const [userContext, recentSafety, recentMessages] = await Promise.all([
+      buildUserPromptContext(this.prisma, req.userId),
+      this.prisma.safetyEvent.findMany({
+        where: { userId: req.userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.coachingMessage.findMany({
+        where: { coachingSession: { userId: req.userId } },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]);
 
-    // Get weak joints from safety events
-    const recentSafety = await this.prisma.safetyEvent.findMany({
-      where: { userId: req.userId },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    });
+    // Derive weak joints from safety event frequency (3+ events on same joint).
     const jointCounts = new Map<string, number>();
-    recentSafety.forEach((e) => jointCounts.set(e.jointName, (jointCounts.get(e.jointName) || 0) + 1));
+    recentSafety.forEach((e) =>
+      jointCounts.set(e.jointName, (jointCounts.get(e.jointName) || 0) + 1),
+    );
     const weakJoints = [...jointCounts.entries()]
       .filter(([, count]) => count >= 3)
       .map(([joint]) => joint);
 
-    // Get recent coaching messages
-    const recentMessages = await this.prisma.coachingMessage.findMany({
-      where: { coachingSession: { userId: req.userId } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    });
-
-    const daysSince = progress?.lastWorkoutDate
-      ? Math.floor((Date.now() - progress.lastWorkoutDate.getTime()) / 86400000)
-      : null;
-
     return {
-      userName: user?.name ?? 'Cvičenci',
-      level: progress ? String(progress.totalXP >= 2000 ? 'Legenda' : progress.totalXP >= 1000 ? 'Mistr' : progress.totalXP >= 500 ? 'Expert' : progress.totalXP >= 200 ? 'Pokročilý' : 'Začátečník') : 'Začátečník',
-      totalXP: progress?.totalXP ?? 0,
-      currentStreak: progress?.currentStreak ?? 0,
-      daysSinceLastWorkout: daysSince,
+      // From shared user context
+      userName: userContext.name,
+      level: userContext.level,
+      skillTier: userContext.skillTier,
+      totalXP: userContext.totalXP,
+      currentStreak: userContext.currentStreak,
+      daysSinceLastWorkout: userContext.daysSinceLastWorkout,
+      age: userContext.age,
+      goal: userContext.goal,
+      experienceMonths: userContext.experienceMonths,
+      injuries: userContext.injuries,
+      priorityMuscles: userContext.priorityMuscles,
+
+      // Derived
       weakJoints,
+
+      // Per-exercise session fields
       currentExercise: req.exerciseName,
       currentPhase: req.currentPhase,
       recentFormScores: [req.formScore],

@@ -1,10 +1,23 @@
+import type { FitnessGoal, SkillTier } from '../shared/user-context.builder';
+
 export interface CoachingContext {
+  // Per-user (from shared user-context builder)
   userName: string;
   level: string;
+  skillTier: SkillTier;
   totalXP: number;
   currentStreak: number;
   daysSinceLastWorkout: number | null;
+  age: number | null;
+  goal: FitnessGoal | null;
+  experienceMonths: number;
+  injuries: string[];
+  priorityMuscles: string[];
+
+  // Derived from recent safety events
   weakJoints: string[];
+
+  // Per-exercise / per-set (from FeedbackRequest)
   currentExercise: string;
   currentPhase: string;
   recentFormScores: number[];
@@ -14,11 +27,66 @@ export interface CoachingContext {
   recentMessages: string[];
 }
 
+/**
+ * Build personalization rules tailored to the user's profile.
+ * Each rule is opt-in — only emitted when the relevant fact is present.
+ */
+function buildPersonalizationRules(ctx: CoachingContext): string[] {
+  const rules: string[] = [];
+
+  if (ctx.age !== null && ctx.age >= 60) {
+    rules.push(
+      'VĚK 60+: Buď jemný, šetrný k pohybovému aparátu. Vyhni se frázím jako "zaber", "přes to jdi", "makej víc". Používej "v klidu", "pomalu", "s kontrolou".',
+    );
+  }
+
+  if (ctx.injuries.length > 0) {
+    rules.push(
+      `ZRANĚNÍ / CITLIVÉ OBLASTI: ${ctx.injuries.join(', ')}. Nepoužívej cue cílené na tyto oblasti. Pokud to cvik zasahuje, nabízej alternativu nebo sníženou intenzitu.`,
+    );
+  }
+
+  if (ctx.skillTier === 'novice') {
+    rules.push(
+      'ZAČÁTEČNÍK: Jednoduchý jazyk, žádný jargon (RPE, tempo, mind-muscle, concentric). Vysvětluj PROČ, ne jen JAK.',
+    );
+  } else if (ctx.skillTier === 'advanced') {
+    rules.push(
+      'POKROČILÝ: Můžeš použít technický jazyk (tempo 3-1-2, mind-muscle, RPE 8). Krátké hints, ne vysvětlení základů.',
+    );
+  }
+
+  if (ctx.goal === 'WEIGHT_LOSS') {
+    rules.push('CÍL HUBNUTÍ: Zdůrazni tempo a objem, ne maximální váhu.');
+  } else if (ctx.goal === 'STRENGTH') {
+    rules.push('CÍL SÍLA: Zdůrazni intenzitu, drive, maximální úsilí v koncentrické fázi.');
+  } else if (ctx.goal === 'HYPERTROPHY') {
+    rules.push('CÍL HYPERTROFIE: Zdůrazni time under tension, kontrolu, mind-muscle connection.');
+  } else if (ctx.goal === 'MOBILITY') {
+    rules.push('CÍL MOBILITA: Zdůrazni rozsah pohybu a kontrolu, ne zátěž.');
+  }
+
+  if (ctx.priorityMuscles.length > 0) {
+    rules.push(
+      `PRIORITNÍ PARTIE: ${ctx.priorityMuscles.join(', ')}. Pokud cvik zasahuje tyto partie, pochval konkrétně ("cítíš to v ${ctx.priorityMuscles[0]}?").`,
+    );
+  }
+
+  return rules;
+}
+
 export function buildCoachingSystemPrompt(ctx: CoachingContext): string {
+  const personalization = buildPersonalizationRules(ctx);
+  const personalizationBlock =
+    personalization.length > 0
+      ? `\nPERSONALIZACE:\n${personalization.map((r) => `- ${r}`).join('\n')}\n`
+      : '';
+
   return `Jsi FitAI trenér jménem Alex. Mluvíš česky, krátce a přátelsky.
 
-KLIENT: ${ctx.userName}
+KLIENT: ${ctx.userName}${ctx.age !== null ? `, ${ctx.age} let` : ''}
 Level: ${ctx.level} (${ctx.totalXP} XP, ${ctx.currentStreak} dní v sérii)
+Zkušenost: ${ctx.experienceMonths} měsíců
 Slabá místa: ${ctx.weakJoints.length > 0 ? ctx.weakJoints.join(', ') : 'zatím nezjištěno'}
 Poslední trénink: ${ctx.daysSinceLastWorkout !== null ? `před ${ctx.daysSinceLastWorkout} dny` : 'první trénink'}
 
@@ -28,7 +96,7 @@ Fáze: ${ctx.currentPhase}
 Rep: ${ctx.repCount}/${ctx.targetReps}
 Forma posledních setů: ${ctx.recentFormScores.length > 0 ? ctx.recentFormScores.join(', ') + '%' : 'nemáme data'}
 ${ctx.safetyAlerts.length > 0 ? 'SAFETY ALERT: ' + ctx.safetyAlerts.join('; ') : ''}
-
+${personalizationBlock}
 PRAVIDLA:
 1. BEZPEČNOST je priorita č.1 — pokud je safety alert, reaguj okamžitě a důrazně
 2. Odpověz MAX 12 slov — klient cvičí, nemůže číst
@@ -37,6 +105,7 @@ PRAVIDLA:
 5. Po pauze 7+ dní buď jemný, neztrácej klienta
 6. Střídej fráze — neopakuj posledních 5 zpráv
 7. Používej jméno klienta občas (ne každou zprávu)
+8. Respektuj PERSONALIZACI výše — ta má přednost před obecnými pravidly
 
 Posledních 5 zpráv (NEOPAKUJ):
 ${ctx.recentMessages.slice(-5).map((m) => `- "${m}"`).join('\n')}
