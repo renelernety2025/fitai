@@ -41,6 +41,13 @@ const CONTINUOUS_REARM_MS = 200;
 // Waiting 350ms lets the speaker flush before listening begins.
 const POST_CANCEL_SETTLE_MS = 350;
 
+// Maximum consecutive recognition errors before auto-rearm is disabled
+// and the user has to explicitly tap MIC again. Prevents the error 209
+// infinite loop we hit when SFSpeechRecognizer gets stuck in a bad state
+// during continuous mode — each failed start() just triggers another
+// start() and the loop hammers the mic until the user toggles off.
+const MAX_CONSECUTIVE_ERRORS = 3;
+
 export type VoiceInputState =
   | 'idle'          // nothing is happening
   | 'listening'     // mic is open, waiting for user speech
@@ -85,6 +92,17 @@ export function useVoiceInput(
   const subsRef = useRef<any[]>([]);
   const continuousRef = useRef(false);
   const userStoppedRef = useRef(false);
+  // Single pending re-arm timer. When 'end' and 'error' fire in quick
+  // succession (common in error 209 cascades), each scheduled its own
+  // setTimeout(() => internalStart()) which stacked up and spawned
+  // multiple concurrent recognition sessions. scheduleReArm cancels any
+  // pending timer before scheduling a new one — only the most recent
+  // schedule wins, no stacking.
+  const rearmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Consecutive recognition error count. Resets on any successful result.
+  // Once it hits MAX_CONSECUTIVE_ERRORS we stop auto-rearming so the user
+  // can tap MIC again explicitly to recover.
+  const consecutiveErrorsRef = useRef(0);
 
   // Keep continuousRef in sync with continuousMode state.
   continuousRef.current = continuousMode;
@@ -92,6 +110,21 @@ export function useVoiceInput(
   const cleanup = () => {
     subsRef.current.forEach((s) => s?.remove?.());
     subsRef.current = [];
+  };
+
+  const clearPendingReArm = () => {
+    if (rearmTimerRef.current) {
+      clearTimeout(rearmTimerRef.current);
+      rearmTimerRef.current = null;
+    }
+  };
+
+  const scheduleReArm = (delayMs: number) => {
+    clearPendingReArm();
+    rearmTimerRef.current = setTimeout(() => {
+      rearmTimerRef.current = null;
+      internalStart();
+    }, delayMs);
   };
 
   // Core speech-recognition setup. Defined as a regular function (not
@@ -148,7 +181,7 @@ export function useVoiceInput(
           // In continuous mode, re-arm listening so the coach can be
           // interrupted again after it replays the answer.
           if (continuousRef.current && !userStoppedRef.current) {
-            setTimeout(() => internalStart(), CONTINUOUS_REARM_MS);
+            scheduleReArm(CONTINUOUS_REARM_MS);
           } else {
             setState('idle');
           }
@@ -170,6 +203,9 @@ export function useVoiceInput(
           }
 
           const text = event.results?.[0]?.transcript || '';
+          // Successful result resets the consecutive-error counter —
+          // the recognizer is clearly healthy if it's producing text.
+          if (text.length > 0) consecutiveErrorsRef.current = 0;
           lastTranscript = text;
           setTranscript(text);
 
@@ -198,7 +234,7 @@ export function useVoiceInput(
           if (isSpeakingOrJustStopped()) {
             lastTranscript = '';
             if (continuousRef.current && !userStoppedRef.current) {
-              setTimeout(() => internalStart(), CONTINUOUS_REARM_MS);
+              scheduleReArm(CONTINUOUS_REARM_MS);
               return;
             }
             setState('idle');
@@ -217,7 +253,7 @@ export function useVoiceInput(
           if (continuousRef.current && !userStoppedRef.current && !answered) {
             console.log('[VoiceInput] Continuous re-arm');
             if (autopaused) resumeCoach(); // resume between reloops
-            setTimeout(() => internalStart(), CONTINUOUS_REARM_MS);
+            scheduleReArm(CONTINUOUS_REARM_MS);
             return;
           }
 
@@ -228,9 +264,27 @@ export function useVoiceInput(
           console.warn('[VoiceInput] Error:', JSON.stringify(e));
           if (autopaused) resumeCoach();
 
-          // Don't exit continuous mode on transient errors; try to re-arm.
+          consecutiveErrorsRef.current += 1;
+          // Circuit breaker: after MAX_CONSECUTIVE_ERRORS failures in a
+          // row the recognizer is clearly stuck (most common trigger is
+          // kAFAssistantErrorDomain 209 from iOS SFSpeechRecognizer).
+          // Stop auto-rearming — user has to tap MIC again to reset.
+          if (consecutiveErrorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
+            console.warn(
+              '[VoiceInput] Max consecutive errors reached, stopping auto-rearm — user must tap MIC again',
+            );
+            consecutiveErrorsRef.current = 0;
+            clearPendingReArm();
+            setState('idle');
+            return;
+          }
+
+          // Don't exit continuous mode on transient errors; try to re-arm
+          // with exponential backoff.
           if (continuousRef.current && !userStoppedRef.current) {
-            setTimeout(() => internalStart(), CONTINUOUS_REARM_MS * 2);
+            const backoffMs =
+              CONTINUOUS_REARM_MS * 2 * consecutiveErrorsRef.current;
+            scheduleReArm(backoffMs);
             return;
           }
           setState('idle');
@@ -264,6 +318,8 @@ export function useVoiceInput(
   // continuous-mode toggle-off.
   const stopListening = () => {
     userStoppedRef.current = true;
+    clearPendingReArm();
+    consecutiveErrorsRef.current = 0;
     try {
       const { ExpoSpeechRecognitionModule } = require('expo-speech-recognition');
       ExpoSpeechRecognitionModule.stop();
