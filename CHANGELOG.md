@@ -4,6 +4,29 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Voice Coaching v2 — final state after device testing] 2026-04-11 late night
+### Shipped
+AI trenér Alex je po 4h testovací session **plně funkční v push-to-talk módu** na reálném iPhonu. Echo loop je fixnutý, speech recognition spolehlivá, personalizovaný coaching prompt odpovídá kontextově česky. Dva cumulative JS hotfixy postupně řešily edge cases z device testů.
+
+**Details — cumulative v1.2 → v1.4 JS hotfixes:**
+- **v1.2 (commit `543497a`):** `voice-coach.ts` exportuje `isSpeaking()` getter. `voice-input.ts` ignoruje speech-recognition result events, když `isSpeaking() === true`. První linie obrany proti echo.
+- **v1.3 (commit `ab2dd6e`):** Přidán `POST_CANCEL_SETTLE_MS = 350ms` delay po `pauseCoach()` před otevřením mic session. Důvod: iOS speaker buffer drží ~100-300ms audio tailu po cancelu, bez delay mic zachytne konec coachovy fráze. Plus: safety playback timeout `10s → 60s` (dlouhé Claude odpovědi hitaly předčasné aborty).
+- **v1.4 (commit `ed2ac4c`):** Nový `isSpeakingOrJustStopped()` export s **1.2s grace window** po coachově posledním `speaking=false`. Předchozí `isSpeaking()` boolean byl flaky kvůli předčasným `didJustFinish` eventům z expo-audio. Grace window catches speaker buffer lag + SFSpeechRecognizer latency + spurious didJustFinish. Plus MIC button lockout během `answering` state (zamezuje overlap listening sessions, když je uživatel netrpělivý).
+- **Device test verdict:** "podle mě super, reaguje na to co říkám" — user potvrdil, že gate funguje, transcripty jsou čisté, Claude odpovídá na skutečnou řeč (ne echo).
+
+### Known limitations — plánováno jako follow-up tasks
+- **Latence konverzace (~4-10s roundtrip):** Cascade architektura (STT → Claude → ElevenLabs → playback) je sekvenční. Každý krok čeká na předchozí. Real-time konverzace (<1.5s) vyžaduje **Phase E: Conversation Latency Reduction** — streaming Claude response + streaming ElevenLabs TTS + shorter VAD endpoint detection. ~8h práce, top priority pro next session.
+- **Continuous mode (always-on listening) není plně funkční:** Software gate nemůže kompletně zabránit echo, když mic poslouchá during coach playback. Push-to-talk je primární interakce tonight. **Phase A v2 — AVAudioEngine native module s `voiceProcessingEnabled`** (hardware AEC, ~2-4h native Swift) je druhá top priority.
+- **Native voiceChat mode cleanup v EAS build:** Commit `7d9b6bb` odstranil `.voiceChat` mode z Phase A config pluginu, ale to je **native změna** — JS hot reload ji na existujícím iPhone dev buildu nepropsal. Nový EAS build s tímhle hotfixem eliminuje zbývající sporadic `kAFAssistantErrorDomain 209/216` errory. Může se udělat kdykoli (současná build je funkční i tak).
+
+### Verification
+- Push-to-talk device test: ✅ transcripty čisté, žádný echo (user confirmed)
+- Phase D personalized coaching: ✅ produkce verified via curl, Claude vrací kontextové české odpovědi
+- Phases B, C, D: shipped a verified v předchozích commitech (viz níže)
+- Phase A v1.4 JS gate: shipped via Metro hot reload na existující dev buildu, žádný nový EAS build nebyl potřeba pro tonight
+
+---
+
 ## [fix(mobile): Phase A v1.1 — remove voiceChat mode] 2026-04-11
 ### Fixed
 Odstraněn `.voiceChat` mode z `with-audio-session.js` Expo config pluginu, protože způsoboval sporadic SFSpeechRecognizer errors (`kAFAssistantErrorDomain 209 / 216`) bez toho, aby reálně aktivoval hardware echo cancellation. Zachována jen `.playAndRecord` category + speaker/Bluetooth routing. Speech recognition je teď spolehlivá, echo loop ale přetrvává — vyžaduje separátní **Phase A v2** task (AVAudioEngine s `voiceProcessingEnabled` native module, naplánovaný jako follow-up).
