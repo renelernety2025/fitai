@@ -436,19 +436,36 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
           {/* Mic button (during workout or rest) */}
           {(running || resting) && (
             <Pressable
-              style={[styles.micBtn, voiceInput.listening && styles.micBtnActive]}
+              style={[
+                styles.micBtn,
+                voiceInput.listening && styles.micBtnActive,
+                voiceInput.continuousMode && styles.micBtnContinuous,
+                voiceInput.state === 'user-speaking' && styles.micBtnSpeaking,
+              ]}
               onPress={() => {
-                console.log('[MIC] Pressed, listening:', voiceInput.listening);
+                console.log('[MIC] Pressed, state:', voiceInput.state);
+                if (voiceInput.continuousMode) return; // tap is a no-op in continuous mode
                 if (voiceInput.listening) {
                   voiceInput.stopListening();
                 } else {
                   voiceInput.startListening();
                 }
               }}
+              onLongPress={() => {
+                console.log('[MIC] Long press — toggle continuous mode');
+                voiceInput.toggleContinuous();
+              }}
+              delayLongPress={400}
               hitSlop={16}
             >
               <Text style={styles.micBtnText}>
-                {voiceInput.listening ? '...' : 'MIC'}
+                {voiceInput.continuousMode
+                  ? 'ALL'
+                  : voiceInput.state === 'user-speaking'
+                  ? '🎙'
+                  : voiceInput.listening
+                  ? '...'
+                  : 'MIC'}
               </Text>
             </Pressable>
           )}
@@ -795,6 +812,14 @@ const styles = StyleSheet.create({
   micBtnActive: {
     backgroundColor: 'rgba(108,99,255,0.4)',
     borderColor: '#6c63ff',
+  },
+  micBtnContinuous: {
+    backgroundColor: 'rgba(0,200,120,0.25)',
+    borderColor: '#00c878',
+  },
+  micBtnSpeaking: {
+    backgroundColor: 'rgba(255,80,80,0.35)',
+    borderColor: '#ff5050',
   },
   micBtnText: {
     color: '#fff',
