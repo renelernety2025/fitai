@@ -48,7 +48,7 @@ function scorePhase(landmarks: PoseLandmarks, rules: ExercisePhaseDefinition['ru
       correct++;
     }
   }
-  if (evaluated === 0) return 100;
+  if (evaluated === 0) return 0; // No visible joints → can't score → no rep
   return Math.round((correct / evaluated) * 100);
 }
 
