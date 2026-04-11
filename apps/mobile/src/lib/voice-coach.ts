@@ -1,10 +1,8 @@
 /**
- * Voice Coach v4 — ElevenLabs TTS with lazy-loaded audio.
- * Detects available audio module at runtime.
- * Falls back to no-op if no audio module is in the build.
+ * Voice Coach v5 — ElevenLabs TTS via expo-audio.
+ * Simple, reliable, verbose logging.
  */
 
-import { NativeModules } from 'react-native';
 import { synthesizeVoice } from './api';
 
 const cache = new Map<string, string>();
@@ -12,86 +10,49 @@ let currentPlayer: any = null;
 let speaking = false;
 const queue: string[] = [];
 let lastSpokenText = '';
+let audioModuleLoaded = false;
+let createPlayer: any = null;
 
-// Detect which audio module is available
-const hasExpoAudio = !!NativeModules.ExpoAudio;
-const hasExponentAV = !!NativeModules.ExponentAV;
-
-async function playAudio(base64: string): Promise<void> {
-  const uri = `data:audio/mpeg;base64,${base64}`;
-
-  if (hasExpoAudio) {
-    const { createAudioPlayer } = require('expo-audio');
-    if (currentPlayer) {
-      currentPlayer.remove();
-      currentPlayer = null;
-    }
-    const player = createAudioPlayer(uri);
-    currentPlayer = player;
-    player.play();
-
-    await new Promise<void>((resolve) => {
-      const check = setInterval(() => {
-        if (!player.playing && player.currentTime > 0) {
-          clearInterval(check);
-          player.remove();
-          if (currentPlayer === player) currentPlayer = null;
-          resolve();
-        }
-      }, 200);
-      setTimeout(() => { clearInterval(check); resolve(); }, 10000);
-    });
-    return;
+function loadAudioModule(): boolean {
+  if (audioModuleLoaded) return !!createPlayer;
+  audioModuleLoaded = true;
+  try {
+    const mod = require('expo-audio');
+    createPlayer = mod.createAudioPlayer;
+    console.log('[VoiceCoach] expo-audio loaded OK');
+    return true;
+  } catch (e: any) {
+    console.warn('[VoiceCoach] expo-audio not available:', e.message);
+    return false;
   }
-
-  if (hasExponentAV) {
-    const { Audio } = require('expo-av');
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-    if (currentPlayer) {
-      await currentPlayer.unloadAsync().catch(() => {});
-      currentPlayer = null;
-    }
-    const { sound } = await Audio.Sound.createAsync(
-      { uri },
-      { shouldPlay: true, volume: 1.0 },
-    );
-    currentPlayer = sound;
-    await new Promise<void>((resolve) => {
-      sound.setOnPlaybackStatusUpdate((s: any) => {
-        if (s?.didJustFinish) {
-          sound.unloadAsync().catch(() => {});
-          if (currentPlayer === sound) currentPlayer = null;
-          resolve();
-        }
-      });
-      setTimeout(resolve, 10000);
-    });
-    return;
-  }
-
-  console.warn('[VoiceCoach] No audio module available');
 }
 
 async function playNext() {
   if (speaking || queue.length === 0) return;
-  if (!hasExpoAudio && !hasExponentAV) {
+  if (!loadAudioModule()) {
+    console.warn('[VoiceCoach] No audio module, clearing queue');
     queue.length = 0;
     return;
   }
 
   const text = queue.shift()!;
   speaking = true;
+  console.log('[VoiceCoach] Playing:', text.substring(0, 40));
 
   try {
     let base64 = cache.get(text);
+
     if (!base64) {
+      console.log('[VoiceCoach] Fetching TTS from API...');
       const result = await synthesizeVoice(text);
       if (!result?.audioBase64) {
+        console.warn('[VoiceCoach] API returned no audio for:', text);
         speaking = false;
         playNext();
         return;
       }
       base64 = result.audioBase64;
+      console.log('[VoiceCoach] Got audio, length:', base64.length);
       cache.set(text, base64);
       if (cache.size > 30) {
         const k = cache.keys().next().value;
@@ -99,11 +60,51 @@ async function playNext() {
       }
     }
 
-    await playAudio(base64);
-    speaking = false;
-    playNext();
+    // Stop previous
+    if (currentPlayer) {
+      try { currentPlayer.remove(); } catch {}
+      currentPlayer = null;
+    }
+
+    const uri = `data:audio/mpeg;base64,${base64}`;
+    const player = createPlayer(uri);
+    currentPlayer = player;
+    player.play();
+    console.log('[VoiceCoach] Playing audio...');
+
+    // Wait for playback to finish
+    await new Promise<void>((resolve) => {
+      let resolved = false;
+      const done = () => {
+        if (resolved) return;
+        resolved = true;
+        try { player.remove(); } catch {}
+        if (currentPlayer === player) currentPlayer = null;
+        speaking = false;
+        resolve();
+        playNext();
+      };
+
+      const check = setInterval(() => {
+        try {
+          if (!player.playing && player.currentTime > 0) {
+            clearInterval(check);
+            done();
+          }
+        } catch {
+          clearInterval(check);
+          done();
+        }
+      }, 300);
+
+      // Safety: max 10s per phrase
+      setTimeout(() => {
+        clearInterval(check);
+        done();
+      }, 10000);
+    });
   } catch (e: any) {
-    console.warn('[VoiceCoach] playNext failed:', e.message);
+    console.warn('[VoiceCoach] playNext error:', e.message);
     speaking = false;
     playNext();
   }
@@ -112,19 +113,16 @@ async function playNext() {
 export async function speak(text: string): Promise<void> {
   if (text === lastSpokenText) return;
   lastSpokenText = text;
-  if (queue.length >= 3) queue.shift();
+  if (queue.length >= 2) queue.shift(); // Keep queue short
   queue.push(text);
-  playNext();
+  playNext(); // Fire and forget
 }
 
 export function stopVoice(): void {
   queue.length = 0;
   speaking = false;
   if (currentPlayer) {
-    try {
-      if (currentPlayer.remove) currentPlayer.remove();
-      else if (currentPlayer.unloadAsync) currentPlayer.unloadAsync();
-    } catch {}
+    try { currentPlayer.remove(); } catch {}
     currentPlayer = null;
   }
 }
