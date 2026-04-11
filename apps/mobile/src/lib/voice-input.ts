@@ -2,17 +2,14 @@
  * Voice Input — speech-to-text for conversational coaching.
  * User asks a question → transcribed → /coaching/ask → Claude answers → ElevenLabs speaks.
  *
- * Requires expo-speech-recognition native module.
- * Gracefully degrades to no-op if not available.
+ * Uses try/require instead of NativeModules check (module name differs).
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { NativeModules } from 'react-native';
 import { speak } from './voice-coach';
 import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
-const hasSpeechModule = !!NativeModules.ExpoSpeechRecognition;
 
 async function askCoach(
   question: string,
@@ -59,15 +56,20 @@ export function useVoiceInput(
   }, []);
 
   const startListening = useCallback(async () => {
-    if (!hasSpeechModule) {
-      console.warn('[VoiceInput] ExpoSpeechRecognition not available');
-      return;
-    }
+    console.log('[VoiceInput] startListening called');
 
     try {
       const SR = require('expo-speech-recognition');
+      console.log('[VoiceInput] expo-speech-recognition loaded, keys:', Object.keys(SR).join(', '));
+
       const mod = SR.ExpoSpeechRecognitionModule;
+      if (!mod) {
+        console.warn('[VoiceInput] ExpoSpeechRecognitionModule is undefined in package');
+        return;
+      }
+
       const { granted } = await mod.requestPermissionsAsync();
+      console.log('[VoiceInput] Permission granted:', granted);
       if (!granted) return;
 
       cleanup();
@@ -77,6 +79,7 @@ export function useVoiceInput(
       subsRef.current.push(
         SR.addSpeechRecognitionListener('result', (event: any) => {
           const text = event.results?.[0]?.transcript || '';
+          console.log('[VoiceInput] Transcript:', text, 'isFinal:', event.isFinal);
           setTranscript(text);
 
           if (event.isFinal && text.length > 3) {
@@ -85,25 +88,32 @@ export function useVoiceInput(
             cleanup();
 
             askCoach(text, exerciseKey, formScore, reps).then((result) => {
+              console.log('[VoiceInput] Coach answer:', result.answer);
               setAnswering(false);
               setLastAnswer(result.answer);
               speak(result.answer);
             });
           }
         }),
-        SR.addSpeechRecognitionListener('end', () => setListening(false)),
-        SR.addSpeechRecognitionListener('error', () => setListening(false)),
+        SR.addSpeechRecognitionListener('end', () => {
+          console.log('[VoiceInput] Speech ended');
+          setListening(false);
+        }),
+        SR.addSpeechRecognitionListener('error', (e: any) => {
+          console.warn('[VoiceInput] Error:', e);
+          setListening(false);
+        }),
       );
 
       mod.start({ lang: 'cs-CZ', interimResults: true, maxAlternatives: 1 });
+      console.log('[VoiceInput] Recognition started');
     } catch (e: any) {
-      console.warn('[VoiceInput] start failed:', e.message);
+      console.warn('[VoiceInput] Failed:', e.message);
       setListening(false);
     }
   }, [exerciseKey, formScore, reps, cleanup]);
 
   const stopListening = useCallback(() => {
-    if (!hasSpeechModule) return;
     try {
       require('expo-speech-recognition').ExpoSpeechRecognitionModule.stop();
     } catch {}
