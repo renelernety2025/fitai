@@ -23,6 +23,8 @@ import {
   muscleFocus,
   exerciseMotivation,
   deviationWarning,
+  breathingCue,
+  keyFocusCue,
   safetyVoice,
   setFinished,
   setStart,
@@ -163,7 +165,21 @@ export function createCoachingEngine(
       return;
     }
 
-    // Priority 9: Muscle focus hint (rep 2 and 7)
+    // Priority 9: Breathing cue (rep 1 and 6)
+    if ((repNumber === 1 || repNumber === 6) && formScore >= 50) {
+      speak(breathingCue(state.exerciseKey));
+      state.lastSpokenEvent = 'breathing';
+      return;
+    }
+
+    // Priority 10: Key focus (rep 3 and 8)
+    if ((repNumber === 3 || repNumber === 8) && formScore >= 60) {
+      speak(keyFocusCue(state.exerciseKey));
+      state.lastSpokenEvent = 'keyFocus';
+      return;
+    }
+
+    // Priority 11: Muscle focus hint (rep 2 and 7)
     if ((repNumber === 2 || repNumber === 7) && formScore >= 60) {
       const mf = muscleFocus(state.exerciseKey);
       if (mf) {

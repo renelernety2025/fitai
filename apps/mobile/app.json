@@ -59,6 +59,13 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "FitAI potřebuje mikrofon pro hlasové příkazy AI trenérovi.",
+          "speechRecognitionPermission": "FitAI používá rozpoznávání hlasu pro konverzaci s AI trenérem."
+        }
+      ],
       "./plugins/with-mlkit-pose"
     ],
     "extra": {

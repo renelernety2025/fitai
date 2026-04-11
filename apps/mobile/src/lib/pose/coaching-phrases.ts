@@ -82,10 +82,23 @@ interface ExerciseCoaching {
   muscleFeel: string[];     // what muscle should burn/work
   motivation: string[];     // exercise-specific encouragement
   deviation: string;        // what to say if user does different movement
+  breathing: string[];      // when to inhale/exhale
+  keyFocus: string[];       // what is essential for this exercise
 }
 
 const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
   squat: {
+    breathing: [
+      'Nadechni se nahoře, drž dech dolů, vydechni nahoru.',
+      'Dýchání: nadech ve stojce, výdech při tlaku nahoru.',
+      'Drž dech v dolní pozici, to stabilizuje core.',
+    ],
+    keyFocus: [
+      'Stěžejní je hloubka a kolena ven. Zbytek přijde sám.',
+      'Klíč k dřepu: rovná záda a aktivní core. Bez toho nic nefunguje.',
+      'Soustřeď se na paty. Celá síla jde z pat do země.',
+      'Tři věci: hrudník vzhůru, kolena ven, paty na zemi.',
+    ],
     corrections: [
       'Kolena tlač ven.', 'Hrudník vzhůru.', 'Váha na patách.', 'Záda rovná.',
       'Sed si dozadu, jako na židli.', 'Core zpevni.', 'Pohled dopředu.',
@@ -108,6 +121,15 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Hele, tohle nevypadá jako dřep. Vrať se do správné pozice.',
   },
   pushup: {
+    breathing: [
+      'Nadechni dolů, vydechni při tlaku nahoru.',
+      'Výdech nahoře, nadech když klesáš.',
+    ],
+    keyFocus: [
+      'Klíčové je rovné tělo. Zadek ani břicho nesmí viset.',
+      'Soustřeď se na hrudník. On dělá hlavní práci.',
+      'Plný rozsah je důležitější než počet. Hrudník k zemi.',
+    ],
     corrections: [
       'Tělo jako prkno.', 'Lokty čtyřicet pět stupňů od těla.',
       'Hlavu neuklánéj.', 'Břicho zpevni.', 'Dokonči rozsah.',
@@ -130,6 +152,16 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Tohle není klik. Drž tělo rovné a pokračuj.',
   },
   deadlift: {
+    breathing: [
+      'Velký nadech dole, drž dech při tahu, vydechni nahoře.',
+      'Dech je tvůj bezpečnostní pás. Drž ho při tahu.',
+      'Nadechni se, zpevni břicho jako beton, pak táhni.',
+    ],
+    keyFocus: [
+      'Záda rovná. To je pravidlo číslo jedna. Všechno ostatní je vedlejší.',
+      'Klíč: tlač nohama do země, ne tahat zády.',
+      'Činku veď co nejblíž tělu. Čím dál od těla, tím víc trpí záda.',
+    ],
     corrections: [
       'Záda rovná! Nezakulacuj.', 'Činku veď těsně u těla.',
       'Boky dopředu nahoře.', 'Stáhni lopatky.',
@@ -154,6 +186,15 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Pozor, tohle nevypadá jako mrtvý tah. Drž správnou pozici.',
   },
   ohp: {
+    breathing: [
+      'Nadechni v rack pozici, vydechni při tlaku nahoru.',
+      'Dech: nadech dole, výdech nahoře v lockoutu.',
+    ],
+    keyFocus: [
+      'Core musí být jako beton. Bez zpevněného středu těla riskuješ záda.',
+      'Tlač přímo nahoru, ne dopředu. Činka jde rovně nad hlavu.',
+      'Lockout nahoře je klíčový. Paže úplně natažené.',
+    ],
     corrections: [
       'Lokty pod činkou.', 'Zpevni core.', 'Hlavu uklid z cesty.',
       'Natáhni paže úplně nahoře.', 'Nepohybuj zády.',
@@ -175,6 +216,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Tohle není tlak nad hlavu. Vrať se do rack pozice.',
   },
   lunge: {
+    breathing: ['Nadechni nahoře, vydechni při výpadu dolů.', 'Výdech při odrazu nahoru.'],
+    keyFocus: ['Koleno přední nohy musí být nad kotníkem, ne před špičkou.', 'Rovný trup je základ. Nenaklánéj se.'],
     corrections: ['Koleno nad kotníkem.', 'Trup vzpřímený.', 'Zadní koleno k zemi.', 'Odraz z paty.', 'Nenaklánéj se dopředu.'],
     perRepFocus: ['Koleno přední nohy přímo nad kotníkem.', 'Zadní koleno téměř k zemi.', 'Odraz z paty přední nohy.', 'Trup drž vzpřímeně.'],
     muscleFeel: ['Cíť quadriceps přední nohy a glutey.', 'Hamstring zadní nohy protahuje.'],
@@ -182,6 +225,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Tohle není výpad. Udělej krok dopředu a pokles.',
   },
   bicepCurl: {
+    breathing: ['Vydechni při zdvihu, nadechni při spouštění.', 'Dýchej plynule, nezadržuj dech.'],
+    keyFocus: ['Lokty u těla. Pohybuje se jen předloktí.', 'Stisk na vrcholu je to co buduje biceps.', 'Pomalá negativní fáze dolů je důležitější než zdvih.'],
     corrections: ['Lokty u těla.', 'Nesvihej.', 'Kontrolovaně dolů.', 'Stiskni biceps nahoře.', 'Zápěstí rovné.', 'Nedělej švihy trupem.'],
     perRepFocus: ['Loket nehýbej, jen předloktí se pohybuje.', 'Stiskni biceps na vrcholu na jednu sekundu.', 'Spouštěj pomalu a kontrolovaně.', 'Cíť napětí v bicepsu celou dobu.'],
     muscleFeel: ['Biceps by měl hořet, hlavně na vrcholu.', 'Cíť kontrakci v přední části paže.', 'Předloktí pomáhá, ale biceps dominuje.'],
@@ -189,6 +234,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Tohle nevypadá jako bicepsový zdvih. Lokty u těla, pohyb jen v lokti.',
   },
   lateralRaise: {
+    breathing: ['Vydechni při zvedání, nadechni dolů.'],
+    keyFocus: ['Nekrč trapézy! Ramena dolů, zvedej jen paže.', 'Představ si že liješ vodu z konvice — malíček výš.'],
     corrections: ['Nekrč ramena.', 'Do výšky ramen, ne výš.', 'Mírný ohyb v loktech.', 'Kontrolovaně spouštěj.'],
     perRepFocus: ['Zvedej do výšky ramen, ne výš.', 'Jako bys liješ vodu z konvice.', 'Mírný ohyb v loktech celou dobu.'],
     muscleFeel: ['Cíť boční deltoid, ne trapézy.', 'Ramena by měla hořet po stranách.'],
@@ -196,6 +243,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Pohyb by měl být do stran, ne dopředu.',
   },
   row: {
+    breathing: ['Vydechni při tahu, nadechni při spouštění.', 'Nadech v natažené pozici, výdech při stažení lopatek.'],
+    keyFocus: ['Klíč: lopatky k sobě. Představ si tužku mezi lopatkami.', 'Záda pracují, ne bicepsy. Táhni lokty, ne ruce.'],
     corrections: ['Stáhni lopatky.', 'Táhni lokty dozadu.', 'Drž předklon.', 'Záda rovná.'],
     perRepFocus: ['Táhni lokty dozadu a stáhni lopatky k sobě.', 'Představ si že mačkáš tužku mezi lopatkami.', 'Drž předklon stabilní.'],
     muscleFeel: ['Cíť práci mezi lopatkami a v latissimus.', 'Záda by měla pracovat víc než bicepsy.'],
@@ -203,6 +252,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Drž předklon a táhni lokty dozadu.',
   },
   gluteBridge: {
+    breathing: ['Vydechni při zdvihu boků, nadechni dole.'],
+    keyFocus: ['Cíť glutey, ne záda. Pokud cítíš záda, chodidla dej blíž.', 'Pauza nahoře a stisk gluteů je to nejdůležitější.'],
     corrections: ['Stiskni glutey nahoře.', 'Boky výš.', 'Netlač ze zad.', 'Chodidla blízko k zadku.'],
     perRepFocus: ['Tlač boky co nejvýš a stiskni glutey nahoře.', 'Drž pauzu nahoře jednu sekundu.', 'Cíť glutey, ne záda.'],
     muscleFeel: ['Glutey by měly hořet!', 'Cíť práci v hýždích, ne v zádech.'],
@@ -210,6 +261,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Tlač boky nahoru, ne jen záda.',
   },
   calfRaise: {
+    breathing: ['Vydechni nahoru na špičky, nadechni dolů.'],
+    keyFocus: ['Plný rozsah je klíč. Dole protáhni, nahoře stiskni.', 'Lýtka vyžadují objem. Pomalu a kontrolovaně.'],
     corrections: ['Co nejvýš na špičky.', 'Pauza nahoře.', 'Plný rozsah dolů.', 'Pomalý pohyb.'],
     perRepFocus: ['Vytáhni se co nejvýš na špičky.', 'Drž nahoře jednu sekundu.', 'Protáhni lýtko dole.'],
     muscleFeel: ['Lýtka by měla hořet!', 'Cíť napětí od kotníku po koleno.'],
@@ -217,6 +270,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Pomalý pohyb nahoru a dolů, plný rozsah.',
   },
   singleArmCurl: {
+    breathing: ['Vydechni při zdvihu, nadechni dolů.'],
+    keyFocus: ['Plná koncentrace na jeden biceps. Cíť každé vlákno.'],
     corrections: ['Loket u těla.', 'Nesvihej.', 'Stiskni na vrcholu.'],
     perRepFocus: ['Soustřeď se na jeden biceps.', 'Cíť jak sval pracuje izolovaně.', 'Kontroluj celý rozsah pohybu.'],
     muscleFeel: ['Jeden biceps by měl hořet. Cíť každé vlákno.'],
@@ -224,6 +279,8 @@ const EXERCISE_COACHING: Record<string, ExerciseCoaching> = {
     deviation: 'Pohybuj jen jednou rukou, druhou drž v klidu.',
   },
   singleArmPress: {
+    breathing: ['Nadechni dole, vydechni při tlaku nahoru.'],
+    keyFocus: ['Core stabilizuje celé tělo. Nenaklánéj se na stranu.', 'Jednostranný tlak odhalí asymetrie. Pracuj na slabší straně.'],
     corrections: ['Zpevni core.', 'Nenaklánéj se.', 'Lockout nahoře.'],
     perRepFocus: ['Core musí stabilizovat, nenaklánéj trup.', 'Tlač přímo nahoru.', 'Natáhni paži úplně nahoře.'],
     muscleFeel: ['Cíť rameno a triceps na pracující straně.', 'Core pracuje na stabilizaci.'],
@@ -254,6 +311,16 @@ export function exerciseMotivation(exerciseKey: string): string {
 
 export function deviationWarning(exerciseKey: string): string {
   return EXERCISE_COACHING[exerciseKey]?.deviation || 'Vrať se ke správnému provedení cviku.';
+}
+
+export function breathingCue(exerciseKey: string): string {
+  const c = EXERCISE_COACHING[exerciseKey]?.breathing || [];
+  return c.length > 0 ? pickUnused(c, usedPhrases) : 'Dýchej plynule. Nezadržuj dech.';
+}
+
+export function keyFocusCue(exerciseKey: string): string {
+  const c = EXERCISE_COACHING[exerciseKey]?.keyFocus || [];
+  return c.length > 0 ? pickUnused(c, usedPhrases) : 'Soustřeď se na čisté provedení.';
 }
 
 // ── Safety ──
