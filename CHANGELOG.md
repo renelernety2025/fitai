@@ -4,6 +4,20 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [fix(mobile): Phase A v1.1 — remove voiceChat mode] 2026-04-11
+### Fixed
+Odstraněn `.voiceChat` mode z `with-audio-session.js` Expo config pluginu, protože způsoboval sporadic SFSpeechRecognizer errors (`kAFAssistantErrorDomain 209 / 216`) bez toho, aby reálně aktivoval hardware echo cancellation. Zachována jen `.playAndRecord` category + speaker/Bluetooth routing. Speech recognition je teď spolehlivá, echo loop ale přetrvává — vyžaduje separátní **Phase A v2** task (AVAudioEngine s `voiceProcessingEnabled` native module, naplánovaný jako follow-up).
+
+**Details:**
+- Root cause: AVAudioSession mode je jen hint pro iOS — skutečná hardware AEC vyžaduje routing zvuku přes `AVAudioEngine` s `inputNode.isVoiceProcessingEnabled = true` (backed by `kAudioUnitSubType_VoiceProcessingIO`). `expo-audio` používá `AVAudioPlayer` a `expo-speech-recognition` používá `SFSpeechRecognizer`'s internal engine — ani jeden nejde přes AVAudioEngine, takže voiceChat mode byl jen cosmetic setting.
+- Navíc voiceChat mode kolidoval se SFSpeechRecognizer's audio tap, což způsobovalo errory typu `{"error":"audio-capture","message":"Failure occurred during speech recognition."}` sporadicky během continuous módu.
+- v1.1 hotfix odstraňuje `mode: .voiceChat` z `setCategory(...)` volání — session teď drží jen kategorii a routing options. Speech recognition beze konfliktu.
+- Idempotency guard v pluginu nyní matchuje společný prefix `// FitAI: AVAudioSession`, takže re-run prebuild na starém patched AppDelegate.swift **neaplikuje** nový kód — musíš použít `expo prebuild --clean` pro čistou regeneraci.
+- Device test log před hotfixem ukázal echo loop přímo v transcriptu: uživatel řekl jen "Kouči posloucháš neslyším tě" a mic zachytil coachovu předchozí odpověď ("o HP je brutální cvičení takže si dej čas na pořádný warmup...") zpátky do Claude. To je přesně důvod, proč mic-driven interrupt v continuous módu zatím není spolehlivý.
+- **Phase A v2 plán** je v `memory/fitai_coaching_state.md` — custom native module s AVAudioEngine, ~2-4h práce, target: plně funkční always-on listening bez echo feedback.
+
+---
+
 ## [Voice Coaching v2 — pipeline redesign] 2026-04-11
 ### Added
 AI trenér Alex má čtyři fundamentální vylepšení — neslyší sám sebe, poslouchá kontinuálně, pauzne mid-sentence když začneš mluvit, a mluví jinak k začátečníkovi než k pokročilému.

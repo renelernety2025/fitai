@@ -1,22 +1,57 @@
 /**
- * Expo config plugin: AVAudioSession voiceChat mode.
+ * Expo config plugin: AVAudioSession PlayAndRecord category (v1.1).
  *
- * Patches AppDelegate.swift to configure the iOS audio session for
- * hardware echo cancellation (PlayAndRecord category + VoiceChat mode).
+ * Patches AppDelegate.swift at app startup to configure the iOS audio
+ * session for simultaneous playback + recording (PlayAndRecord category)
+ * with speaker routing. This lets expo-audio (TTS playback) and
+ * expo-speech-recognition (mic input) coexist without session conflicts.
  *
- * Without this, the microphone picks up the coach's own TTS output
- * from the speaker, creating an echo loop during voice coaching.
- * VoiceChat mode enables iOS hardware echo cancellation (AEC).
+ * WHAT THIS DOES:
+ * - Allows simultaneous playback + mic recording
+ * - Routes audio through the speaker by default (not earpiece)
+ * - Allows Bluetooth A2DP and HFP devices
  *
- * The setup MUST run at app startup before any React Native audio
- * module (expo-audio, expo-speech-recognition) initializes, otherwise
- * expo-audio will install its own PlayAndRecord config without AEC.
+ * WHAT THIS DOES *NOT* DO — known limitation:
+ * An earlier version of this plugin set `mode: .voiceChat` hoping to get
+ * hardware AEC (acoustic echo cancellation), but two problems emerged:
  *
- * Idempotent: safe to run multiple times during prebuild.
+ *   1. voiceChat mode caused SFSpeechRecognizer errors
+ *      (kAFAssistantErrorDomain 209 / 216 — audio-capture failures),
+ *      because expo-speech-recognition's audio engine contends with
+ *      the voiceChat session config.
+ *
+ *   2. Hardware AEC was never actually engaged. AVAudioSession mode
+ *      alone is only a "hint" to iOS — real hardware echo cancellation
+ *      requires routing both the TTS playback and mic input through
+ *      an `AVAudioEngine` with `inputNode.isVoiceProcessingEnabled = true`
+ *      (backed by Apple's voiceProcessingIO audio unit). Neither expo-audio
+ *      nor expo-speech-recognition use that engine internally, so the
+ *      session mode was ineffective for AEC.
+ *
+ * Both problems are fixed by removing .voiceChat mode. The mic STILL
+ * captures the coach's own voice from the speaker though — that's the
+ * software reality of echo in this audio stack. Workarounds:
+ *   - Push-to-talk mode: tap MIC button while coach is speaking → Phase B
+ *     `cancelCurrent()` interrupts playback immediately, user can speak
+ *     into silence.
+ *   - Continuous mode (Phase C): functional but limited until Phase A v2
+ *     ships with proper AVAudioEngine + voiceProcessingEnabled native
+ *     integration.
+ *
+ * Idempotent: safe to run multiple times during prebuild. Idempotency
+ * check uses the shared prefix "FitAI: AVAudioSession", so this plugin
+ * also correctly skips re-patching any legacy voiceChat version — but
+ * when updating between versions always run `expo prebuild --clean` to
+ * regenerate ios/ from scratch.
  */
 const { withAppDelegate } = require('expo/config-plugins');
 
-const MARKER = '// FitAI: AVAudioSession voiceChat mode';
+const MARKER = '// FitAI: AVAudioSession PlayAndRecord';
+// Legacy marker substring — the idempotency guard also matches the v1
+// voiceChat marker so re-running prebuild without --clean on an old
+// patched file does not create a duplicate block (the old block is
+// still there; caller is expected to --clean for the new version).
+const LEGACY_MARKER_PREFIX = '// FitAI: AVAudioSession';
 const SWIFT_IMPORT = 'import AVFoundation';
 const ANCHOR = 'let delegate = ReactNativeDelegate()';
 
@@ -25,17 +60,17 @@ const ANCHOR = 'let delegate = ReactNativeDelegate()';
 // template's first line starts WITHOUT leading spaces; subsequent lines carry
 // their own 4-space indent; the trailing `    ` re-indents the ANCHOR itself.
 const SWIFT_SETUP_BLOCK = `${MARKER}
-    // Hardware echo cancellation for voice coaching.
+    // Simultaneous playback + recording via the speaker.
     // Must run before expo-audio / expo-speech-recognition init.
+    // NOTE: Does NOT enable hardware AEC — see Phase A v2 for that.
     do {
       let audioSession = AVAudioSession.sharedInstance()
       try audioSession.setCategory(
         .playAndRecord,
-        mode: .voiceChat,
         options: [.defaultToSpeaker, .allowBluetoothA2DP, .allowBluetooth]
       )
       try audioSession.setActive(true)
-      NSLog("[FitAI] AVAudioSession configured: playAndRecord + voiceChat")
+      NSLog("[FitAI] AVAudioSession configured: playAndRecord (no AEC)")
     } catch {
       NSLog("[FitAI] AVAudioSession setup failed: \\(error.localizedDescription)")
     }
@@ -43,7 +78,7 @@ const SWIFT_SETUP_BLOCK = `${MARKER}
     `;
 
 function patchSwiftAppDelegate(contents) {
-  if (contents.includes(MARKER)) {
+  if (contents.includes(LEGACY_MARKER_PREFIX)) {
     console.log('[with-audio-session] Already patched, skipping');
     return contents;
   }
