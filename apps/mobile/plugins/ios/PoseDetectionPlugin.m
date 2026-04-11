@@ -4,8 +4,8 @@
  * Returns normalized landmark positions (0-1) for all 33 pose landmarks.
  */
 
-#import <VisionCamera/FrameProcessorPlugin.h>
-#import <VisionCamera/Frame.h>
+#import "FrameProcessorPlugin.h"
+#import "Frame.h"
 #import <MLKitPoseDetection/MLKitPoseDetection.h>
 #import <MLKitPoseDetectionCommon/MLKitPoseDetectionCommon.h>
 @import MLKitVision;

@@ -13,9 +13,11 @@ Pod::Spec.new do |s|
   s.dependency "VisionCamera"
   s.dependency "GoogleMLKit/PoseDetection"
 
-  # Enable clang modules so @import works
   s.pod_target_xcconfig = {
     'CLANG_ENABLE_MODULES' => 'YES',
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+    # VisionCamera doesn't expose FrameProcessorPlugin.h as public header.
+    # Point directly to its source directory.
+    'HEADER_SEARCH_PATHS' => '"${PODS_ROOT}/../../node_modules/react-native-vision-camera/ios/FrameProcessors" "${PODS_ROOT}/../../node_modules/react-native-vision-camera/ios/React"',
   }
 end

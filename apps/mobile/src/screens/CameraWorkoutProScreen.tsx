@@ -22,7 +22,7 @@ import {
   useCameraPermission,
   useFrameProcessor,
 } from 'react-native-vision-camera';
-import { useRunOnJS } from 'react-native-worklets';
+import { useRunOnJS } from 'react-native-worklets-core';
 
 import { SAMPLE_EXERCISES, EXERCISE_LIST } from '../lib/pose/sample-exercises';
 import type { ExerciseDefinition } from '../lib/pose/sample-exercises';
