@@ -4,6 +4,25 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Voice Coaching v2 — pipeline redesign] 2026-04-11
+### Added
+AI trenér Alex má čtyři fundamentální vylepšení — neslyší sám sebe, poslouchá kontinuálně, pauzne mid-sentence když začneš mluvit, a mluví jinak k začátečníkovi než k pokročilému.
+
+**Details:**
+- **Phase A — iOS hardware echo cancellation:** nový Expo config plugin `with-audio-session.js` patchuje `AppDelegate.swift` tak, aby nastavil `AVAudioSession` do `PlayAndRecord` + `.voiceChat` módu při startu aplikace. iOS pak hardwarově filtruje coachův zvuk z mic vstupu. Unblocks always-on listening.
+- **Phase B — listener-based voice-coach playback:** `voice-coach.ts` přepsaný z 300ms setInterval pollingu na `expo-audio` `playbackStatusUpdate` listener (`didJustFinish`). Nový `cancelCurrent()` export umožňuje přerušit frázi mid-playback bez dropnutí zbytku queue. `pauseCoach()` teď volá `cancelCurrent()` místo `stopVoice()` — queue se zachovává a dokončí po `resumeCoach()`. Fix dead `stopVoice` import v `CameraWorkoutProScreen`: nyní se volá v `useEffect` cleanup při unmount.
+- **Phase C — always-on listening + auto-pause:** `voice-input.ts` má nový `continuousMode` + `toggleContinuous()` API. V continuous módu mic zůstává efektivně vždy zapnutý (auto-reloop na `end` event), coach se auto-pauzne okamžitě na první interim speech-recognition výsledek s >3 znaky (nečeká se na `isFinal`). MIC button má tři vizuální stavy: fialová (push-to-talk), zelená (continuous listening), červená (user-speaking, coach paused). Long-press přepíná continuous mode.
+- **Phase D — personalized coaching prompt:** nový `apps/api/src/shared/user-context.builder.ts` — sdílený utility assembling User + UserProgress + FitnessProfile do jednoho normalizovaného kontextu. Coaching prompt teď zná `age`, `injuries`, `goal`, `experienceMonths`, `priorityMuscles` a odvozený `skillTier` (novice/intermediate/advanced). Claude dostává pravidla: 60+ let → jemný jazyk; injuries → alternativy; novice → bez jargonu; advanced → technické cue; goal-specific emphasis. Přidán `@Throttle({ limit: 30, ttl: seconds(3600) })` na `/coaching/ask` endpoint (předtím bez rate limitu — budget gap).
+- **Out of scope (follow-up plány):** golf cviky (vyžaduje Exercise schema extension s rotation jointy + cyclic phase model), video coaching overlay (`expo-video` v camera screen s instructor video playback).
+
+### Verification
+- Local prebuild test: `expo prebuild --platform ios --clean` → plugin patchuje AppDelegate.swift correctly, idempotent
+- Typecheck: mobile + api TypeScript clean pro všechny modifikované soubory
+- Pre-existing TS chyby v nedotčených modulech (achievements, ai-planner, exercises, videos) jsou tech debt — nesouvisí s Voice Coaching v2
+- **Pending:** EAS dev build + device test (uživatelská akce): coach mluví, mic neslyší sám sebe; long-press MIC → continuous mode → řekni "pozor" → coach pauzne do ~500ms; curl `/api/coaching/feedback` se seniorem s injuries → prompt obsahuje personalization bloky
+
+---
+
 ## [fix(mobile): switch camera from vision-camera to expo-camera] 2026-04-09
 ### Fixed
 Metro bundler byl v nekonečné smyčce "Cannot find module" chyb při každém reload:
