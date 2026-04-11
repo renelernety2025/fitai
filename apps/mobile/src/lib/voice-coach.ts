@@ -18,6 +18,15 @@ import { synthesizeVoice } from './api';
 const cache = new Map<string, string>();
 let currentPlayer: any = null;
 let speaking = false;
+// Timestamp of the last moment `speaking` transitioned from true to false.
+// Used by isSpeakingOrJustStopped() to implement a grace window — the iOS
+// speaker buffer and SFSpeechRecognizer pipeline mean mic-captured audio
+// arrives 200-600ms after the coach's voice actually played, so the gate
+// has to stay closed for a bit after the flag clears. Also guards against
+// spurious/early `didJustFinish` events from expo-audio that would otherwise
+// clear `speaking` mid-playback and let echo through.
+let lastSpeakingEndedAt = 0;
+const POST_SPEAKING_GRACE_MS = 1200;
 const queue: string[] = [];
 let lastSpokenText = '';
 let paused = false; // true when MIC is active
@@ -65,6 +74,7 @@ async function playNext() {
       if (!result?.audioBase64) {
         console.warn('[VoiceCoach] API returned no audio for:', text);
         speaking = false;
+        lastSpeakingEndedAt = Date.now();
         playNext();
         return;
       }
@@ -106,6 +116,7 @@ async function playNext() {
         try { player.remove(); } catch {}
         if (currentPlayer === player) currentPlayer = null;
         speaking = false;
+        lastSpeakingEndedAt = Date.now();
 
         if (canceled) {
           // Allow coaching-engine to re-emit the same phrase after resume
@@ -146,6 +157,7 @@ async function playNext() {
   } catch (e: any) {
     console.warn('[VoiceCoach] playNext error:', e.message);
     speaking = false;
+    lastSpeakingEndedAt = Date.now();
     cancelCurrentPlayback = null;
     playNext();
   }
@@ -169,15 +181,33 @@ export function cancelCurrent(): void {
 
 /**
  * Returns true if the coach is currently playing a phrase.
- * Used by voice-input.ts to gate speech-recognition result processing:
- * when the coach is speaking, any transcribed audio is almost certainly
- * mic picking up the coach's own voice from the speaker (echo loop),
- * so those results must be ignored. Real hardware echo cancellation
- * will eventually replace this software gate (see Phase A v2 in the
- * project plan — AVAudioEngine with voiceProcessingEnabled).
+ * Kept for backward compat. Prefer isSpeakingOrJustStopped() for echo gating
+ * because it also covers the grace window after playback ends.
  */
 export function isSpeaking(): boolean {
   return speaking;
+}
+
+/**
+ * Returns true if the coach is currently speaking OR stopped speaking within
+ * the last POST_SPEAKING_GRACE_MS milliseconds. This is the correct gate for
+ * echo filtering in voice-input.ts:
+ *
+ * 1. iOS speaker has a ~100-300ms output buffer — audio keeps physically
+ *    playing after cancelCurrent() clears `speaking`.
+ * 2. SFSpeechRecognizer has ~200-500ms processing latency — transcripts
+ *    arrive at the result listener well after the audio was captured.
+ * 3. expo-audio's `playbackStatusUpdate` event is not always reliable —
+ *    `didJustFinish` can fire prematurely, clearing `speaking` before the
+ *    phrase is actually done. The grace window re-catches that case too.
+ *
+ * Real hardware echo cancellation (Phase A v2, AVAudioEngine with
+ * voiceProcessingEnabled) will make this workaround obsolete.
+ */
+export function isSpeakingOrJustStopped(): boolean {
+  if (speaking) return true;
+  if (lastSpeakingEndedAt === 0) return false;
+  return Date.now() - lastSpeakingEndedAt < POST_SPEAKING_GRACE_MS;
 }
 
 export function pauseCoach(): void {
@@ -196,6 +226,7 @@ export function stopVoice(): void {
   queue.length = 0;
   cancelCurrent();
   speaking = false;
+  lastSpeakingEndedAt = Date.now();
   if (currentPlayer) {
     try { currentPlayer.remove(); } catch {}
     currentPlayer = null;

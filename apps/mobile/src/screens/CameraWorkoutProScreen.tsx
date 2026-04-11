@@ -445,6 +445,13 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
               onPress={() => {
                 console.log('[MIC] Pressed, state:', voiceInput.state);
                 if (voiceInput.continuousMode) return; // tap is a no-op in continuous mode
+                if (voiceInput.state === 'answering') {
+                  // Ignore taps while waiting for Claude — opening a new
+                  // listening session now would overlap with the answer
+                  // playback and cause echo loops.
+                  console.log('[MIC] Ignored — still answering');
+                  return;
+                }
                 if (voiceInput.listening) {
                   voiceInput.stopListening();
                 } else {

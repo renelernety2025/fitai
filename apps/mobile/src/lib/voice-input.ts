@@ -15,7 +15,12 @@
  */
 
 import { useRef, useState } from 'react';
-import { speak, pauseCoach, resumeCoach, isSpeaking } from './voice-coach';
+import {
+  speak,
+  pauseCoach,
+  resumeCoach,
+  isSpeakingOrJustStopped,
+} from './voice-coach';
 import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
@@ -152,13 +157,15 @@ export function useVoiceInput(
 
       subsRef.current.push(
         ExpoSpeechRecognitionModule.addListener('result', (event: any) => {
-          // ECHO GATE: if the coach is currently playing audio, the mic is
-          // almost certainly capturing his own voice from the speaker.
-          // Ignore the transcript entirely — do NOT update state, do NOT
-          // trigger auto-pause, do NOT forward to Claude. A proper fix
-          // (hardware AEC via AVAudioEngine voiceProcessingEnabled) is
-          // tracked as Phase A v2 in the project plan.
-          if (isSpeaking()) {
+          // ECHO GATE: if the coach is speaking (or stopped speaking
+          // within the grace window), the mic is almost certainly
+          // capturing his own voice from the speaker. Ignore the
+          // transcript entirely — do NOT update state, do NOT trigger
+          // auto-pause, do NOT forward to Claude. The grace window
+          // covers: iOS speaker output buffer (~300ms), SFSpeechRecognizer
+          // processing latency (~500ms), and spurious early didJustFinish
+          // events from expo-audio. See voice-coach.isSpeakingOrJustStopped.
+          if (isSpeakingOrJustStopped()) {
             return;
           }
 
@@ -184,10 +191,11 @@ export function useVoiceInput(
         ExpoSpeechRecognitionModule.addListener('end', () => {
           console.log('[VoiceInput] Ended, lastTranscript:', lastTranscript);
 
-          // ECHO GATE: if the coach is currently speaking, whatever we
-          // captured was echo. Don't sendToCoach the bogus transcript; just
-          // re-arm continuous listening (or go idle) so we stay responsive.
-          if (isSpeaking()) {
+          // ECHO GATE: if the coach is speaking or within the grace
+          // window, whatever we captured was echo. Don't sendToCoach the
+          // bogus transcript; just re-arm continuous listening (or go
+          // idle) so we stay responsive.
+          if (isSpeakingOrJustStopped()) {
             lastTranscript = '';
             if (continuousRef.current && !userStoppedRef.current) {
               setTimeout(() => internalStart(), CONTINUOUS_REARM_MS);
