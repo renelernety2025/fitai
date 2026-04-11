@@ -18,6 +18,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "FitAI potřebuje kameru pro real-time pose detection a sledování formy při cvičení.",
         "NSMotionUsageDescription": "FitAI sleduje pohyb pro přesnější počítání opakování.",
+        "NSSpeechRecognitionUsageDescription": "FitAI používá rozpoznávání hlasu pro konverzaci s AI trenérem během cvičení.",
+        "NSMicrophoneUsageDescription": "FitAI potřebuje mikrofon pro hlasové příkazy AI trenérovi.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

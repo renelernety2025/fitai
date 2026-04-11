@@ -36,6 +36,7 @@ import { PoseGuide } from '../components/PoseGuide';
 import type { PoseLandmarks, SafetyAlert, ExercisePhaseDefinition } from '../lib/pose/types';
 import { stopVoice } from '../lib/voice-coach';
 import { createCoachingEngine, type CoachingCallbacks } from '../lib/pose/coaching-engine';
+import { useVoiceInput } from '../lib/voice-input';
 
 export function CameraWorkoutProScreen({ route, navigation }: any) {
   const initialKey: string = route?.params?.exercise || '';
@@ -64,6 +65,8 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const [resting, setResting] = useState(false);
   const [restSeconds, setRestSeconds] = useState(0);
   const [lastSetSummary, setLastSetSummary] = useState('');
+
+  const voiceInput = useVoiceInput(selectedKey, formScore, reps);
 
   const repCounterRef = useRef(
     exercise ? createRepCounter(exercise.phases) : null,
@@ -409,7 +412,34 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         </View>
       )}
 
+      {/* Voice input indicator */}
+      {voiceInput.listening && (
+        <View style={styles.voiceIndicator}>
+          <Text style={styles.voiceIndicatorText}>Poslouchám...</Text>
+          {voiceInput.transcript !== '' && (
+            <Text style={styles.voiceTranscript}>{voiceInput.transcript}</Text>
+          )}
+        </View>
+      )}
+      {voiceInput.answering && (
+        <View style={styles.voiceIndicator}>
+          <Text style={styles.voiceIndicatorText}>Přemýšlím...</Text>
+        </View>
+      )}
+
       <View style={styles.bottomBar} pointerEvents="box-none">
+        {/* Mic button (during workout or rest) */}
+        {(running || resting) && (
+          <Pressable
+            style={[styles.micBtn, voiceInput.listening && styles.micBtnActive]}
+            onPress={voiceInput.listening ? voiceInput.stopListening : voiceInput.startListening}
+            hitSlop={10}
+          >
+            <Text style={styles.micBtnText}>
+              {voiceInput.listening ? '...' : 'MIC'}
+            </Text>
+          </Pressable>
+        )}
         <Pressable
           style={[styles.primaryBtn, running && styles.primaryBtnActive]}
           onPress={running ? handleStop : resting ? undefined : handleStart}
@@ -735,5 +765,53 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '300',
     paddingHorizontal: 12,
+  },
+
+  // Mic button
+  micBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  micBtnActive: {
+    backgroundColor: 'rgba(108,99,255,0.4)',
+    borderColor: '#6c63ff',
+  },
+  micBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+
+  // Voice indicator
+  voiceIndicator: {
+    position: 'absolute',
+    bottom: 130,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(108,99,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(108,99,255,0.4)',
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+  },
+  voiceIndicatorText: {
+    color: '#6c63ff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  voiceTranscript: {
+    color: '#fff',
+    fontSize: 13,
+    marginTop: 6,
+    textAlign: 'center',
   },
 });
