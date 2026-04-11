@@ -37,10 +37,11 @@ export class ElevenLabsService {
         body: JSON.stringify({
           text,
           model_id: 'eleven_multilingual_v2',
+          language_code: 'cs',
           voice_settings: {
-            stability: 0.7,
-            similarity_boost: 0.8,
-            style: 0.3,
+            stability: 0.75,
+            similarity_boost: 0.85,
+            style: 0.2,
           },
         }),
       });

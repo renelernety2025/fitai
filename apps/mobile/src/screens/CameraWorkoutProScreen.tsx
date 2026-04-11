@@ -34,7 +34,8 @@ import { detectPose } from '../lib/pose/frame-processor';
 import { PoseOverlay } from '../components/PoseOverlay';
 import { PoseGuide } from '../components/PoseGuide';
 import type { PoseLandmarks, SafetyAlert, ExercisePhaseDefinition } from '../lib/pose/types';
-import { speak, stopVoice } from '../lib/voice-coach';
+import { stopVoice } from '../lib/voice-coach';
+import { createCoachingEngine } from '../lib/pose/coaching-engine';
 
 export function CameraWorkoutProScreen({ route, navigation }: any) {
   const initialKey: string = route?.params?.exercise || '';
@@ -58,12 +59,21 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const [landmarks, setLandmarks] = useState<PoseLandmarks | null>(null);
   const [safetyAlerts, setSafetyAlerts] = useState<SafetyAlert[]>([]);
   const [poseVisible, setPoseVisible] = useState(false);
+  const [currentSet, setCurrentSet] = useState(1);
+  const [targetReps, setTargetReps] = useState(10);
+  const [resting, setResting] = useState(false);
+  const [restSeconds, setRestSeconds] = useState(0);
+  const [lastSetSummary, setLastSetSummary] = useState('');
 
   const repCounterRef = useRef(
     exercise ? createRepCounter(exercise.phases) : null,
   );
+  const coachRef = useRef(
+    selectedKey ? createCoachingEngine(selectedKey) : null,
+  );
   const lastRepCount = useRef(0);
   const frameCount = useRef(0);
+  const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handlePose = useCallback(
     (pose: MlkitPose) => {
@@ -95,27 +105,28 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
           : result.feedback.errors[0] ?? '',
       );
 
+      // Coaching: phase change hint
+      if (result.currentPhase.nameCs !== phaseName) {
+        coachRef.current?.onPhaseChange(
+          result.currentPhase.nameCs,
+          result.currentPhase.coachingHint,
+        );
+      }
+
       if (result.repJustCompleted && result.completedReps > lastRepCount.current) {
         lastRepCount.current = result.completedReps;
         setReps(result.completedReps);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Voice: announce rep count
-        const n = result.completedReps;
-        const praise = n % 5 === 0 ? 'Výborně! ' : '';
-        speak(`${praise}${n}`);
+        // Coaching engine decides what to say
+        coachRef.current?.onRepCompleted(result.completedReps, result.formScore);
       }
 
       if (frameCount.current % 5 === 0) {
-        const alerts = checkSafety(lm, exercise.name);
+        const alerts = checkSafety(lm, exercise?.name ?? '');
         setSafetyAlerts(alerts);
         if (alerts.length > 0) {
-          const critical = alerts.find((a) => a.severity === 'critical');
-          if (critical) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            speak(critical.messageCs);
-          } else {
-            speak(alerts[0].messageCs);
-          }
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          coachRef.current?.onSafetyAlert(alerts);
         }
       }
     },
@@ -143,6 +154,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const handleStart = useCallback(() => {
     if (!exercise) return;
     repCounterRef.current = createRepCounter(exercise.phases);
+    coachRef.current = createCoachingEngine(selectedKey);
     lastRepCount.current = 0;
     frameCount.current = 0;
     setReps(0);
@@ -150,17 +162,43 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
     setSafetyAlerts([]);
     setPhaseName(exercise.phases[0]?.nameCs ?? '');
     setPhaseFeedback('');
+    setResting(false);
+    setLastSetSummary('');
+    if (restTimerRef.current) clearInterval(restTimerRef.current);
     setRunning(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [exercise]);
+    coachRef.current.startSet(currentSet, targetReps);
+  }, [exercise, selectedKey, currentSet, targetReps]);
+
+  const startRest = useCallback(() => {
+    setResting(true);
+    setRestSeconds(90);
+    restTimerRef.current = setInterval(() => {
+      setRestSeconds((prev) => {
+        if (prev <= 1) {
+          if (restTimerRef.current) clearInterval(restTimerRef.current);
+          setResting(false);
+          return 0;
+        }
+        coachRef.current?.onRestTick(prev - 1);
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
 
   const handleStop = useCallback(() => {
     setRunning(false);
     setLandmarks(null);
     setPoseVisible(false);
-    stopVoice();
-    speak('Set hotový!');
-  }, []);
+    coachRef.current?.endSet();
+    const avg = coachRef.current?.getState().formScores ?? [];
+    const avgForm = avg.length > 0
+      ? Math.round(avg.reduce((a: number, b: number) => a + b, 0) / avg.length)
+      : 0;
+    setLastSetSummary(`Set ${currentSet}: ${reps} repů, forma ${avgForm}%`);
+    setCurrentSet((s) => s + 1);
+    startRest();
+  }, [currentSet, reps, startRest]);
 
   // Exercise picker
   if (!exercise) {
@@ -317,11 +355,50 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
         </View>
       )}
 
+      {/* Rest overlay */}
+      {resting && (
+        <View style={styles.restOverlay}>
+          <Text style={styles.restTitle}>Odpočinek</Text>
+          <Text style={styles.restTimer}>{restSeconds}s</Text>
+          {lastSetSummary !== '' && (
+            <Text style={styles.restSummary}>{lastSetSummary}</Text>
+          )}
+          <Text style={styles.restHint}>Set {currentSet} za chvíli</Text>
+          <Pressable
+            style={styles.skipRestBtn}
+            onPress={() => {
+              if (restTimerRef.current) clearInterval(restTimerRef.current);
+              setResting(false);
+              setRestSeconds(0);
+            }}
+          >
+            <Text style={styles.skipRestText}>Přeskočit</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Set info + target reps */}
+      {!running && !resting && exercise && (
+        <View style={styles.setInfoBox}>
+          <Text style={styles.setInfoLabel}>Set {currentSet}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8 }}>
+            <Pressable onPress={() => setTargetReps((r) => Math.max(1, r - 1))}>
+              <Text style={styles.repAdjust}>-</Text>
+            </Pressable>
+            <Text style={styles.targetRepsText}>{targetReps} repů</Text>
+            <Pressable onPress={() => setTargetReps((r) => r + 1)}>
+              <Text style={styles.repAdjust}>+</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       <View style={styles.bottomBar} pointerEvents="box-none">
         <Pressable
           style={[styles.primaryBtn, running && styles.primaryBtnActive]}
-          onPress={running ? handleStop : handleStart}
+          onPress={running ? handleStop : resting ? undefined : handleStart}
           hitSlop={10}
+          disabled={resting}
         >
           <Text
             style={[
@@ -329,7 +406,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
               running && styles.primaryBtnTextActive,
             ]}
           >
-            {running ? 'STOP' : 'START SET'}
+            {running ? 'STOP' : `START SET ${currentSet}`}
           </Text>
         </Pressable>
       </View>
@@ -573,4 +650,74 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   primaryBtnTextActive: { color: '#fff' },
+
+  // Rest overlay
+  restOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  restTitle: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 2,
+  },
+  restTimer: {
+    color: '#fff',
+    fontSize: 72,
+    fontWeight: '800',
+    letterSpacing: -3,
+  },
+  restSummary: {
+    color: '#00d4aa',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  restHint: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 13,
+  },
+  skipRestBtn: {
+    marginTop: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  skipRestText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Set info
+  setInfoBox: {
+    position: 'absolute',
+    bottom: 120,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  setInfoLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+  },
+  targetRepsText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  repAdjust: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 32,
+    fontWeight: '300',
+    paddingHorizontal: 12,
+  },
 });

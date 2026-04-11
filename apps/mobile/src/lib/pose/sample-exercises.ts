@@ -14,6 +14,7 @@ export interface ExerciseDefinition {
   tips: string[];
   commonMistakes: string[];
   muscles: string[];
+  unilateral?: boolean;
   phases: ExercisePhaseDefinition[];
 }
 
@@ -490,6 +491,31 @@ export const SAMPLE_EXERCISES: Record<string, ExerciseDefinition> = {
     tips: ['Co nejvýš na špičky', 'Pomalý kontrolovaný pohyb', 'Pauza nahoře 1s', 'Plný rozsah dolů (protáhni)'],
     commonMistakes: ['Příliš rychlé tempo', 'Neúplný rozsah pohybu', 'Ohýbání kolen'],
     muscles: ['Gastrocnemius', 'Soleus'],
+  },
+  // ── Unilateral variants ──
+  singleArmCurl: {
+    name: 'Single-arm Curl', nameCs: 'Jednoruční biceps', icon: '💪', unilateral: true,
+    phases: [
+      { name: 'start', nameCs: 'Paže dole', coachingHint: 'Loket u těla, paže natažená', rules: [{ joint: 'left_elbow', angle_min: 150, angle_max: 180 }], feedback_correct: 'Natažená', feedback_wrong: 'Natáhni', minDurationMs: 300 },
+      { name: 'curl', nameCs: 'Zdvih', coachingHint: 'Stiskni biceps, loket nehýbej', rules: [{ joint: 'left_elbow', angle_min: 30, angle_max: 70 }], feedback_correct: 'Stiskni', feedback_wrong: 'Víc nahoru', minDurationMs: 400 },
+      { name: 'down', nameCs: 'Dolů', coachingHint: 'Kontrolovaně spouštěj', rules: [{ joint: 'left_elbow', angle_min: 80, angle_max: 150 }], feedback_correct: 'Kontrolovaně', feedback_wrong: 'Pomaleji', minDurationMs: 300 },
+    ],
+    description: 'Jednoruční bicepsový zdvih. Izoluje biceps, lepší koncentrace na sval.',
+    tips: ['Loket přitisknutý k tělu', 'Nedělej švihy', 'Stiskni na vrcholu'],
+    commonMistakes: ['Švihy tělem', 'Loket se hýbe', 'Příliš rychle dolů'],
+    muscles: ['Biceps brachii'],
+  },
+  singleArmPress: {
+    name: 'Single-arm Press', nameCs: 'Jednoruční tlak', icon: '🙌', unilateral: true,
+    phases: [
+      { name: 'start', nameCs: 'Rack pozice', coachingHint: 'Loket pod činkou, core zpevni', rules: [{ joint: 'left_elbow', angle_min: 60, angle_max: 100 }], feedback_correct: 'Připraven', feedback_wrong: 'Lokty pod', minDurationMs: 300 },
+      { name: 'press', nameCs: 'Tlak nahoru', coachingHint: 'Tlač nahoru, natáhni paži', rules: [{ joint: 'left_elbow', angle_min: 140, angle_max: 180 }], feedback_correct: 'Lockout!', feedback_wrong: 'Natáhni', minDurationMs: 400 },
+      { name: 'down', nameCs: 'Dolů', coachingHint: 'Kontrolovaně dolů do rack pozice', rules: [{ joint: 'left_elbow', angle_min: 80, angle_max: 140 }], feedback_correct: 'Kontrolovaně', feedback_wrong: 'Pomaleji', minDurationMs: 300 },
+    ],
+    description: 'Jednoruční tlak nad hlavu. Aktivuje core pro stabilizaci, odhalí asymetrie.',
+    tips: ['Zpevni core', 'Nenaklánéj se na stranu', 'Plný lockout nahoře'],
+    commonMistakes: ['Naklánění trupu', 'Neúplný lockout', 'Prohnutá záda'],
+    muscles: ['Deltoids', 'Triceps', 'Core'],
   },
 };
 
