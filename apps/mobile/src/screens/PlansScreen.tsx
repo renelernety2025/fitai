@@ -33,6 +33,7 @@ export function PlansScreen({ navigation }: any) {
           { label: 'Doma', screen: 'Doma', color: v2.green },
           { label: 'Video', screen: 'Videos', color: v2.blue },
           { label: 'AI Plán', screen: 'AICoach', color: v2.purple },
+          { label: 'Pose AI', screen: 'CameraWorkoutPro', color: v2.red },
         ].map((q) => (
           <Pressable
             key={q.label}
