@@ -94,7 +94,9 @@ export async function buildUserPromptContext(
     : null;
 
   return {
-    name: user?.name ?? 'Cvičenci',
+    // Czech singular vocative for a gender-neutral fallback — previous
+    // "Cvičenci" was plural vocative and grammatically wrong.
+    name: user?.name ?? 'klient',
     level: levelFromXP(totalXP),
     skillTier: deriveSkillTier(totalXP, experienceMonths),
     totalXP,

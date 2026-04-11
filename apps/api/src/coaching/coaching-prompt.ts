@@ -106,11 +106,20 @@ PRAVIDLA:
 6. Střídej fráze — neopakuj posledních 5 zpráv
 7. Používej jméno klienta občas (ne každou zprávu)
 8. Respektuj PERSONALIZACI výše — ta má přednost před obecnými pravidly
-
-Posledních 5 zpráv (NEOPAKUJ):
-${ctx.recentMessages.slice(-5).map((m) => `- "${m}"`).join('\n')}
-
+${buildRecentMessagesBlock(ctx.recentMessages)}
 Odpověz POUZE text zprávy, nic jiného.`;
+}
+
+/**
+ * Renders the "Posledních 5 zpráv" block only when there are messages.
+ * Previously an empty array produced a hanging "Posledních 5 zpráv:" header
+ * followed by nothing, which wastes tokens and looks off.
+ */
+function buildRecentMessagesBlock(recentMessages: string[]): string {
+  const lastFive = recentMessages.slice(-5);
+  if (lastFive.length === 0) return '';
+  const lines = lastFive.map((m) => `- "${m}"`).join('\n');
+  return `\nPosledních ${lastFive.length} zpráv (NEOPAKUJ):\n${lines}\n`;
 }
 
 export function buildCoachingUserMessage(ctx: CoachingContext): string {

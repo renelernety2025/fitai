@@ -2,6 +2,7 @@ import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
 import { CoachingService } from './coaching.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AskCoachDto } from './dto/ask-coach.dto';
 
 @Controller('coaching')
 @UseGuards(JwtAuthGuard)
@@ -37,16 +38,13 @@ export class CoachingController {
   /** Voice Q&A — user asks a question during workout, Claude answers */
   @Throttle({ default: { limit: 30, ttl: seconds(3600) } }) // 30 voice questions/hour/user
   @Post('ask')
-  askCoach(
-    @Request() req: any,
-    @Body() body: { question: string; exerciseName?: string; formScore?: number; completedReps?: number },
-  ) {
+  askCoach(@Request() req: any, @Body() dto: AskCoachDto) {
     return this.coachingService.answerQuestion(
       req.user.id,
-      body.question,
-      body.exerciseName,
-      body.formScore,
-      body.completedReps,
+      dto.question,
+      dto.exerciseName,
+      dto.formScore,
+      dto.completedReps,
     );
   }
 }
