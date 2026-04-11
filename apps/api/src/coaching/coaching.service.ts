@@ -107,6 +107,66 @@ export class CoachingService {
     return { text, audioBase64: audio?.audioBase64 ?? null, fallbackToWebSpeech: !audio };
   }
 
+  /** Answer a voice question from the user during workout */
+  async answerQuestion(
+    userId: string,
+    question: string,
+    exerciseName?: string,
+    formScore?: number,
+    completedReps?: number,
+  ) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return {
+        answer: 'Soustřeď se na formu a pokračuj.',
+        audioBase64: null,
+      };
+    }
+
+    try {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic.default({ apiKey });
+
+      const context = [
+        exerciseName ? `Uživatel cvičí: ${exerciseName}` : '',
+        formScore !== undefined ? `Aktuální forma: ${formScore}%` : '',
+        completedReps !== undefined ? `Dokončeno repů: ${completedReps}` : '',
+      ].filter(Boolean).join('. ');
+
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: `Jsi osobní fitness trenér. Odpovídej ČESKY, stručně (max 2 věty), motivačně a odborně.
+
+${context}
+
+Otázka uživatele: "${question}"
+
+Odpověz přímo, konkrétně, bez zbytečných slov. Pokud se ptá na formu, odpověz na základě jeho aktuálního skóre.`,
+        }],
+      });
+
+      const answer = response.content[0]?.type === 'text'
+        ? response.content[0].text
+        : 'Pokračuj, děláš to dobře.';
+
+      const audio = await this.elevenLabs.synthesize(answer);
+
+      return {
+        answer,
+        audioBase64: audio?.audioBase64 ?? null,
+      };
+    } catch (e: any) {
+      this.logger.error(`Voice Q&A failed: ${e.message}`);
+      return {
+        answer: 'Soustřeď se na cvik a pokračuj.',
+        audioBase64: null,
+      };
+    }
+  }
+
   private async buildContext(
     req: FeedbackRequest,
     safetyAlerts: string[],

@@ -1,37 +1,28 @@
 /**
  * Voice Input — speech-to-text for conversational coaching.
- * User asks a question → transcribed → sent to Claude → answer via ElevenLabs.
+ * User asks a question → transcribed → /coaching/ask → Claude answers → ElevenLabs speaks.
  *
  * Requires expo-speech-recognition native module.
- * If not available, startListening is a no-op.
+ * Gracefully degrades to no-op if not available.
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { NativeModules } from 'react-native';
 import { speak } from './voice-coach';
+import { getToken } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://fitai.bfevents.cz';
-
 const hasSpeechModule = !!NativeModules.ExpoSpeechRecognition;
-
-async function getToken(): Promise<string | null> {
-  try {
-    const { getToken: gt } = require('./api');
-    return await gt();
-  } catch {
-    return null;
-  }
-}
 
 async function askCoach(
   question: string,
-  exerciseKey: string,
+  exerciseName: string,
   formScore: number,
   reps: number,
-): Promise<string> {
+): Promise<{ answer: string; audioBase64: string | null }> {
   try {
     const token = await getToken();
-    const res = await fetch(`${API_BASE}/api/coaching/feedback`, {
+    const res = await fetch(`${API_BASE}/api/coaching/ask`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,17 +30,15 @@ async function askCoach(
       },
       body: JSON.stringify({
         question,
-        exerciseName: exerciseKey,
-        currentFormScore: formScore,
+        exerciseName,
+        formScore,
         completedReps: reps,
-        context: 'voice_question',
       }),
     });
-    if (!res.ok) return 'Soustřeď se na cvik.';
-    const data = await res.json();
-    return data.message || data.feedback || 'Pokračuj, děláš to dobře.';
+    if (!res.ok) return { answer: 'Soustřeď se na cvik.', audioBase64: null };
+    return await res.json();
   } catch {
-    return 'Soustřeď se na formu a pokračuj.';
+    return { answer: 'Pokračuj v cvičení.', audioBase64: null };
   }
 }
 
@@ -62,14 +51,12 @@ export function useVoiceInput(
   const [transcript, setTranscript] = useState('');
   const [answering, setAnswering] = useState(false);
   const [lastAnswer, setLastAnswer] = useState('');
-  const subRef = useRef<any[]>([]);
+  const subsRef = useRef<any[]>([]);
 
   const cleanup = useCallback(() => {
-    subRef.current.forEach((s) => s?.remove?.());
-    subRef.current = [];
+    subsRef.current.forEach((s) => s?.remove?.());
+    subsRef.current = [];
   }, []);
-
-  useEffect(() => cleanup, [cleanup]);
 
   const startListening = useCallback(async () => {
     if (!hasSpeechModule) {
@@ -80,7 +67,6 @@ export function useVoiceInput(
     try {
       const SR = require('expo-speech-recognition');
       const mod = SR.ExpoSpeechRecognitionModule;
-
       const { granted } = await mod.requestPermissionsAsync();
       if (!granted) return;
 
@@ -88,7 +74,7 @@ export function useVoiceInput(
       setListening(true);
       setTranscript('');
 
-      subRef.current.push(
+      subsRef.current.push(
         SR.addSpeechRecognitionListener('result', (event: any) => {
           const text = event.results?.[0]?.transcript || '';
           setTranscript(text);
@@ -96,20 +82,17 @@ export function useVoiceInput(
           if (event.isFinal && text.length > 3) {
             setListening(false);
             setAnswering(true);
+            cleanup();
 
-            askCoach(text, exerciseKey, formScore, reps).then((answer) => {
+            askCoach(text, exerciseKey, formScore, reps).then((result) => {
               setAnswering(false);
-              setLastAnswer(answer);
-              speak(answer);
+              setLastAnswer(result.answer);
+              speak(result.answer);
             });
           }
         }),
-        SR.addSpeechRecognitionListener('end', () => {
-          setListening(false);
-        }),
-        SR.addSpeechRecognitionListener('error', () => {
-          setListening(false);
-        }),
+        SR.addSpeechRecognitionListener('end', () => setListening(false)),
+        SR.addSpeechRecognitionListener('error', () => setListening(false)),
       );
 
       mod.start({ lang: 'cs-CZ', interimResults: true, maxAlternatives: 1 });
@@ -122,8 +105,7 @@ export function useVoiceInput(
   const stopListening = useCallback(() => {
     if (!hasSpeechModule) return;
     try {
-      const SR = require('expo-speech-recognition');
-      SR.ExpoSpeechRecognitionModule.stop();
+      require('expo-speech-recognition').ExpoSpeechRecognitionModule.stop();
     } catch {}
     setListening(false);
     cleanup();

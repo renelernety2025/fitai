@@ -32,4 +32,19 @@ export class CoachingController {
   precache() {
     return this.coachingService.precache();
   }
+
+  /** Voice Q&A — user asks a question during workout, Claude answers */
+  @Post('ask')
+  askCoach(
+    @Request() req: any,
+    @Body() body: { question: string; exerciseName?: string; formScore?: number; completedReps?: number },
+  ) {
+    return this.coachingService.answerQuestion(
+      req.user.id,
+      body.question,
+      body.exerciseName,
+      body.formScore,
+      body.completedReps,
+    );
+  }
 }
