@@ -79,11 +79,16 @@ public class VoiceEngine: RCTEventEmitter {
     try engine.inputNode.setVoiceProcessingEnabled(true)
 
     // 3. Attach player node and connect it into the graph so its output
-    //    is routed through the mixer → output → speaker. The fact that
-    //    playback goes through the same engine as the mic input is what
-    //    lets the VoiceProcessingIO unit know what to subtract.
+    //    is routed through the mixer → output → speaker. Connect with
+    //    an EXPLICIT int16 mono 16 kHz format so scheduleBuffer() always
+    //    matches the player node's declared output format — nil-format
+    //    connect was the source of the b2a8bba crash because the
+    //    AVAudioFile-decoded buffers came back as 44.1 kHz stereo float32
+    //    while VoiceProcessingIO pinned the engine to 16 kHz mono, and
+    //    AVAudioEngine hard-asserted on the mismatch. Mixer handles the
+    //    downstream conversion to hwFormat automatically.
     engine.attach(playerNode)
-    engine.connect(playerNode, to: engine.mainMixerNode, format: nil)
+    engine.connect(playerNode, to: engine.mainMixerNode, format: ttsFormat())
 
     // 4. Start the engine. After this point, playerNode can be scheduled
     //    and the input node's tap (installed on first startRecognition)
@@ -97,6 +102,21 @@ public class VoiceEngine: RCTEventEmitter {
 
   // MARK: - Playback
 
+  /// Shared PCM format for all TTS audio: int16 mono 16 kHz, matching the
+  /// hardware format that VoiceProcessingIO forces onto the engine graph.
+  /// Using a mismatched format (e.g. 44.1 kHz stereo from an MP3 decode)
+  /// causes AVAudioEngine to hard-assert inside CoreAudio, which is NOT
+  /// catchable in Swift — the app crashes. The fix is to never let a
+  /// mismatched buffer touch the player node in the first place.
+  private func ttsFormat() -> AVAudioFormat {
+    return AVAudioFormat(
+      commonFormat: .pcmFormatInt16,
+      sampleRate: 16000,
+      channels: 1,
+      interleaved: true
+    )!
+  }
+
   @objc
   public func play(
     _ base64: String,
@@ -106,42 +126,46 @@ public class VoiceEngine: RCTEventEmitter {
     do {
       try ensureEngineStarted()
 
-      // ElevenLabs TTS comes back as MP3 bytes in base64. AVAudioPlayerNode
-      // can only schedule AVAudioPCMBuffer, so we need to decode the MP3
-      // into a PCM buffer. The simplest cross-format path is to write the
-      // bytes to a temp file and read them back via AVAudioFile, which
-      // handles MP3 / AAC / WAV decoding transparently.
+      // Backend returns raw PCM 16 kHz mono int16 (ElevenLabs
+      // output_format=pcm_16000). We do NOT decode MP3 or hit AVAudioFile
+      // any more — those paths forced a format mismatch with the
+      // VoiceProcessingIO audio unit and crashed the engine.
       guard let data = Data(base64Encoded: base64) else {
         reject("E_BASE64", "Invalid base64 input", nil)
         return
       }
 
-      let tempURL = FileManager.default.temporaryDirectory
-        .appendingPathComponent("fitai-voice-\(UUID().uuidString).mp3")
-      try data.write(to: tempURL)
-
-      let audioFile = try AVAudioFile(forReading: tempURL)
-      let frameCount = AVAudioFrameCount(audioFile.length)
+      let format = ttsFormat()
+      let frameCount = AVAudioFrameCount(data.count / 2) // int16 = 2 bytes/frame
+      guard frameCount > 0 else {
+        reject("E_EMPTY", "PCM payload has zero frames", nil)
+        return
+      }
       guard let buffer = AVAudioPCMBuffer(
-        pcmFormat: audioFile.processingFormat,
+        pcmFormat: format,
         frameCapacity: frameCount
       ) else {
-        try? FileManager.default.removeItem(at: tempURL)
         reject("E_BUFFER", "Failed to allocate AVAudioPCMBuffer", nil)
         return
       }
-      try audioFile.read(into: buffer)
+      buffer.frameLength = frameCount
+      data.withUnsafeBytes { (rawPtr: UnsafeRawBufferPointer) in
+        if let src = rawPtr.baseAddress,
+           let dst = buffer.int16ChannelData?[0] {
+          memcpy(dst, src, data.count)
+        }
+      }
 
-      // Stop any previous buffer before scheduling a new one — mirrors the
-      // voice-coach.ts queue discipline where only one phrase plays at a time.
+      // Single-phrase semantics: stop any previous buffer, then restart.
+      // voice-coach.ts queue discipline means only one phrase is live at
+      // a time, so resetting the player node here is safe.
       playerNode.stop()
       playerNode.play()
 
-      // Schedule buffer with completion callback. The callback fires whether
-      // playback completes naturally OR is interrupted by stop() — we treat
-      // both as "playback finished" from the JS layer's perspective.
+      // Completion callback fires whether playback completes naturally OR
+      // is interrupted by stop() — both funnel to the JS `playbackFinished`
+      // listener via the same event.
       playerNode.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
-        try? FileManager.default.removeItem(at: tempURL)
         DispatchQueue.main.async {
           self?.sendEvent(withName: "playbackFinished", body: nil)
         }
