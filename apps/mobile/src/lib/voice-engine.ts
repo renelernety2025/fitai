@@ -147,3 +147,15 @@ export function onRecognitionError(
   const sub = emitter?.addListener('recognitionError', cb);
   return () => sub?.remove();
 }
+
+/**
+ * Debug event from native VoiceEngine — emitted during ensureEngineStarted()
+ * and play() with format info, frame counts, converter status. Shows in
+ * Metro log so we can diagnose playback issues without Xcode.
+ */
+export function onEngineDebug(
+  cb: (info: Record<string, unknown>) => void,
+): () => void {
+  const sub = emitter?.addListener('engineDebug', cb);
+  return () => sub?.remove();
+}

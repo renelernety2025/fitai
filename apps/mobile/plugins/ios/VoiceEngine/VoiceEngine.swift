@@ -51,6 +51,7 @@ public class VoiceEngine: RCTEventEmitter {
       "recognitionResult",
       "recognitionEnd",
       "recognitionError",
+      "engineDebug",
     ]
   }
 
@@ -113,7 +114,18 @@ public class VoiceEngine: RCTEventEmitter {
     playbackFormat = playerNode.outputFormat(forBus: 0)
     isEngineStarted = true
 
-    NSLog("[VoiceEngine] Engine started — playback format: \(playbackFormat.sampleRate) Hz, \(playbackFormat.channelCount) ch, \(playbackFormat.commonFormat.rawValue)")
+    let debugInfo: [String: Any] = [
+      "event": "engineStarted",
+      "sampleRate": playbackFormat.sampleRate,
+      "channels": playbackFormat.channelCount,
+      "formatType": playbackFormat.commonFormat.rawValue,
+      "mixerOutputRate": engine.mainMixerNode.outputFormat(forBus: 0).sampleRate,
+      "outputNodeRate": engine.outputNode.inputFormat(forBus: 0).sampleRate,
+    ]
+    DispatchQueue.main.async { [weak self] in
+      self?.sendEvent(withName: "engineDebug", body: debugInfo)
+    }
+    NSLog("[VoiceEngine] Engine started — playback format: \(playbackFormat.sampleRate) Hz, \(playbackFormat.channelCount) ch, format=\(playbackFormat.commonFormat.rawValue)")
   }
 
   // MARK: - Playback
@@ -201,7 +213,22 @@ public class VoiceEngine: RCTEventEmitter {
         return
       }
 
-      // 3. Schedule the correctly-formatted buffer
+      // 3. Emit debug info so JS Metro log shows what happened
+      let playDebug: [String: Any] = [
+        "event": "play",
+        "srcFrames": srcFrameCount,
+        "srcRate": srcFormat.sampleRate,
+        "dstFrames": dstBuffer.frameLength,
+        "dstRate": playbackFormat.sampleRate,
+        "ratio": ratio,
+        "convertError": convError?.localizedDescription ?? "none",
+        "playerIsPlaying": playerNode.isPlaying,
+      ]
+      DispatchQueue.main.async { [weak self] in
+        self?.sendEvent(withName: "engineDebug", body: playDebug)
+      }
+
+      // 4. Schedule the correctly-formatted buffer
       playerNode.stop()
       playerNode.play()
       playerNode.scheduleBuffer(dstBuffer, at: nil, options: []) { [weak self] in

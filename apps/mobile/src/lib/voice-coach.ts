@@ -32,8 +32,16 @@ import {
   playChunk as enginePlayChunk,
   finalizeStream as engineFinalizeStream,
   onPlaybackFinished,
+  onEngineDebug,
   isAvailable as isVoiceEngineAvailable,
 } from './voice-engine';
+
+// Subscribe to native debug events — shows format info in Metro log
+// so we can diagnose silent playback without Xcode. Remove after
+// VoiceEngine is proven stable.
+onEngineDebug((info) => {
+  console.log('[VoiceEngine:debug]', JSON.stringify(info));
+});
 
 // ─── Module state ───────────────────────────────────────────────────────────
 const cache = new Map<string, string>();
@@ -79,7 +87,7 @@ async function playNext(): Promise<void> {
 
 async function playOnePhrase(text: string): Promise<void> {
   speaking = true;
-  console.log('[VoiceCoach] Playing:', text.substring(0, 40));
+  console.log('[VoiceCoach] Playing:', text.substring(0, 40), '(build:debug-v2)');
 
   try {
     const base64 = await fetchOrCacheAudio(text);
