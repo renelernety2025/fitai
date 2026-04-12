@@ -102,15 +102,21 @@ public class VoiceEngine: RCTEventEmitter {
 
   // MARK: - Playback
 
-  /// Shared PCM format for all TTS audio: int16 mono 16 kHz, matching the
-  /// hardware format that VoiceProcessingIO forces onto the engine graph.
-  /// Using a mismatched format (e.g. 44.1 kHz stereo from an MP3 decode)
-  /// causes AVAudioEngine to hard-assert inside CoreAudio, which is NOT
-  /// catchable in Swift — the app crashes. The fix is to never let a
-  /// mismatched buffer touch the player node in the first place.
+  /// Shared PCM format for TTS playback buffers: **float32** mono 16 kHz.
+  ///
+  /// Why float32 and not int16 (the wire format from ElevenLabs)?
+  /// AVAudioMixerNode silently ignores int16 buffers — it expects float
+  /// data on its input buses. Scheduling int16 buffers causes no crash
+  /// and no error, just silence. The play() method converts the raw int16
+  /// bytes from the wire to float32 samples before scheduling, so the
+  /// mixer always receives data it can actually mix.
+  ///
+  /// 16 kHz sample rate matches the VoiceProcessingIO hardware format
+  /// that ensureEngineStarted() pins the graph to, so no sample-rate
+  /// conversion is needed at the mixer boundary.
   private func ttsFormat() -> AVAudioFormat {
     return AVAudioFormat(
-      commonFormat: .pcmFormatInt16,
+      commonFormat: .pcmFormatFloat32,
       sampleRate: 16000,
       channels: 1,
       interleaved: true
@@ -135,8 +141,8 @@ public class VoiceEngine: RCTEventEmitter {
         return
       }
 
-      let format = ttsFormat()
-      let frameCount = AVAudioFrameCount(data.count / 2) // int16 = 2 bytes/frame
+      let format = ttsFormat() // float32 mono 16 kHz
+      let frameCount = AVAudioFrameCount(data.count / 2) // wire = int16 = 2 bytes/frame
       guard frameCount > 0 else {
         reject("E_EMPTY", "PCM payload has zero frames", nil)
         return
@@ -149,10 +155,14 @@ public class VoiceEngine: RCTEventEmitter {
         return
       }
       buffer.frameLength = frameCount
+
+      // Convert int16 (wire format from ElevenLabs pcm_16000) → float32
+      // (mixer-compatible format). Each int16 sample maps to [-1.0, 1.0].
       data.withUnsafeBytes { (rawPtr: UnsafeRawBufferPointer) in
-        if let src = rawPtr.baseAddress,
-           let dst = buffer.int16ChannelData?[0] {
-          memcpy(dst, src, data.count)
+        let src = rawPtr.bindMemory(to: Int16.self)
+        guard let dst = buffer.floatChannelData?[0] else { return }
+        for i in 0..<Int(frameCount) {
+          dst[i] = Float(src[i]) / 32768.0
         }
       }
 
