@@ -65,6 +65,16 @@ const POST_CANCEL_SETTLE_MS = 350;
 // another start and the loop hammered the mic until the user toggled off.
 const MAX_CONSECUTIVE_ERRORS = 3;
 
+// Fast VAD endpointing (Phase E-4): treat the transcript as final once
+// it has stopped changing for this many ms, even if SFSpeech hasn't
+// emitted its own isFinal yet. SFSpeech's internal silence detection
+// typically waits 1-2 s, which adds ~1 s of dead air to every Q&A
+// round-trip. 500 ms is aggressive enough to save most of that without
+// cutting off slow talkers — the dispatcher guards on MIN_SPEECH_CHARS
+// so transient interim results below that threshold can't trip it.
+// Raise to 700-800 ms if observation shows slow speakers getting cut.
+const SILENCE_FAST_MS = 500;
+
 export type VoiceInputState =
   | 'idle'          // nothing is happening
   | 'listening'     // mic is open, waiting for user speech
@@ -75,6 +85,14 @@ interface SessionState {
   lastTranscript: string;
   answered: boolean;
   autopaused: boolean;
+  /**
+   * Fast VAD timer (Phase E-4). Scheduled on every interim result; if it
+   * fires before the next result arrives, the transcript hasn't changed
+   * for SILENCE_FAST_MS and we dispatch to the coach ahead of SFSpeech's
+   * native isFinal. Cleared on every new result, on explicit send, and
+   * during cleanup.
+   */
+  fastEndTimer: ReturnType<typeof setTimeout> | null;
 }
 
 /** Type for the handler returned by registerListeners — unsubscribes all. */
@@ -168,11 +186,15 @@ export function useVoiceInput(
   };
 
   // Factory for the "finalize this question and ship it to Claude" closure.
-  // Shared between the result listener (on isFinal) and the end listener
-  // (fallback for when the engine doesn't fire isFinal).
+  // Shared between the result listener (on isFinal), the fast VAD timer,
+  // and the end listener (fallback for when the engine doesn't fire isFinal).
   const makeSendToCoach = (session: SessionState) => (text: string) => {
     if (session.answered || text.length <= MIN_SPEECH_CHARS) return;
     session.answered = true;
+    if (session.fastEndTimer) {
+      clearTimeout(session.fastEndTimer);
+      session.fastEndTimer = null;
+    }
     console.log('[VoiceInput] Sending to coach:', text);
     setState('answering');
     cleanup();
@@ -217,6 +239,25 @@ export function useVoiceInput(
       console.log('[VoiceInput] Auto-paused coach on user speech');
     }
 
+    // Fast VAD endpointing (Phase E-4): reset the timer on every result.
+    // If the transcript stops changing for SILENCE_FAST_MS, treat it as
+    // final ahead of SFSpeech's ~1-2 s internal isFinal — saves ~1 s on
+    // every Q&A round-trip. Guarded by MIN_SPEECH_CHARS so transient
+    // short interim results (like "uh") don't dispatch prematurely.
+    if (session.fastEndTimer) {
+      clearTimeout(session.fastEndTimer);
+      session.fastEndTimer = null;
+    }
+    if (!session.answered && text.length > MIN_SPEECH_CHARS) {
+      session.fastEndTimer = setTimeout(() => {
+        session.fastEndTimer = null;
+        if (!session.answered) {
+          console.log('[VoiceInput] Fast VAD endpoint fired', text);
+          sendToCoach(text);
+        }
+      }, SILENCE_FAST_MS);
+    }
+
     if (result.isFinal) sendToCoach(text);
   };
 
@@ -225,6 +266,12 @@ export function useVoiceInput(
     sendToCoach: (text: string) => void,
   ) => () => {
     console.log('[VoiceInput] Ended, lastTranscript:', session.lastTranscript);
+    // Cancel any pending fast VAD timer — the end handler is authoritative
+    // from here on, whether via echo gate, fallback dispatch, or re-arm.
+    if (session.fastEndTimer) {
+      clearTimeout(session.fastEndTimer);
+      session.fastEndTimer = null;
+    }
 
     // Defensive echo gate (same reasoning as result handler).
     if (isSpeakingOrJustStopped()) {
@@ -309,6 +356,7 @@ export function useVoiceInput(
         lastTranscript: '',
         answered: false,
         autopaused: false,
+        fastEndTimer: null,
       };
       const sendToCoach = makeSendToCoach(session);
 
