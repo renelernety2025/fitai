@@ -242,10 +242,11 @@ export class CoachingService {
       const Anthropic = require('@anthropic-ai/sdk').default;
       const client = new Anthropic({ apiKey });
 
-      // `messages.stream()` returns a MessageStream with a .textStream
-      // async iterator that yields each incremental text chunk as a
-      // plain string — cleaner than iterating raw SDK events and picking
-      // out content_block_delta frames.
+      // `messages.stream()` returns a MessageStream that implements
+      // AsyncIterable<MessageStreamEvent>. SDK v0.82 does NOT expose a
+      // `.textStream` convenience iterator (older docs mention it, some
+      // newer versions have it back; we're in the gap). Iterate raw
+      // events and unwrap text deltas from content_block_delta frames.
       const stream = client.messages.stream({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 150,
@@ -274,12 +275,23 @@ export class CoachingService {
         }
       };
 
-      for await (const chunk of stream.textStream) {
-        if (!chunk || chunk.length === 0) continue;
+      for await (const event of stream) {
+        // We only care about text deltas on the content_block_delta event.
+        // Other events (message_start, content_block_start, message_stop,
+        // etc.) are informational and can be ignored for our streaming
+        // pipeline — buffer-and-flush logic reacts purely to text.
+        if (
+          event.type !== 'content_block_delta' ||
+          event.delta?.type !== 'text_delta'
+        ) {
+          continue;
+        }
+        const chunk: string = event.delta.text || '';
+        if (chunk.length === 0) continue;
         emit({ type: 'text_delta', delta: chunk });
         buffer += chunk;
 
-        // A single chunk may contain multiple sentence boundaries —
+        // A single delta may contain multiple sentence boundaries —
         // drain them all before resuming the Claude iterator.
         let match = buffer.match(sentenceBoundary);
         while (match) {
