@@ -25,10 +25,12 @@
  *   isSpeaking / isSpeakingOrJustStopped
  */
 
-import { synthesizeVoice } from './api';
+import { synthesizeVoice, askCoachStream } from './api';
 import {
   play as enginePlay,
   stopPlayback as engineStopPlayback,
+  playChunk as enginePlayChunk,
+  finalizeStream as engineFinalizeStream,
   onPlaybackFinished,
   isAvailable as isVoiceEngineAvailable,
 } from './voice-engine';
@@ -244,4 +246,96 @@ export function resumeCoach(): void {
 export function stopVoice(): void {
   queue.length = 0;
   cancelCurrent();
+}
+
+/**
+ * Phase E-3 streaming variant (DORMANT until Okno B).
+ *
+ * Instead of fetching a full TTS blob and playing it once the network
+ * round-trip completes, this opens a POST SSE stream to
+ * /coaching/ask-stream and schedules each audio chunk as it arrives.
+ * Target: first coach word heard within 1.5 s of user stopping speech.
+ *
+ * Why dormant: voice-input.ts still routes sendToCoach through the
+ * legacy `askCoach → synthesizeVoice → enginePlay` chain. This function
+ * is imported but never invoked — the wiring only flips in Okno B once
+ * the E-3 Swift half (VoiceEngine.playChunk + finalizeStream) is in a
+ * new EAS build that's been installed on device. Calling streamSpeak()
+ * against the current binary would throw in enginePlayChunk because
+ * the native method doesn't exist yet; the catch falls back to
+ * legacy `speak(fallbackText)` so the user hears something coherent.
+ *
+ * Semantics vs. speak():
+ * - No queue. A streamSpeak() call is exclusive — if another phrase is
+ *   speaking, we bail out early to avoid cross-talk.
+ * - Respects `paused` flag: if MIC is active, we skip.
+ * - Grace window + echo gate in voice-input.ts keep working because we
+ *   flip `speaking` true for the duration and update lastSpeakingEndedAt
+ *   in the finally block.
+ */
+export async function streamSpeak(
+  question: string,
+  context: {
+    exerciseName?: string;
+    formScore?: number;
+    completedReps?: number;
+    fallbackText?: string;
+  } = {},
+): Promise<void> {
+  if (paused) return;
+  if (speaking) {
+    console.warn('[VoiceCoach] streamSpeak: already speaking, skipping');
+    return;
+  }
+  if (!isVoiceEngineAvailable()) {
+    console.warn('[VoiceCoach] streamSpeak: VoiceEngine unavailable');
+    return;
+  }
+
+  speaking = true;
+  lastSpokenText = ''; // don't dedup streaming answers
+  console.log('[VoiceCoach] streamSpeak start:', question.substring(0, 40));
+
+  try {
+    await askCoachStream(
+      question,
+      {
+        exerciseName: context.exerciseName,
+        formScore: context.formScore,
+        completedReps: context.completedReps,
+      },
+      {
+        onTextDelta: (_delta) => {
+          // Future: live subtitle overlay. For now we ignore text deltas
+          // and rely purely on audio playback — keeps UI unchanged.
+        },
+        onAudioChunk: async (base64) => {
+          if (paused) return;
+          await enginePlayChunk(base64); // throws on old binary → outer catch
+        },
+        onDone: async () => {
+          try {
+            await engineFinalizeStream();
+          } catch (err: any) {
+            console.warn('[VoiceCoach] finalizeStream failed:', err?.message);
+          }
+        },
+        onError: (err) => {
+          console.warn('[VoiceCoach] streamSpeak error event:', err);
+        },
+      },
+    );
+  } catch (err: any) {
+    console.warn('[VoiceCoach] streamSpeak fallback:', err?.message);
+    // Fallback to legacy speak() with a canned phrase so the user hears
+    // SOMETHING rather than dead silence. Phase E-3 Swift will eliminate
+    // this path for the normal flow.
+    const fallback = context.fallbackText ?? 'Pokračuj v cvičení.';
+    speaking = false; // let speak() take over the speaking flag
+    speak(fallback);
+    return;
+  } finally {
+    speaking = false;
+    lastSpeakingEndedAt = Date.now();
+  }
 }

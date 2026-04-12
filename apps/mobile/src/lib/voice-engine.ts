@@ -62,6 +62,44 @@ export function stopPlayback(): void {
 }
 
 /**
+ * Phase E-3: chunked streaming playback. Schedules one PCM chunk
+ * (raw int16 mono 16 kHz bytes, base64 encoded) into the running
+ * player node's buffer queue WITHOUT calling stop() first — multiple
+ * playChunk() calls chain seamlessly because AVAudioPlayerNode queues
+ * scheduled buffers internally.
+ *
+ * Dormant until the E-3 Swift half (VoiceEngine.swift::playChunk) is
+ * shipped in the next EAS build. Calling this against an older binary
+ * (that only has `play`) will throw at the native bridge layer because
+ * the method doesn't exist. streamSpeak() in voice-coach.ts catches
+ * that and falls back to the legacy speak() path.
+ */
+export async function playChunk(audioBase64: string): Promise<void> {
+  if (!Native) throw new Error('VoiceEngine native module not loaded');
+  if (typeof Native.playChunk !== 'function') {
+    throw new Error('VoiceEngine.playChunk unavailable — old binary');
+  }
+  return Native.playChunk(audioBase64);
+}
+
+/**
+ * Phase E-3: signal end-of-stream. Schedules a sentinel 1-frame empty
+ * buffer; its completion handler fires `playbackFinished` only after
+ * all real PCM chunks scheduled before it have drained. This is how
+ * voice-coach's awaitPlaybackEnd() knows the streaming response is
+ * fully played, vs. the single-buffer completion of plain play().
+ *
+ * Same dormant/old-binary caveat as playChunk above.
+ */
+export async function finalizeStream(): Promise<void> {
+  if (!Native) throw new Error('VoiceEngine native module not loaded');
+  if (typeof Native.finalizeStream !== 'function') {
+    throw new Error('VoiceEngine.finalizeStream unavailable — old binary');
+  }
+  return Native.finalizeStream();
+}
+
+/**
  * Start speech recognition. Requests microphone + speech recognition
  * permissions on first call. Resolves once the session is successfully
  * armed; subsequent results arrive via `onRecognitionResult()`.

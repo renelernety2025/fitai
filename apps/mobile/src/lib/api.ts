@@ -172,6 +172,100 @@ export function synthesizeVoice(text: string) {
   );
 }
 
+/**
+ * Phase E-3: streaming voice Q&A. Opens a POST SSE connection to
+ * /api/coaching/ask-stream and invokes handlers as each event arrives.
+ *
+ * Protocol (see apps/api/src/coaching/coaching.service.ts::StreamEvent):
+ *   text_delta  → incremental Claude text (for live subtitle / debug)
+ *   text_done   → Claude stream finished, no more text_delta after this
+ *   audio_chunk → one PCM 16 kHz int16 mono chunk, base64 encoded
+ *   audio_done  → all audio chunks sent, playback will drain naturally
+ *   error       → server-side failure; fallback to legacy path
+ *
+ * Returns a promise that resolves on audio_done / error and rejects
+ * on network failures. Uses react-native-sse (pure JS wrapper over
+ * XHR), no native linking required.
+ */
+export interface StreamCoachHandlers {
+  onTextDelta?: (delta: string) => void;
+  onAudioChunk?: (base64: string) => void;
+  onDone?: () => void;
+  onError?: (err: unknown) => void;
+}
+
+export async function askCoachStream(
+  question: string,
+  context: { exerciseName?: string; formScore?: number; completedReps?: number },
+  handlers: StreamCoachHandlers,
+): Promise<void> {
+  // Lazy-import so nothing tries to resolve the package on app startup
+  // when this path is dormant (Phase E-3 TS skeleton).
+  const { default: EventSource } = await import('react-native-sse');
+
+  const token = await getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  return new Promise<void>((resolve, reject) => {
+    const es = new EventSource(`${API_URL}/coaching/ask-stream`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        question,
+        exerciseName: context.exerciseName,
+        formScore: context.formScore,
+        completedReps: context.completedReps,
+        audioFormat: 'pcm',
+      }),
+    });
+
+    const close = () => {
+      try { es.close(); } catch { /* ignore */ }
+    };
+
+    es.addEventListener('message', (e: any) => {
+      if (!e?.data) return;
+      let event: any;
+      try {
+        event = JSON.parse(e.data);
+      } catch {
+        return; // drop malformed frames
+      }
+      switch (event.type) {
+        case 'text_delta':
+          handlers.onTextDelta?.(event.delta);
+          break;
+        case 'text_done':
+          // No-op; we resolve on audio_done to match playback lifecycle.
+          break;
+        case 'audio_chunk':
+          handlers.onAudioChunk?.(event.base64);
+          break;
+        case 'audio_done':
+          handlers.onDone?.();
+          close();
+          resolve();
+          break;
+        case 'error':
+          handlers.onError?.(new Error(event.message || 'stream error'));
+          close();
+          reject(new Error(event.message || 'stream error'));
+          break;
+      }
+    });
+
+    es.addEventListener('error', (e: any) => {
+      handlers.onError?.(e);
+      close();
+      reject(e);
+    });
+  });
+}
+
 // ── Habits (Section G) ──
 export function getHabitsToday() { return request<any>('/habits/today'); }
 export function updateHabitsToday(body: any) {
