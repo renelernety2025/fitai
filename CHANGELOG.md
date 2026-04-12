@@ -4,6 +4,38 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Voice Coaching v2 — Phase A v2 VoiceEngine + user-ID throttler] 2026-04-12 pozdě večer
+### Shipped
+**Voice Coaching v2 + Phase A v2 final state.** Two-phase rollout dotažen, hardware AEC live na zařízení, backend rate limity teď per-user.
+
+**Commits v této iteraci (chronologicky):**
+- `3a54dab` — `feat(api): user-ID based throttler tracker` — Task #10: nová `UserIdThrottlerGuard` subclass co override-ne `getTracker()` na `req.user?.id ?? req.ip`. Registrovaná jako `APP_GUARD` v `app.module.ts`, automaticky ovlivní všechny `@Throttle()` dekorátory napříč projektem (auth, coaching, nutrition, ai-insights, progress-photos). Fixuje NAT sharing bug: dva členové rodiny na stejné WiFi už nesdílí budget na drahé AI endpointy. Fallback na `req.ip` pro unauthenticated endpointy (login/register) pro brute-force ochranu. Deploy: automaticky přes GitHub Actions → CodeBuild → ECS, verified smoke testem (`/coaching/ask` 201 s oběma test tokeny).
+- `3a92c11` — `feat(mobile): VoiceEngine native module — hardware AEC via AVAudioEngine` — Task #6: nový Swift native modul (`VoiceEngine.swift` + `VoiceEngineBridge.m` + `VoiceEngine.podspec`) co sjednotí TTS playback a mic input přes jeden `AVAudioEngine` s `inputNode.setVoiceProcessingEnabled(true)` → iOS hardware echo cancellation (`kAudioUnitSubType_VoiceProcessingIO`). Plus config plugin `with-voice-engine.js` (pattern mirror s `with-mlkit-pose`), JS wrapper `voice-engine.ts`, deleted `with-audio-session.js` (superseded). Initial commit měl **flag-day migraci** voice-coach.ts + voice-input.ts na VoiceEngine.
+- `4d096d9` — `fix(mobile): revert voice-coach/voice-input to v6/v2` — Flag-day rollout spadl uživatelovu dev buildu (starý nativní binár neměl VoiceEngine, Metro hot-reloadoval nový JS s `NativeModules.VoiceEngine` → undefined → crash při startu workoutu). Revert na ed2ac4c verze (expo-audio + expo-speech-recognition). **Ponecháno** v repu: VoiceEngine native files, config plugin, JS wrapper, app.json plugin array — připravené na příští EAS build. Změna rollout strategie z flag-day na **two-phase**.
+- `40c9cfe` — `fix(mobile): voice-input continuous mode — single rearm timer + error circuit breaker` — Po revertu uživatel testoval continuous mode a objevily se dva pre-existing bugy: (1) **stacking** `setTimeout(() => internalStart())` v 'end' a 'error' listenerech vedlo k 3-8 souběžným recognition sessionům; (2) **error 209 infinite loop** — SFSpeechRecognizer ve broken state → error → rearm → error → rearm → donekonečna. Fix: nový `scheduleReArm()` helper který cancel-ne předchozí timer před scheduleováním nového + `consecutiveErrorsRef` circuit breaker (max 3 consecutive errors → `setState('idle')`, user musí tapnout MIC znovu). Plus exponential backoff mezi error rearmy.
+- `b2a8bba` — `feat(mobile): Phase 2 flip — voice-coach/voice-input use VoiceEngine native module` — Po úspěšném EAS buildu (uživatel potvrdil `nainstalovaný`) flip na VoiceEngine. `voice-coach.ts` čistý restore z `3a92c11` (v8 s `enginePlay` + `onPlaybackFinished`). `voice-input.ts` MERGE v4 z `3a92c11` s rearm/circuit-breaker z `40c9cfe` — oba patterny koexistují, protože stacking bug existuje bez ohledu na underlying recognizer. Metro hot-reloadovatelné, žádný další EAS build nepotřebný.
+
+### Zachováno beze změn z předchozích iterací
+- AskCoachDto prompt injection ochrana
+- Phase D personalized coaching (age/injuries/goal/skillTier)
+- Voice Coaching v2 grace window (`isSpeakingOrJustStopped`, 1200ms) — kept as defensive backstop
+- POST_CANCEL_SETTLE_MS (350ms) — kept as defensive backstop
+- Coaching engine, handler factories, SessionState pattern, push-to-talk UX
+
+### Known limitace po shipnutí
+- **Grace window je teď nadbytečný** — hardware AEC fyzicky filtruje coachův hlas z mic signálu, takže `isSpeakingOrJustStopped()` už nic nechytá, jen stojí v cestě legitimním user speech. Follow-up: zkrátit na ~200-300ms po 1 týdnu stabilního provozu.
+- **`POST_CANCEL_SETTLE_MS = 350ms` je nadbytečný** ze stejného důvodu. Follow-up: zkrátit na ~50ms.
+- **`expo-audio` a `expo-speech-recognition` zůstávají v `package.json`** jako emergency rollback. Follow-up: uninstall po pár dnech stability.
+- **Android support** — VoiceEngine je iOS-only. Android má jiný audio stack (`AcousticEchoCanceler`), samostatný project.
+
+### Verification
+- **Backend**: Task #10 deploy ✓ completed success na produkci, curl smoke test oba tokeny 201
+- **Native build**: `expo prebuild --clean` ✓ + `pod install` ✓ 113 podů + `xcodebuild` ✓ exit 0, VoiceEngine PCM/umbrella.h/`.o` artifacts v DerivedData
+- **TypeScript**: `npx tsc --noEmit` na mobile + api clean
+- **Device**: EAS build installed, voice coaching funkční, push-to-talk clean, continuous mode chráněný circuit breakerem, hardware AEC pending uživatelský device test po posledním reloadu
+
+---
+
 ## [Voice Coaching v2 — code review follow-ups] 2026-04-12
 ### Fixed
 Kompletní sada fixes z independent code review session — všechny 3 critical items a 8 quality items. 4 logické commity, žádná změna public API, žádný nový EAS build potřebný (backend má `test-production.sh` flow, mobile JS jde přes Metro hot reload, plugin jen pro další prebuild).
