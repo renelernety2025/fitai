@@ -27,8 +27,11 @@ export class CoachingController {
   }
 
   @Post('tts')
-  synthesize(@Body('text') text: string) {
-    return this.coachingService.synthesize(text);
+  synthesize(
+    @Body('text') text: string,
+    @Body('audioFormat') audioFormat?: 'mp3' | 'pcm',
+  ) {
+    return this.coachingService.synthesize(text, audioFormat);
   }
 
   @Post('precache')

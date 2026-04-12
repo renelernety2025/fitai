@@ -165,10 +165,14 @@ export function analyzeFoodPhoto(s3Key: string) {
 }
 
 // ── Coaching (Voice) ──
+// audioFormat:'pcm' → backend returns raw PCM 16 kHz int16 mono matching
+// VoiceEngine's hardware format. Without this, backend defaults to MP3
+// which VoiceEngine.swift can't decode (crashes on AVAudioEngine format
+// mismatch). Web clients that don't send this field still get MP3.
 export function synthesizeVoice(text: string) {
   return request<{ text: string; audioBase64: string | null; fallbackToWebSpeech: boolean }>(
     '/coaching/tts',
-    { method: 'POST', body: JSON.stringify({ text }) },
+    { method: 'POST', body: JSON.stringify({ text, audioFormat: 'pcm' }) },
   );
 }
 

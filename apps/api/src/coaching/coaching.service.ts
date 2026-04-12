@@ -122,8 +122,9 @@ export class CoachingService {
     return this.elevenLabs.precacheCommonPhrases();
   }
 
-  async synthesize(text: string) {
-    const audio = await this.elevenLabs.synthesize(text);
+  async synthesize(text: string, audioFormat?: 'mp3' | 'pcm') {
+    const outputFormat = audioFormat === 'pcm' ? 'pcm_16000' : 'mp3_44100_128';
+    const audio = await this.elevenLabs.synthesize(text, { outputFormat });
     return { text, audioBase64: audio?.audioBase64 ?? null, fallbackToWebSpeech: !audio };
   }
 
