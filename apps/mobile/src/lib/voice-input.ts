@@ -323,7 +323,11 @@ export function useVoiceInput(
       console.warn(
         '[VoiceInput] Max consecutive errors reached, stopping auto-rearm — user must tap MIC again',
       );
-      consecutiveErrorsRef.current = 0;
+      // DO NOT reset counter here! The end handler also fires for the same
+      // failed session and checks consecutiveErrorsRef — if we reset to 0,
+      // the end handler bypasses the circuit breaker and schedules a re-arm.
+      // Counter is reset by: (1) successful recognition result, (2) explicit
+      // stopListening call, (3) user tapping MIC again (startListening).
       clearPendingReArm();
       setState('idle');
       return;
@@ -352,6 +356,8 @@ export function useVoiceInput(
       cleanup();
       setTranscript('');
       setState('listening');
+      // Reset circuit breaker on fresh start so user can retry after trip.
+      consecutiveErrorsRef.current = 0;
 
       // Push-to-talk mode eagerly pauses the coach as soon as the mic opens.
       // Continuous mode waits for actual user voice before pausing, so the

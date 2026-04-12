@@ -79,6 +79,13 @@ public class VoiceEngine: RCTEventEmitter {
     )
     try session.setActive(true, options: [])
 
+    // Force speaker output — voiceProcessingEnabled puts iOS in VoIP mode
+    // which routes audio to the earpiece by default. .defaultToSpeaker in
+    // the category options is NOT enough when VoiceProcessingIO is engaged.
+    // overrideOutputAudioPort(.speaker) is the nuclear option that FaceTime
+    // uses when on speaker — forces the loudspeaker regardless of mode.
+    try session.overrideOutputAudioPort(.speaker)
+
     // 2. Enable voice processing on the input node BEFORE start() —
     //    this is what engages the VoiceProcessingIO audio unit (hardware AEC).
     //    Apple's doc explicitly requires this to be set pre-start.
@@ -214,15 +221,31 @@ public class VoiceEngine: RCTEventEmitter {
       }
 
       // 3. Emit debug info so JS Metro log shows what happened
+      //    Include first 4 samples from dst buffer to check if converter
+      //    produced real audio or just zeros (silence diagnostic).
+      var firstSamples = [Float]()
+      if let ch0 = dstBuffer.floatChannelData?[0] {
+        for i in 0..<min(4, Int(dstBuffer.frameLength)) {
+          firstSamples.append(ch0[i])
+        }
+      }
+      let route = AVAudioSession.sharedInstance().currentRoute
+      let outputPort = route.outputs.first?.portName ?? "unknown"
+      let outputType = route.outputs.first?.portType.rawValue ?? "unknown"
+
       let playDebug: [String: Any] = [
         "event": "play",
         "srcFrames": srcFrameCount,
         "srcRate": srcFormat.sampleRate,
         "dstFrames": dstBuffer.frameLength,
         "dstRate": playbackFormat.sampleRate,
+        "dstChannels": playbackFormat.channelCount,
         "ratio": ratio,
         "convertError": convError?.localizedDescription ?? "none",
         "playerIsPlaying": playerNode.isPlaying,
+        "firstSamples": firstSamples.map { String(format: "%.6f", $0) },
+        "outputPort": outputPort,
+        "outputType": outputType,
       ]
       DispatchQueue.main.async { [weak self] in
         self?.sendEvent(withName: "engineDebug", body: playDebug)
