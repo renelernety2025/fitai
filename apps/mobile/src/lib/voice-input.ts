@@ -291,7 +291,16 @@ export function useVoiceInput(
     }
 
     // Continuous mode auto-reloop so mic stays effectively always-on.
+    // Check circuit breaker FIRST — both recognitionError and recognitionEnd
+    // fire for the same failed session. If the error handler already tripped
+    // the breaker, the end handler must NOT schedule a re-arm or the error
+    // loop continues indefinitely (the bug that caused the 209 storm).
     if (continuousRef.current && !userStoppedRef.current && !session.answered) {
+      if (consecutiveErrorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
+        console.log('[VoiceInput] End handler respects circuit breaker — no re-arm');
+        setState('idle');
+        return;
+      }
       console.log('[VoiceInput] Continuous re-arm');
       if (session.autopaused) resumeCoach();
       scheduleReArm(CONTINUOUS_REARM_MS);

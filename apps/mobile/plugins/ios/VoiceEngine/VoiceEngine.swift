@@ -27,6 +27,11 @@ public class VoiceEngine: RCTEventEmitter {
   private let playerNode = AVAudioPlayerNode()
   private var isEngineStarted = false
   private var isTapInstalled = false
+  /// Resolved after engine.start() — the format the mixer actually wants
+  /// on its input bus. On modern iPhones with voiceProcessingEnabled, this
+  /// is typically float32 mono 48 kHz. We convert every TTS buffer to this
+  /// format before scheduling so the mixer never sees a mismatch.
+  private var playbackFormat: AVAudioFormat!
 
   private var speechRecognizer: SFSpeechRecognizer?
   private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -78,45 +83,46 @@ public class VoiceEngine: RCTEventEmitter {
     //    Apple's doc explicitly requires this to be set pre-start.
     try engine.inputNode.setVoiceProcessingEnabled(true)
 
-    // 3. Attach player node and connect it into the graph so its output
-    //    is routed through the mixer → output → speaker. Connect with
-    //    an EXPLICIT int16 mono 16 kHz format so scheduleBuffer() always
-    //    matches the player node's declared output format — nil-format
-    //    connect was the source of the b2a8bba crash because the
-    //    AVAudioFile-decoded buffers came back as 44.1 kHz stereo float32
-    //    while VoiceProcessingIO pinned the engine to 16 kHz mono, and
-    //    AVAudioEngine hard-asserted on the mismatch. Mixer handles the
-    //    downstream conversion to hwFormat automatically.
+    // 3. Attach player node and connect into the graph with nil format.
+    //    nil tells the engine "negotiate the format yourself based on the
+    //    hardware." When voiceProcessingEnabled is true, the engine pins
+    //    the graph to whatever format VoiceProcessingIO dictates (48 kHz
+    //    mono float32 on modern iPhones). We used to force a specific
+    //    format here, but:
+    //    - int16 mono 16 kHz → mixer silently produced silence (mixers
+    //      require float32)
+    //    - float32 mono 16 kHz → silence (sample rate mismatch: engine
+    //      graph is 48 kHz, mixer drops frames)
+    //    nil-format + dynamically queried playbackFormat (step 5) is the
+    //    only robust path: we let the engine decide, then conform our
+    //    buffers to whatever it chose.
     engine.attach(playerNode)
-    engine.connect(playerNode, to: engine.mainMixerNode, format: ttsFormat())
+    engine.connect(playerNode, to: engine.mainMixerNode, format: nil)
 
     // 4. Start the engine. After this point, playerNode can be scheduled
     //    and the input node's tap (installed on first startRecognition)
     //    will receive buffers with echo removed.
     try engine.start()
     playerNode.play()
+
+    // 5. Query the resolved format AFTER start. This is whatever the
+    //    engine negotiated for the playerNode→mixer bus. Every buffer we
+    //    schedule must match this format exactly — the play() method uses
+    //    AVAudioConverter to transcode from ElevenLabs pcm_16000 (int16
+    //    mono 16 kHz) to playbackFormat at runtime.
+    playbackFormat = playerNode.outputFormat(forBus: 0)
     isEngineStarted = true
 
-    NSLog("[VoiceEngine] Engine started with voice processing enabled")
+    NSLog("[VoiceEngine] Engine started — playback format: \(playbackFormat.sampleRate) Hz, \(playbackFormat.channelCount) ch, \(playbackFormat.commonFormat.rawValue)")
   }
 
   // MARK: - Playback
 
-  /// Shared PCM format for TTS playback buffers: **float32** mono 16 kHz.
-  ///
-  /// Why float32 and not int16 (the wire format from ElevenLabs)?
-  /// AVAudioMixerNode silently ignores int16 buffers — it expects float
-  /// data on its input buses. Scheduling int16 buffers causes no crash
-  /// and no error, just silence. The play() method converts the raw int16
-  /// bytes from the wire to float32 samples before scheduling, so the
-  /// mixer always receives data it can actually mix.
-  ///
-  /// 16 kHz sample rate matches the VoiceProcessingIO hardware format
-  /// that ensureEngineStarted() pins the graph to, so no sample-rate
-  /// conversion is needed at the mixer boundary.
-  private func ttsFormat() -> AVAudioFormat {
+  /// The wire format from ElevenLabs pcm_16000: int16 mono 16 kHz.
+  /// Used as the SOURCE format for AVAudioConverter in play().
+  private func wireFormat() -> AVAudioFormat {
     return AVAudioFormat(
-      commonFormat: .pcmFormatFloat32,
+      commonFormat: .pcmFormatInt16,
       sampleRate: 16000,
       channels: 1,
       interleaved: true
@@ -132,50 +138,73 @@ public class VoiceEngine: RCTEventEmitter {
     do {
       try ensureEngineStarted()
 
-      // Backend returns raw PCM 16 kHz mono int16 (ElevenLabs
-      // output_format=pcm_16000). We do NOT decode MP3 or hit AVAudioFile
-      // any more — those paths forced a format mismatch with the
-      // VoiceProcessingIO audio unit and crashed the engine.
       guard let data = Data(base64Encoded: base64) else {
         reject("E_BASE64", "Invalid base64 input", nil)
         return
       }
 
-      let format = ttsFormat() // float32 mono 16 kHz
-      let frameCount = AVAudioFrameCount(data.count / 2) // wire = int16 = 2 bytes/frame
-      guard frameCount > 0 else {
+      // 1. Parse raw PCM int16 mono 16 kHz from the wire
+      let srcFormat = wireFormat()
+      let srcFrameCount = AVAudioFrameCount(data.count / 2)
+      guard srcFrameCount > 0 else {
         reject("E_EMPTY", "PCM payload has zero frames", nil)
         return
       }
-      guard let buffer = AVAudioPCMBuffer(
-        pcmFormat: format,
-        frameCapacity: frameCount
+      guard let srcBuffer = AVAudioPCMBuffer(
+        pcmFormat: srcFormat, frameCapacity: srcFrameCount
       ) else {
-        reject("E_BUFFER", "Failed to allocate AVAudioPCMBuffer", nil)
+        reject("E_BUFFER", "Failed to allocate source buffer", nil)
         return
       }
-      buffer.frameLength = frameCount
-
-      // Convert int16 (wire format from ElevenLabs pcm_16000) → float32
-      // (mixer-compatible format). Each int16 sample maps to [-1.0, 1.0].
+      srcBuffer.frameLength = srcFrameCount
       data.withUnsafeBytes { (rawPtr: UnsafeRawBufferPointer) in
-        let src = rawPtr.bindMemory(to: Int16.self)
-        guard let dst = buffer.floatChannelData?[0] else { return }
-        for i in 0..<Int(frameCount) {
-          dst[i] = Float(src[i]) / 32768.0
+        if let src = rawPtr.baseAddress,
+           let dst = srcBuffer.int16ChannelData?[0] {
+          memcpy(dst, src, data.count)
         }
       }
 
-      // Single-phrase semantics: stop any previous buffer, then restart.
-      // voice-coach.ts queue discipline means only one phrase is live at
-      // a time, so resetting the player node here is safe.
+      // 2. Convert to the engine's resolved playback format (typically
+      //    float32 mono 48 kHz on modern iPhones with voiceProcessingEnabled).
+      //    AVAudioConverter handles both the int16→float32 sample format
+      //    conversion AND the 16→48 kHz sample rate conversion in one pass.
+      guard let converter = AVAudioConverter(
+        from: srcFormat, to: playbackFormat
+      ) else {
+        reject("E_CONVERTER", "AVAudioConverter init failed", nil)
+        return
+      }
+      let ratio = playbackFormat.sampleRate / srcFormat.sampleRate
+      let dstFrameCount = AVAudioFrameCount(
+        ceil(Double(srcFrameCount) * ratio)
+      )
+      guard let dstBuffer = AVAudioPCMBuffer(
+        pcmFormat: playbackFormat, frameCapacity: dstFrameCount
+      ) else {
+        reject("E_BUFFER", "Failed to allocate destination buffer", nil)
+        return
+      }
+
+      var convError: NSError?
+      var inputConsumed = false
+      converter.convert(to: dstBuffer, error: &convError) { _, status in
+        if inputConsumed {
+          status.pointee = .endOfStream
+          return nil
+        }
+        inputConsumed = true
+        status.pointee = .haveData
+        return srcBuffer
+      }
+      if let convError = convError {
+        reject("E_CONVERT", convError.localizedDescription, convError)
+        return
+      }
+
+      // 3. Schedule the correctly-formatted buffer
       playerNode.stop()
       playerNode.play()
-
-      // Completion callback fires whether playback completes naturally OR
-      // is interrupted by stop() — both funnel to the JS `playbackFinished`
-      // listener via the same event.
-      playerNode.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+      playerNode.scheduleBuffer(dstBuffer, at: nil, options: []) { [weak self] in
         DispatchQueue.main.async {
           self?.sendEvent(withName: "playbackFinished", body: nil)
         }
