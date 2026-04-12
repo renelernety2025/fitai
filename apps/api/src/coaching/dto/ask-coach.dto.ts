@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -6,6 +7,16 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+
+/**
+ * Client hint for which audio encoding the coach should return.
+ * - 'mp3' (default): 44.1 kHz MP3 — compatible with expo-audio playback.
+ * - 'pcm': 16 kHz int16 mono raw PCM — required by VoiceEngine native
+ *   module, matches the VoiceProcessingIO hardware format.
+ * Older mobile builds that don't send this field get MP3, which is
+ * what they already know how to play.
+ */
+export type AskAudioFormat = 'mp3' | 'pcm';
 
 /**
  * Voice Q&A input DTO for POST /api/coaching/ask.
@@ -40,4 +51,8 @@ export class AskCoachDto {
   @Min(0)
   @Max(10000)
   completedReps?: number;
+
+  @IsOptional()
+  @IsIn(['mp3', 'pcm'])
+  audioFormat?: AskAudioFormat;
 }

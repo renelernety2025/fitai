@@ -1,11 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+export type ElevenLabsOutputFormat = 'mp3_44100_128' | 'pcm_16000';
+
+export interface SynthesizeOptions {
+  outputFormat?: ElevenLabsOutputFormat;
+}
+
 @Injectable()
 export class ElevenLabsService {
   private readonly logger = new Logger(ElevenLabsService.name);
   private apiKey: string;
   private voiceId: string;
-  private cache = new Map<string, string>(); // text → audioUrl
+  private cache = new Map<string, string>(); // `${outputFormat}:${text}` → audioBase64
 
   constructor() {
     this.apiKey = process.env.ELEVENLABS_API_KEY || '';
@@ -16,23 +22,34 @@ export class ElevenLabsService {
     return !!this.apiKey;
   }
 
-  async synthesize(text: string): Promise<{ audioBase64: string } | null> {
+  async synthesize(
+    text: string,
+    options: SynthesizeOptions = {},
+  ): Promise<{ audioBase64: string } | null> {
     if (!this.apiKey) {
       this.logger.warn('No ELEVENLABS_API_KEY — skipping TTS');
       return null;
     }
 
-    // Check cache
-    const cached = this.cache.get(text);
+    const outputFormat: ElevenLabsOutputFormat = options.outputFormat ?? 'mp3_44100_128';
+    const cacheKey = `${outputFormat}:${text}`;
+
+    // Check cache (keyed by format so MP3 and PCM variants don't collide)
+    const cached = this.cache.get(cacheKey);
     if (cached) return { audioBase64: cached };
 
     try {
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}`, {
+      const url =
+        `https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}` +
+        `?output_format=${outputFormat}`;
+      const accept = outputFormat === 'pcm_16000' ? 'audio/pcm' : 'audio/mpeg';
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'xi-api-key': this.apiKey,
           'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
+          'Accept': accept,
         },
         body: JSON.stringify({
           text,
@@ -56,7 +73,7 @@ export class ElevenLabsService {
 
       // Cache short phrases (under 50 chars)
       if (text.length < 50) {
-        this.cache.set(text, audioBase64);
+        this.cache.set(cacheKey, audioBase64);
         // Limit cache size
         if (this.cache.size > 200) {
           const firstKey = this.cache.keys().next().value;

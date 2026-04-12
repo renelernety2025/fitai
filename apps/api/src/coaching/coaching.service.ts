@@ -131,6 +131,7 @@ export class CoachingService {
     exerciseName?: string,
     formScore?: number,
     completedReps?: number,
+    audioFormat?: 'mp3' | 'pcm',
   ) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -162,7 +163,15 @@ export class CoachingService {
         ? response.content[0].text
         : 'Pokračuj, děláš to dobře.';
 
-      const audio = await this.elevenLabs.synthesize(answer);
+      // Audio format is client-driven: new mobile builds (VoiceEngine)
+      // request 'pcm' to skip MP3 decode + match VoiceProcessingIO hw
+      // format. Older clients (expo-audio) don't send the field and
+      // fall through to MP3 so they stay backwards-compatible.
+      const elevenLabsFormat =
+        audioFormat === 'pcm' ? 'pcm_16000' : 'mp3_44100_128';
+      const audio = await this.elevenLabs.synthesize(answer, {
+        outputFormat: elevenLabsFormat,
+      });
 
       return {
         answer,

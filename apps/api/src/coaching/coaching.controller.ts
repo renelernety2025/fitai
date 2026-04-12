@@ -45,6 +45,7 @@ export class CoachingController {
       dto.exerciseName,
       dto.formScore,
       dto.completedReps,
+      dto.audioFormat,
     );
   }
 }
