@@ -8,6 +8,22 @@ import {
   type UserPromptContext,
 } from '../shared/user-context.builder';
 
+/**
+ * SSE event protocol between the /ask-stream endpoint and the mobile
+ * client. Emitted by `answerQuestionStream` via the `emit` callback
+ * and forwarded to the wire as `data: <json>\n\n`.
+ *
+ * Phase E-1 emits text_delta + text_done. Phase E-2 adds audio_chunk +
+ * audio_done. The client routes events by type so each phase can ship
+ * independently without client/server protocol renegotiation.
+ */
+export type StreamEvent =
+  | { type: 'text_delta'; delta: string }
+  | { type: 'text_done' }
+  | { type: 'audio_chunk'; base64: string }
+  | { type: 'audio_done' }
+  | { type: 'error'; message: string };
+
 interface FeedbackRequest {
   userId: string;
   sessionType: 'video' | 'gym';
@@ -183,6 +199,74 @@ export class CoachingService {
         answer: 'Soustřeď se na cvik a pokračuj.',
         audioBase64: null,
       };
+    }
+  }
+
+  /**
+   * Streaming variant of answerQuestion. Emits Claude text deltas to the
+   * supplied `emit` callback as they arrive, instead of buffering the full
+   * response and returning a single JSON. This is the backbone of Phase E
+   * latency reduction — callers (coaching.controller's /ask-stream handler)
+   * wire `emit` to an Express SSE response so the mobile client sees each
+   * text chunk in real time.
+   *
+   * Phase E-1: emits only `text_delta` and `text_done` events. Phase E-2
+   * will extend the pipeline to also emit `audio_chunk` events by piping
+   * each completed sentence through ElevenLabs streaming TTS.
+   */
+  async answerQuestionStream(
+    userId: string,
+    dto: {
+      question: string;
+      exerciseName?: string;
+      formScore?: number;
+      completedReps?: number;
+    },
+    emit: (event: StreamEvent) => void,
+  ): Promise<void> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      emit({ type: 'text_delta', delta: 'Soustřeď se na formu a pokračuj.' });
+      emit({ type: 'text_done' });
+      return;
+    }
+
+    try {
+      const userCtx = await buildUserPromptContext(this.prisma, userId);
+      const systemPrompt = this.buildAskSystemPrompt(userCtx, {
+        exerciseName: dto.exerciseName,
+        formScore: dto.formScore,
+        completedReps: dto.completedReps,
+      });
+
+      const Anthropic = require('@anthropic-ai/sdk').default;
+      const client = new Anthropic({ apiKey });
+
+      // `messages.stream()` returns a MessageStream with a .textStream
+      // async iterator that yields each incremental text chunk as a
+      // plain string — cleaner than iterating raw SDK events and picking
+      // out content_block_delta frames.
+      const stream = client.messages.stream({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 150,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: dto.question }],
+      });
+
+      for await (const chunk of stream.textStream) {
+        if (chunk && chunk.length > 0) {
+          emit({ type: 'text_delta', delta: chunk });
+        }
+      }
+
+      emit({ type: 'text_done' });
+    } catch (e: any) {
+      this.logger.error(`Voice Q&A stream failed: ${e.message}`);
+      emit({
+        type: 'text_delta',
+        delta: 'Soustřeď se na cvik a pokračuj.',
+      });
+      emit({ type: 'text_done' });
     }
   }
 
