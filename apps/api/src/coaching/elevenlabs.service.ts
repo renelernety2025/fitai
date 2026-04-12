@@ -88,6 +88,67 @@ export class ElevenLabsService {
     }
   }
 
+  /**
+   * Streaming variant of synthesize — yields raw PCM chunks as they arrive
+   * from ElevenLabs instead of buffering the full audio blob. Target: first
+   * audio byte <500ms after the request. Used by the /coaching/ask-stream
+   * pipeline (Phase E-2) to interleave Claude text tokens with audio
+   * chunks on the same SSE output.
+   *
+   * Always PCM 16 kHz mono int16 to match the iOS VoiceProcessingIO hw
+   * format. `optimize_streaming_latency=3` trades a bit of quality for
+   * ~300ms lower first-byte latency per ElevenLabs docs.
+   */
+  async *synthesizeStream(text: string): AsyncGenerator<Buffer> {
+    if (!this.apiKey) {
+      this.logger.warn('No ELEVENLABS_API_KEY — skipping TTS stream');
+      return;
+    }
+    const url =
+      `https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}/stream` +
+      `?optimize_streaming_latency=3&output_format=pcm_16000`;
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': this.apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/pcm',
+      },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        language_code: 'cs',
+        voice_settings: {
+          stability: 0.75,
+          similarity_boost: 0.85,
+          style: 0.2,
+        },
+      }),
+    });
+
+    if (!res.ok || !res.body) {
+      this.logger.error(`ElevenLabs stream error: ${res.status} ${await res.text()}`);
+      return;
+    }
+
+    // Node 18+ fetch body is a web ReadableStream; read it chunk-by-chunk.
+    // Each chunk is a Uint8Array of raw PCM bytes; upstream callers
+    // base64-encode for the SSE wire.
+    const reader = res.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value && value.length > 0) {
+          yield Buffer.from(value);
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
   async precacheCommonPhrases() {
     const phrases = [
       'Výborně!', 'Skvělé!', 'Perfektní!', 'Super forma!',

@@ -253,13 +253,52 @@ export class CoachingService {
         messages: [{ role: 'user', content: dto.question }],
       });
 
+      // Sentence-boundary buffering: accumulate Claude text deltas into
+      // `buffer`, and whenever a sentence terminator appears, flush that
+      // sentence through ElevenLabs streaming TTS and emit audio chunks.
+      // Keeps Claude tokens flowing to the client for live subtitles
+      // while audio for the already-completed sentence is generated —
+      // first-word latency is bound to (Claude TTFT + first sentence
+      // length + ElevenLabs TTFT) ≈ 0.9-1.2 s.
+      let buffer = '';
+      const sentenceBoundary = /^(.*?[.!?])(\s|$)/;
+
+      const flushSentence = async (sentence: string): Promise<void> => {
+        const trimmed = sentence.trim();
+        if (trimmed.length === 0) return;
+        for await (const pcmChunk of this.elevenLabs.synthesizeStream(trimmed)) {
+          emit({
+            type: 'audio_chunk',
+            base64: pcmChunk.toString('base64'),
+          });
+        }
+      };
+
       for await (const chunk of stream.textStream) {
-        if (chunk && chunk.length > 0) {
-          emit({ type: 'text_delta', delta: chunk });
+        if (!chunk || chunk.length === 0) continue;
+        emit({ type: 'text_delta', delta: chunk });
+        buffer += chunk;
+
+        // A single chunk may contain multiple sentence boundaries —
+        // drain them all before resuming the Claude iterator.
+        let match = buffer.match(sentenceBoundary);
+        while (match) {
+          const sentence = match[1];
+          buffer = buffer.slice(match[0].length);
+          await flushSentence(sentence);
+          match = buffer.match(sentenceBoundary);
         }
       }
 
       emit({ type: 'text_done' });
+
+      // Any tail text that Claude emitted without a terminating . ! ? —
+      // still flush it so the user hears the full answer.
+      if (buffer.trim().length > 0) {
+        await flushSentence(buffer);
+      }
+
+      emit({ type: 'audio_done' });
     } catch (e: any) {
       this.logger.error(`Voice Q&A stream failed: ${e.message}`);
       emit({
@@ -267,6 +306,7 @@ export class CoachingService {
         delta: 'Soustřeď se na cvik a pokračuj.',
       });
       emit({ type: 'text_done' });
+      emit({ type: 'audio_done' });
     }
   }
 
