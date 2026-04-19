@@ -18,7 +18,7 @@ FitAI je AI-powered fitness platforma: real-time pose detection, gym workout tra
 ## Struktura
 ```
 fitai/
-├── apps/api/            NestJS backend (28 modulů)
+├── apps/api/            NestJS backend (29 modulů)
 ├── apps/web/            Next.js frontend
 ├── apps/mobile/         React Native + Expo (dev build via EAS)
 ├── packages/shared/     Shared TypeScript types

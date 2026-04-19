@@ -1,6 +1,6 @@
 # FitAI — Architecture
 
-> Aktualizováno: 2026-04-08
+> Aktualizováno: 2026-04-19
 
 > **Scale readiness:** Plán jak připravit platformu na 1M+ DAU je v [`SCALING.md`](./SCALING.md) — 4 vrstvy podle ROI (free quick wins → observability → load test → paid upgrades).
 
@@ -19,7 +19,7 @@ ALB
           ├── /api/* + /health → API (compat)
           └── default          → 301 → https://fitai.bfevents.cz/...
 
-ECS API (28 NestJS modules)
+ECS API (29 NestJS modules)
     ├── PostgreSQL RDS (30+ tables, private subnet)
     ├── Redis ElastiCache (private subnet)
     ├── S3 + CloudFront (videos, choreography, assets)
@@ -214,7 +214,7 @@ grep -rn "@Get\|@Post\|@Put\|@Delete\|@Patch" apps/api/src/**/*.controller.ts
 | **Social & Gamification** | `social`, `achievements` | Follow, feed, challenges, 17 badges |
 | **Infrastructure** | `notifications`, `wearables`, `content`, `onboarding`, `health` | Web push (VAPID), HR sync, URL import, 1RM wizard, ALB health |
 
-**Canonical list** viz `apps/api/src/app.module.ts` (imports array) — 28 modulů + Prisma internal.
+**Canonical list** viz `apps/api/src/app.module.ts` (imports array) — 29 modulů + Prisma internal.
 
 ## Frontend Architecture
 

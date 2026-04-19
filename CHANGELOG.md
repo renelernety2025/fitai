@@ -39,7 +39,7 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ### ROADMAP aktualizován na 2026-04-19
 - Voice coaching + Phase E work zapsán
-- Stats: 28 modulů, 61 testů, 15 ADRs, 60 cviků
+- Stats: 29 modulů, 61 testů, 15 ADRs, 60 cviků
 - Priorities: VoiceEngine debug → App Store → Scale Readiness
 
 ---

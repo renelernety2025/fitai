@@ -57,7 +57,7 @@ function getAudio() {
 **Symptom:** User presses MIC button → speech recognition transcribes the COACH's voice instead of the user's.
 **Root cause:** iPhone speaker output bleeds into the MIC input (no hardware echo cancellation by default).
 **Current workaround:** `pauseCoach()` is called when MIC activates, `resumeCoach()` on MIC close.
-**Real fix (next session):** Configure `AVAudioSession` in voiceChat mode for hardware echo cancellation.
+**Real fix:** VoiceEngine native module with `voiceProcessingEnabled` (attempted 2026-04-12, rolled back due to silent playback bug). Needs Xcode debug session. voiceChat mode was tried and removed (Phase A v1.1). Current stack: expo-audio + pauseCoach/resumeCoach workaround.
 
 Check the workaround is wired up:
 ```bash

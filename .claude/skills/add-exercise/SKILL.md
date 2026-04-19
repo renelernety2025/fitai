@@ -9,7 +9,7 @@ FitAI exercises need structured metadata so pose detection, coaching, and the UI
 
 ## Where exercises live
 
-- **Exercise data seed:** `apps/api/prisma/seed.ts` → `SAMPLE_EXERCISES` array
+- **Exercise data:** `apps/api/prisma/exercises-data.ts` → `exercises` + `bodyweightExercises` + `equipmentMap` arrays (seed.ts imports from here)
 - **Exercise list for UI:** `apps/mobile/src/constants/exercises.ts` → `EXERCISE_LIST`
 - **Coaching phrases per exercise:** `apps/mobile/src/lib/coaching-phrases.ts` (reuse generic pool + add exercise-specific)
 - **Pose validation rules:** `apps/web/src/lib/feedback-engine.ts` → JOINT_MAP + checkpoint logic (LOCKED — do not touch without explicit permission)
@@ -97,7 +97,8 @@ FitAI exercises need structured metadata so pose detection, coaching, and the UI
 
 ## Checklist when adding a new exercise
 
-- [ ] Added to `SAMPLE_EXERCISES` in `apps/api/prisma/seed.ts`
+- [ ] Added to `exercises` or `bodyweightExercises` in `apps/api/prisma/exercises-data.ts`
+- [ ] Added to `equipmentMap` in same file
 - [ ] Added to `EXERCISE_LIST` in `apps/mobile/src/constants/exercises.ts`
 - [ ] All 4 phases defined (start, eccentric, bottom/hold, concentric)
 - [ ] Angle rules cover min/max for each tracked joint

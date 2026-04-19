@@ -16,7 +16,7 @@
 
 ## Hotovo
 
-Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 screens · Backend 28 modulů
+Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 screens · Backend 29 modulů
 
 > Detail: @ROADMAP-archive/2026-04-completed-phases.md
 
@@ -122,7 +122,7 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ## Stats (2026-04-19)
 
-- **28 NestJS modules**
+- **29 NestJS modules**
 - **30+ DB models**
 - **19 web pages** (v2 design)
 - **18 mobile screens** (v2 design)
