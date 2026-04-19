@@ -16,6 +16,11 @@ export class ExercisesController {
     return this.exercisesService.findAll({ muscleGroup, difficulty });
   }
 
+  @Get('micro-workout')
+  getMicroWorkout() {
+    return this.exercisesService.getMicroWorkout();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.exercisesService.findById(id);

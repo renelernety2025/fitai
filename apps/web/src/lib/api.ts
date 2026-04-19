@@ -251,6 +251,16 @@ export function getExercise(id: string) {
   return request<ExerciseData>(`/exercises/${id}`);
 }
 
+export interface MicroWorkoutData {
+  title: string;
+  durationMinutes: number;
+  exercises: (ExerciseData & { targetReps: number; targetSets: number; restSeconds: number })[];
+}
+
+export function getMicroWorkout() {
+  return request<MicroWorkoutData>('/exercises/micro-workout');
+}
+
 // Workout Plans
 export interface WorkoutPlanData {
   id: string;

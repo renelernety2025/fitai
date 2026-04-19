@@ -40,6 +40,23 @@ export class ExercisesService {
     });
   }
 
+  /** Pick 3 random exercises for a 5-minute micro-workout challenge. */
+  async getMicroWorkout() {
+    const all = await this.findAll();
+    const shuffled = [...all].sort(() => Math.random() - 0.5);
+    const picked = shuffled.slice(0, 3);
+    return {
+      title: '5-minutovy challenge',
+      durationMinutes: 5,
+      exercises: picked.map((ex) => ({
+        ...ex,
+        targetReps: 12,
+        targetSets: 2,
+        restSeconds: 30,
+      })),
+    };
+  }
+
   async create(data: any) {
     const created = await this.prisma.exercise.create({ data });
     await this.invalidate();
