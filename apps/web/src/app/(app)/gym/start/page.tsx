@@ -4,12 +4,16 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { getWorkoutPlans, startGymSession, type WorkoutPlanData } from '@/lib/api';
+import CoachPersonalityPicker from '@/components/gym/CoachPersonalityPicker';
+
+type CoachPersonality = 'DRILL' | 'CHILL' | 'MOTIVATIONAL';
 
 function GymStartContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [plans, setPlans] = useState<WorkoutPlanData[]>([]);
   const [starting, setStarting] = useState(false);
+  const [personality, setPersonality] = useState<CoachPersonality>('MOTIVATIONAL');
 
   const planId = searchParams.get('planId');
   const dayIndex = searchParams.get('dayIndex');
@@ -21,7 +25,11 @@ function GymStartContent() {
   async function handleStart(pId: string, dIdx: number) {
     setStarting(true);
     try {
-      const session = await startGymSession({ workoutPlanId: pId, workoutDayIndex: dIdx });
+      const session = await startGymSession({
+        workoutPlanId: pId,
+        workoutDayIndex: dIdx,
+        coachPersonality: personality,
+      });
       router.push(`/gym/${session.id}`);
     } catch (err) {
       console.error(err);
@@ -46,7 +54,13 @@ function GymStartContent() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-8">
       <h1 className="mb-6 text-3xl font-bold text-white">Začít trénink</h1>
-      <p className="mb-8 text-gray-400">Vyber plán a den, nebo vyber jednotlivé cviky.</p>
+
+      <section className="mb-10">
+        <h2 className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">Tvůj trenér</h2>
+        <CoachPersonalityPicker value={personality} onChange={setPersonality} />
+      </section>
+
+      <p className="mb-8 text-gray-400">Vyber plán a den:</p>
       <div className="space-y-4">
         {plans.map((plan) =>
           plan.days.map((day) => (

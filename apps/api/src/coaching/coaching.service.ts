@@ -385,7 +385,7 @@ PRAVIDLA:
     //   1. Shared user context (User + UserProgress + FitnessProfile)
     //   2. Recent safety events (for weak joints inference)
     //   3. Last 5 coaching messages (for dedup in Claude prompt)
-    const [userContext, recentSafety, recentMessages] = await Promise.all([
+    const [userContext, recentSafety, recentMessages, gymSession] = await Promise.all([
       buildUserPromptContext(this.prisma, req.userId),
       this.prisma.safetyEvent.findMany({
         where: { userId: req.userId },
@@ -397,6 +397,12 @@ PRAVIDLA:
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
+      req.sessionType === 'gym'
+        ? this.prisma.gymSession.findUnique({
+            where: { id: req.sessionId },
+            select: { coachPersonality: true },
+          })
+        : null,
     ]);
 
     // Derive weak joints from safety event frequency (3+ events on same joint).
@@ -424,6 +430,7 @@ PRAVIDLA:
 
       // Derived
       weakJoints,
+      coachPersonality: gymSession?.coachPersonality ?? 'MOTIVATIONAL',
 
       // Per-exercise session fields
       currentExercise: req.exerciseName,

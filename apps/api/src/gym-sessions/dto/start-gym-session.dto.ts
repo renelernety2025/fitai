@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsArray, IsEnum } from 'class-validator';
 
 export class StartGymSessionDto {
   @IsOptional()
@@ -8,6 +8,10 @@ export class StartGymSessionDto {
   @IsOptional()
   @IsInt()
   workoutDayIndex?: number;
+
+  @IsOptional()
+  @IsEnum(['DRILL', 'CHILL', 'MOTIVATIONAL'])
+  coachPersonality?: 'DRILL' | 'CHILL' | 'MOTIVATIONAL';
 
   @IsOptional()
   @IsArray()

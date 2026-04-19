@@ -318,6 +318,7 @@ export interface GymSessionData {
 export function startGymSession(data: {
   workoutPlanId?: string;
   workoutDayIndex?: number;
+  coachPersonality?: 'DRILL' | 'CHILL' | 'MOTIVATIONAL';
   adHocExercises?: { exerciseId: string; targetSets: number; targetReps: number; targetWeight?: number }[];
 }) {
   return request<GymSessionData>('/gym-sessions/start', {

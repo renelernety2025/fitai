@@ -18,6 +18,7 @@ export class GymSessionsService {
         userId,
         workoutPlanId: dto.workoutPlanId,
         workoutDayIndex: dto.workoutDayIndex,
+        coachPersonality: dto.coachPersonality ?? 'MOTIVATIONAL',
       },
     });
 

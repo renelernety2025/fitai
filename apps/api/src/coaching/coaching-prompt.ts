@@ -1,5 +1,7 @@
 import type { FitnessGoal, SkillTier } from '../shared/user-context.builder';
 
+export type CoachPersonalityType = 'DRILL' | 'CHILL' | 'MOTIVATIONAL';
+
 export interface CoachingContext {
   // Per-user (from shared user-context builder)
   userName: string;
@@ -16,6 +18,9 @@ export interface CoachingContext {
 
   // Derived from recent safety events
   weakJoints: string[];
+
+  // Coach personality for this session
+  coachPersonality: CoachPersonalityType;
 
   // Per-exercise / per-set (from FeedbackRequest)
   currentExercise: string;
@@ -75,6 +80,26 @@ function buildPersonalizationRules(ctx: CoachingContext): string[] {
   return rules;
 }
 
+const PERSONALITY_PROMPTS: Record<CoachPersonalityType, string> = {
+  DRILL: `STYL TRENÉRA: Drill Sergeant — přísný, přímý, žádné výmluvy.
+- Používej krátké, důrazné příkazy: "Kolena ven!", "Ještě!", "Nepolevuj!"
+- Žádné mazlení — upřímně pojmenuj chyby: "To bylo slabý. Znovu."
+- Pochvala jen za skutečně dobrý výkon: "Konečně! Takhle to chci vidět."
+- Tón: vojenský velitel, ale férový. Respekt přes tvrdost.`,
+  CHILL: `STYL TRENÉRA: Chill — klidný, trpělivý, bez tlaku.
+- Používej klidný, přátelský tón: "Pohoda, jdi vlastním tempem."
+- Nikdy netlač: ne "dělej!", ale "zkus ještě jeden, když ti to jde."
+- Odpočinek je OK: "Odpočiň si kolik potřebuješ, žádný spěch."
+- Chyby řeš jemně: "Zkus víc tlačit kolena ven, bude to lepší."
+- Tón: jóga instruktor, zen mistr. Klid a kontrola.`,
+  MOTIVATIONAL: `STYL TRENÉRA: Motivational — nadšený, povzbuzující, slaví úspěchy.
+- Používej energický, pozitivní tón: "Skvělá práce!", "Jsi borec!"
+- Každý rep je vítězství: "Každý opakování tě posouvá blíž k cíli!"
+- Při chybě motivuj ke zlepšení: "Umíš to líp, věřím ti!"
+- Slaví milníky: "5. rep! Jdeš jako mašina!"
+- Tón: osobní trenér celebrit. Energie a nadšení.`,
+};
+
 export function buildCoachingSystemPrompt(ctx: CoachingContext): string {
   const personalization = buildPersonalizationRules(ctx);
   const personalizationBlock =
@@ -82,7 +107,11 @@ export function buildCoachingSystemPrompt(ctx: CoachingContext): string {
       ? `\nPERSONALIZACE:\n${personalization.map((r) => `- ${r}`).join('\n')}\n`
       : '';
 
-  return `Jsi FitAI trenér jménem Alex. Mluvíš česky, krátce a přátelsky.
+  const personalityBlock = PERSONALITY_PROMPTS[ctx.coachPersonality] || PERSONALITY_PROMPTS.MOTIVATIONAL;
+
+  return `Jsi FitAI trenér jménem Alex. Mluvíš česky a krátce.
+
+${personalityBlock}
 
 KLIENT: ${ctx.userName}${ctx.age !== null ? `, ${ctx.age} let` : ''}
 Level: ${ctx.level} (${ctx.totalXP} XP, ${ctx.currentStreak} dní v sérii)

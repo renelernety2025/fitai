@@ -246,15 +246,16 @@ model PlannedExercise {
 }
 
 model GymSession {
-  id              String    @id @default(uuid())
-  userId          String
-  workoutPlanId   String?
-  workoutDayIndex Int?
-  startedAt       DateTime  @default(now())
-  completedAt     DateTime?
-  totalReps       Int       @default(0)
-  averageFormScore Float    @default(0)
-  durationSeconds Int       @default(0)
+  id               String            @id @default(uuid())
+  userId           String
+  workoutPlanId    String?
+  workoutDayIndex  Int?
+  coachPersonality CoachPersonality  @default(MOTIVATIONAL)
+  startedAt        DateTime          @default(now())
+  completedAt      DateTime?
+  totalReps        Int               @default(0)
+  averageFormScore Float             @default(0)
+  durationSeconds  Int               @default(0)
 
   user           User             @relation(fields: [userId], references: [id])
   workoutPlan    WorkoutPlan?     @relation(fields: [workoutPlanId], references: [id])
@@ -370,6 +371,12 @@ model SafetyEvent {
 }
 
 // ── Adaptive Intelligence ──
+
+enum CoachPersonality {
+  DRILL
+  CHILL
+  MOTIVATIONAL
+}
 
 enum FitnessGoal {
   STRENGTH
