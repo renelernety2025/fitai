@@ -19,7 +19,7 @@ ALB
           ├── /api/* + /health → API (compat)
           └── default          → 301 → https://fitai.bfevents.cz/...
 
-ECS API (26 NestJS modules)
+ECS API (28 NestJS modules)
     ├── PostgreSQL RDS (30+ tables, private subnet)
     ├── Redis ElastiCache (private subnet)
     ├── S3 + CloudFront (videos, choreography, assets)
@@ -71,7 +71,7 @@ CodeBuild (base: public.ecr.aws/docker/library/node:20-alpine — no DockerHub r
   - `dorny/paths-filter@v3` detekuje api/web/schema změny
   - Paralelní `aws codebuild start-build` pro relevantní projekty
   - Auto-spuštění `fitai-migrate:2` task při změně `prisma/schema.prisma`
-  - Smoke test `test-production.sh` (54/54) po deployi
+  - Smoke test `test-production.sh` (61/61) po deployi
   - Concurrency lock `deploy-production`
 - **CI** (`.github/workflows/ci.yml`): PR lint + typecheck (nedeployuje)
 
@@ -452,7 +452,7 @@ Stack screens (přístupné z Profile menu / Plans / Dashboard):
 | Pose detection (MediaPipe) | ✅ | ❌ TODO Phase 6 part 2 (EAS Build + native plugin) |
 | Manual rep counter | — | ✅ |
 | AI coaching | ✅ | ❌ depends on pose detection |
-| Voice (ElevenLabs) | ✅ | ❌ TODO native TTS player |
+| Voice (ElevenLabs) | ✅ | ✅ expo-audio (VoiceEngine rolled back) |
 | Push notifications | ❌ VAPID keys missing | ✅ Expo Push |
 | All non-pose features | ✅ | ✅ Parita |
 

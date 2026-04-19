@@ -56,8 +56,11 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 - `POST /api/adaptive/recommend-weight`
 
 ### Coaching
-- `POST /api/coaching/feedback` (Claude Haiku)
-- `POST /api/coaching/voice` (ElevenLabs TTS)
+- `POST /api/coaching/feedback` (Claude Haiku real-time feedback)
+- `POST /api/coaching/tts` body: `{text, audioFormat?: 'mp3'|'pcm'}` → `{text, audioBase64, fallbackToWebSpeech}`
+- `POST /api/coaching/ask` body: `AskCoachDto {question, exerciseName?, formScore?, completedReps?, audioFormat?}` → `{answer, audioBase64}` @Throttle 30/hour/user
+- `POST /api/coaching/ask-stream` body: same AskCoachDto → SSE events: `text_delta, text_done, audio_chunk, audio_done, error`
+- `POST /api/coaching/precache` (pre-cache common TTS phrases)
 
 ### AI Planner
 - `POST /api/ai-planner/generate`
