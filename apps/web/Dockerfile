@@ -9,7 +9,7 @@ COPY package.json package-lock.json* ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN npm install --workspace=@fitai/web --workspace=@fitai/shared
+RUN npm install --workspace=@fitai/web --workspace=@fitai/shared --legacy-peer-deps
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
