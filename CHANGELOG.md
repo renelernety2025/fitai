@@ -7,6 +7,43 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Phase E streaming + VoiceEngine rollback + Bible audit + 60 exercises] 2026-04-19
+
+### Backend streaming pipeline (deployed, verified)
+- `POST /api/coaching/ask-stream` — Claude SSE text streaming + ElevenLabs PCM audio streaming
+- Sentence-boundary flushing (`.!?` → flush to TTS). First audio chunk <2s (curl verified)
+- Backend PCM opt-in via `audioFormat` DTO field (backwards compat, default MP3)
+- SDK event iteration fix (`stream.textStream` → raw `AsyncIterable<MessageStreamEvent>`)
+- `/coaching/tts` + `/coaching/ask` accept optional `audioFormat:'pcm'`
+
+### VoiceEngine native module (ROLLED BACK)
+- Multiple Swift fix attempts: format mismatch → int16→float32 → AVAudioConverter → overrideOutputAudioPort
+- Debug instrumentation revealed: engine resolves to stereo 44.1kHz float32, converter produces frames, but no audible output
+- **Decision: rollback to expo-audio** (known working). VoiceEngine stays in binary, unused. Debug with Xcode in separate session.
+- Circuit breaker leak fixed (error handler was resetting counter before end handler checked it)
+
+### Doc infrastructure (Bible v4.2 audit)
+- CHANGELOG archived: 74→18 KB (-76%). `CHANGELOG-archive/2026-04-foundation-and-infra.md`
+- ROADMAP archived: 11→5 KB (-55%). `ROADMAP-archive/2026-04-completed-phases.md`
+- ADR table: 15 entries in ARCHITECTURE.md
+- `scripts/verify-docs-integrity.sh` — 6 automated checks
+- `/resume-session` skill for post-/clear orientation
+- `memory/project_summary.md` created
+- Bible v4.2 + standalone patterns in `docs/`
+
+### Content explosion: 14 → 60 exercises
+- 46 new exercises across all muscle groups (chest, back, shoulders, arms, legs, calves, core, compound, bodyweight, stretching)
+- Full Czech instructions, phases with MediaPipe angle rules, equipment mapping
+- `prisma/exercises-data.ts` (2275 LOC data file) extracted from seed.ts
+- Seed run via ECS migrate task, cache invalidated, 60 exercises live on production
+
+### ROADMAP aktualizován na 2026-04-19
+- Voice coaching + Phase E work zapsán
+- Stats: 28 modulů, 61 testů, 15 ADRs, 60 cviků
+- Priorities: VoiceEngine debug → App Store → Scale Readiness
+
+---
+
 ## [Voice Coaching v2 — Phase A v2 VoiceEngine + user-ID throttler] 2026-04-12 pozdě večer
 ### Shipped
 **Voice Coaching v2 + Phase A v2 final state.** Two-phase rollout dotažen, hardware AEC live na zařízení, backend rate limity teď per-user.
