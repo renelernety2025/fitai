@@ -455,3 +455,25 @@ Stack screens (přístupné z Profile menu / Plans / Dashboard):
 | Voice (ElevenLabs) | ✅ | ❌ TODO native TTS player |
 | Push notifications | ❌ VAPID keys missing | ✅ Expo Push |
 | All non-pose features | ✅ | ✅ Parita |
+
+## Klíčová rozhodnutí (ADRs) — LOAD-BEARING
+
+> Append-only tabulka. Nikdy nemazat řádky — pokud je rozhodnutí superseded, přidej nový ADR a v původním přidej "Superseded by #N".
+
+| # | Datum | Rozhodnutí | Důvod |
+|---|---|---|---|
+| 1 | 2026-04-06 | Global API prefix `/api/*` via `setGlobalPrefix()` | ALB routing rule `/api/*` → API target group, `/*` → Web. Bez prefixu by NestJS a Next.js page paths kolidovaly |
+| 2 | 2026-04-06 | `prisma db push` místo `migrate dev` | Produkce nemá migration history, schema push je idempotentní. Trade-off: žádné rollback migrace, ale jednodušší deploy flow |
+| 3 | 2026-04-07 | ElevenLabs `language_code: 'cs'` hardcoded | Bez explicitní language_code ElevenLabs detekuje jazyk automaticky a občas mluví anglicky na český text |
+| 4 | 2026-04-07 | Redis cache TTL: 7d static, 1h per-user, 24h daily-brief | Static content (exercises, lessons) se nemění, per-user AI insights potřebují refresh, daily-brief je 1x denně |
+| 5 | 2026-04-08 | GitHub Actions OIDC federation místo long-lived AWS keys | Bezpečnější — žádné rotující secrets, IAM role s scoped permissions, audit trail v CloudTrail |
+| 6 | 2026-04-08 | `dorny/paths-filter` v CI pro selective builds | API a Web builds jsou nezávislé. Bez filtru každý push buildí obě — zbytečný CodeBuild čas a náklady |
+| 7 | 2026-04-08 | Claude Haiku pro coaching/tips, Sonnet pro vision | Haiku je 10x levnější a dostatečný pro krátké CZ coaching fráze. Sonnet potřeba jen pro image analysis (food, body photos) |
+| 8 | 2026-04-09 | `expo-camera` místo `react-native-vision-camera` pro mobile workout | VisionCamera vyžaduje frame processor plugin + worklet runtime. expo-camera je jednodušší, stačí pro mirror view + manual rep counting |
+| 9 | 2026-04-11 | Two-phase native rollout (native scaffold → JS flip) | Flag-day rollout (3a92c11) crashnul protože starý binár neměl nový native modul ale Metro hot-reloadnul nový JS. Lesson: native changes a JS flip vždy v oddělených commitech |
+| 10 | 2026-04-11 | `scheduleReArm()` single-timer pattern pro recognition loop | Bez single-timer patternu 'end' + 'error' events stackovaly setTimeout callbacks → 3-8 concurrent recognition sessions → error 209 storm |
+| 11 | 2026-04-12 | Backend PCM opt-in via `audioFormat` DTO field | Backwards compat: starý klient (expo-audio) nedostane PCM (které neumí přehrát). Nový klient (VoiceEngine) explicitně požádá o PCM. Default = MP3 |
+| 12 | 2026-04-12 | POST /coaching/ask-stream (SSE) místo rozšíření /ask | Nový endpoint neruší existující JSON path. Mobile klient může přepnout na streaming nezávisle na web klientovi |
+| 13 | 2026-04-12 | Sentence-boundary flushing pro Claude→ElevenLabs pipeline | Word-by-word = příliš mnoho TTS requestů. Celá odpověď = zabíjí latency. Sentence boundary (`. ! ?`) = optimální trade-off |
+| 14 | 2026-04-19 | Rollback VoiceEngine na expo-audio | VoiceEngine native modul (AVAudioEngine + VoiceProcessingIO) měl nevyřešený silent playback bug (format/routing). Expo-audio funguje spolehlivě. VoiceEngine debug v separate session s Xcode |
+| 15 | 2026-04-19 | Archive rhythm pro CHANGELOG/ROADMAP | CHANGELOG narostl na 74 KB (2x budget). Archive completed phases verbatim, aktivní docs drží jen recent. Viz CHANGELOG-archive/ a ROADMAP-archive/ |
