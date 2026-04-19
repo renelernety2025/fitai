@@ -10,6 +10,9 @@ const DEFAULT_PHASE_DURATION_MS = 800;
 const HOLD_MULTIPLIER = 2;
 const VISUAL_SLOWDOWN = 3;
 
+export const SPEED_OPTIONS = [0.5, 1, 2] as const;
+export type SpeedMultiplier = (typeof SPEED_OPTIONS)[number];
+
 interface PhaseDefinition {
   phase: string;
   nameCs: string;
@@ -20,8 +23,10 @@ export interface PhaseAnimationState {
   currentPhaseIndex: number;
   progress: number;
   isPlaying: boolean;
+  speed: SpeedMultiplier;
   togglePlay: () => void;
   jumpToPhase: (index: number) => void;
+  cycleSpeed: () => void;
 }
 
 export function usePhaseAnimation(
@@ -30,9 +35,11 @@ export function usePhaseAnimation(
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [speed, setSpeed] = useState<SpeedMultiplier>(1);
   const progressRef = useRef(0);
   const prevTimeRef = useRef(0);
   const phaseIndexRef = useRef(0);
+  const speedRef = useRef<SpeedMultiplier>(1);
 
   const togglePlay = useCallback(() => setIsPlaying((p) => !p), []);
 
@@ -41,6 +48,15 @@ export function usePhaseAnimation(
     progressRef.current = 0;
     setCurrentPhaseIndex(index);
     setProgress(0);
+  }, []);
+
+  const cycleSpeed = useCallback(() => {
+    setSpeed((prev) => {
+      const idx = SPEED_OPTIONS.indexOf(prev);
+      const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
+      speedRef.current = next;
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -63,7 +79,8 @@ export function usePhaseAnimation(
           ? baseDuration * HOLD_MULTIPLIER
           : baseDuration;
 
-      progressRef.current += delta / duration;
+      progressRef.current +=
+        (delta * speedRef.current) / duration;
 
       if (progressRef.current >= 1) {
         progressRef.current = 0;
@@ -85,7 +102,9 @@ export function usePhaseAnimation(
     currentPhaseIndex,
     progress,
     isPlaying,
+    speed,
     togglePlay,
     jumpToPhase,
+    cycleSpeed,
   };
 }

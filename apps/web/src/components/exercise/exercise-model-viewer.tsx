@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useCallback, useRef } from 'react';
+import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import HumanoidModel from './humanoid-model';
@@ -23,20 +24,45 @@ interface Phase {
 interface ExerciseModelViewerProps {
   phases: Phase[];
   muscleGroups: string[];
+  externalPhaseIndex?: number;
 }
+
+const CAMERA_VIEWS = {
+  front: new THREE.Vector3(0, 0, 3),
+  side: new THREE.Vector3(3, 0, 0),
+  back: new THREE.Vector3(0, 0, -3),
+} as const;
 
 /** 3D animated exercise model viewer with playback controls. */
 export default function ExerciseModelViewer({
   phases,
   muscleGroups,
+  externalPhaseIndex,
 }: ExerciseModelViewerProps) {
-  const {
-    currentPhaseIndex,
-    progress,
-    isPlaying,
-    togglePlay,
-    jumpToPhase,
-  } = usePhaseAnimation(phases);
+  const animation = usePhaseAnimation(phases);
+  const controlsRef = useRef<any>(null);
+
+  // Sync with external phase selection (from text section)
+  const prevExternal = useRef(externalPhaseIndex);
+  if (
+    externalPhaseIndex !== undefined &&
+    externalPhaseIndex !== prevExternal.current
+  ) {
+    prevExternal.current = externalPhaseIndex;
+    animation.jumpToPhase(externalPhaseIndex);
+  }
+
+  const setView = useCallback(
+    (view: 'front' | 'side' | 'back') => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      const pos = CAMERA_VIEWS[view];
+      controls.object.position.copy(pos);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    },
+    [],
+  );
 
   if (!phases || phases.length === 0) return null;
 
@@ -47,18 +73,22 @@ export default function ExerciseModelViewer({
           camera={{ position: [0, 0, 3], fov: 50 }}
           gl={{ antialias: true, alpha: true }}
         >
+          {/* @ts-expect-error R3F v8 JSX types incompatible with TS 5.9 */}
           <ambientLight intensity={0.6} />
+          {/* @ts-expect-error R3F v8 JSX types */}
           <directionalLight position={[5, 5, 5]} intensity={0.8} />
+          {/* @ts-expect-error R3F v8 JSX types */}
           <directionalLight position={[-3, 3, -3]} intensity={0.3} />
           <Suspense fallback={null}>
             <HumanoidModel
               phases={phases}
               muscleGroups={muscleGroups}
-              currentPhaseIndex={currentPhaseIndex}
-              progress={progress}
+              currentPhaseIndex={animation.currentPhaseIndex}
+              progress={animation.progress}
             />
           </Suspense>
           <OrbitControls
+            ref={controlsRef}
             enablePan={false}
             minDistance={2}
             maxDistance={5}
@@ -68,10 +98,13 @@ export default function ExerciseModelViewer({
       </div>
       <PhaseControls
         phases={phases}
-        currentPhaseIndex={currentPhaseIndex}
-        isPlaying={isPlaying}
-        onTogglePlay={togglePlay}
-        onJumpToPhase={jumpToPhase}
+        currentPhaseIndex={animation.currentPhaseIndex}
+        isPlaying={animation.isPlaying}
+        speed={animation.speed}
+        onTogglePlay={animation.togglePlay}
+        onJumpToPhase={animation.jumpToPhase}
+        onCycleSpeed={animation.cycleSpeed}
+        onSetView={setView}
       />
     </div>
   );

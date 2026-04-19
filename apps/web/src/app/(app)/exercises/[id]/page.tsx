@@ -14,6 +14,7 @@ const ExerciseModelViewer = dynamic(
 
 export default function ExerciseV2DetailPage({ params }: { params: { id: string } }) {
   const [ex, setEx] = useState<ExerciseData | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<number | undefined>();
 
   useEffect(() => {
     getExercise(params.id).then(setEx).catch(console.error);
@@ -50,7 +51,7 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
 
       {/* 3D animated model */}
       {ex.phases.length > 0 && (
-        <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} />
+        <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} externalPhaseIndex={selectedPhase} />
       )}
 
       {/* Target muscles */}
@@ -150,7 +151,13 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
         <V2SectionLabel>Fáze pohybu</V2SectionLabel>
         <div className="space-y-1">
           {ex.phases.map((phase: any, i: number) => (
-            <div key={i} className="border-b border-white/8 py-6">
+            <button
+              key={i}
+              onClick={() => { setSelectedPhase(i); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className={`block w-full border-b border-white/8 py-6 text-left transition ${
+                selectedPhase === i ? 'bg-white/5' : 'hover:bg-white/3'
+              }`}
+            >
               <div className="mb-2 flex items-baseline gap-3">
                 <div className="font-bold tabular-nums text-white/40">{i + 1}.</div>
                 <V2Display size="sm">{phase.nameCs}</V2Display>
@@ -160,7 +167,7 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
               </div>
               <p className="ml-7 text-sm text-[#A8FF00]">{phase.feedback_correct}</p>
               <p className="ml-7 text-sm text-[#FF375F]">{phase.feedback_wrong}</p>
-            </div>
+            </button>
           ))}
         </div>
       </section>

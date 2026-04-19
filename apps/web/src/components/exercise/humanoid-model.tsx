@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, Html } from '@react-three/drei';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { computePoseTargets, REST_QUATERNION } from '@/lib/phase-to-pose';
 import { getHighlightedBones, HIGHLIGHT_COLOR } from '@/lib/muscle-group-regions';
+import { HUMANOID_JOINT_MAP } from '@/lib/humanoid-joint-map';
 
 interface PhaseRule {
   joint: string;
@@ -29,6 +30,18 @@ interface HumanoidModelProps {
 }
 
 const MODEL_PATH = '/models/humanoid.glb';
+
+const JOINT_LABELS: Record<string, string> = {
+  left_knee: 'Koleno',
+  right_knee: 'Koleno',
+  left_hip: 'Kyčel',
+  right_hip: 'Kyčel',
+  left_elbow: 'Loket',
+  right_elbow: 'Loket',
+  left_shoulder: 'Rameno',
+  right_shoulder: 'Rameno',
+  left_ankle: 'Kotník',
+};
 
 /** 3D humanoid model driven by exercise phase angle rules. */
 export default function HumanoidModel({
@@ -70,6 +83,18 @@ export default function HumanoidModel({
     return computePoseTargets(phases[nextIdx]);
   }, [phases, currentPhaseIndex]);
 
+  // Compute current angle values for overlay
+  const activeRules = useMemo(() => {
+    const phase = phases[currentPhaseIndex];
+    if (!phase) return [];
+    return phase.rules.map((rule) => ({
+      joint: rule.joint,
+      angle: Math.round((rule.angle_min + rule.angle_max) / 2),
+      boneName: HUMANOID_JOINT_MAP[rule.joint]?.boneName,
+      label: JOINT_LABELS[rule.joint] ?? rule.joint,
+    }));
+  }, [phases, currentPhaseIndex]);
+
   useFrame(() => {
     const bones = bonesRef.current;
     if (bones.size === 0) return;
@@ -83,8 +108,61 @@ export default function HumanoidModel({
     });
   });
 
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
   return (
-    <primitive object={clonedScene} scale={1} position={[0, -1, 0]} />
+    <>
+      {/* @ts-ignore R3F v8 JSX types incompatible with TS 5.9 */}
+      <primitive
+        object={clonedScene}
+        scale={1}
+        position={[0, -1, 0]}
+      />
+      {/* Angle overlay labels */}
+      {activeRules.map((rule) => {
+        const bone = bonesRef.current.get(rule.boneName ?? '');
+        if (!bone) return null;
+        return (
+          <AngleLabel
+            key={rule.joint}
+            bone={bone}
+            angle={rule.angle}
+            label={rule.label}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+/** Floating angle label attached to a bone. */
+function AngleLabel({
+  bone,
+  angle,
+  label,
+}: {
+  bone: THREE.Bone;
+  angle: number;
+  label: string;
+}) {
+  const [pos, setPos] = useState<[number, number, number]>([0, 0, 0]);
+  const worldPos = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    bone.getWorldPosition(worldPos);
+    setPos([worldPos.x, worldPos.y, worldPos.z]);
+  });
+
+  return (
+    <Html
+      position={pos}
+      center
+      distanceFactor={4}
+      style={{ pointerEvents: 'none' }}
+    >
+      <div className="whitespace-nowrap rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold tabular-nums text-[#A8FF00] backdrop-blur-sm">
+        {label} {angle}°
+      </div>
+    </Html>
   );
 }
 

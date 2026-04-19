@@ -1,16 +1,23 @@
 'use client';
 
+import type { SpeedMultiplier } from '@/lib/use-phase-animation';
+
 interface PhaseInfo {
   phase: string;
   nameCs: string;
 }
 
+type ViewAngle = 'front' | 'side' | 'back';
+
 interface PhaseControlsProps {
   phases: PhaseInfo[];
   currentPhaseIndex: number;
   isPlaying: boolean;
+  speed: SpeedMultiplier;
   onTogglePlay: () => void;
   onJumpToPhase: (index: number) => void;
+  onCycleSpeed: () => void;
+  onSetView: (view: ViewAngle) => void;
 }
 
 /** Playback controls overlay for the 3D exercise viewer. */
@@ -18,26 +25,42 @@ export default function PhaseControls({
   phases,
   currentPhaseIndex,
   isPlaying,
+  speed,
   onTogglePlay,
   onJumpToPhase,
+  onCycleSpeed,
+  onSetView,
 }: PhaseControlsProps) {
   const currentPhase = phases[currentPhaseIndex];
 
   return (
     <div className="flex flex-col items-center gap-2 pt-3">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        {/* View angle buttons */}
+        <div className="flex items-center gap-1">
+          {VIEW_BUTTONS.map(({ view, label }) => (
+            <button
+              key={view}
+              onClick={() => onSetView(view)}
+              className="rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40 transition hover:bg-white/5 hover:text-white/70"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-4 w-px bg-white/10" />
+
+        {/* Play/pause */}
         <button
           onClick={onTogglePlay}
           className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/60 transition hover:border-white/40 hover:text-white"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? (
-            <PauseIcon />
-          ) : (
-            <PlayIcon />
-          )}
+          {isPlaying ? <PauseIcon /> : <PlayIcon />}
         </button>
 
+        {/* Phase dots */}
         <div className="flex items-center gap-2">
           {phases.map((_, i) => (
             <button
@@ -52,6 +75,16 @@ export default function PhaseControls({
             />
           ))}
         </div>
+
+        <div className="h-4 w-px bg-white/10" />
+
+        {/* Speed control */}
+        <button
+          onClick={onCycleSpeed}
+          className="rounded-md px-2 py-1 text-[11px] font-bold tabular-nums text-white/50 transition hover:bg-white/5 hover:text-white/70"
+        >
+          {speed}x
+        </button>
       </div>
 
       {currentPhase && (
@@ -62,6 +95,12 @@ export default function PhaseControls({
     </div>
   );
 }
+
+const VIEW_BUTTONS: { view: ViewAngle; label: string }[] = [
+  { view: 'front', label: 'Zepředu' },
+  { view: 'side', label: 'Z boku' },
+  { view: 'back', label: 'Zezadu' },
+];
 
 function PlayIcon() {
   return (
