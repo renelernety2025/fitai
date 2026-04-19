@@ -94,10 +94,10 @@ export class NotificationService {
       });
       if (prefs && !prefs.streakWarning) continue;
 
-      const payload = {
-        title: `🔥 Série ${progress.currentStreak} dní!`,
-        body: `Neztrať sérii, ${progress.user.name}! Udělej dnes alespoň krátký trénink.`,
-      };
+      const payload = buildStreakFearMessage(
+        progress.user.name || 'trenere',
+        progress.currentStreak,
+      );
       await this.sendToUser(progress.userId, { ...payload, url: '/dashboard', tag: 'streak-reminder' });
       await this.sendExpoToUser(progress.userId, payload);
       sent++;
@@ -165,4 +165,33 @@ export class NotificationService {
     await this.getPreferences(userId);
     return this.prisma.notificationPreference.update({ where: { userId }, data });
   }
+}
+
+/** Build escalating streak fear notification based on streak length. */
+function buildStreakFearMessage(
+  name: string,
+  streak: number,
+): { title: string; body: string } {
+  if (streak >= 30) {
+    return {
+      title: `${streak} dni v serii! Neznic to!`,
+      body: `${name}, ${streak} dni tvrdé prace. Jedna absence a vsechno je pryc. Dnes to nevzdavej!`,
+    };
+  }
+  if (streak >= 14) {
+    return {
+      title: `${streak} dni! Neopovazuj se zastavit!`,
+      body: `${name}, uz ${streak} dni v kuse. Staci 5 minut a serie pokracuje.`,
+    };
+  }
+  if (streak >= 7) {
+    return {
+      title: `${streak} dni v serii — zitra to ztratís!`,
+      body: `${name}, jsi v tahu! Neztrac momentum. Kratky trenink staci.`,
+    };
+  }
+  return {
+    title: `Serie ${streak} dni — neztrac ji!`,
+    body: `${name}, neznic serii! Udelej dnes aspon kratky trenink.`,
+  };
 }
