@@ -1,183 +1,135 @@
 # FitAI — Roadmap & Progress
 
-> Aktualizováno: 2026-04-08
+> Aktualizováno: 2026-04-19
 
-## 🎯 Production
+## Production
 - **Web (HTTPS):** https://fitai.bfevents.cz
 - **API:** https://fitai.bfevents.cz/api
 - **GitHub:** https://github.com/renelernety2025/fitai
 - **AWS:** eu-west-1, account 326334468637, profile `fitai`
 
-## 🔑 Demo
+## Demo
 - demo@fitai.com / demo1234
 - admin@fitai.com / demo1234
 
 ---
 
-## ✅ Hotovo
+## Hotovo
 
-Phases 1-10 ✅ · Sections A-L ✅ · Infrastructure ✅ · Web 19 pages ✅ · Mobile 18 screens ✅ · Backend 28 modulů ✅
+Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 screens · Backend 28 modulů
 
 > Detail: @ROADMAP-archive/2026-04-completed-phases.md
 
----
-
-_Sekce níže (Scale Readiness, Mobile Launch, Co dál) zůstávají aktivní._
-
-
-## 📏 Scale Readiness
-
-Plán jak připravit platformu na **1M+ DAU** bez plýtvání. Kompletní systematika v [`SCALING.md`](./SCALING.md).
-
-**4 vrstvy podle ROI:**
-1. **Vrstva 1** — FREE quick wins: caching, indexy, rate limiting, autoscaling (~1 den, +$20/mo, 100× capacity)
-2. **Vrstva 2** — Observability: CloudWatch, Sentry, structured logging (~půl dne, +$26/mo)
-3. **Vrstva 3** — Load testing: k6, 4 scenarios, data-driven bottleneck detection (~1 den, $0)
-4. **Vrstva 4** — Paid upgrades: RDS r6g.large, read replicas, Fargate Spot (jen podle load test dat)
-
-**Aktuální stage:** Launch (0-100 DAU). Vrstvy 1-3 plánovány na tento týden.
+**Navíc od 2026-04-11:**
+- Voice Coaching v2 — Phase D personalized coaching (age/injuries/goal/skillTier), AskCoachDto + prompt injection fix, user-ID throttler
+- Phase E-1 backend — Claude SSE streaming (`POST /coaching/ask-stream`), deployed + curl verified
+- Phase E-2 backend — ElevenLabs PCM streaming pipeline, sentence-boundary flushing, deployed
+- Backend PCM opt-in — `audioFormat` DTO field, backwards compat (default MP3)
+- Doc infrastructure — archive rhythm, ADR table (15 entries), verify-docs-integrity.sh, /resume-session skill
 
 ---
 
-## 📱 Mobile App Store Launch Plan (2026-04-09 +2 týdny)
+## Aktuální priorita
 
-**Kompletní 8-fázový plán v CHANGELOG.md** — od dnešního dev buildu po veřejné vydání v App Store.
+### 1. VoiceEngine debug + hardware AEC (~4h, potřeba Xcode)
 
-| Fáze | Čas | Co |
+VoiceEngine native modul (Swift, AVAudioEngine + VoiceProcessingIO) je v EAS binárce ale **nefunkční** — silent playback bug (AVAudioConverter produkuje frames ale žádný zvuk). Rollback na expo-audio (funguje). Debug vyžaduje Xcode attached k iPhone pro native breakpointy + audio session inspection.
+
+**Po opravě:**
+- Hardware AEC eliminuje echo loop → continuous mode mid-sentence interrupt
+- Phase E-3 mobile streaming playback se odblokuje (playChunk + streamSpeak)
+- Cílová latence <1.5s first word (backend streaming pipeline ready)
+
+**Known issues:**
+- Error 216/209 v SFSpeech recognition (session overlap + circuit breaker leak) — fixnout jako součást VoiceEngine debug
+- `expo-audio` + `expo-speech-recognition` zůstávají jako fallback
+
+### 2. App Store launch (~2 týdny)
+
+| Fáze | Co | Status |
 |---|---|---|
-| 1. Dev build | Dnes | Expo-camera switch, test na iPhonu |
-| 2. Bug fixes | Zítra | Oprava QA issues |
-| 3. TestFlight preview | Den 3 | 5-10 beta testerů |
-| 4. TestFlight iterace | Dny 4-7 | Feedback → fixy → new builds |
-| 5. App Store compliance | Dny 8-9 | Privacy policy, TOS, AI disclaimer, account deletion, metadata |
-| 6. Production build + submit | Den 10 | `eas submit --profile production` |
-| 7. Apple Review | Dny 11-13 | Čekání, možná 1 round rejection fixes |
-| 8. 🚀 Release | Den 14 | Veřejně v App Store |
+| 1. Dev build | EAS development build na iPhonu | ✅ Máme |
+| 2. Bug fixes | QA issues z device testingu | Probíhá (voice coaching) |
+| 3. TestFlight | 5-10 beta testerů | Pending |
+| 4. TestFlight iterace | Feedback → fixy → new builds | Pending |
+| 5. Compliance | Privacy policy, TOS, AI disclaimer, account deletion | Pending |
+| 6. Production build | `eas submit --profile production` | Pending |
+| 7. Apple Review | Čekání, možná rejection fixes | Pending |
+| 8. Release | Veřejně v App Store | Pending |
 
-**Timeline: ~2 týdny od teď.**
+### 3. Scale Readiness (~3 dny)
+
+Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány ale zatím neimplementovány.
+
+| Vrstva | Co | Effort | Status |
+|---|---|---|---|
+| 1. Quick wins | Caching, indexy, rate limiting, autoscaling | ~1 den | Pending |
+| 2. Observability | CloudWatch, Sentry, structured logging | ~0.5 dne | Pending |
+| 3. Load testing | k6, 4 scenarios, bottleneck identification | ~1 den | Pending |
+| 4. Paid upgrades | RDS larger, read replicas, Fargate Spot | Dle dat | Blocked on Vrstva 3 |
 
 ---
 
-## 🚧 Co dál (priorita)
+## Střední priorita
 
-### Vysoká priorita — Scale Readiness Week (2026-04-08 až 04-12)
+- **Apple HealthKit + Google Fit** — mobile čte sleep/steps/HR/HRV, auto-sync do wearables modulu, recovery score se zlepší. Vyžaduje EAS build.
+- **Phase E-3 mobile streaming** — playChunk + finalizeStream (Swift) + streamSpeak (TS) + react-native-sse client. Gated na VoiceEngine fix. TS skeleton už committed (dormant).
+- **Phase E-4 fast VAD** — committed (SILENCE_FAST_MS=500), aktivuje se po Metro reload s expo-speech-recognition stackem.
 
-**Week plan:** 5 dní práce, připravit platformu na alpha launch.
+## Nízká priorita / nice to have
 
-1. **Den 1 (Dnes)** — Phase 6 part 2 — Native MediaPipe pose detection na mobilu
-   - EAS Build (custom dev build, mimo Expo Go)
-   - `react-native-vision-camera` + Google ML Kit Pose plugin
-   - Port `feedback-engine.ts`, `rep-counter.ts`, `safety-checker.ts` z webu do RN
-   - TestFlight ready (Apple Developer účet už je)
+- Apple Watch app — quick rep counter + heart rate stream
+- Voice activation — "Hey FitAI" → start workout
+- Live group classes — WebRTC multi-camera sync
+- Trainer marketplace — externí trenéři, revenue split
+- Export workout history → CSV/PDF
+- Supersety + giant sets v plan editoru
+- Custom exercise builder
+- Photo-based food recognition (Claude Vision)
+- Golf cviky (sport category enum + cyclic phase model)
 
-2. **Den 2** — SCALING.md Vrstva 1: FREE quick wins
-   - Aggressive caching (Redis) pro 10 klíčových endpointů
-   - Database indexy audit + fix chybějících
-   - Rate limiting per endpoint (`@nestjs/throttler`)
-   - ECS autoscaling 1-3 → 2-20 s CPU target tracking
-   - ALB timeout tuning + Prisma connection pooling
+## Polish / iterace
 
-3. **Den 3** — SCALING.md Vrstva 2: Observability
-   - CloudWatch dashboard (API/Web/RDS/Redis/ALB metriky)
-   - CloudWatch alarmy + SNS email (10 alarmů)
-   - Sentry integration (backend + mobile + web)
-   - Structured JSON logging (nestjs-pino)
-   - AI usage custom metrics (Claude tokens/den)
-
-4. **Den 4** — SCALING.md Vrstva 3: Load testing
-   - k6 install + 4 test scenarios
-   - Baseline run proti produkci
-   - Identifikace top 3 bottlenecks
-   - První optimalizace + re-test
-
-5. **Den 5** — Polish + produkce ready
-   - Bug fixes ze Sentry
-   - Performance regression guards
-   - Backup/restore test
-   - Alpha launch go/no-go decision
-
-### Střední priorita
-4. **Apple HealthKit + Google Fit integrace**
-   - Mobile čte sleep/steps/HR/HRV z native zdrojů
-   - Auto-sync do `wearables` modulu
-   - Recovery score se zlepší
-   - Vyžaduje EAS Build
-
-5. ~~**Section K — Body progress photos**~~ ✅ HOTOVO 2026-04-08
-   (BodyPhoto + BodyAnalysis modely, Claude Vision, before/after slider,
-   web + mobile parita, S3Service fix, IAM task role rozšířena)
-
-6. ~~**AI workout suggestion of the day**~~ ✅ HOTOVO 2026-04-08 (AI Coach Daily Brief, V2DailyBrief hero)
-
-7. ~~**Generative meal planning**~~ ✅ HOTOVO 2026-04-08 (Section L, MealPlan model, Claude Haiku, web + mobile, shopping list)
-
-### Nízká priorita / nice to have
-8. **Apple Watch app** — quick rep counter + heart rate stream
-9. **Voice activation** — "Hey FitAI" → start workout
-10. **Live group classes** — multiple cameras synced via WebRTC
-11. **Trainer marketplace** — externí trenéři publikují plány (revenue split)
-12. **Export workout history** → CSV/PDF
-13. **Supersety + giant sets v plan editoru**
-14. **Custom exercise builder** — uživatel si vytvoří vlastní cvik
-15. **Photo-based food recognition** — Florence-2 nebo Claude Vision
-
-### Polish / iterace
-- Iterace v2 designu podle uživatelského feedbacku
-- Empty states a první-krát UX
+- Iterace v2 designu podle feedbacku
+- Empty states a first-time UX
 - Onboarding tooltips
 - Animations (Framer Motion / Reanimated)
 
 ---
 
-## 📋 Technical Debt
+## Technical Debt
 
-### Vyřešeno ✓
-- ~~HTTPS na produkci~~ → ✅ fitai.bfevents.cz
-- ~~Local Docker broken~~ → ✅ AWS Public ECR
-- ~~Real AI keys~~ → ✅ Secrets Manager
-- ~~Mobile bez kamery~~ → 🟡 lite verze, full v Phase 6 part 2
-- ~~CodeBuild manual trigger~~ → ✅ GitHub Actions auto-deploy přes OIDC (2026-04-08)
-- ~~VAPID web push keys missing~~ → ✅ Secrets Manager + ECS task def rev 4 (2026-04-08)
+### Vyřešeno
+- ~~HTTPS~~ · ~~Local Docker~~ · ~~Real AI keys~~ · ~~CodeBuild manual~~ · ~~VAPID keys~~ · ~~S3Service credentials~~
 
 ### Aktivní
-- **TypeScript decorators relaxed** — `strictNullChecks: false` (NestJS interop)
-- **No real seed videos** — pouze 3 picsum placeholdery
-- ~~S3Service AWS credentials warning~~ → ✅ Fixed 2026-04-08 (init unconditional, task role auto-discover)
-- **Weekly volume aggregation** — bez ECS scheduled task na reset/agregaci
+- **TypeScript `strictNullChecks: false`** — NestJS decorator interop
+- **No real seed videos** — 3 picsum placeholdery
+- **Weekly volume aggregation** — bez ECS scheduled task
+- **VoiceEngine native modul** — silent playback, needs Xcode debug
+- **expo-audio + expo-speech-recognition** — legacy deps, uninstall po VoiceEngine fix
 
 ---
 
-## 🛡️ Regression Prevention
+## Regression Prevention
 
-- **`test-production.sh`** — 54 testů (API + frontend pages + routing sanity), spouštět před každým deployem
-- **`CONTRACTS.md`** — zámčené API + DB modely + core soubory
-- **`CHANGELOG.md`** — lidsky čitelná historie všech sekcí
-- **`memory/project_state.md`** — current state pro Claude Code napříč sessions
-
-### Workflow při nové feature
-1. Implementuj feature
-2. `bash test-production.sh` — všech 54 musí projít
-3. Commit + push
-4. CodeBuild build (api/web)
-5. Force ECS deploy
-6. Update CHANGELOG, ROADMAP, memory
-7. Pokud nový modul → CONTRACTS.md (přidat endpointy + DB pole)
+- **`test-production.sh`** — 61 testů, spouštět po každém deployi
+- **`CONTRACTS.md`** — zámčené API shapes + DB modely
+- **`scripts/verify-docs-integrity.sh`** — doc health check (size budgets, archive pointers, ADR count)
+- **`CHANGELOG-archive/`** — verbatim archive starších entries
 
 ---
 
-## 📊 Stats (2026-04-08)
+## Stats (2026-04-19)
 
-- **26 NestJS modules**
+- **28 NestJS modules**
 - **30+ DB models**
-- **19 web pages** (kompletní v2 design)
-- **18 mobile screens** (kompletní v2 design)
+- **19 web pages** (v2 design)
+- **18 mobile screens** (v2 design)
 - **17 achievements**
 - **8 cviků s pose detection**
-- **8 education lessons**
-- **16 glossary terms**
-- **15 quick foods**
-- **3 home workout modes** (quick/home/travel)
-- **61/61 regression tests passing**
-- **Section K Body Progress Photos** (Claude Vision, before/after slider)
-- **Section L Generative Meal Planning** (Claude Haiku, 7-day plan, shopping list)
-- **AI Coach Daily Brief** (flagship hero, mood-driven)
+- **61/61 regression tests**
+- **15 ADRs** v ARCHITECTURE.md
+- **2 archive files** (CHANGELOG + ROADMAP)
+- **55 KB auto-load** (post-archive, down from 116 KB)
+- **Backend SSE streaming** deployed (Claude + ElevenLabs PCM pipeline)
