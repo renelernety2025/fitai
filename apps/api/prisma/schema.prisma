@@ -1,3 +1,4 @@
+// Exercise library expanded to 60 exercises (2026-04-19)
 generator client {
   provider = "prisma-client-js"
 }
