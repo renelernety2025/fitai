@@ -1,9 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getExercise, type ExerciseData } from '@/lib/api';
+import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
+
+const ExerciseModelViewer = dynamic(
+  () => import('@/components/exercise/exercise-model-viewer'),
+  { ssr: false, loading: () => <ExerciseModelPlaceholder /> },
+);
 
 export default function ExerciseV2DetailPage({ params }: { params: { id: string } }) {
   const [ex, setEx] = useState<ExerciseData | null>(null);
@@ -40,6 +47,11 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
         <V2Display size="xl">{ex.nameCs}</V2Display>
         <p className="mt-4 max-w-2xl text-base text-white/55">{ex.descriptionCs}</p>
       </section>
+
+      {/* 3D animated model */}
+      {ex.phases.length > 0 && (
+        <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} />
+      )}
 
       {/* Target muscles */}
       {inst.targetMuscles && (
