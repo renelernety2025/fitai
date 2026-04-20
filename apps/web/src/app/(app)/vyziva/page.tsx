@@ -33,6 +33,15 @@ const MEALS = [
   { value: 'snack', label: 'Svačina' },
 ];
 
+/** Guess current meal type based on time of day. */
+function guessCurrentMeal(): string {
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 14) return 'lunch';
+  if (h < 17) return 'snack';
+  return 'dinner';
+}
+
 export default function NutritionV2Page() {
   const [data, setData] = useState<NutritionToday | null>(null);
   const [foods, setFoods] = useState<QuickFood[]>([]);
@@ -90,6 +99,24 @@ export default function NutritionV2Page() {
         <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="#A8FF00" label="Sacharidy" unit="g" />
         <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} color="#00E5FF" label="Tuky" unit="g" />
       </section>
+
+      {/* Quick add chips */}
+      {foods.length > 0 && (
+        <section className="mb-24">
+          <V2SectionLabel>Rychle pridat</V2SectionLabel>
+          <div className="flex flex-wrap gap-2">
+            {foods.slice(0, 8).map((f) => (
+              <button
+                key={f.name}
+                onClick={() => addFoodLog({ ...f, mealType: guessCurrentMeal() }).then(reload)}
+                className="rounded-full border border-white/10 px-4 py-2 text-[11px] text-white/60 transition hover:border-white/25 hover:bg-white/5 hover:text-white"
+              >
+                {f.name} <span className="tabular-nums text-white/30">{f.kcal}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* AI nutrition tips */}
       {tips.length > 0 && (

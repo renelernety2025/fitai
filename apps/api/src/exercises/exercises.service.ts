@@ -32,6 +32,22 @@ export class ExercisesService {
     return this.prisma.exercise.findMany({ where, orderBy: { name: 'asc' } });
   }
 
+  /** Get user's personal best for an exercise. */
+  async getPersonalBest(exerciseId: string, userId: string) {
+    const history = await this.prisma.exerciseHistory.findFirst({
+      where: { exerciseId, userId },
+      orderBy: { bestWeight: 'desc' },
+    });
+    if (!history) return { hasPR: false };
+    return {
+      hasPR: true,
+      bestWeight: history.bestWeight,
+      bestReps: history.bestReps,
+      avgFormScore: Math.round(history.avgFormScore),
+      totalVolume: Math.round(history.totalVolume),
+    };
+  }
+
   async findById(id: string) {
     return this.cache.getOrSet(`exercises:${id}`, CACHE_TTL_EXERCISES, async () => {
       const ex = await this.prisma.exercise.findUnique({ where: { id } });

@@ -9,6 +9,7 @@ import {
 } from '@/components/v2/V2Layout';
 import Link from 'next/link';
 import { getMyStats, getInsights, getMyGymSessions, type StatsData, type Insights, type GymSessionData } from '@/lib/api';
+import ActivityHeatmap from '@/components/progress/ActivityHeatmap';
 
 export default function ProgressV2Page() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -49,6 +50,14 @@ export default function ProgressV2Page() {
           >
             Zacit prvni trenink →
           </Link>
+        </section>
+      )}
+
+      {/* Activity heatmap */}
+      {sessions.length > 0 && (
+        <section className="mb-32">
+          <V2SectionLabel>Aktivita</V2SectionLabel>
+          <ActivityHeatmap sessionDates={sessions.map((s) => s.startedAt)} />
         </section>
       )}
 

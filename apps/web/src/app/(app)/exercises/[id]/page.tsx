@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { getExercise, getExercises, type ExerciseData } from '@/lib/api';
+import { getExercise, getExercises, getExercisePersonalBest, type ExerciseData, type PersonalBest } from '@/lib/api';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
 import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
 
@@ -16,12 +16,14 @@ const ExerciseModelViewer = dynamic(
 export default function ExerciseV2DetailPage({ params }: { params: { id: string } }) {
   const [ex, setEx] = useState<ExerciseData | null>(null);
   const [related, setRelated] = useState<ExerciseData[]>([]);
+  const [pr, setPr] = useState<PersonalBest | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<number | undefined>();
 
   useEffect(() => {
     setSelectedPhase(undefined);
     setEx(null);
     setRelated([]);
+    setPr(null);
     getExercise(params.id).then((data) => {
       setEx(data);
       if (data.muscleGroups[0]) {
@@ -30,6 +32,7 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
           .catch(console.error);
       }
     }).catch(console.error);
+    getExercisePersonalBest(params.id).then(setPr).catch(console.error);
   }, [params.id]);
 
   if (!ex) {
@@ -59,6 +62,18 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
         </div>
         <V2Display size="xl">{ex.nameCs}</V2Display>
         <p className="mt-4 max-w-2xl text-base text-white/55">{ex.descriptionCs}</p>
+        {pr?.hasPR && (
+          <div className="mt-6 inline-flex items-center gap-4 rounded-xl border border-[#FF9F0A]/20 bg-[#FF9F0A]/5 px-5 py-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#FF9F0A]">Tvuj rekord</span>
+            {pr.bestWeight && <span className="text-sm font-bold tabular-nums text-white">{pr.bestWeight}kg</span>}
+            <span className="text-sm tabular-nums text-white/50">x{pr.bestReps}</span>
+            {pr.avgFormScore && (
+              <span className={`text-sm font-bold tabular-nums ${pr.avgFormScore >= 80 ? 'text-[#A8FF00]' : 'text-[#FF9F0A]'}`}>
+                {pr.avgFormScore}% forma
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       {/* 3D animated model */}

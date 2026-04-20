@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -19,6 +19,12 @@ export class ExercisesController {
   @Get('micro-workout')
   getMicroWorkout() {
     return this.exercisesService.getMicroWorkout();
+  }
+
+  @Get(':id/personal-best')
+  @UseGuards(JwtAuthGuard)
+  getPersonalBest(@Param('id') id: string, @Request() req: any) {
+    return this.exercisesService.getPersonalBest(id, req.user.id);
   }
 
   @Get(':id')

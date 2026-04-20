@@ -251,6 +251,18 @@ export function getExercise(id: string) {
   return request<ExerciseData>(`/exercises/${id}`);
 }
 
+export interface PersonalBest {
+  hasPR: boolean;
+  bestWeight?: number;
+  bestReps?: number;
+  avgFormScore?: number;
+  totalVolume?: number;
+}
+
+export function getExercisePersonalBest(id: string) {
+  return request<PersonalBest>(`/exercises/${id}/personal-best`);
+}
+
 export interface MicroWorkoutData {
   title: string;
   durationMinutes: number;
