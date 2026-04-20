@@ -37,6 +37,14 @@ const SPORTS = [
     icon: 'soccer',
   },
   {
+    href: '/sequences',
+    title: 'Treninky',
+    subtitle: 'Choreografie · Sekvence',
+    description: 'Kompletni treninky — box kolo, HIIT, golf trenink. Plynule crossfade prechody.',
+    accent: '#BF5AF2',
+    icon: 'sequence',
+  },
+  {
     href: '/gym/start',
     title: 'Gym Workout',
     subtitle: 'Plan + AI Coach',
