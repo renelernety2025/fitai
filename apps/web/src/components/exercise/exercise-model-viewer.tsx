@@ -73,11 +73,11 @@ export default function ExerciseModelViewer({
           camera={{ position: [0, 0, 3], fov: 50 }}
           gl={{ antialias: true, alpha: true }}
         >
-          {/* @ts-expect-error R3F v8 JSX types incompatible with TS 5.9 */}
+          {/* @ts-ignore R3F v8 JSX types incompatible with TS 5.9 */}
           <ambientLight intensity={0.6} />
-          {/* @ts-expect-error R3F v8 JSX types */}
+          {/* @ts-ignore R3F v8 JSX types */}
           <directionalLight position={[5, 5, 5]} intensity={0.8} />
-          {/* @ts-expect-error R3F v8 JSX types */}
+          {/* @ts-ignore R3F v8 JSX types */}
           <directionalLight position={[-3, 3, -3]} intensity={0.3} />
           <Suspense fallback={null}>
             <HumanoidModel
