@@ -111,9 +111,47 @@ export default function DashboardV2Page() {
   const greeting = hour < 12 ? 'Dobré ráno' : hour < 18 ? 'Dobré odpoledne' : 'Dobrý večer';
   const firstName = user?.name?.split(' ')[0] || 'Athlete';
 
+  const isNewUser = stats?.totalSessions === 0;
+
   return (
     <V2Layout>
       <>
+        {/* ── WELCOME for new users ── */}
+        {isNewUser && (
+          <section className="mb-16 rounded-2xl border border-[#A8FF00]/15 bg-[#A8FF00]/5 p-10 text-center">
+            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#A8FF00]">
+              Vitej v FitAI
+            </div>
+            <h2 className="mb-4 text-2xl font-bold tracking-tight text-white">
+              Tvuj AI trener je pripraveny
+            </h2>
+            <p className="mx-auto mb-8 max-w-md text-sm text-white/50">
+              Zacni prvnim treninkem. AI ti bude davat zpetnou vazbu v realnem case,
+              sledovat tvuj pokrok a prizpusobovat plan tvym cilum.
+            </p>
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <Link
+                href="/gym/start"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition hover:scale-105"
+              >
+                Zacit trenink →
+              </Link>
+              <Link
+                href="/micro-workout"
+                className="inline-flex items-center gap-2 rounded-full border border-[#FF9F0A]/30 px-8 py-4 text-sm font-semibold text-[#FF9F0A] transition hover:bg-[#FF9F0A]/10"
+              >
+                5-min challenge →
+              </Link>
+              <Link
+                href="/exercises"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-8 py-4 text-sm font-semibold text-white/60 transition hover:text-white"
+              >
+                Prohlizet cviky →
+              </Link>
+            </div>
+          </section>
+        )}
+
         {/* ── HERO ── */}
         <section className="flex flex-col items-center pt-12 pb-24 text-center">
           <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { getExercise, type ExerciseData } from '@/lib/api';
+import { getExercise, getExercises, type ExerciseData } from '@/lib/api';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
 import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
 
@@ -15,12 +15,21 @@ const ExerciseModelViewer = dynamic(
 
 export default function ExerciseV2DetailPage({ params }: { params: { id: string } }) {
   const [ex, setEx] = useState<ExerciseData | null>(null);
+  const [related, setRelated] = useState<ExerciseData[]>([]);
   const [selectedPhase, setSelectedPhase] = useState<number | undefined>();
 
   useEffect(() => {
     setSelectedPhase(undefined);
     setEx(null);
-    getExercise(params.id).then(setEx).catch(console.error);
+    setRelated([]);
+    getExercise(params.id).then((data) => {
+      setEx(data);
+      if (data.muscleGroups[0]) {
+        getExercises({ muscleGroup: data.muscleGroups[0] })
+          .then((all) => setRelated(all.filter((e) => e.id !== data.id).slice(0, 4)))
+          .catch(console.error);
+      }
+    }).catch(console.error);
   }, [params.id]);
 
   if (!ex) {
@@ -176,6 +185,38 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
           ))}
         </div>
       </section>
+
+      {/* CTA */}
+      <section className="mb-24 text-center">
+        <Link
+          href="/gym/start"
+          className="group inline-flex items-center gap-3 rounded-full bg-white px-10 py-5 text-base font-semibold tracking-tight text-black transition hover:scale-105 hover:bg-white/90"
+        >
+          Trenuj {ex.nameCs}
+          <span className="transition group-hover:translate-x-1">→</span>
+        </Link>
+      </section>
+
+      {/* Related exercises */}
+      {related.length > 0 && (
+        <section className="mb-24">
+          <V2SectionLabel>Podobne cviky</V2SectionLabel>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {related.map((r) => (
+              <Link
+                key={r.id}
+                href={`/exercises/${r.id}`}
+                className="rounded-xl border border-white/8 p-5 transition hover:border-white/15 hover:bg-white/3"
+              >
+                <div className="text-sm font-semibold text-white">{r.nameCs}</div>
+                <div className="mt-1 text-[10px] text-white/40">
+                  {r.muscleGroups.join(' · ')} · {r.difficulty}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </V2Layout>
   );
 }
