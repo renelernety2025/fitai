@@ -7,6 +7,25 @@ import {
   buildUserPromptContext,
   type UserPromptContext,
 } from '../shared/user-context.builder';
+import type { CoachPersonalityType } from './coaching-prompt';
+
+interface GymSessionPersonality {
+  coachPersonality: string;
+}
+
+/** Resolve coach personality with logging for unexpected states. */
+function resolveCoachPersonality(
+  req: { sessionType: string; sessionId: string },
+  gymSession: GymSessionPersonality | null,
+  logger: Logger,
+): CoachPersonalityType {
+  if (req.sessionType !== 'gym') return 'MOTIVATIONAL';
+  if (!gymSession) {
+    logger.warn(`GymSession ${req.sessionId} not found — defaulting to MOTIVATIONAL`);
+    return 'MOTIVATIONAL';
+  }
+  return (gymSession.coachPersonality as CoachPersonalityType) ?? 'MOTIVATIONAL';
+}
 
 /**
  * SSE event protocol between the /ask-stream endpoint and the mobile
@@ -430,7 +449,7 @@ PRAVIDLA:
 
       // Derived
       weakJoints,
-      coachPersonality: gymSession?.coachPersonality ?? 'MOTIVATIONAL',
+      coachPersonality: resolveCoachPersonality(req, gymSession, this.logger),
 
       // Per-exercise session fields
       currentExercise: req.exerciseName,

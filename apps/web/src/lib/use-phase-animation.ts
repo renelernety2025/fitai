@@ -41,6 +41,9 @@ export function usePhaseAnimation(
   const phaseIndexRef = useRef(0);
   const speedRef = useRef<SpeedMultiplier>(1);
 
+  // Keep speedRef in sync with speed state (fixes stale ref if speed is set externally)
+  useEffect(() => { speedRef.current = speed; }, [speed]);
+
   const togglePlay = useCallback(() => setIsPlaying((p) => !p), []);
 
   const jumpToPhase = useCallback((index: number) => {

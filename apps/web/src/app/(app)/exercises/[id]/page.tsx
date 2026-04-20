@@ -17,6 +17,8 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
   const [selectedPhase, setSelectedPhase] = useState<number | undefined>();
 
   useEffect(() => {
+    setSelectedPhase(undefined);
+    setEx(null);
     getExercise(params.id).then(setEx).catch(console.error);
   }, [params.id]);
 

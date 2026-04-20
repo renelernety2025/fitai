@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, Html } from '@react-three/drei';
@@ -134,7 +134,7 @@ export default function HumanoidModel({
   );
 }
 
-/** Floating angle label attached to a bone. */
+/** Floating angle label attached to a bone. Tracks bone position via useFrame + ref (zero re-renders). */
 function AngleLabel({
   bone,
   angle,
@@ -144,26 +144,26 @@ function AngleLabel({
   angle: number;
   label: string;
 }) {
-  const [pos, setPos] = useState<[number, number, number]>([0, 0, 0]);
+  const groupRef = useRef<THREE.Object3D>(null);
   const worldPos = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
+    if (!groupRef.current) return;
     bone.getWorldPosition(worldPos);
-    setPos([worldPos.x, worldPos.y, worldPos.z]);
+    groupRef.current.position.copy(worldPos);
   });
 
-  return (
-    <Html
-      position={pos}
-      center
-      distanceFactor={4}
-      style={{ pointerEvents: 'none' }}
-    >
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
+  // @ts-ignore R3F v8 JSX — opening tag
+  const groupEl = <group ref={groupRef}>
+    <Html center distanceFactor={4} style={{ pointerEvents: 'none' }}>
       <div className="whitespace-nowrap rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold tabular-nums text-[#A8FF00] backdrop-blur-sm">
         {label} {angle}°
       </div>
     </Html>
-  );
+    {/* @ts-ignore R3F v8 JSX — closing tag */}
+  </group>;
+  return groupEl;
 }
 
 function applyMuscleHighlight(

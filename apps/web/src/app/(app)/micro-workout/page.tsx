@@ -8,12 +8,14 @@ import { getMicroWorkout, type MicroWorkoutData } from '@/lib/api';
 export default function MicroWorkoutPage() {
   const [data, setData] = useState<MicroWorkoutData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   function loadChallenge() {
     setLoading(true);
+    setError(null);
     getMicroWorkout()
       .then(setData)
-      .catch(console.error)
+      .catch((err) => setError(err?.message ?? 'Nepodařilo se načíst cviky'))
       .finally(() => setLoading(false));
   }
 
@@ -41,14 +43,29 @@ export default function MicroWorkoutPage() {
 
       {loading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+          <p className="text-sm text-white/40">Nacitam cviky...</p>
         </div>
       )}
 
-      {data && !loading && (
+      {error && !loading && (
+        <div className="mb-12 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 p-6 text-center">
+          <p className="mb-3 text-sm text-[#FF375F]">{error}</p>
+          <button
+            onClick={loadChallenge}
+            className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/60 transition hover:text-white"
+          >
+            Zkusit znovu
+          </button>
+        </div>
+      )}
+
+      {data && !loading && !error && (
         <>
           <section className="mb-12">
             <V2SectionLabel>Dnesni challenge</V2SectionLabel>
+            {data.exercises.length === 0 ? (
+              <p className="py-8 text-center text-sm text-white/40">Zadne cviky dostupne. Zkus pozdeji.</p>
+            ) : (
             <div className="space-y-4">
               {data.exercises.map((ex, i) => (
                 <Link
@@ -76,6 +93,7 @@ export default function MicroWorkoutPage() {
                 </Link>
               ))}
             </div>
+            )}
           </section>
 
           <div className="mb-24 flex gap-4">
