@@ -19,12 +19,14 @@ import {
   getNutritionToday,
   getWeeklyReview,
   getDailyBrief,
+  getMicroWorkout,
   type StatsData,
   type Insights,
   type Lesson,
   type NutritionToday,
   type WeeklyReview,
   type DailyBrief,
+  type MicroWorkoutData,
 } from '@/lib/api';
 
 function TripleRing({
@@ -82,6 +84,7 @@ export default function DashboardV2Page() {
   const [nutrition, setNutrition] = useState<NutritionToday | null>(null);
   const [weekly, setWeekly] = useState<WeeklyReview | null>(null);
   const [brief, setBrief] = useState<DailyBrief | null>(null);
+  const [micro, setMicro] = useState<MicroWorkoutData | null>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -90,6 +93,7 @@ export default function DashboardV2Page() {
     getNutritionToday().then(setNutrition).catch(console.error);
     getWeeklyReview().then((r) => setWeekly(r.review)).catch(console.error);
     getDailyBrief().then((r) => setBrief(r.brief)).catch(console.error);
+    getMicroWorkout().then(setMicro).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -271,6 +275,41 @@ export default function DashboardV2Page() {
               {insights.recovery.recommendation}
             </p>
           </div>
+        )}
+
+        {/* ── MICRO WORKOUT ── */}
+        {micro && micro.exercises.length > 0 && (
+          <section className="mb-24">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#FF9F0A]">
+              5-min challenge
+            </div>
+            <h2
+              className="mb-6 font-bold tracking-tight text-white"
+              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', letterSpacing: '-0.03em', lineHeight: 1.15 }}
+            >
+              Dnesni micro workout
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {micro.exercises.map((ex, i) => (
+                <Link
+                  key={ex.id}
+                  href={`/exercises/${ex.id}`}
+                  className="rounded-xl border border-white/8 p-4 transition hover:border-white/15 hover:bg-white/3"
+                >
+                  <div className="mb-1 text-lg font-bold tabular-nums text-white/20">{i + 1}</div>
+                  <div className="text-sm font-semibold text-white">{ex.nameCs}</div>
+                  <div className="mt-1 text-[10px] text-white/40">{ex.muscleGroups.join(' · ')}</div>
+                  <div className="mt-2 text-[11px] text-white/50">{ex.targetSets}x{ex.targetReps} · {ex.restSeconds}s pauza</div>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href="/micro-workout"
+              className="mt-4 inline-block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#FF9F0A]/60 transition hover:text-[#FF9F0A]"
+            >
+              Jiny challenge →
+            </Link>
+          </section>
         )}
 
         {/* ── CTA ── */}

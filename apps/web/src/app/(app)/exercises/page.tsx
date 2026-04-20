@@ -30,14 +30,24 @@ const diffAccent: Record<string, string> = {
   ADVANCED: '#FF375F',
 };
 
+const DIFFICULTIES = [
+  { v: 'ALL', l: 'Vše', color: '#FFF' },
+  { v: 'BEGINNER', l: 'Začátečník', color: '#A8FF00' },
+  { v: 'INTERMEDIATE', l: 'Pokročilý', color: '#00E5FF' },
+  { v: 'ADVANCED', l: 'Expert', color: '#FF375F' },
+];
+
 export default function ExercisesV2Page() {
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [filter, setFilter] = useState('ALL');
+  const [diffFilter, setDiffFilter] = useState('ALL');
 
   useEffect(() => {
-    const f = filter !== 'ALL' ? { muscleGroup: filter } : undefined;
-    getExercises(f).then(setExercises).catch(console.error);
-  }, [filter]);
+    const f: Record<string, string> = {};
+    if (filter !== 'ALL') f.muscleGroup = filter;
+    if (diffFilter !== 'ALL') f.difficulty = diffFilter;
+    getExercises(Object.keys(f).length > 0 ? f : undefined).then(setExercises).catch(console.error);
+  }, [filter, diffFilter]);
 
   return (
     <V2Layout>
@@ -49,7 +59,7 @@ export default function ExercisesV2Page() {
         </p>
       </section>
 
-      <div className="mb-16 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap gap-2">
         {MUSCLES.map((m) => (
           <button
             key={m.v}
@@ -63,6 +73,26 @@ export default function ExercisesV2Page() {
             {m.l}
           </button>
         ))}
+      </div>
+      <div className="mb-16 flex flex-wrap gap-2">
+        {DIFFICULTIES.map((d) => (
+          <button
+            key={d.v}
+            onClick={() => setDiffFilter(d.v)}
+            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
+              diffFilter === d.v
+                ? 'text-black'
+                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
+            }`}
+            style={diffFilter === d.v ? { borderColor: d.color, backgroundColor: d.color } : undefined}
+          >
+            {d.l}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-6 text-[11px] font-semibold tabular-nums text-white/30">
+        {exercises.length} {exercises.length === 1 ? 'cvik' : exercises.length < 5 ? 'cviky' : 'cviku'}
       </div>
 
       <section className="space-y-1">
