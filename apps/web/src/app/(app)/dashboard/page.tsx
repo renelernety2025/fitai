@@ -274,12 +274,19 @@ export default function DashboardV2Page() {
         )}
 
         {/* ── CTA ── */}
-        <div className="mb-24 text-center">
+        <div className="mb-24 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href="/gym/start"
             className="group inline-flex items-center gap-3 rounded-full bg-white px-10 py-5 text-base font-semibold tracking-tight text-black transition hover:scale-105 hover:bg-white/90"
           >
             Začít trénink
+            <span className="transition group-hover:translate-x-1">→</span>
+          </Link>
+          <Link
+            href="/micro-workout"
+            className="group inline-flex items-center gap-3 rounded-full border border-[#FF9F0A]/40 px-8 py-5 text-base font-semibold tracking-tight text-[#FF9F0A] transition hover:scale-105 hover:bg-[#FF9F0A]/10"
+          >
+            5-min Micro
             <span className="transition group-hover:translate-x-1">→</span>
           </Link>
         </div>

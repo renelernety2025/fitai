@@ -5,23 +5,23 @@
  */
 
 export const MUSCLE_BONE_MAP: Record<string, string[]> = {
-  QUADRICEPS: ['mixamorigLeftUpLeg', 'mixamorigRightUpLeg'],
-  HAMSTRINGS: ['mixamorigLeftUpLeg', 'mixamorigRightUpLeg'],
-  GLUTES: ['mixamorigHips'],
-  CALVES: ['mixamorigLeftLeg', 'mixamorigRightLeg'],
-  CHEST: ['mixamorigSpine1', 'mixamorigSpine2'],
-  BACK: ['mixamorigSpine', 'mixamorigSpine1'],
+  QUADRICEPS: ['mixamorig:LeftUpLeg', 'mixamorig:RightUpLeg'],
+  HAMSTRINGS: ['mixamorig:LeftUpLeg', 'mixamorig:RightUpLeg'],
+  GLUTES: ['mixamorig:Hips'],
+  CALVES: ['mixamorig:LeftLeg', 'mixamorig:RightLeg'],
+  CHEST: ['mixamorig:Spine1', 'mixamorig:Spine2'],
+  BACK: ['mixamorig:Spine', 'mixamorig:Spine1'],
   SHOULDERS: [
-    'mixamorigLeftShoulder', 'mixamorigRightShoulder',
-    'mixamorigLeftArm', 'mixamorigRightArm',
+    'mixamorig:LeftShoulder', 'mixamorig:RightShoulder',
+    'mixamorig:LeftArm', 'mixamorig:RightArm',
   ],
-  BICEPS: ['mixamorigLeftForeArm', 'mixamorigRightForeArm'],
-  TRICEPS: ['mixamorigLeftArm', 'mixamorigRightArm'],
-  CORE: ['mixamorigSpine', 'mixamorigHips'],
+  BICEPS: ['mixamorig:LeftForeArm', 'mixamorig:RightForeArm'],
+  TRICEPS: ['mixamorig:LeftArm', 'mixamorig:RightArm'],
+  CORE: ['mixamorig:Spine', 'mixamorig:Hips'],
   FULL_BODY: [
-    'mixamorigSpine', 'mixamorigSpine1', 'mixamorigSpine2',
-    'mixamorigLeftUpLeg', 'mixamorigRightUpLeg',
-    'mixamorigLeftArm', 'mixamorigRightArm',
+    'mixamorig:Spine', 'mixamorig:Spine1', 'mixamorig:Spine2',
+    'mixamorig:LeftUpLeg', 'mixamorig:RightUpLeg',
+    'mixamorig:LeftArm', 'mixamorig:RightArm',
   ],
 };
 
