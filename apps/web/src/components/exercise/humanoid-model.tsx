@@ -41,11 +41,13 @@ export default function HumanoidModel({
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionRef = useRef<THREE.AnimationAction | null>(null);
 
-  // Build bone lookup
+  // Sanitize bone names: replace ':' with '_' (Three.js PropertyBinding
+  // treats ':' as a separator, breaking AnimationMixer track resolution)
   const bonesMap = useMemo(() => {
     const map = new Map<string, THREE.Bone>();
     clonedScene.traverse((child) => {
       if ((child as THREE.Bone).isBone) {
+        child.name = child.name.replace(/:/g, '_');
         map.set(child.name, child as THREE.Bone);
       }
     });
