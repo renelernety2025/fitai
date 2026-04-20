@@ -128,7 +128,7 @@ export default function HumanoidModel({
       const curTarget = cur ? rest.clone().multiply(cur) : rest;
       const nxtTarget = nxt ? rest.clone().multiply(nxt) : rest;
       tmpQuat.copy(curTarget).slerp(nxtTarget, progress);
-      bone.quaternion.slerp(tmpQuat, 0.08);
+      bone.quaternion.slerp(tmpQuat, 0.2);
     }
   });
 
@@ -202,7 +202,7 @@ function applyMuscleHighlight(
     const mesh = child as THREE.SkinnedMesh;
     const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
     mat.emissive = color;
-    mat.emissiveIntensity = 0.05;
+    mat.emissiveIntensity = 0.02;
     mesh.material = mat;
   });
 }

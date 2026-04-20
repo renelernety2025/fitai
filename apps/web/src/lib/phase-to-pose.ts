@@ -11,7 +11,7 @@ import { HUMANOID_JOINT_MAP, MIRROR_MAP, type BoneMapping } from './humanoid-joi
 import { getExerciseKeyframes } from './exercise-pose-keyframes';
 
 const DEG2RAD = Math.PI / 180;
-const DAMPING = 0.7;
+const DAMPING = 1.0;
 
 interface PoseRule {
   joint: string;
