@@ -3,22 +3,16 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, Html } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { computePoseTargets, REST_QUATERNION } from '@/lib/phase-to-pose';
-import { getHighlightedBones, HIGHLIGHT_COLOR } from '@/lib/muscle-group-regions';
 import { HUMANOID_JOINT_MAP } from '@/lib/humanoid-joint-map';
-
-interface PhaseRule {
-  joint: string;
-  angle_min: number;
-  angle_max: number;
-}
+import { getExerciseKeyframes } from '@/lib/exercise-pose-keyframes';
+import { getHighlightedBones, HIGHLIGHT_COLOR } from '@/lib/muscle-group-regions';
 
 interface Phase {
   phase: string;
   nameCs: string;
-  rules: PhaseRule[];
+  rules: { joint: string; angle_min: number; angle_max: number }[];
   minDurationMs?: number;
 }
 
@@ -31,20 +25,10 @@ interface HumanoidModelProps {
 }
 
 const MODEL_PATH = '/models/humanoid.glb';
+const DEG2RAD = Math.PI / 180;
+const PHASE_DURATION = 1.5;
 
-const JOINT_LABELS: Record<string, string> = {
-  left_knee: 'Koleno',
-  right_knee: 'Koleno',
-  left_hip: 'Kyčel',
-  right_hip: 'Kyčel',
-  left_elbow: 'Loket',
-  right_elbow: 'Loket',
-  left_shoulder: 'Rameno',
-  right_shoulder: 'Rameno',
-  left_ankle: 'Kotník',
-};
-
-/** 3D humanoid model driven by exercise phase angle rules. */
+/** 3D humanoid model animated via Three.js AnimationMixer. */
 export default function HumanoidModel({
   phases,
   muscleGroups,
@@ -53,142 +37,157 @@ export default function HumanoidModel({
   progress,
 }: HumanoidModelProps) {
   const { scene } = useGLTF(MODEL_PATH);
-  const clonedScene = useMemo(
-    () => SkeletonUtils.clone(scene),
-    [scene],
-  );
-  const bonesRef = useRef<Map<string, THREE.Bone>>(new Map());
+  const clonedScene = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
 
-  useEffect(() => {
-    const bones = new Map<string, THREE.Bone>();
+  // Build bone lookup
+  const bonesMap = useMemo(() => {
+    const map = new Map<string, THREE.Bone>();
     clonedScene.traverse((child) => {
       if ((child as THREE.Bone).isBone) {
-        bones.set(child.name, child as THREE.Bone);
+        map.set(child.name, child as THREE.Bone);
       }
     });
-    bonesRef.current = bones;
+    return map;
   }, [clonedScene]);
 
+  // Create AnimationClip from keyframes and attach to mixer
+  useEffect(() => {
+    if (bonesMap.size === 0 || phases.length === 0) return;
+
+    const mixer = new THREE.AnimationMixer(clonedScene);
+    mixerRef.current = mixer;
+
+    const clip = buildAnimationClip(phases, exerciseName, bonesMap);
+    if (clip) {
+      const action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.play();
+      actionRef.current = action;
+    }
+
+    return () => {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(clonedScene);
+    };
+  }, [clonedScene, bonesMap, phases, exerciseName]);
+
+  // Apply muscle highlighting
   useEffect(() => {
     const highlighted = getHighlightedBones(muscleGroups);
     applyMuscleHighlight(clonedScene, highlighted);
   }, [clonedScene, muscleGroups]);
 
-  const currentTargets = useMemo(() => {
-    if (!phases[currentPhaseIndex]) return new Map();
-    return computePoseTargets(phases[currentPhaseIndex], exerciseName);
-  }, [phases, currentPhaseIndex, exerciseName]);
-
-  const nextTargets = useMemo(() => {
-    const nextIdx = (currentPhaseIndex + 1) % phases.length;
-    if (!phases[nextIdx]) return new Map();
-    return computePoseTargets(phases[nextIdx], exerciseName);
-  }, [phases, currentPhaseIndex, exerciseName]);
-
-  // Compute current angle values for overlay
-  const activeRules = useMemo(() => {
-    const phase = phases[currentPhaseIndex];
-    if (!phase) return [];
-    return phase.rules.map((rule) => ({
-      joint: rule.joint,
-      angle: Math.round((rule.angle_min + rule.angle_max) / 2),
-      boneName: HUMANOID_JOINT_MAP[rule.joint]?.boneName,
-      label: JOINT_LABELS[rule.joint] ?? rule.joint,
-    }));
-  }, [phases, currentPhaseIndex]);
-
-  // Store original bone quaternions on first frame (rest pose)
-  const restPoseRef = useRef<Map<string, THREE.Quaternion>>(new Map());
-
-  useFrame(() => {
-    const bones = bonesRef.current;
-    if (bones.size === 0) return;
-
-    // Capture rest pose on first frame
-    if (restPoseRef.current.size === 0) {
-      bones.forEach((bone, name) => {
-        restPoseRef.current.set(name, bone.quaternion.clone());
-      });
-    }
-
-    // Only animate bones that have targets — leave others at rest pose
-    const allTargetBones = new Set([
-      ...currentTargets.keys(),
-      ...nextTargets.keys(),
-    ]);
-
-    const tmpQuat = new THREE.Quaternion();
-    for (const name of allTargetBones) {
-      const bone = bones.get(name);
-      if (!bone) continue;
-      const rest = restPoseRef.current.get(name) ?? REST_QUATERNION;
-      const cur = currentTargets.get(name);
-      const nxt = nextTargets.get(name);
-      // Compose: rest pose * phase delta
-      const curTarget = cur ? rest.clone().multiply(cur) : rest;
-      const nxtTarget = nxt ? rest.clone().multiply(nxt) : rest;
-      tmpQuat.copy(curTarget).slerp(nxtTarget, progress);
-      bone.quaternion.slerp(tmpQuat, 0.2);
-    }
+  // Update mixer each frame
+  useFrame((_, delta) => {
+    mixerRef.current?.update(delta * 0.4);
   });
 
   /* eslint-disable @typescript-eslint/ban-ts-comment */
   return (
     <>
-      {/* @ts-ignore R3F v8 JSX types incompatible with TS 5.9 */}
-      <primitive
-        object={clonedScene}
-        scale={1}
-        position={[0, -1, 0]}
-      />
-      {/* Angle overlay labels */}
-      {activeRules.map((rule) => {
-        const bone = bonesRef.current.get(rule.boneName ?? '');
-        if (!bone) return null;
-        return (
-          <AngleLabel
-            key={rule.joint}
-            bone={bone}
-            angle={rule.angle}
-            label={rule.label}
-          />
-        );
-      })}
+      {/* @ts-ignore R3F v8 JSX types */}
+      <primitive object={clonedScene} scale={1} position={[0, -1, 0]} />
     </>
   );
 }
 
-/** Floating angle label attached to a bone. Tracks bone position via useFrame + ref (zero re-renders). */
-function AngleLabel({
-  bone,
-  angle,
-  label,
-}: {
-  bone: THREE.Bone;
-  angle: number;
-  label: string;
-}) {
-  const groupRef = useRef<THREE.Object3D>(null);
-  const worldPos = useMemo(() => new THREE.Vector3(), []);
+/**
+ * Build a Three.js AnimationClip from exercise keyframes.
+ * Creates QuaternionKeyframeTrack for each animated bone.
+ */
+function buildAnimationClip(
+  phases: Phase[],
+  exerciseName: string | undefined,
+  bonesMap: Map<string, THREE.Bone>,
+): THREE.AnimationClip | null {
+  const keyframes = exerciseName ? getExerciseKeyframes(exerciseName) : null;
+  const phaseOrder = ['START', 'ECCENTRIC', 'HOLD', 'CONCENTRIC', 'START'];
+  const totalDuration = phaseOrder.length * PHASE_DURATION;
 
-  useFrame(() => {
-    if (!groupRef.current) return;
-    bone.getWorldPosition(worldPos);
-    groupRef.current.position.copy(worldPos);
-  });
+  // Collect all joints that appear in any phase
+  const allJoints = new Set<string>();
 
-  /* eslint-disable @typescript-eslint/ban-ts-comment */
-  // @ts-ignore R3F v8 JSX — opening tag
-  const groupEl = <group ref={groupRef}>
-    <Html center distanceFactor={4} style={{ pointerEvents: 'none' }}>
-      <div className="whitespace-nowrap rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold tabular-nums text-[#A8FF00] backdrop-blur-sm">
-        {label} {angle}°
-      </div>
-    </Html>
-    {/* @ts-ignore R3F v8 JSX — closing tag */}
-  </group>;
-  return groupEl;
+  if (keyframes) {
+    for (const phase of Object.values(keyframes)) {
+      for (const joint of Object.keys(phase)) {
+        allJoints.add(joint);
+      }
+    }
+  } else {
+    // Fallback: use phase rules
+    for (const phase of phases) {
+      for (const rule of phase.rules) {
+        allJoints.add(rule.joint);
+        const mirror = MIRROR_MAP_INLINE[rule.joint];
+        if (mirror) allJoints.add(mirror);
+      }
+    }
+  }
+
+  if (allJoints.size === 0) return null;
+
+  const tracks: THREE.KeyframeTrack[] = [];
+
+  for (const joint of allJoints) {
+    const mapping = HUMANOID_JOINT_MAP[joint];
+    if (!mapping) continue;
+
+    const bone = bonesMap.get(mapping.boneName);
+    if (!bone) continue;
+
+    const times: number[] = [];
+    const values: number[] = [];
+    const restQuat = bone.quaternion.clone();
+
+    for (let i = 0; i < phaseOrder.length; i++) {
+      const phaseKey = phaseOrder[i];
+      const time = i * PHASE_DURATION;
+      times.push(time);
+
+      let targetAngle: number | null = null;
+
+      if (keyframes) {
+        const kf = keyframes[phaseKey as keyof typeof keyframes];
+        targetAngle = kf?.[joint] ?? null;
+      } else {
+        const phase = phases.find((p) => p.phase === phaseKey);
+        const rule = phase?.rules.find((r) => r.joint === joint);
+        if (rule) targetAngle = (rule.angle_min + rule.angle_max) / 2;
+      }
+
+      if (targetAngle !== null) {
+        const delta = (mapping.restAngle - targetAngle) * DEG2RAD * mapping.direction;
+        const euler = new THREE.Euler();
+        euler[mapping.axis] = delta;
+        const q = restQuat.clone().multiply(
+          new THREE.Quaternion().setFromEuler(euler),
+        );
+        values.push(q.x, q.y, q.z, q.w);
+      } else {
+        values.push(restQuat.x, restQuat.y, restQuat.z, restQuat.w);
+      }
+    }
+
+    const trackName = `${bone.name}.quaternion`;
+    tracks.push(
+      new THREE.QuaternionKeyframeTrack(trackName, times, values),
+    );
+  }
+
+  if (tracks.length === 0) return null;
+  return new THREE.AnimationClip('exercise', totalDuration, tracks);
 }
+
+const MIRROR_MAP_INLINE: Record<string, string> = {
+  left_knee: 'right_knee',
+  left_hip: 'right_hip',
+  left_elbow: 'right_elbow',
+  left_shoulder: 'right_shoulder',
+  left_shoulder_z: 'right_shoulder_z',
+  left_ankle: 'right_ankle',
+};
 
 function applyMuscleHighlight(
   root: THREE.Object3D,
