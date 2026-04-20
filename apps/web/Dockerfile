@@ -5,18 +5,16 @@ WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-COPY package.json package-lock.json* ./
+# Copy only web and shared package definitions — skip root mobile deps
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 
-# Strip root-level mobile deps (react 19, expo, react-native) that conflict
-# with apps/web react 18. Only workspace install for web + shared is needed.
-RUN node -e "\
-  const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));\
-  delete p.dependencies;\
-  require('fs').writeFileSync('package.json',JSON.stringify(p,null,2));"
+# Create minimal root package.json for workspace install (no mobile deps)
+RUN echo '{"private":true,"workspaces":["apps/*","packages/*"]}' > package.json
 
-RUN npm install --workspace=@fitai/web --workspace=@fitai/shared
+# Install without lockfile to avoid root-level react 19 conflicts
+RUN cd apps/web && npm install --legacy-peer-deps
+RUN cd packages/shared && npm install 2>/dev/null || true
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
