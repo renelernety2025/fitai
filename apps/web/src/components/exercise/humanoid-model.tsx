@@ -95,17 +95,39 @@ export default function HumanoidModel({
     }));
   }, [phases, currentPhaseIndex]);
 
+  // Store original bone quaternions on first frame (rest pose)
+  const restPoseRef = useRef<Map<string, THREE.Quaternion>>(new Map());
+
   useFrame(() => {
     const bones = bonesRef.current;
     if (bones.size === 0) return;
 
+    // Capture rest pose on first frame
+    if (restPoseRef.current.size === 0) {
+      bones.forEach((bone, name) => {
+        restPoseRef.current.set(name, bone.quaternion.clone());
+      });
+    }
+
+    // Only animate bones that have targets — leave others at rest pose
+    const allTargetBones = new Set([
+      ...currentTargets.keys(),
+      ...nextTargets.keys(),
+    ]);
+
     const tmpQuat = new THREE.Quaternion();
-    bones.forEach((bone, name) => {
-      const cur = currentTargets.get(name) ?? REST_QUATERNION;
-      const nxt = nextTargets.get(name) ?? REST_QUATERNION;
-      tmpQuat.copy(cur).slerp(nxt, progress);
+    for (const name of allTargetBones) {
+      const bone = bones.get(name);
+      if (!bone) continue;
+      const rest = restPoseRef.current.get(name) ?? REST_QUATERNION;
+      const cur = currentTargets.get(name);
+      const nxt = nextTargets.get(name);
+      // Compose: rest pose * phase delta
+      const curTarget = cur ? rest.clone().multiply(cur) : rest;
+      const nxtTarget = nxt ? rest.clone().multiply(nxt) : rest;
+      tmpQuat.copy(curTarget).slerp(nxtTarget, progress);
       bone.quaternion.slerp(tmpQuat, 0.08);
-    });
+    }
   });
 
   /* eslint-disable @typescript-eslint/ban-ts-comment */
@@ -178,7 +200,7 @@ function applyMuscleHighlight(
     const mesh = child as THREE.SkinnedMesh;
     const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
     mat.emissive = color;
-    mat.emissiveIntensity = 0.15;
+    mat.emissiveIntensity = 0.05;
     mesh.material = mat;
   });
 }

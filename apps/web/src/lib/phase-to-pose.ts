@@ -23,12 +23,18 @@ interface PhaseDefinition {
   rules: PoseRule[];
 }
 
-/** Compute target quaternion for a single bone from its angle rule. */
+/**
+ * Compute DELTA quaternion for a bone from its angle rule.
+ * This is multiplied with the model's rest pose, not used as absolute rotation.
+ * Damping factor prevents over-rotation on Mixamo rigs.
+ */
+const DAMPING = 0.6;
+
 function computeBoneQuaternion(
   mapping: BoneMapping,
   targetAngle: number,
 ): THREE.Quaternion {
-  const delta = (mapping.restAngle - targetAngle) * DEG2RAD * mapping.direction;
+  const delta = (mapping.restAngle - targetAngle) * DEG2RAD * mapping.direction * DAMPING;
   const euler = new THREE.Euler();
   euler[mapping.axis] = delta;
   return new THREE.Quaternion().setFromEuler(euler);
