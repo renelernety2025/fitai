@@ -357,6 +357,10 @@ export function endGymSession(sessionId: string) {
   );
 }
 
+export function getMyGymSessions() {
+  return request<GymSessionData[]>('/gym-sessions/my');
+}
+
 // Education (Section D)
 export interface Lesson {
   id: string;

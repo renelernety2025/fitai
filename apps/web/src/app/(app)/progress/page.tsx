@@ -7,15 +7,18 @@ import {
   V2Display,
   V2Stat,
 } from '@/components/v2/V2Layout';
-import { getMyStats, getInsights, type StatsData, type Insights } from '@/lib/api';
+import Link from 'next/link';
+import { getMyStats, getInsights, getMyGymSessions, type StatsData, type Insights, type GymSessionData } from '@/lib/api';
 
 export default function ProgressV2Page() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
+  const [sessions, setSessions] = useState<GymSessionData[]>([]);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
+    getMyGymSessions().then(setSessions).catch(console.error);
   }, []);
 
   if (!stats) {
@@ -34,6 +37,20 @@ export default function ProgressV2Page() {
         <V2SectionLabel>Vše co jsi udělal</V2SectionLabel>
         <V2Display size="xl">Pokrok.</V2Display>
       </section>
+
+      {/* Empty state for new users */}
+      {stats.totalSessions === 0 && (
+        <section className="mb-32 rounded-2xl border border-white/8 p-12 text-center">
+          <p className="mb-2 text-lg text-white/50">Zatim zadne treninky</p>
+          <p className="mb-6 text-sm text-white/30">Zacni cvicit a uvidis svuj pokrok zde.</p>
+          <Link
+            href="/gym/start"
+            className="inline-flex rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:scale-105"
+          >
+            Zacit prvni trenink →
+          </Link>
+        </section>
+      )}
 
       {/* Big stats */}
       <section className="mb-32 grid grid-cols-2 gap-y-16 sm:grid-cols-4">
@@ -110,6 +127,44 @@ export default function ProgressV2Page() {
                 <p className="mt-2 max-w-xl text-sm text-white/55">{w.reason}</p>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+      {/* Workout history */}
+      {sessions.length > 0 && (
+        <section className="mb-32">
+          <V2SectionLabel>Historie treninku</V2SectionLabel>
+          <div className="space-y-1">
+            {sessions.slice(0, 10).map((s) => {
+              const date = new Date(s.startedAt);
+              const mins = Math.round(s.durationSeconds / 60);
+              const uniqueExercises = new Set(s.exerciseSets?.map((e) => e.exerciseId) ?? []);
+              return (
+                <Link
+                  key={s.id}
+                  href={`/gym/${s.id}`}
+                  className="group flex items-center justify-between border-b border-white/8 py-5 transition hover:border-white/20"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-white">
+                      {date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
+                      <span className="ml-2 text-white/40">{date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-white/40">
+                      {uniqueExercises.size} cviku · {s.totalReps} repu · {mins} min
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {s.averageFormScore > 0 && (
+                      <span className={`text-sm font-bold tabular-nums ${s.averageFormScore >= 80 ? 'text-[#A8FF00]' : s.averageFormScore >= 60 ? 'text-[#FF9F0A]' : 'text-[#FF375F]'}`}>
+                        {Math.round(s.averageFormScore)}%
+                      </span>
+                    )}
+                    <span className="text-white/20 transition group-hover:text-white">→</span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

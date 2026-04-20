@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getExercises, type ExerciseData } from '@/lib/api';
@@ -38,16 +38,25 @@ const DIFFICULTIES = [
 ];
 
 export default function ExercisesV2Page() {
-  const [exercises, setExercises] = useState<ExerciseData[]>([]);
+  const [allExercises, setAllExercises] = useState<ExerciseData[]>([]);
   const [filter, setFilter] = useState('ALL');
   const [diffFilter, setDiffFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const f: Record<string, string> = {};
-    if (filter !== 'ALL') f.muscleGroup = filter;
-    if (diffFilter !== 'ALL') f.difficulty = diffFilter;
-    getExercises(Object.keys(f).length > 0 ? f : undefined).then(setExercises).catch(console.error);
-  }, [filter, diffFilter]);
+    getExercises().then(setAllExercises).catch(console.error);
+  }, []);
+
+  const exercises = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return allExercises.filter((ex) => {
+      if (filter !== 'ALL' && !ex.muscleGroups.includes(filter)) return false;
+      if (diffFilter !== 'ALL' && ex.difficulty !== diffFilter) return false;
+      if (q && !ex.nameCs.toLowerCase().includes(q) && !ex.name.toLowerCase().includes(q)
+        && !ex.muscleGroups.some((g) => g.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [allExercises, filter, diffFilter, search]);
 
   return (
     <V2Layout>
@@ -58,6 +67,16 @@ export default function ExercisesV2Page() {
           Detailní instrukce, fáze pohybu, dýchání, tempo. Forma má přednost před váhou.
         </p>
       </section>
+
+      <div className="mb-6">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Hledej cvik..."
+          className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25"
+        />
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {MUSCLES.map((m) => (
@@ -94,6 +113,18 @@ export default function ExercisesV2Page() {
       <div className="mb-6 text-[11px] font-semibold tabular-nums text-white/30">
         {exercises.length} {exercises.length === 1 ? 'cvik' : exercises.length < 5 ? 'cviky' : 'cviku'}
       </div>
+
+      {exercises.length === 0 && allExercises.length > 0 && (
+        <div className="py-16 text-center">
+          <p className="text-lg text-white/30">Zadny cvik neodpovida filtrum</p>
+          <button
+            onClick={() => { setFilter('ALL'); setDiffFilter('ALL'); setSearch(''); }}
+            className="mt-4 text-sm text-[#A8FF00]/60 transition hover:text-[#A8FF00]"
+          >
+            Zrusit filtry
+          </button>
+        </div>
+      )}
 
       <section className="space-y-1">
         {exercises.map((ex) => (
