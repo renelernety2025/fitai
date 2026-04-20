@@ -9,7 +9,14 @@ COPY package.json package-lock.json* ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 
-RUN npm install --workspace=@fitai/web --workspace=@fitai/shared --legacy-peer-deps
+# Strip root-level mobile deps (react 19, expo, react-native) that conflict
+# with apps/web react 18. Only workspace install for web + shared is needed.
+RUN node -e "\
+  const p=JSON.parse(require('fs').readFileSync('package.json','utf8'));\
+  delete p.dependencies;\
+  require('fs').writeFileSync('package.json',JSON.stringify(p,null,2));"
+
+RUN npm install --workspace=@fitai/web --workspace=@fitai/shared
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
