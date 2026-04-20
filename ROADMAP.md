@@ -27,6 +27,14 @@ Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 scree
 - Backend PCM opt-in — `audioFormat` DTO field, backwards compat (default MP3)
 - Doc infrastructure — archive rhythm, ADR table (15 entries), verify-docs-integrity.sh, /resume-session skill
 
+**Navíc od 2026-04-20:**
+- 3D exercise viewer — Three.js/R3F animated humanoid (Michelle model), phase controls, speed, camera presets, angle overlay, muscle highlighting
+- Coach personality modes — Drill Sergeant / Chill / Motivational, per-session selection
+- Post-workout confetti — canvas particle celebration on XP overlay
+- Streak fear push — escalating urgency notifications (2-6 / 7-13 / 14-29 / 30+ days)
+- Micro-workout mode — `/micro-workout` page, 3 random exercises, 5-min challenge, reroll
+- Quality audit — 5 critical fixes (perf, error handling, stale state, validation, Docker)
+
 ---
 
 ## Aktuální priorita
@@ -120,16 +128,17 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ---
 
-## Stats (2026-04-19)
+## Stats (2026-04-20)
 
 - **29 NestJS modules**
-- **30+ DB models**
-- **19 web pages** (v2 design)
+- **30+ DB models** (+ CoachPersonality enum)
+- **20 web pages** (v2 design, +micro-workout)
 - **18 mobile screens** (v2 design)
 - **17 achievements**
-- **8 cviků s pose detection**
+- **60 exercises** with 3D animated viewer
+- **3 coach personality modes** (Drill/Chill/Motivational)
 - **61/61 regression tests**
 - **15 ADRs** v ARCHITECTURE.md
 - **2 archive files** (CHANGELOG + ROADMAP)
-- **55 KB auto-load** (post-archive, down from 116 KB)
 - **Backend SSE streaming** deployed (Claude + ElevenLabs PCM pipeline)
+- **Three.js 3D viewer** with phase animation, controls, angle overlay

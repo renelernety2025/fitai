@@ -7,6 +7,47 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [3D exercise viewer + coach personality + engagement features] 2026-04-20
+
+### 3D Animated Exercise Viewer (web)
+- Three.js / React Three Fiber powered 3D humanoid model on `/exercises/[id]`
+- Michelle (realistic Mixamo-rigged model, 3.1 MB) animates through 4 phases (START→ECCENTRIC→HOLD→CONCENTRIC)
+- Phase controls: play/pause, phase dots, speed (0.5x/1x/2x), camera presets (front/side/back)
+- Joint angle overlay: floating labels show target angles on active joints
+- Muscle group highlighting (emissive tint on model)
+- Phase sync: click phase in text section → viewer jumps to that phase
+- Lazy loaded via `next/dynamic` with SSR disabled (Canvas needs `window`)
+
+### Coach Personality Modes
+- 3 modes: Drill Sergeant (strict), Chill (calm), Motivational (energetic)
+- User selects before each gym session via 3-card picker on `/gym/start`
+- `CoachPersonality` enum + field on `GymSession` model (default MOTIVATIONAL)
+- Personality-specific Claude system prompt rules in `coaching-prompt.ts`
+- Coaching service reads personality from active GymSession
+
+### Post-workout Celebration
+- Canvas confetti particle animation (120 particles, FitAI accent colors)
+- Fires on XP gained overlay after completing gym session
+
+### Streak Fear Push Notifications
+- Escalating urgency based on streak length (2-6 / 7-13 / 14-29 / 30+ days)
+- Personalized with user name
+
+### Micro-workout Mode
+- `GET /api/exercises/micro-workout` — 3 random exercises, 2x12 reps, 30s rest
+- `/micro-workout` web page with V2 design, reroll button
+- Nav link + dashboard CTA button
+
+### Quality Audit Fixes
+- AngleLabel: ref-based position tracking (zero re-renders per frame vs 60/sec)
+- Micro-workout: error state UI + empty exercises fallback + retry button
+- Exercise detail: reset selectedPhase on exercise change (stale closure fix)
+- Coaching service: log warning on missing GymSession, explicit personality resolution
+- Speed animation: sync speedRef with speed state via useEffect
+- Dockerfile: isolated npm install to fix React 18/19 monorepo conflict
+
+---
+
 ## [Phase E streaming + VoiceEngine rollback + Bible audit + 60 exercises] 2026-04-19
 
 ### Backend streaming pipeline (deployed, verified)
