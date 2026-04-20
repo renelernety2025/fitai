@@ -1,17 +1,17 @@
 /**
- * Converts exercise phase angle rules into bone rotation targets.
- * Each phase specifies angle ranges per joint — this computes
- * the midpoint angle and converts to bone-local Euler rotation.
+ * Converts exercise phase data into bone rotation targets.
+ *
+ * Two sources of pose data (in priority order):
+ * 1. Full-body keyframes (exercise-pose-keyframes.ts) — complete poses for top exercises
+ * 2. Phase angle rules (from API phases[].rules) — partial, used for detection + fallback
  */
 
 import * as THREE from 'three';
-import {
-  HUMANOID_JOINT_MAP,
-  MIRROR_MAP,
-  type BoneMapping,
-} from './humanoid-joint-map';
+import { HUMANOID_JOINT_MAP, MIRROR_MAP, type BoneMapping } from './humanoid-joint-map';
+import { getExerciseKeyframes } from './exercise-pose-keyframes';
 
 const DEG2RAD = Math.PI / 180;
+const DAMPING = 0.7;
 
 interface PoseRule {
   joint: string;
@@ -20,21 +20,20 @@ interface PoseRule {
 }
 
 interface PhaseDefinition {
+  phase: string;
   rules: PoseRule[];
 }
 
 /**
- * Compute DELTA quaternion for a bone from its angle rule.
- * This is multiplied with the model's rest pose, not used as absolute rotation.
- * Damping factor prevents over-rotation on Mixamo rigs.
+ * Compute DELTA quaternion for a bone.
+ * Multiplied with rest pose in the renderer.
  */
-const DAMPING = 0.6;
-
-function computeBoneQuaternion(
+function boneQuaternion(
   mapping: BoneMapping,
   targetAngle: number,
 ): THREE.Quaternion {
-  const delta = (mapping.restAngle - targetAngle) * DEG2RAD * mapping.direction * DAMPING;
+  const delta =
+    (mapping.restAngle - targetAngle) * DEG2RAD * mapping.direction * DAMPING;
   const euler = new THREE.Euler();
   euler[mapping.axis] = delta;
   return new THREE.Quaternion().setFromEuler(euler);
@@ -42,40 +41,74 @@ function computeBoneQuaternion(
 
 /**
  * Compute bone rotation targets for a given phase.
- * Returns Map<boneName, THREE.Quaternion>.
- * Mirrors left-only rules to right side automatically.
+ * Tries full-body keyframes first, falls back to phase rules.
  */
 export function computePoseTargets(
   phase: PhaseDefinition,
+  exerciseName?: string,
 ): Map<string, THREE.Quaternion> {
   const targets = new Map<string, THREE.Quaternion>();
 
-  for (const rule of phase.rules) {
-    const mapping = HUMANOID_JOINT_MAP[rule.joint];
+  // Try full-body keyframes first
+  const keyframes = exerciseName ? getExerciseKeyframes(exerciseName) : null;
+  const phaseKey = phase.phase as 'START' | 'ECCENTRIC' | 'HOLD' | 'CONCENTRIC';
+  const kf = keyframes?.[phaseKey];
+
+  if (kf) {
+    return computeFromKeyframe(kf);
+  }
+
+  // Fallback: use phase angle rules (partial)
+  return computeFromRules(phase.rules);
+}
+
+/** Compute from full-body keyframe (all joints specified). */
+function computeFromKeyframe(
+  kf: Record<string, number>,
+): Map<string, THREE.Quaternion> {
+  const targets = new Map<string, THREE.Quaternion>();
+
+  for (const [joint, angle] of Object.entries(kf)) {
+    const mapping = HUMANOID_JOINT_MAP[joint];
     if (!mapping) continue;
+    targets.set(mapping.boneName, boneQuaternion(mapping, angle));
 
-    const midAngle = (rule.angle_min + rule.angle_max) / 2;
-    targets.set(mapping.boneName, computeBoneQuaternion(mapping, midAngle));
-
-    applyMirror(rule, midAngle, targets);
+    // Auto-mirror if right side not specified
+    const mirrorJoint = MIRROR_MAP[joint];
+    if (mirrorJoint && !(mirrorJoint in kf)) {
+      const mirrorMapping = HUMANOID_JOINT_MAP[mirrorJoint];
+      if (mirrorMapping && !targets.has(mirrorMapping.boneName)) {
+        targets.set(mirrorMapping.boneName, boneQuaternion(mirrorMapping, angle));
+      }
+    }
   }
 
   return targets;
 }
 
-/** Mirror left-side rule to right side if right isn't already set. */
-function applyMirror(
-  rule: PoseRule,
-  midAngle: number,
-  targets: Map<string, THREE.Quaternion>,
-): void {
-  const mirrorJoint = MIRROR_MAP[rule.joint];
-  if (!mirrorJoint) return;
+/** Compute from phase angle rules (partial — validation data). */
+function computeFromRules(
+  rules: PoseRule[],
+): Map<string, THREE.Quaternion> {
+  const targets = new Map<string, THREE.Quaternion>();
 
-  const mirrorMapping = HUMANOID_JOINT_MAP[mirrorJoint];
-  if (!mirrorMapping || targets.has(mirrorMapping.boneName)) return;
+  for (const rule of rules) {
+    const mapping = HUMANOID_JOINT_MAP[rule.joint];
+    if (!mapping) continue;
 
-  targets.set(mirrorMapping.boneName, computeBoneQuaternion(mirrorMapping, midAngle));
+    const midAngle = (rule.angle_min + rule.angle_max) / 2;
+    targets.set(mapping.boneName, boneQuaternion(mapping, midAngle));
+
+    const mirrorJoint = MIRROR_MAP[rule.joint];
+    if (mirrorJoint) {
+      const mirrorMapping = HUMANOID_JOINT_MAP[mirrorJoint];
+      if (mirrorMapping && !targets.has(mirrorMapping.boneName)) {
+        targets.set(mirrorMapping.boneName, boneQuaternion(mirrorMapping, midAngle));
+      }
+    }
+  }
+
+  return targets;
 }
 
 /** Identity quaternion for rest pose. */

@@ -79,7 +79,7 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
       {/* 3D animated model */}
       {ex.phases.length > 0 && (
         <ExerciseModelError>
-          <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} externalPhaseIndex={selectedPhase} />
+          <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} exerciseName={ex.name} externalPhaseIndex={selectedPhase} />
         </ExerciseModelError>
       )}
 

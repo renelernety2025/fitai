@@ -24,6 +24,7 @@ interface Phase {
 interface ExerciseModelViewerProps {
   phases: Phase[];
   muscleGroups: string[];
+  exerciseName?: string;
   externalPhaseIndex?: number;
 }
 
@@ -37,6 +38,7 @@ const CAMERA_VIEWS = {
 export default function ExerciseModelViewer({
   phases,
   muscleGroups,
+  exerciseName,
   externalPhaseIndex,
 }: ExerciseModelViewerProps) {
   const animation = usePhaseAnimation(phases);
@@ -83,6 +85,7 @@ export default function ExerciseModelViewer({
             <HumanoidModel
               phases={phases}
               muscleGroups={muscleGroups}
+              exerciseName={exerciseName}
               currentPhaseIndex={animation.currentPhaseIndex}
               progress={animation.progress}
             />

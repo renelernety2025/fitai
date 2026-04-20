@@ -25,6 +25,7 @@ interface Phase {
 interface HumanoidModelProps {
   phases: Phase[];
   muscleGroups: string[];
+  exerciseName?: string;
   currentPhaseIndex: number;
   progress: number;
 }
@@ -47,6 +48,7 @@ const JOINT_LABELS: Record<string, string> = {
 export default function HumanoidModel({
   phases,
   muscleGroups,
+  exerciseName,
   currentPhaseIndex,
   progress,
 }: HumanoidModelProps) {
@@ -74,14 +76,14 @@ export default function HumanoidModel({
 
   const currentTargets = useMemo(() => {
     if (!phases[currentPhaseIndex]) return new Map();
-    return computePoseTargets(phases[currentPhaseIndex]);
-  }, [phases, currentPhaseIndex]);
+    return computePoseTargets(phases[currentPhaseIndex], exerciseName);
+  }, [phases, currentPhaseIndex, exerciseName]);
 
   const nextTargets = useMemo(() => {
     const nextIdx = (currentPhaseIndex + 1) % phases.length;
     if (!phases[nextIdx]) return new Map();
-    return computePoseTargets(phases[nextIdx]);
-  }, [phases, currentPhaseIndex]);
+    return computePoseTargets(phases[nextIdx], exerciseName);
+  }, [phases, currentPhaseIndex, exerciseName]);
 
   // Compute current angle values for overlay
   const activeRules = useMemo(() => {
