@@ -29,6 +29,14 @@ const SPORTS = [
     icon: 'timer',
   },
   {
+    href: '/soccer-drills',
+    title: 'Soccer Drills',
+    subtitle: 'Hlavicky, prihrávky, brankar',
+    description: 'Fotbalove dovednosti — dribling, hlavicky, brankarsky trenink.',
+    accent: '#30D5C8',
+    icon: 'soccer',
+  },
+  {
     href: '/gym/start',
     title: 'Gym Workout',
     subtitle: 'Plan + AI Coach',

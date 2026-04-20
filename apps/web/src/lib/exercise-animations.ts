@@ -36,7 +36,7 @@ export const EXERCISE_ANIMATIONS: Record<string, AnimationMapping> = {
 
   // ── Core ──
   'plank': { clipPath: `${BASE}/Start Plank.fbx`, speed: 0.3 },
-  'burpees': { clipPath: `${BASE}/Burpee End.fbx`, speed: 0.5 },
+  'burpees': { clipPath: `${BASE}/Burpee.fbx`, speed: 0.5 },
   'jumping jacks': { clipPath: `${BASE}/Jumping Jacks.fbx`, speed: 0.6 },
   'mountain climbers': { clipPath: `${BASE}/Start Plank.fbx`, speed: 0.5 },
   'bicycle crunch': { clipPath: `${BASE}/Bicycle Crunch.fbx`, speed: 0.5 },
@@ -45,13 +45,13 @@ export const EXERCISE_ANIMATIONS: Record<string, AnimationMapping> = {
   'hanging leg raise': { clipPath: `${BASE}/Situps.fbx`, speed: 0.4 },
 
   // ── Olympic / Functional ──
-  'clean and press': { clipPath: `${BASE}/Snatch.fbx`, speed: 0.4 },
+  'clean and press': { clipPath: `${BASE}/Clean And Jerk.fbx`, speed: 0.4 },
   'thruster': { clipPath: `${BASE}/Sumo High Pull.fbx`, speed: 0.5 },
   'turkish get-up': { clipPath: `${BASE}/Kip Up.fbx`, speed: 0.3 },
   'kettlebell swing': { clipPath: `${BASE}/Kettlebell Swing.fbx`, speed: 0.5 },
 
   // ── Cardio / Athletic ──
-  'bear crawl': { clipPath: `${BASE}/Long Step Forward.fbx`, speed: 0.5 },
+  'bear crawl': { clipPath: `${BASE}/Pike Walk.fbx`, speed: 0.5 },
   'box jump': { clipPath: `${BASE}/Box Jump.fbx`, speed: 0.5 },
 };
 
