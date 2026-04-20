@@ -37,6 +37,7 @@ Všechny pod prefixem `/api/*` (kromě `/health`).
 
 ### Exercises
 - `GET  /api/exercises` → `ExerciseData[]`
+- `GET  /api/exercises/micro-workout` → `{ title, durationMinutes, exercises: (ExerciseData & { targetReps, targetSets, restSeconds })[] }` — 3 random exercises for 5-min challenge
 - `GET  /api/exercises/:id` → `ExerciseData` s `phases`, `instructions`, `category`
 
 ### Workout Plans
@@ -205,9 +206,11 @@ Tyto routes musí ZŮSTAT na svých URL (rozbily by bookmarks + odkazy):
 - `/onboarding`
 - `/videos`, `/videos/[id]`
 - `/workout/[videoId]` — **kamera + pose detection pipeline**
-- `/exercises`, `/exercises/[id]`
+- `/exercises`, `/exercises/[id]` — **3D animated humanoid model viewer**
+- `/micro-workout` — 5-min daily challenge (3 random exercises)
 - `/plans`, `/plans/[id]`
-- `/gym/start`, `/gym/[sessionId]` — **rep counter + RPE + rest timer**
+- `/gym/start` — **coach personality picker** (Drill/Chill/Motivational)
+- `/gym/[sessionId]` — **rep counter + RPE + rest timer**
 - `/ai-coach`
 - `/lekce`, `/lekce/[slug]`, `/slovnik`
 - `/community`, `/progress`

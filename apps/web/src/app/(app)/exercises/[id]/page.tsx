@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getExercise, type ExerciseData } from '@/lib/api';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
+import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
 
 const ExerciseModelViewer = dynamic(
   () => import('@/components/exercise/exercise-model-viewer'),
@@ -53,7 +54,9 @@ export default function ExerciseV2DetailPage({ params }: { params: { id: string 
 
       {/* 3D animated model */}
       {ex.phases.length > 0 && (
-        <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} externalPhaseIndex={selectedPhase} />
+        <ExerciseModelError>
+          <ExerciseModelViewer phases={ex.phases} muscleGroups={ex.muscleGroups} externalPhaseIndex={selectedPhase} />
+        </ExerciseModelError>
       )}
 
       {/* Target muscles */}
