@@ -10,7 +10,10 @@ export interface AnimationMapping {
 }
 
 export const EXERCISE_ANIMATIONS: Record<string, AnimationMapping> = {
-  'barbell squat': { clipPath: '/models/animations/squat.fbx', speed: 0.4 },
+  'barbell squat': { clipPath: '/models/animations/squat.fbx', speed: 0.5 },
+  'goblet squat': { clipPath: '/models/animations/squat.fbx', speed: 0.5 },
+  'front squat': { clipPath: '/models/animations/overhead-squat.fbx', speed: 0.5 },
+  'overhead squat': { clipPath: '/models/animations/overhead-squat.fbx', speed: 0.5 },
 };
 
 /** Get animation for an exercise (case-insensitive). */
