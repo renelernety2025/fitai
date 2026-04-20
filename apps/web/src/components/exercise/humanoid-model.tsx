@@ -92,7 +92,7 @@ function applyMuscleHighlight(
     const mesh = child as THREE.SkinnedMesh;
     const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
     mat.emissive = color;
-    mat.emissiveIntensity = 0.02;
+    mat.emissiveIntensity = 0.008;
     mesh.material = mat;
   });
 }

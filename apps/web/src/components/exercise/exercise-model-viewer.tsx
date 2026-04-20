@@ -72,15 +72,15 @@ export default function ExerciseModelViewer({
     <div className="mb-12">
       <div className="relative aspect-[16/10] max-h-[500px] w-full overflow-hidden rounded-2xl border border-white/8 bg-black/50">
         <Canvas
-          camera={{ position: [0, 0, 3], fov: 50 }}
+          camera={{ position: [0, 0.3, 2.2], fov: 50 }}
           gl={{ antialias: true, alpha: true }}
         >
           {/* @ts-ignore R3F v8 JSX types incompatible with TS 5.9 */}
-          <ambientLight intensity={0.6} />
+          <ambientLight intensity={1.0} />
           {/* @ts-ignore R3F v8 JSX types */}
-          <directionalLight position={[5, 5, 5]} intensity={0.8} />
+          <directionalLight position={[5, 5, 5]} intensity={1.2} />
           {/* @ts-ignore R3F v8 JSX types */}
-          <directionalLight position={[-3, 3, -3]} intensity={0.3} />
+          <directionalLight position={[-3, 3, -3]} intensity={0.5} />
           <Suspense fallback={null}>
             <HumanoidModel
               exerciseName={exerciseName}
