@@ -83,11 +83,8 @@ export default function ExerciseModelViewer({
           <directionalLight position={[-3, 3, -3]} intensity={0.3} />
           <Suspense fallback={null}>
             <HumanoidModel
-              phases={phases}
-              muscleGroups={muscleGroups}
               exerciseName={exerciseName}
-              currentPhaseIndex={animation.currentPhaseIndex}
-              progress={animation.progress}
+              muscleGroups={muscleGroups}
             />
           </Suspense>
           <OrbitControls
