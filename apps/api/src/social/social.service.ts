@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateChallengeDto } from './dto/create-challenge.dto';
 
 @Injectable()
 export class SocialService {
@@ -102,6 +103,94 @@ export class SocialService {
       },
       orderBy: { endDate: 'asc' },
     });
+  }
+
+  async createChallenge(userId: string, dto: CreateChallengeDto) {
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate.setDate(endDate.getDate() + dto.durationDays);
+
+    const challenge = await this.prisma.challenge.create({
+      data: {
+        name: dto.name,
+        nameCs: dto.name,
+        description: dto.description || '',
+        type: dto.type,
+        targetValue: dto.targetValue,
+        startDate: now,
+        endDate,
+        creatorId: userId,
+        participants: { create: { userId } },
+      },
+      include: {
+        participants: {
+          include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        },
+        _count: { select: { participants: true } },
+      },
+    });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    await this.createFeedItem(
+      userId,
+      'challenge_created',
+      `${user?.name ?? 'Uživatel'} vytvořil výzvu "${dto.name}"`,
+      `Cíl: ${dto.targetValue} · ${dto.durationDays} dní`,
+    );
+
+    return challenge;
+  }
+
+  async getChallengeDetail(challengeId: string) {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: challengeId },
+      include: {
+        creator: { select: { id: true, name: true, avatarUrl: true } },
+        participants: {
+          orderBy: { currentValue: 'desc' },
+          include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+        },
+        _count: { select: { participants: true } },
+      },
+    });
+    if (!challenge) throw new NotFoundException('Výzva nenalezena');
+
+    const now = Date.now();
+    const endMs = new Date(challenge.endDate).getTime();
+    const daysRemaining = Math.max(0, Math.ceil((endMs - now) / 86400000));
+    const isExpired = endMs < now;
+
+    return { ...challenge, daysRemaining, isExpired };
+  }
+
+  async inviteToChallenge(
+    inviterId: string,
+    challengeId: string,
+    targetUserId: string,
+  ) {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id: challengeId },
+    });
+    if (!challenge) throw new NotFoundException('Výzva nenalezena');
+    if (!challenge.isActive) throw new ConflictException('Výzva již skončila');
+
+    const inviter = await this.prisma.user.findUnique({
+      where: { id: inviterId },
+      select: { name: true },
+    });
+
+    await this.createFeedItem(
+      targetUserId,
+      'challenge_invite',
+      `${inviter?.name ?? 'Někdo'} tě pozval do výzvy "${challenge.nameCs}"`,
+      `Cíl: ${challenge.targetValue} · Připoj se!`,
+      { challengeId },
+    );
+
+    return { ok: true };
   }
 
   async joinChallenge(userId: string, challengeId: string) {

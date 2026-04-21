@@ -47,9 +47,11 @@ export default function JournalPage() {
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadMonth = useCallback(async (month: string) => {
     setLoading(true);
+    setError(null);
     setSummary(null);
     try {
       const [journalRes, milestonesRes] = await Promise.all([
@@ -59,7 +61,7 @@ export default function JournalPage() {
       setDays(journalRes.days);
       setMilestones(milestonesRes.milestones);
     } catch {
-      /* fetch failed */
+      setError('Nepodarilo se nacist zaznamy');
     } finally {
       setLoading(false);
     }
@@ -74,7 +76,7 @@ export default function JournalPage() {
       const res = await getJournalMonthlySummary(currentMonth);
       setSummary(res);
     } catch {
-      /* summary failed */
+      setError('Nepodarilo se nacist mesicni shrnuti');
     }
   }
 
@@ -95,7 +97,7 @@ export default function JournalPage() {
       await upsertJournalEntry(date, data);
       await loadMonth(currentMonth);
     } catch {
-      /* update failed */
+      setError('Nepodarilo se ulozit zaznam');
     }
   }
 
@@ -104,7 +106,7 @@ export default function JournalPage() {
       await generateJournalInsight(date);
       await loadMonth(currentMonth);
     } catch {
-      /* insight failed */
+      setError('Nepodarilo se vygenerovat AI insight');
     }
   }
 
@@ -159,6 +161,7 @@ export default function JournalPage() {
         <button
           type="button"
           onClick={goToPreviousMonth}
+          aria-label="Predchozi mesic"
           className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-white/60 transition hover:text-white"
         >
           &larr;
@@ -169,6 +172,7 @@ export default function JournalPage() {
         <button
           type="button"
           onClick={goToNextMonth}
+          aria-label="Dalsi mesic"
           className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-white/60 transition hover:text-white"
         >
           &rarr;
@@ -193,6 +197,13 @@ export default function JournalPage() {
         summary={summary}
         onLoadSummary={handleLoadSummary}
       />
+
+      {/* Error */}
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       {/* Days */}
       {loading ? (

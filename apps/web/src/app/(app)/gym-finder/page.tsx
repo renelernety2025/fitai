@@ -22,6 +22,8 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
 
 export default function GymFinderPage() {
   const [gyms, setGyms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [equipFilter, setEquipFilter] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'rating' | 'name'>('rating');
@@ -30,7 +32,10 @@ export default function GymFinderPage() {
   });
 
   useEffect(() => {
-    getGymReviews().then(setGyms).catch(() => {});
+    getGymReviews()
+      .then(setGyms)
+      .catch(() => setError('Nepodarilo se nacist recenze'))
+      .finally(() => setLoading(false));
   }, []);
 
   function toggleEquipFilter(eq: string) {
@@ -80,6 +85,18 @@ export default function GymFinderPage() {
           Recenze posiloven od komunity. Najdi tu pravou pro tvuj trenink.
         </p>
       </section>
+
+      {loading && (
+        <div className="flex items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <button onClick={() => setShowForm((p) => !p)}

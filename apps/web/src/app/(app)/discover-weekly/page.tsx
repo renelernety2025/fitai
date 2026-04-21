@@ -52,6 +52,11 @@ export default function DiscoverWeeklyPage() {
           </section>
 
           {/* Exercise list */}
+          {exercises.length === 0 && (
+            <div className="mb-12 py-12 text-center text-white/30">
+              <p className="text-sm">Zatim zadne cviky v tomto tydennim mixu.</p>
+            </div>
+          )}
           <section className="mb-12 space-y-1">
             {exercises.map((ex: any, i: number) => (
               <div key={ex.id || i}
@@ -102,8 +107,8 @@ export default function DiscoverWeeklyPage() {
       )}
 
       {!data && !err && (
-        <div className="py-20 text-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40 mx-auto" />
+        <div className="flex items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
         </div>
       )}
     </V2Layout>

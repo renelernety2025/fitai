@@ -149,7 +149,9 @@ export default function BossFightsPage() {
       </section>
 
       {bosses.length === 0 && !activeBoss && (
-        <div className="py-16 text-center text-white/30">Arena se nacita...</div>
+        <div className="flex items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#FFD600]" />
+        </div>
       )}
     </V2Layout>
   );

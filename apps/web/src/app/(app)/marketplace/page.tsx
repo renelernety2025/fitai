@@ -30,7 +30,9 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
 
 export default function MarketplacePage() {
   const [listings, setListings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [sort, setSort] = useState('newest');
   const [selected, setSelected] = useState<any>(null);
@@ -41,7 +43,10 @@ export default function MarketplacePage() {
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    getMarketplace().then(setListings).catch(() => {});
+    getMarketplace()
+      .then(setListings)
+      .catch(() => setError('Nepodarilo se nacist marketplace'))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -88,6 +93,18 @@ export default function MarketplacePage() {
         <V2SectionLabel>Komunita</V2SectionLabel>
         <V2Display size="xl">Marketplace.</V2Display>
       </section>
+
+      {loading && (
+        <div className="flex items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       {/* Search + filters */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row">

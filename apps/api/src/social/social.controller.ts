@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Delete, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
 import { SocialService } from './social.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateChallengeDto } from './dto/create-challenge.dto';
 
 @Controller('social')
 @UseGuards(JwtAuthGuard)
@@ -55,9 +56,28 @@ export class SocialController {
     return this.socialService.getChallenges();
   }
 
+  @Post('challenges')
+  createChallenge(@Request() req: any, @Body() dto: CreateChallengeDto) {
+    return this.socialService.createChallenge(req.user.id, dto);
+  }
+
+  @Get('challenges/:id')
+  getChallengeDetail(@Param('id') id: string) {
+    return this.socialService.getChallengeDetail(id);
+  }
+
   @Post('challenges/:id/join')
   joinChallenge(@Request() req: any, @Param('id') id: string) {
     return this.socialService.joinChallenge(req.user.id, id);
+  }
+
+  @Post('challenges/:id/invite')
+  inviteToChallenge(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body('userId') userId: string,
+  ) {
+    return this.socialService.inviteToChallenge(req.user.id, id, userId);
   }
 
   @Get('challenges/:id/leaderboard')

@@ -25,6 +25,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [showPicker, setShowPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const dragIdx = useRef<number | null>(null);
 
@@ -126,6 +127,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
   const handleSave = useCallback(async () => {
     if (!plan) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updateWorkoutPlan(plan.id, {
         name: plan.name,
@@ -152,8 +154,8 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
         })),
       });
       router.push(`/plans/${plan.id}`);
-    } catch (err) {
-      console.error('Save failed:', err);
+    } catch {
+      setSaveError('Nepodarilo se ulozit plan. Zkus to znovu.');
     } finally {
       setSaving(false);
     }
@@ -162,8 +164,8 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
   if (!plan) {
     return (
       <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
         </div>
       </V2Layout>
     );
@@ -201,6 +203,12 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
       )}
 
       {/* Exercise list */}
+      {currentExercises.length === 0 && (
+        <div className="mt-4 rounded-xl border border-dashed border-white/10 py-12 text-center text-white/30">
+          <p className="text-sm">Tento den nema zadne cviky.</p>
+          <p className="mt-1 text-xs">Pridej prvni cvik tlacitkem nize.</p>
+        </div>
+      )}
       <div className="mt-4 space-y-1">
         {grouped.map((item) => {
           if (item.type === 'single') {
@@ -259,6 +267,13 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
       >
         + Pridat cvik
       </button>
+
+      {/* Save error */}
+      {saveError && (
+        <div className="mt-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {saveError}
+        </div>
+      )}
 
       {/* Save */}
       <div className="mt-10 flex gap-4 pb-16">

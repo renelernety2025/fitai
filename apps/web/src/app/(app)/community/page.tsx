@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
+import CreateChallengeModal from '@/components/social/CreateChallengeModal';
 import {
   getSocialFeed,
   getChallenges,
@@ -31,6 +33,8 @@ export default function CommunityV2Page() {
   const [tab, setTab] = useState<'feed' | 'challenges' | 'people'>('feed');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     getSocialFeed().then(setFeed).catch(console.error);
@@ -100,20 +104,53 @@ export default function CommunityV2Page() {
       {/* Challenges */}
       {tab === 'challenges' && (
         <section className="space-y-12">
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition hover:bg-white/90"
+          >
+            + Vytvorit vyzvu
+          </button>
+
           {challenges.length === 0 && (
             <p className="py-12 text-center text-sm text-white/40">Žádné aktivní výzvy.</p>
           )}
           {challenges.map((ch) => {
             const days = Math.max(0, Math.ceil((new Date(ch.endDate).getTime() - Date.now()) / 86400000));
             const joined = ch.participants.some((p) => p.user.id === user?.id);
+            const myEntry = ch.participants.find((p) => p.user.id === user?.id);
+            const pct = myEntry
+              ? Math.min(100, Math.round((myEntry.currentValue / ch.targetValue) * 100))
+              : 0;
             return (
-              <div key={ch.id} className="border-b border-white/10 pb-12">
+              <div
+                key={ch.id}
+                className="cursor-pointer border-b border-white/10 pb-12 transition hover:border-white/20"
+                onClick={() => router.push(`/community/challenge/${ch.id}`)}
+              >
                 <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
                   {days} dní zbývá · {ch._count.participants} účastníků
                 </div>
                 <V2Display size="md">{ch.nameCs}</V2Display>
                 <p className="mt-3 text-base text-white/55">{ch.description}</p>
                 <p className="mt-1 text-sm text-white/40">Cíl: {ch.targetValue}</p>
+
+                {/* Progress bar for current user */}
+                {joined && (
+                  <div className="mt-4">
+                    <div className="mb-1 flex items-baseline justify-between">
+                      <span className="text-[10px] text-white/40">
+                        {myEntry?.currentValue ?? 0} / {ch.targetValue}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#A8FF00]">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#A8FF00] to-[#00E5FF] transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {ch.participants.length > 0 && (
                   <div className="mt-6 space-y-2">
@@ -137,23 +174,30 @@ export default function CommunityV2Page() {
                 <div className="mt-6">
                   {!joined ? (
                     <button
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.stopPropagation();
                         await joinChallenge(ch.id);
                         setChallenges(await getChallenges());
                       }}
                       className="rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition hover:bg-white/90"
                     >
-                      Připojit se →
+                      Připojit se
                     </button>
                   ) : (
                     <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#A8FF00]">
-                      ✓ Účastníš se
+                      Ucastnis se
                     </span>
                   )}
                 </div>
               </div>
             );
           })}
+
+          <CreateChallengeModal
+            open={createOpen}
+            onClose={() => setCreateOpen(false)}
+            onCreated={() => getChallenges().then(setChallenges)}
+          />
         </section>
       )}
 

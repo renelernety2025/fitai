@@ -124,7 +124,7 @@ export default function DashboardV2Page() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
       </div>
     );
   }

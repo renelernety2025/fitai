@@ -40,6 +40,7 @@ const DIFFICULTIES = [
 
 export default function ExercisesV2Page() {
   const [allExercises, setAllExercises] = useState<ExerciseData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [diffFilter, setDiffFilter] = useState('ALL');
   const [search, setSearch] = useState('');
@@ -48,7 +49,7 @@ export default function ExercisesV2Page() {
   const [recs, setRecs] = useState<any[]>([]);
 
   useEffect(() => {
-    getExercises().then(setAllExercises).catch(console.error);
+    getExercises().then(setAllExercises).catch(console.error).finally(() => setLoading(false));
     setFavIds(new Set(getFavoriteIds()));
     getRecommendations()
       .then((r) => setRecs(r?.exercises || r?.recommendations || []))
@@ -162,9 +163,17 @@ export default function ExercisesV2Page() {
         ))}
       </div>
 
-      <div className="mb-6 text-[11px] font-semibold tabular-nums text-white/30">
-        {exercises.length} {exercises.length === 1 ? 'cvik' : exercises.length < 5 ? 'cviky' : 'cviku'}
-      </div>
+      {loading && (
+        <div className="flex items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      )}
+
+      {!loading && (
+        <div className="mb-6 text-[11px] font-semibold tabular-nums text-white/30">
+          {exercises.length} {exercises.length === 1 ? 'cvik' : exercises.length < 5 ? 'cviky' : 'cviku'}
+        </div>
+      )}
 
       {exercises.length === 0 && allExercises.length > 0 && (
         <div className="py-16 text-center">

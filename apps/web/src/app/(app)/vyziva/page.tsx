@@ -64,8 +64,8 @@ export default function NutritionV2Page() {
   if (!data) {
     return (
       <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
         </div>
       </V2Layout>
     );

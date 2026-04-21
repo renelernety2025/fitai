@@ -42,6 +42,15 @@ import { LeaguesModule } from './leagues/leagues.module';
 import { SkillTreeModule } from './skill-tree/skill-tree.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { SeasonsModule } from './seasons/seasons.module';
+import { BodyPortfolioModule } from './body-portfolio/body-portfolio.module';
+import { BloodworkModule } from './bloodwork/bloodwork.module';
+import { RehabModule } from './rehab/rehab.module';
+import { StreakFreezeModule } from './streak-freeze/streak-freeze.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
+import { BossFightsModule } from './boss-fights/boss-fights.module';
+import { DiscoverWeeklyModule } from './discover-weekly/discover-weekly.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+import { GymFinderModule } from './gym-finder/gym-finder.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -124,6 +133,15 @@ import { ScheduleModule } from '@nestjs/schedule';
     SkillTreeModule,
     CalendarModule,
     SeasonsModule,
+    BodyPortfolioModule,
+    BloodworkModule,
+    RehabModule,
+    StreakFreezeModule,
+    MarketplaceModule,
+    BossFightsModule,
+    DiscoverWeeklyModule,
+    RecommendationsModule,
+    GymFinderModule,
   ],
   providers: [
     {

@@ -79,17 +79,29 @@ function ScoreRing({ score, size, color }: { score: number; size: number; color:
 
 export default function BodyPortfolioPage() {
   const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
 
   useEffect(() => {
     getBodyPortfolio()
       .then(setData)
-      .catch(() => setErr(true));
+      .catch(() => setErr(true))
+      .finally(() => setLoading(false));
   }, []);
 
   const scores = data?.categories || {};
   const overall = data?.overallScore ?? 0;
   const catScores = CATEGORIES.map((c) => scores[c.key]?.score ?? 0);
+
+  if (loading) {
+    return (
+      <V2Layout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      </V2Layout>
+    );
+  }
 
   return (
     <V2Layout>
@@ -98,7 +110,18 @@ export default function BodyPortfolioPage() {
         <V2Display size="xl">Portfolio.</V2Display>
       </section>
 
-      {err && <p className="text-sm text-[#FF375F]">Nepodarilo se nacist data. Zkus to pozdeji.</p>}
+      {err && (
+        <div className="mb-8 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          Nepodarilo se nacist data. Zkus to pozdeji.
+        </div>
+      )}
+
+      {!err && !data && (
+        <div className="py-16 text-center text-white/30">
+          <p className="text-lg">Zatim zadna data</p>
+          <p className="mt-2 text-sm">Zacni trenovat a sledovat navyky pro zobrazeni portfolia.</p>
+        </div>
+      )}
 
       {/* Overall score hero */}
       <section className="mb-20 flex flex-col items-center">
@@ -116,7 +139,7 @@ export default function BodyPortfolioPage() {
       </section>
 
       {/* Category cards */}
-      <section className="mb-16 grid grid-cols-1 gap-4 sm:grid-cols-5">
+      <section className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {CATEGORIES.map((cat) => {
           const s = scores[cat.key] || {};
           const change = s.monthlyChange ?? 0;

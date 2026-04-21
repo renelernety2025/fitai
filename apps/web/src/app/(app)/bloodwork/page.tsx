@@ -71,13 +71,18 @@ function DotChart({ entries, type }: { entries: any[]; type: typeof TEST_TYPES[n
 
 export default function BloodworkPage() {
   const [entries, setEntries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [form, setForm] = useState({ testType: 'testosterone', value: '', date: '', lab: '' });
 
   useEffect(() => {
-    getBloodwork().then(setEntries).catch(() => {});
+    getBloodwork()
+      .then(setEntries)
+      .catch(() => setError('Nepodarilo se nacist zaznamy'))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleAdd() {
@@ -112,12 +117,28 @@ export default function BloodworkPage() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
+  if (loading) {
+    return (
+      <V2Layout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      </V2Layout>
+    );
+  }
+
   return (
     <V2Layout>
       <section className="pt-12 pb-8">
         <V2SectionLabel>Zdravi</V2SectionLabel>
         <V2Display size="xl">Krevni testy.</V2Display>
       </section>
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       <div className="mb-8 flex gap-3">
         <button onClick={() => setShowForm((p) => !p)}
@@ -168,12 +189,22 @@ export default function BloodworkPage() {
         </div>
       )}
 
+      {/* Empty state */}
+      {entries.length === 0 && !error && (
+        <div className="py-16 text-center text-white/30">
+          <p className="text-lg">Zatim zadne krevni testy</p>
+          <p className="mt-2 text-sm">Pridej prvni zaznam tlacitkem vyse.</p>
+        </div>
+      )}
+
       {/* Charts per test type */}
-      <section className="mb-16">
-        {TEST_TYPES.map((t) => (
-          <DotChart key={t.value} entries={entries} type={t} />
-        ))}
-      </section>
+      {entries.length > 0 && (
+        <section className="mb-16">
+          {TEST_TYPES.map((t) => (
+            <DotChart key={t.value} entries={entries} type={t} />
+          ))}
+        </section>
+      )}
 
       {/* Raw entries list */}
       {entries.length > 0 && (

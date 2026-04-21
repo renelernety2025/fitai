@@ -24,9 +24,14 @@ export default function RecipesPage() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [selected, setSelected] = useState<Recipe | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const reload = () => {
-    getRecipes().then(setRecipes).catch(console.error).finally(() => setLoading(false));
+    setError(null);
+    getRecipes()
+      .then(setRecipes)
+      .catch(() => setError('Nepodarilo se nacist recepty'))
+      .finally(() => setLoading(false));
   };
   useEffect(reload, []);
 
@@ -52,8 +57,8 @@ export default function RecipesPage() {
   if (loading) {
     return (
       <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
         </div>
       </V2Layout>
     );
@@ -67,6 +72,12 @@ export default function RecipesPage() {
         <V2Display size="lg">Moje recepty</V2Display>
         <p className="mt-3 text-sm text-white/40">{recipes.length} receptu</p>
       </section>
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       {/* Actions */}
       <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

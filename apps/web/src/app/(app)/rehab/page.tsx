@@ -22,6 +22,8 @@ const SEVERITIES = [
 
 export default function RehabPage() {
   const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
@@ -30,7 +32,10 @@ export default function RehabPage() {
   const [logForm, setLogForm] = useState({ painLevel: 5, notes: '', exercises: [] as string[] });
 
   useEffect(() => {
-    getRehabPlans().then(setPlans).catch(() => {});
+    getRehabPlans()
+      .then(setPlans)
+      .catch(() => setError('Nepodarilo se nacist plany'))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleCreate() {
@@ -60,6 +65,16 @@ export default function RehabPage() {
     setLogForm({ painLevel: 5, notes: '', exercises: [] });
   }
 
+  if (loading) {
+    return (
+      <V2Layout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        </div>
+      </V2Layout>
+    );
+  }
+
   return (
     <V2Layout>
       <section className="pt-12 pb-8">
@@ -69,6 +84,12 @@ export default function RehabPage() {
           Plany rehabilitace s AI. Sleduj bolest, loguj sessions, zotav se rychleji.
         </p>
       </section>
+
+      {error && (
+        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          {error}
+        </div>
+      )}
 
       <button onClick={() => setShowCreate((p) => !p)}
         className="mb-8 rounded-full border border-[#A8FF00]/30 px-6 py-2.5 text-sm font-semibold text-[#A8FF00] transition hover:bg-[#A8FF00]/10"
@@ -99,6 +120,14 @@ export default function RehabPage() {
           >
             Vytvorit (AI vygeneruje plan)
           </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {plans.length === 0 && !error && (
+        <div className="py-16 text-center text-white/30">
+          <p className="text-lg">Zatim zadne rehab plany</p>
+          <p className="mt-2 text-sm">Vytvor prvni plan a AI ti sestavi cviceni.</p>
         </div>
       )}
 
