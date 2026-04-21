@@ -7,6 +7,49 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [9 cross-industry features — Portfolio, Bloodwork, Rehab, Marketplace, Boss, and more] 2026-04-21
+
+### Body Portfolio (`/body-portfolio`)
+- Fintech-style dashboard: overall score + 5 categories (Strength/Endurance/Form/Nutrition/Mobility)
+- CSS radar pentagon chart, monthly change indicators, sparklines
+
+### Bloodwork Tracker (`/bloodwork`)
+- Log blood test results (7 markers: testosterone, iron, vitamin D, CRP, cholesterol, glucose, HbA1c)
+- Dot charts with reference range zones, AI trend analysis (Claude Haiku)
+
+### Injury Rehab Planner (`/rehab`)
+- AI-generated rehab plans (Claude Haiku) based on injury type/body part/severity
+- Phase timeline, session logging with pain level 0-10, exercise checklists
+
+### Streak Freeze (dashboard integration)
+- Duolingo-style streak freeze: max 2/month, ice crystal button on dashboard
+
+### Marketplace (`/marketplace`)
+- Share/sell workout plans for XP currency
+- Browse, search, filter, rate, purchase listings
+
+### Boss Fights (`/boss-fights`)
+- 5 epic workout challenges (Minotaur through Olymp, 500-2000 XP)
+- Timer, completion tracking, gold badges for defeated bosses
+
+### Discover Weekly (`/discover-weekly`)
+- AI-generated personalized "workout of the week" (Claude Haiku)
+- Exercise rationale, regenerates every Monday
+
+### "Lidé jako ty" Recommendations (exercises integration)
+- "People like you also do..." section on exercises page
+- Based on similar users' exercise frequency
+
+### Gym Finder (`/gym-finder`)
+- User-submitted gym reviews with equipment tags and ratings
+- Equipment filter, nearby search
+
+### Backend
+- 9 new NestJS modules, 9 new Prisma models
+- Haversine distance for gym proximity, XP marketplace economy
+
+---
+
 ## [Cross-industry features — Wrapped, Leagues, Skill Tree, Calendar, Battle Pass] 2026-04-21
 
 ### FitAI Wrapped (`/wrapped`)
