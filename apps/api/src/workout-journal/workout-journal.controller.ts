@@ -78,8 +78,9 @@ export class WorkoutJournalController {
 
   /** Training milestones for the user. */
   @Get('milestones')
-  milestones(@Request() req: any) {
-    return this.service.getMilestones(req.user.id);
+  async milestones(@Request() req: any) {
+    const milestones = await this.service.getMilestones(req.user.id);
+    return { milestones };
   }
 
   /** Generate AI insight for a specific day. Throttled: 20/day. */

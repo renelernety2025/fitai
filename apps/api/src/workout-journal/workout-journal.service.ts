@@ -56,7 +56,7 @@ export class WorkoutJournalService {
   async getMonth(
     userId: string,
     month: string,
-  ): Promise<DayData[]> {
+  ): Promise<{ days: any[] }> {
     if (month && !/^\d{4}-\d{2}$/.test(month)) {
       throw new BadRequestException(
         'Invalid month format. Use YYYY-MM.',
@@ -80,6 +80,13 @@ export class WorkoutJournalService {
           userId,
           startedAt: { gte: start, lt: end },
         },
+        include: {
+          exerciseSets: {
+            include: { exercise: { select: { name: true, nameCs: true } } },
+            orderBy: { setNumber: 'asc' },
+          },
+          workoutPlan: { select: { name: true, nameCs: true } },
+        },
         orderBy: { startedAt: 'asc' },
       }),
     ]);
@@ -102,13 +109,53 @@ export class WorkoutJournalService {
       ...sessionByDate.keys(),
     ]);
 
-    return [...allDates]
+    const days = [...allDates]
       .sort()
-      .map((date) => ({
-        date,
-        journalEntry: entryByDate.get(date) ?? null,
-        gymSession: sessionByDate.get(date) ?? null,
-      }));
+      .map((date) => {
+        const raw = sessionByDate.get(date);
+        let gymSession = null;
+        if (raw) {
+          // Aggregate exercise sets into summary per exercise
+          const exMap = new Map<string, { exerciseName: string; sets: number; totalReps: number; avgWeight: number; avgFormScore: number; avgRpe: number }>();
+          for (const s of raw.exerciseSets || []) {
+            const name = s.exercise?.nameCs || s.exercise?.name || 'Unknown';
+            const existing = exMap.get(name);
+            if (existing) {
+              existing.sets++;
+              existing.totalReps += s.actualReps || 0;
+              existing.avgWeight = (existing.avgWeight * (existing.sets - 1) + (s.actualWeight || 0)) / existing.sets;
+              existing.avgFormScore = (existing.avgFormScore * (existing.sets - 1) + (s.formScore || 0)) / existing.sets;
+              existing.avgRpe = (existing.avgRpe * (existing.sets - 1) + (s.rpe || 0)) / existing.sets;
+            } else {
+              exMap.set(name, {
+                exerciseName: name,
+                sets: 1,
+                totalReps: s.actualReps || 0,
+                avgWeight: s.actualWeight || 0,
+                avgFormScore: s.formScore || 0,
+                avgRpe: s.rpe || 0,
+              });
+            }
+          }
+          gymSession = {
+            id: raw.id,
+            startedAt: raw.startedAt,
+            completedAt: raw.completedAt,
+            totalReps: raw.totalReps,
+            averageFormScore: raw.averageFormScore,
+            durationSeconds: raw.durationSeconds,
+            coachPersonality: raw.coachPersonality,
+            workoutPlanName: raw.workoutPlan?.nameCs || raw.workoutPlan?.name || null,
+            exerciseSets: [...exMap.values()],
+          };
+        }
+        return {
+          date,
+          entry: entryByDate.get(date) ?? null,
+          gymSession,
+        };
+      });
+    return { days };
   }
 
   // ── upsertEntry ──
