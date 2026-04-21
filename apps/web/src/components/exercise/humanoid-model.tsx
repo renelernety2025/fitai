@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { getAnimationForExercise } from '@/lib/exercise-animations';
 
 interface HumanoidModelProps {
@@ -12,75 +13,96 @@ interface HumanoidModelProps {
   muscleGroups: string[];
 }
 
-const FALLBACK_CHARACTER = '/models/characters/default.glb';
+const CHARACTER_PATH = '/models/characters/default.glb';
 
 export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
-  const mapping = exerciseName ? getAnimationForExercise(exerciseName) : null;
-  if (mapping) {
-    return <FBXCharacter clipPath={mapping.clipPath} speed={mapping.speed} />;
-  }
-  return <StaticCharacter />;
-}
-
-/** Load complete FBX with auto-framing. */
-function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) {
-  const [model, setModel] = useState<THREE.Group | null>(null);
+  const { scene } = useGLTF(CHARACTER_PATH);
+  const character = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const { camera } = useThree();
 
   useEffect(() => {
-    setModel(null);
-    if (mixerRef.current) mixerRef.current.stopAllAction();
+    const mapping = exerciseName
+      ? getAnimationForExercise(exerciseName)
+      : null;
+    if (!mapping) return;
+
+    const mixer = new THREE.AnimationMixer(character);
+    mixerRef.current = mixer;
 
     const loader = new FBXLoader();
     loader.load(
-      clipPath,
+      mapping.clipPath,
       (fbx) => {
-        if (fbx.animations.length > 0) {
-          const mixer = new THREE.AnimationMixer(fbx);
-          mixerRef.current = mixer;
-          const action = mixer.clipAction(fbx.animations[0]);
-          action.setLoop(THREE.LoopRepeat, Infinity);
-          action.timeScale = speed;
-          action.play();
-        }
+        if (fbx.animations.length === 0) return;
 
-        // Auto-frame camera
-        const box = new THREE.Box3().setFromObject(fbx);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const dist = Math.max(size.x, size.y, size.z) * 1.8;
-        camera.position.set(center.x, center.y, center.z + dist);
-        camera.lookAt(center);
-        camera.updateProjectionMatrix();
+        // FBX animation tracks reference bones by name.
+        // Both FBX and GLB use Mixamo naming (mixamorig:X).
+        // FBX coordinate system (Z-up) is converted by FBXLoader
+        // but Hips tracks may still have offset — fix by renaming
+        // tracks to match the GLB skeleton hierarchy.
+        const clip = convertFBXClipForGLB(fbx.animations[0], fbx);
 
-        setModel(fbx);
+        const action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.timeScale = mapping.speed;
+        action.play();
       },
       undefined,
-      (err) => console.error('FBX load error:', err),
+      (err) => console.error('Animation load error:', err),
     );
 
     return () => {
-      if (mixerRef.current) {
-        mixerRef.current.stopAllAction();
-        mixerRef.current = null;
-      }
+      mixer.stopAllAction();
+      mixerRef.current = null;
     };
-  }, [clipPath, speed, camera]);
+  }, [character, exerciseName]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
   });
 
-  if (!model) return null;
   // @ts-ignore R3F v8 JSX
-  return <primitive object={model} />;
+  return <primitive object={character} scale={1} position={[0, -1, 0]} />;
 }
 
-function StaticCharacter() {
-  const { scene } = useGLTF(FALLBACK_CHARACTER);
-  // @ts-ignore R3F v8 JSX
-  return <primitive object={scene} scale={1} position={[0, -1, 0]} />;
+/**
+ * Convert FBX animation clip to work with GLB model.
+ * FBXLoader already converts coordinates, but track names may include
+ * hierarchy path. Strip hierarchy prefix so AnimationMixer finds bones
+ * by name directly.
+ */
+function convertFBXClipForGLB(
+  clip: THREE.AnimationClip,
+  fbxScene: THREE.Group,
+): THREE.AnimationClip {
+  // Build a map of FBX bone paths to bone names
+  const boneNameMap = new Map<string, string>();
+  fbxScene.traverse((child) => {
+    if ((child as THREE.Bone).isBone) {
+      // FBX track names use full path: "Armature|mixamorig:Hips|..."
+      // GLB bones are found by name: "mixamorig:Hips"
+      boneNameMap.set(child.name, child.name);
+    }
+  });
+
+  const newTracks = clip.tracks.map((track) => {
+    // Track name format: "boneName.property" or "hierarchy/boneName.property"
+    const dotIdx = track.name.lastIndexOf('.');
+    const prop = track.name.slice(dotIdx); // .quaternion, .position, .scale
+    const bonePath = track.name.slice(0, dotIdx);
+
+    // Extract just the bone name (last segment of path)
+    const segments = bonePath.split('/');
+    const boneName = segments[segments.length - 1];
+
+    return new (track.constructor as any)(
+      boneName + prop,
+      track.times,
+      track.values,
+    );
+  });
+
+  return new THREE.AnimationClip(clip.name, clip.duration, newTracks);
 }
 
-useGLTF.preload(FALLBACK_CHARACTER);
+useGLTF.preload(CHARACTER_PATH);
