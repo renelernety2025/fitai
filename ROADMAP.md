@@ -35,6 +35,7 @@ Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 scree
 - Landing page features grid + stats section
 - Header profile/notification icons
 - V2Tooltip onboarding component
+- **Tier 1:** AI Chat Coach (/ai-chat, SSE streaming, conversation memory), Activity Heatmap (7x12, recovery colors), "Co dnes?" smart widget (rules-based, 5 scenarios)
 
 **Navíc od 2026-04-20:**
 - 3D exercise viewer — Three.js/R3F animated humanoid (Michelle model), phase controls, speed, camera presets, angle overlay, muscle highlighting
@@ -89,10 +90,10 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ## Další priorita (next session)
 
-### Tier 1 — Okamžitá hodnota
-- **AI Chat Coach** — web konverzační UI na /ai-chat (backend /coaching/ask existuje)
-- **Workout streak calendar** — heatmap daily check-in na habits stránce
-- **"Co dnes?" smart widget** — AI doporučení 1 akce na dashboard
+### Tier 1 — Okamžitá hodnota ✅
+- ~~**AI Chat Coach**~~ ✅ — /ai-chat s Claude streaming, hero + suggested prompts, conversation memory
+- ~~**Workout streak calendar**~~ ✅ — GitHub-style heatmap 7x12 na /habity, recovery score barvy
+- ~~**"Co dnes?" smart widget**~~ ✅ — rules-based karta nad Daily Brief, 5 scénářů, dismiss per day
 
 ### Tier 2 — Diferenciace
 - **AI Form Coach split-screen** — kamera + 3D model vedle sebe
@@ -160,7 +161,7 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 - **29 NestJS modules**
 - **30+ DB models** (+ CoachPersonality enum)
-- **20 web pages** (v2 design, +micro-workout)
+- **21 web pages** (v2 design, +ai-chat)
 - **18 mobile screens** (v2 design)
 - **17 achievements**
 - **60 exercises** with 3D animated viewer

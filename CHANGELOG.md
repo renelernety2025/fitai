@@ -7,6 +7,33 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Tier 1 — AI Chat Coach + Activity Heatmap + Smart Widget] 2026-04-21
+
+### AI Chat Coach (`/ai-chat`)
+- Full conversational UI with Claude Haiku streaming (SSE)
+- Hero section with Alex avatar + 8 suggested prompts
+- Conversation memory (last 20 messages as Claude context)
+- Auto-generated conversation titles
+- 3 new API endpoints: POST /coaching/chat, GET /conversations, GET /conversations/:id/messages
+
+### Activity Heatmap (`/habity`)
+- GitHub-style 7x12 grid (12 weeks / 3 months)
+- Color-coded by recovery score (red/orange/lime)
+- Hover tooltips with date + score
+- Stats row: total check-ins, longest streak, current streak
+
+### "Co dnes?" Smart Widget (`/dashboard`)
+- Rules-based recommendation card above Daily Brief
+- 5 priority scenarios: streak risk, high soreness, long absence, low nutrition, default
+- Dismissible per day (localStorage)
+- Gradient themes per action type
+- New API: GET /ai-insights/today-action (instant, no Claude call)
+
+### Navigation
+- "AI Chat" added to header nav bar
+
+---
+
 ## [Sport modules + workout mode + profile + polish] 2026-04-21
 
 ### Sport Training Modules
