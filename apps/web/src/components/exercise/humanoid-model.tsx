@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { getAnimationForExercise } from '@/lib/exercise-animations';
@@ -14,27 +14,19 @@ interface HumanoidModelProps {
 
 const FALLBACK_CHARACTER = '/models/characters/default.glb';
 
-/**
- * 3D humanoid with animation.
- * FBX exercises: load complete FBX (model + animation)
- * No animation: show static Michelle GLB
- */
-export default function HumanoidModel({
-  exerciseName,
-}: HumanoidModelProps) {
+export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
   const mapping = exerciseName ? getAnimationForExercise(exerciseName) : null;
-
   if (mapping) {
     return <FBXCharacter clipPath={mapping.clipPath} speed={mapping.speed} />;
   }
-
   return <StaticCharacter />;
 }
 
-/** Load complete FBX and render. */
+/** Load complete FBX with auto-framing. */
 function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) {
   const [model, setModel] = useState<THREE.Group | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const { camera } = useThree();
 
   useEffect(() => {
     setModel(null);
@@ -52,6 +44,16 @@ function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) 
           action.timeScale = speed;
           action.play();
         }
+
+        // Auto-frame camera
+        const box = new THREE.Box3().setFromObject(fbx);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const dist = Math.max(size.x, size.y, size.z) * 1.8;
+        camera.position.set(center.x, center.y, center.z + dist);
+        camera.lookAt(center);
+        camera.updateProjectionMatrix();
+
         setModel(fbx);
       },
       undefined,
@@ -64,23 +66,19 @@ function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) 
         mixerRef.current = null;
       }
     };
-  }, [clipPath, speed]);
+  }, [clipPath, speed, camera]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
   });
 
   if (!model) return null;
-
-  /* eslint-disable @typescript-eslint/ban-ts-comment */
   // @ts-ignore R3F v8 JSX
   return <primitive object={model} />;
 }
 
-/** Static GLB fallback. */
 function StaticCharacter() {
   const { scene } = useGLTF(FALLBACK_CHARACTER);
-  /* eslint-disable @typescript-eslint/ban-ts-comment */
   // @ts-ignore R3F v8 JSX
   return <primitive object={scene} scale={1} position={[0, -1, 0]} />;
 }
