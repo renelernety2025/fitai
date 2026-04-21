@@ -7,6 +7,29 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [AI Food Recognition + Recipe Book] 2026-04-21
+
+### Food Camera (`/vyziva`)
+- "Vyfotit jídlo" button — photo upload → Claude Sonnet Vision analyzes → estimated kcal/macros/ingredients
+- Source selector: Doma/Restaurace/Obchod/Rozvoz (color-coded badges)
+- Rating, notes, confidence score per food entry
+- Enhanced food log items with photo thumbnail, source badge, expandable details
+
+### Recipe Book (`/recepty`)
+- Full recipe CRUD — name, ingredients (structured JSON), instructions, prep/cook time, macros
+- Recipe grid with search + tag filters + favorites
+- Recipe detail modal with serif instructions (book feel)
+- "Vytvořit z fotky" — AI generates recipe estimate from food photo (Claude Sonnet Vision)
+- Recipe photo upload (S3 presigned URLs)
+
+### Backend
+- New NestJS module: `recipes` (8 endpoints)
+- Recipe model: ingredients JSON, macros, tags, favorite, photo
+- Extended FoodLog: +photoS3Key, source, sourceDetail, ingredients, recipeId, rating, notes, confidence
+- Enhanced analyze-photo: returns ingredients + source estimate
+
+---
+
 ## [Workout Journal — full fitness diary] 2026-04-21
 
 ### Journal Page (`/journal`)
