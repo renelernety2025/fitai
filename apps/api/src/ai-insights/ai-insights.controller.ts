@@ -39,4 +39,10 @@ export class AiInsightsController {
   dailyBrief(@Request() req: any) {
     return this.service.getDailyBrief(req.user.id);
   }
+
+  @Get('motivation')
+  @Throttle({ default: { limit: 10, ttl: seconds(3600) } })
+  motivation(@Request() req: any) {
+    return this.service.getMotivation(req.user.id);
+  }
 }

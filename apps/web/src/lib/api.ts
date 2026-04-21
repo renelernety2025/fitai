@@ -913,6 +913,10 @@ export function getDailyBrief() {
   return request<{ brief: DailyBrief; cached: boolean }>('/ai-insights/daily-brief');
 }
 
+export function getDailyMotivation() {
+  return request<{ message: string; source: string }>('/ai-insights/motivation');
+}
+
 // ── Section K: Body Progress Photos ──
 export type PhotoSide = 'FRONT' | 'SIDE' | 'BACK';
 

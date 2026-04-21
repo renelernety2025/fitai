@@ -805,4 +805,56 @@ Pravidla:
       source: 'rules',
     };
   }
+
+  /** Personalized daily motivation — short Claude-generated message. Cached 12h. */
+  async getMotivation(userId: string) {
+    const cacheKey = `motivation:${userId}`;
+    const cached = this.insightsCache.get(cacheKey);
+    if (cached) return { message: cached, source: 'cache' };
+
+    const [user, progress, profile] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.userProgress.findUnique({ where: { userId } }),
+      this.prisma.fitnessProfile.findUnique({ where: { userId } }),
+    ]);
+
+    const name = user?.name?.split(' ')[0] || 'trenere';
+    const streak = progress?.currentStreak ?? 0;
+    const sessions = progress?.totalSessions ?? 0;
+    const goal = profile?.goal || 'GENERAL_FITNESS';
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+
+    if (!apiKey) {
+      const fallback = this.fallbackMotivation(name, streak);
+      return { message: fallback, source: 'fallback' };
+    }
+
+    try {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const client = new Anthropic.default({ apiKey });
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: `Vygeneruj 1 krátkou motivační větu (max 20 slov) pro fitness uživatele. Česky. Jméno: ${name}. Streak: ${streak} dní. Celkem tréninků: ${sessions}. Cíl: ${goal}. Buď energický, osobní, konkrétní. Pouze text věty, nic jiného.`,
+        }],
+      });
+      const text = response.content[0]?.type === 'text'
+        ? response.content[0].text.trim()
+        : this.fallbackMotivation(name, streak);
+
+      this.insightsCache.set(cacheKey, text);
+      setTimeout(() => this.insightsCache.delete(cacheKey), 12 * 3600 * 1000);
+      return { message: text, source: 'claude' };
+    } catch {
+      return { message: this.fallbackMotivation(name, streak), source: 'fallback' };
+    }
+  }
+
+  private fallbackMotivation(name: string, streak: number): string {
+    if (streak >= 7) return `${name}, ${streak} dni v rade! Takhle se to dela.`;
+    if (streak >= 3) return `${name}, mas rozjeto! Dnes to nebalime.`;
+    return `${name}, kazdy trenink se pocita. Jdeme na to!`;
+  }
 }

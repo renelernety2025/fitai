@@ -19,6 +19,7 @@ import {
   getNutritionToday,
   getWeeklyReview,
   getDailyBrief,
+  getDailyMotivation,
   getMicroWorkout,
   type StatsData,
   type Insights,
@@ -85,6 +86,7 @@ export default function DashboardV2Page() {
   const [weekly, setWeekly] = useState<WeeklyReview | null>(null);
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [micro, setMicro] = useState<MicroWorkoutData | null>(null);
+  const [motivation, setMotivation] = useState<string | null>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -94,6 +96,7 @@ export default function DashboardV2Page() {
     getWeeklyReview().then((r) => setWeekly(r.review)).catch(console.error);
     getDailyBrief().then((r) => setBrief(r.brief)).catch(console.error);
     getMicroWorkout().then(setMicro).catch(console.error);
+    getDailyMotivation().then((r) => setMotivation(r.message)).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -163,6 +166,13 @@ export default function DashboardV2Page() {
           >
             {firstName}.
           </h1>
+
+          {/* AI motivation */}
+          {motivation && (
+            <p className="mb-12 max-w-lg text-base italic text-white/40">
+              &ldquo;{motivation}&rdquo;
+            </p>
+          )}
 
           {/* Ring with overlay */}
           <div className="relative w-full max-w-[440px]">
