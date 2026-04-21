@@ -51,6 +51,8 @@ import { BossFightsModule } from './boss-fights/boss-fights.module';
 import { DiscoverWeeklyModule } from './discover-weekly/discover-weekly.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { GymFinderModule } from './gym-finder/gym-finder.module';
+import { BuddyModule } from './buddy/buddy.module';
+import { MessagesModule } from './messages/messages.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -142,6 +144,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     DiscoverWeeklyModule,
     RecommendationsModule,
     GymFinderModule,
+    BuddyModule,
+    MessagesModule,
   ],
   providers: [
     {

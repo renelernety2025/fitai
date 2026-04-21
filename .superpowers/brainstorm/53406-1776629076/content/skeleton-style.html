@@ -1,0 +1,151 @@
+<h2>Jaký vizuální styl pro skeleton animaci?</h2>
+<p class="subtitle">Animovaná postava na exercise detail stránce — ukazuje pohyb cviku ve 4 fázích (START → ECCENTRIC → HOLD → CONCENTRIC)</p>
+
+<div class="cards">
+  <!-- Option A: Neon Wireframe -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0a0a0a; display: flex; align-items: center; justify-content: center; min-height: 320px; position: relative; overflow: hidden;">
+      <!-- Neon glow stick figure -->
+      <svg width="160" height="280" viewBox="0 0 160 280">
+        <!-- Glow filter -->
+        <defs>
+          <filter id="glow-a">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#glow-a)">
+          <!-- Head -->
+          <circle cx="80" cy="35" r="14" fill="none" stroke="#A8FF00" stroke-width="2.5"/>
+          <!-- Spine -->
+          <line x1="80" y1="49" x2="80" y2="140" stroke="#A8FF00" stroke-width="2.5"/>
+          <!-- Arms -->
+          <line x1="80" y1="70" x2="40" y2="110" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="40" y1="110" x2="30" y2="150" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="80" y1="70" x2="120" y2="110" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="120" y1="110" x2="130" y2="150" stroke="#A8FF00" stroke-width="2.5"/>
+          <!-- Legs -->
+          <line x1="80" y1="140" x2="55" y2="210" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="55" y1="210" x2="50" y2="270" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="80" y1="140" x2="105" y2="210" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="105" y1="210" x2="110" y2="270" stroke="#A8FF00" stroke-width="2.5"/>
+          <!-- Joints -->
+          <circle cx="80" cy="70" r="4" fill="#A8FF00"/>
+          <circle cx="40" cy="110" r="4" fill="#A8FF00"/>
+          <circle cx="120" cy="110" r="4" fill="#A8FF00"/>
+          <circle cx="80" cy="140" r="4" fill="#A8FF00"/>
+          <circle cx="55" cy="210" r="4" fill="#A8FF00"/>
+          <circle cx="105" cy="210" r="4" fill="#A8FF00"/>
+        </g>
+      </svg>
+      <!-- Phase label -->
+      <div style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;">
+        <span style="font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(168, 255, 0, 0.6);">ECCENTRIC</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Neon Wireframe</h3>
+      <p>Zelený neon (#A8FF00) na černém pozadí. Svítící klouby, glow efekt. Ladí s FitAI v2 designem (Activity Rings, accent color). Minimální, čistý.</p>
+    </div>
+  </div>
+
+  <!-- Option B: X-ray / Medical -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0a0a0a; display: flex; align-items: center; justify-content: center; min-height: 320px; position: relative; overflow: hidden;">
+      <svg width="160" height="280" viewBox="0 0 160 280">
+        <defs>
+          <filter id="glow-b">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#glow-b)">
+          <!-- Head -->
+          <circle cx="80" cy="35" r="14" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <!-- Spine -->
+          <line x1="80" y1="49" x2="80" y2="140" stroke="rgba(255,255,255,0.35)" stroke-width="3" stroke-dasharray="8 4"/>
+          <!-- Arms -->
+          <line x1="80" y1="70" x2="40" y2="110" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="40" y1="110" x2="30" y2="150" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="80" y1="70" x2="120" y2="110" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="120" y1="110" x2="130" y2="150" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <!-- Legs -->
+          <line x1="80" y1="140" x2="55" y2="210" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="55" y1="210" x2="50" y2="270" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="80" y1="140" x2="105" y2="210" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <line x1="105" y1="210" x2="110" y2="270" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+          <!-- Joints as rings -->
+          <circle cx="80" cy="70" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <circle cx="40" cy="110" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <circle cx="120" cy="110" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <circle cx="80" cy="140" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <circle cx="55" cy="210" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <circle cx="105" cy="210" r="5" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <!-- Active joint highlight -->
+          <circle cx="40" cy="110" r="8" fill="none" stroke="#30D5C8" stroke-width="1.5" opacity="0.8"/>
+          <circle cx="120" cy="110" r="8" fill="none" stroke="#30D5C8" stroke-width="1.5" opacity="0.8"/>
+        </g>
+      </svg>
+      <div style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;">
+        <span style="font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255, 255, 255, 0.4);">ECCENTRIC</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — X-ray / Medical</h3>
+      <p>Bílé poloprůhledné kosti, tyrkysový highlight na aktivních kloubech. Rentgenový feel. Profesionálnější, vzdělávací vibe. Více "anatomický".</p>
+    </div>
+  </div>
+
+  <!-- Option C: Gradient Body -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0a0a0a; display: flex; align-items: center; justify-content: center; min-height: 320px; position: relative; overflow: hidden;">
+      <svg width="160" height="280" viewBox="0 0 160 280">
+        <defs>
+          <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FF375F"/>
+            <stop offset="50%" stop-color="#FF9F0A"/>
+            <stop offset="100%" stop-color="#A8FF00"/>
+          </linearGradient>
+          <filter id="glow-c">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#glow-c)">
+          <!-- Head -->
+          <circle cx="80" cy="35" r="14" fill="none" stroke="url(#bodyGrad)" stroke-width="2.5"/>
+          <!-- Spine -->
+          <line x1="80" y1="49" x2="80" y2="140" stroke="url(#bodyGrad)" stroke-width="3"/>
+          <!-- Arms -->
+          <line x1="80" y1="70" x2="40" y2="110" stroke="#FF375F" stroke-width="2.5"/>
+          <line x1="40" y1="110" x2="30" y2="150" stroke="#FF375F" stroke-width="2.5"/>
+          <line x1="80" y1="70" x2="120" y2="110" stroke="#FF375F" stroke-width="2.5"/>
+          <line x1="120" y1="110" x2="130" y2="150" stroke="#FF375F" stroke-width="2.5"/>
+          <!-- Legs -->
+          <line x1="80" y1="140" x2="55" y2="210" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="55" y1="210" x2="50" y2="270" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="80" y1="140" x2="105" y2="210" stroke="#A8FF00" stroke-width="2.5"/>
+          <line x1="105" y1="210" x2="110" y2="270" stroke="#A8FF00" stroke-width="2.5"/>
+          <!-- Joints -->
+          <circle cx="80" cy="70" r="5" fill="#FF9F0A"/>
+          <circle cx="40" cy="110" r="5" fill="#FF375F"/>
+          <circle cx="120" cy="110" r="5" fill="#FF375F"/>
+          <circle cx="80" cy="140" r="5" fill="#FF9F0A"/>
+          <circle cx="55" cy="210" r="5" fill="#A8FF00"/>
+          <circle cx="105" cy="210" r="5" fill="#A8FF00"/>
+        </g>
+      </svg>
+      <div style="position: absolute; bottom: 16px; left: 0; right: 0; text-align: center;">
+        <span style="font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255, 159, 10, 0.6);">ECCENTRIC</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Gradient Body</h3>
+      <p>Barevný gradient (červená → oranžová → zelená) mapuje svalové skupiny. Horní tělo červeně, core oranžově, nohy zeleně. Vizuálně bohatší, ale může být "busy".</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <p class="subtitle">Klikni na preferovaný styl. Všechny varianty budou animované (plynulý přechod mezi 4 fázemi pohybu).</p>
+</div>

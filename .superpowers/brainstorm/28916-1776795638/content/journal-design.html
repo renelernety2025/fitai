@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>FitAI Journal — Design Mockup</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; color: #fff; font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 900px; margin: 0 auto; }
+.serif { font-family: Georgia, 'Times New Roman', serif; }
+
+/* Hero */
+.hero { text-align: center; padding: 40px 0 32px; }
+.hero h1 { font-size: 42px; font-weight: 700; letter-spacing: -1px; }
+.hero .sub { color: rgba(255,255,255,0.4); font-size: 14px; margin-top: 8px; }
+.hero-stats { display: flex; justify-content: center; gap: 32px; margin-top: 24px; }
+.hero-stat { text-align: center; }
+.hero-stat .num { font-size: 28px; font-weight: 700; color: #A8FF00; }
+.hero-stat .label { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+/* Month chapter */
+.month-chapter { margin: 48px 0 24px; padding: 32px; border-radius: 16px; background: linear-gradient(135deg, rgba(168,255,0,0.05), rgba(0,229,255,0.03)); border: 1px solid rgba(255,255,255,0.06); }
+.month-title { font-family: Georgia, serif; font-size: 32px; font-weight: 400; font-style: italic; color: rgba(255,255,255,0.9); }
+.month-ai { margin-top: 16px; font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; border-left: 2px solid #A8FF00; padding-left: 16px; }
+.month-stats { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+.month-stat { font-size: 13px; color: rgba(255,255,255,0.6); }
+.month-stat strong { color: #A8FF00; }
+.month-compare { font-size: 11px; color: rgba(168,255,0,0.6); }
+
+/* Milestone */
+.milestone { text-align: center; margin: 24px 0; padding: 16px; }
+.milestone-badge { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(255,214,0,0.15), rgba(255,149,0,0.1)); border: 1px solid rgba(255,214,0,0.3); border-radius: 24px; padding: 8px 20px; font-size: 14px; font-weight: 600; color: #FFD600; }
+
+/* Day card */
+.day-card { margin: 16px 0; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+.day-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.day-date { font-family: Georgia, serif; font-size: 18px; color: rgba(255,255,255,0.8); }
+.day-tags { display: flex; gap: 6px; }
+.tag { font-size: 10px; padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); }
+.tag.push { border-color: rgba(255,55,95,0.4); color: #FF375F; }
+.tag.legs { border-color: rgba(168,255,0,0.4); color: #A8FF00; }
+
+.day-body { display: grid; grid-template-columns: 1fr 1fr; min-height: 200px; }
+.day-left { padding: 20px; border-right: 1px solid rgba(255,255,255,0.06); }
+.day-right { padding: 20px; }
+
+/* Left side - stats */
+.workout-title { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 12px; }
+.exercise-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; color: rgba(255,255,255,0.45); }
+.exercise-row .name { color: rgba(255,255,255,0.7); }
+.pr-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(255,214,0,0.15), rgba(255,149,0,0.1)); border: 1px solid rgba(255,214,0,0.3); border-radius: 8px; padding: 4px 10px; font-size: 11px; color: #FFD600; margin-top: 8px; }
+.stats-row { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+.mini-stat { font-size: 11px; color: rgba(255,255,255,0.4); }
+.mini-stat strong { color: rgba(255,255,255,0.7); }
+.rating { margin-top: 12px; font-size: 16px; letter-spacing: 2px; }
+.star-on { color: #FFD600; }
+.star-off { color: rgba(255,255,255,0.15); }
+.recovery-mini { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.4); }
+.recovery-dot { width: 8px; height: 8px; border-radius: 50%; background: #A8FF00; }
+
+/* Right side - notes/photos */
+.notes-text { font-family: Georgia, serif; font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.6); font-style: italic; }
+.mood { font-size: 24px; margin-bottom: 12px; }
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.photo-placeholder { aspect-ratio: 1; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.2); }
+.photo-placeholder.has-photo { background: linear-gradient(135deg, rgba(168,255,0,0.1), rgba(0,229,255,0.05)); border: 1px solid rgba(168,255,0,0.2); }
+.ai-insight { margin-top: 16px; padding: 10px 12px; border-radius: 8px; background: rgba(168,255,0,0.05); border: 1px solid rgba(168,255,0,0.1); font-size: 12px; color: rgba(168,255,0,0.7); }
+.ai-insight::before { content: "AI: "; font-weight: 600; }
+
+/* Measurements */
+.measurements { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+.measurement { font-size: 11px; color: rgba(255,255,255,0.35); }
+.measurement strong { color: rgba(255,255,255,0.6); }
+
+/* Rest day card */
+.rest-day .day-body { grid-template-columns: 1fr; text-align: center; padding: 32px; }
+.rest-label { font-family: Georgia, serif; font-size: 16px; color: rgba(255,255,255,0.3); font-style: italic; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Muj denik</h1>
+  <p class="sub">Tvoje fitness cesta, den po dni</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num">47</div>
+      <div class="label">Zapisu</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">12</div>
+      <div class="label">PR tento mesic</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">89</div>
+      <div class="label">Treninku celkem</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">5</div>
+      <div class="label">Aktualni streak</div>
+    </div>
+  </div>
+</div>
+
+<!-- MONTH CHAPTER: DUBEN -->
+<div class="month-chapter">
+  <div class="month-title">Duben 2026</div>
+  <div class="month-ai">
+    Duben byl tvuj nejsilnejsi mesic. Bench press vyrostl o 7.5kg, drepy o 10kg. Forma na compound cvicich se zlepsila prumerne o 8%. Doporucuji pridat vice mobility — 3 treninky bez rozcvicky.
+  </div>
+  <div class="month-stats">
+    <div class="month-stat"><strong>18</strong> treninku <span class="month-compare">+3 vs brezen</span></div>
+    <div class="month-stat"><strong>42,350 kg</strong> celkovy objem <span class="month-compare">+12%</span></div>
+    <div class="month-stat"><strong>5</strong> novych PR</div>
+    <div class="month-stat"><strong>76%</strong> prumerna forma</div>
+  </div>
+</div>
+
+<!-- MILESTONE -->
+<div class="milestone">
+  <div class="milestone-badge">&#x1F3C6; 50. zapis v deniku!</div>
+</div>
+
+<!-- DAY CARD: Training day -->
+<div class="day-card">
+  <div class="day-header">
+    <div class="day-date">21. dubna, pondeli</div>
+    <div class="day-tags">
+      <span class="tag push">Push Day</span>
+      <span class="tag">Sila</span>
+    </div>
+  </div>
+  <div class="day-body">
+    <div class="day-left">
+      <div class="workout-title">Push (sila) &middot; 52 min</div>
+      <div class="exercise-row"><span class="name">Bench Press</span><span>4x5 &middot; 82.5kg &middot; RPE 8</span></div>
+      <div class="exercise-row"><span class="name">OHP</span><span>3x8 &middot; 45kg &middot; RPE 7</span></div>
+      <div class="exercise-row"><span class="name">Incline DB Press</span><span>3x10 &middot; 28kg &middot; RPE 7</span></div>
+      <div class="exercise-row"><span class="name">Tricep Pushdown</span><span>3x12 &middot; 25kg &middot; RPE 6</span></div>
+      <div class="pr-badge">&#9733; Novy PR: Bench Press 82.5kg x5</div>
+      <div class="stats-row">
+        <div class="mini-stat">Objem: <strong>8,240 kg</strong></div>
+        <div class="mini-stat">Forma: <strong>81%</strong></div>
+      </div>
+      <div class="rating">
+        <span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-off">&#9733;</span>
+      </div>
+      <div class="recovery-mini"><span class="recovery-dot"></span> Recovery: 82/100</div>
+      <div class="measurements">
+        <div class="measurement">Vaha: <strong>83.2 kg</strong></div>
+        <div class="measurement">Paze: <strong>37.5 cm</strong></div>
+      </div>
+    </div>
+    <div class="day-right">
+      <div class="mood">&#128170;</div>
+      <div class="notes-text">
+        Dneska super trenink. Bench press konecne prekonan — 82.5kg na 5 rep, ciste bez dopomoci. OHP trochu bolelo leve rameno pri poslednim setu, dal jsem si extra rest. Priste zkusim 85kg.
+      </div>
+      <div class="photo-grid">
+        <div class="photo-placeholder has-photo">gym selfie</div>
+        <div class="photo-placeholder has-photo">bench setup</div>
+      </div>
+      <div class="ai-insight">Bench press se zlepsil o 12% za posledni 4 tydny. Udrzuj tento progres — pristi milestone je 90kg.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY CARD: Rest day with notes -->
+<div class="day-card">
+  <div class="day-header">
+    <div class="day-date">20. dubna, nedele</div>
+    <div class="day-tags">
+      <span class="tag">Rest Day</span>
+      <span class="tag legs">Mobility</span>
+    </div>
+  </div>
+  <div class="day-body">
+    <div class="day-left" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;opacity:0.3;">&#128564;</div>
+      <div class="rest-label">Odpocinkovy den</div>
+      <div class="recovery-mini" style="margin-top:12px;"><span class="recovery-dot" style="background:#00E5FF;"></span> Recovery: 91/100</div>
+      <div class="rating" style="margin-top:8px;">
+        <span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-off">&#9733;</span><span class="star-off">&#9733;</span>
+      </div>
+    </div>
+    <div class="day-right">
+      <div class="mood">&#128524;</div>
+      <div class="notes-text">
+        30 min yoga rano, potom prochazka s psem. Svaly uz nebolej po pateenim leg day. Zitra push day — cil: bench 82.5kg.
+      </div>
+      <div class="photo-grid">
+        <div class="photo-placeholder">+ foto</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DAY CARD: Leg day -->
+<div class="day-card">
+  <div class="day-header">
+    <div class="day-date">19. dubna, sobota</div>
+    <div class="day-tags">
+      <span class="tag legs">Leg Day</span>
+      <span class="tag">Hypertrofie</span>
+    </div>
+  </div>
+  <div class="day-body">
+    <div class="day-left">
+      <div class="workout-title">Legs (objem) &middot; 61 min</div>
+      <div class="exercise-row"><span class="name">Back Squat</span><span>4x8 &middot; 90kg &middot; RPE 8</span></div>
+      <div class="exercise-row"><span class="name">Romanian Deadlift</span><span>3x10 &middot; 70kg &middot; RPE 7</span></div>
+      <div class="exercise-row"><span class="name">Leg Press</span><span>3x12 &middot; 140kg &middot; RPE 7</span></div>
+      <div class="exercise-row"><span class="name">Leg Curl</span><span>3x12 &middot; 35kg &middot; RPE 6</span></div>
+      <div class="exercise-row"><span class="name">Calf Raise</span><span>4x15 &middot; 60kg &middot; RPE 5</span></div>
+      <div class="stats-row">
+        <div class="mini-stat">Objem: <strong>12,680 kg</strong></div>
+        <div class="mini-stat">Forma: <strong>74%</strong></div>
+      </div>
+      <div class="rating">
+        <span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span><span class="star-on">&#9733;</span>
+      </div>
+      <div class="recovery-mini"><span class="recovery-dot" style="background:#FF9500;"></span> Recovery: 65/100</div>
+    </div>
+    <div class="day-right">
+      <div class="mood">&#128293;</div>
+      <div class="notes-text">
+        Brutalka. Drepy konecne sednou — kolena ven, hrudnik nahoru. RDL je gamechanger pro hamstringy. Zitra budu umirat.
+      </div>
+      <div class="photo-grid">
+        <div class="photo-placeholder has-photo">leg press PR</div>
+        <div class="photo-placeholder has-photo">post-workout</div>
+        <div class="photo-placeholder has-photo">meal prep</div>
+        <div class="photo-placeholder">+ foto</div>
+      </div>
+      <div class="ai-insight">Objem na nohy vzrostl o 18% za mesic. Squat forma stabilni na 74% — soustred se na hloubku v eccentric fazi.</div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:48px 0;color:rgba(255,255,255,0.2);font-size:13px;">
+  &darr; Brezen 2026 &darr;
+</div>
+
+</body>
+</html>

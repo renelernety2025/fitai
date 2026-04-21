@@ -1,6 +1,17 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
+import { CreateStoryDto } from './dto/create-story.dto';
+import { ReactDto } from './dto/react.dto';
+import { CommentDto } from './dto/comment.dto';
+import { PropsDto } from './dto/props.dto';
+import { ShareDto } from './dto/share.dto';
 
 @Injectable()
 export class SocialService {
@@ -246,5 +257,352 @@ export class SocialService {
       take: 10,
     });
     return users;
+  }
+
+  // ── Stories ──
+
+  async getStories(userId: string) {
+    const following = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followedId: true },
+    });
+    const userIds = [userId, ...following.map((f) => f.followedId)];
+
+    return this.prisma.story.findMany({
+      where: {
+        userId: { in: userIds },
+        expiresAt: { gt: new Date() },
+      },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  async createStory(userId: string, dto: CreateStoryDto) {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    let cardData: Record<string, unknown> = dto.cardData || {};
+
+    if (dto.gymSessionId) {
+      const session = await this.prisma.gymSession.findFirst({
+        where: { id: dto.gymSessionId, userId },
+      });
+      if (!session) throw new NotFoundException('Session nenalezena');
+      cardData = {
+        type: 'workout',
+        totalReps: session.totalReps,
+        duration: session.durationSeconds,
+        formScore: session.averageFormScore,
+        ...cardData,
+      };
+    }
+
+    return this.prisma.story.create({
+      data: {
+        userId,
+        gymSessionId: dto.gymSessionId,
+        cardData: cardData as any,
+        expiresAt,
+      },
+    });
+  }
+
+  async viewStory(storyId: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+    });
+    if (!story) throw new NotFoundException('Story nenalezena');
+
+    return this.prisma.story.update({
+      where: { id: storyId },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
+
+  // ── Reactions ──
+
+  async react(userId: string, dto: ReactDto) {
+    return this.prisma.reaction.upsert({
+      where: {
+        userId_targetType_targetId: {
+          userId,
+          targetType: dto.targetType,
+          targetId: dto.targetId,
+        },
+      },
+      update: { emoji: dto.emoji },
+      create: {
+        userId,
+        targetType: dto.targetType,
+        targetId: dto.targetId,
+        emoji: dto.emoji,
+      },
+    });
+  }
+
+  async unreact(userId: string, reactionId: string) {
+    const reaction = await this.prisma.reaction.findUnique({
+      where: { id: reactionId },
+    });
+    if (!reaction) throw new NotFoundException('Reakce nenalezena');
+    if (reaction.userId !== userId) {
+      throw new ForbiddenException('Nemůžeš smazat cizí reakci');
+    }
+
+    await this.prisma.reaction.delete({ where: { id: reactionId } });
+    return { ok: true };
+  }
+
+  async getReactions(targetType: string, targetId: string) {
+    return this.prisma.reaction.findMany({
+      where: { targetType, targetId },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ── Comments ──
+
+  async addComment(userId: string, dto: CommentDto) {
+    const feedItem = await this.prisma.activityFeedItem.findUnique({
+      where: { id: dto.feedItemId },
+    });
+    if (!feedItem) throw new NotFoundException('Feed item nenalezen');
+
+    return this.prisma.comment.create({
+      data: { userId, feedItemId: dto.feedItemId, content: dto.content },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    });
+  }
+
+  async getComments(feedItemId: string) {
+    return this.prisma.comment.findMany({
+      where: { feedItemId },
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    });
+  }
+
+  async deleteComment(userId: string, commentId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) throw new NotFoundException('Komentář nenalezen');
+    if (comment.userId !== userId) {
+      throw new ForbiddenException('Nemůžeš smazat cizí komentář');
+    }
+
+    await this.prisma.comment.delete({ where: { id: commentId } });
+    return { ok: true };
+  }
+
+  // ── Props ──
+
+  async giveProps(userId: string, dto: PropsDto) {
+    if (userId === dto.toUserId) {
+      throw new BadRequestException('Nemůžeš dát props sám sobě');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: dto.toUserId },
+    });
+    if (!target) throw new NotFoundException('Uživatel nenalezen');
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayCount = await this.prisma.props.count({
+      where: {
+        fromUserId: userId,
+        createdAt: { gte: todayStart, lte: todayEnd },
+      },
+    });
+
+    if (todayCount >= 5) {
+      throw new BadRequestException('Max 5 props denně');
+    }
+
+    const [props] = await this.prisma.$transaction([
+      this.prisma.props.create({
+        data: {
+          fromUserId: userId,
+          toUserId: dto.toUserId,
+          reason: dto.reason,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: dto.toUserId },
+        data: { propsReceived: { increment: 1 } },
+      }),
+    ]);
+
+    return props;
+  }
+
+  async getReceivedProps(userId: string) {
+    return this.prisma.props.findMany({
+      where: { toUserId: userId },
+      include: {
+        from: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  // ── Flash Challenges ──
+
+  async getActiveFlash() {
+    return this.prisma.flashChallenge.findFirst({
+      where: {
+        isActive: true,
+        endsAt: { gt: new Date() },
+        startsAt: { lte: new Date() },
+      },
+      include: {
+        participants: {
+          orderBy: { value: 'desc' },
+          take: 10,
+          include: {
+            user: { select: { id: true, name: true, avatarUrl: true } },
+          },
+        },
+        _count: { select: { participants: true } },
+      },
+    });
+  }
+
+  async joinFlash(userId: string, challengeId: string) {
+    const flash = await this.prisma.flashChallenge.findUnique({
+      where: { id: challengeId },
+    });
+    if (!flash) throw new NotFoundException('Flash challenge nenalezena');
+    if (!flash.isActive || flash.endsAt < new Date()) {
+      throw new ConflictException('Flash challenge již skončila');
+    }
+
+    return this.prisma.flashParticipant.upsert({
+      where: {
+        challengeId_userId: { challengeId, userId },
+      },
+      update: {},
+      create: { challengeId, userId },
+    });
+  }
+
+  async updateFlash(
+    userId: string,
+    challengeId: string,
+    value: number,
+  ) {
+    const participant = await this.prisma.flashParticipant.findUnique({
+      where: { challengeId_userId: { challengeId, userId } },
+    });
+    if (!participant) {
+      throw new NotFoundException('Nejsi přihlášen do této výzvy');
+    }
+
+    const flash = await this.prisma.flashChallenge.findUnique({
+      where: { id: challengeId },
+    });
+    if (!flash || !flash.isActive || flash.endsAt < new Date()) {
+      throw new ConflictException('Flash challenge již skončila');
+    }
+
+    const newValue = participant.value + value;
+    const completedAt =
+      newValue >= flash.targetValue ? new Date() : undefined;
+
+    return this.prisma.flashParticipant.update({
+      where: { id: participant.id },
+      data: {
+        value: newValue,
+        ...(completedAt ? { completedAt } : {}),
+      },
+    });
+  }
+
+  // ── Share ──
+
+  async share(userId: string, dto: ShareDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    const name = user?.name ?? 'Uživatel';
+
+    const titleMap: Record<string, string> = {
+      workout: `${name} sdílí trénink`,
+      pr: `${name} překonal osobní rekord!`,
+      journal: `${name} sdílí záznam z deníku`,
+      recipe: `${name} sdílí recept`,
+    };
+
+    return this.createFeedItem(
+      userId,
+      `shared_${dto.type}`,
+      titleMap[dto.type] || `${name} sdílí obsah`,
+      '',
+      { type: dto.type, referenceId: dto.referenceId },
+    );
+  }
+
+  // ── Public Profile ──
+
+  async getPublicProfile(targetUserId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        level: true,
+        propsReceived: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException('Uživatel nenalezen');
+
+    const [progress, achievements, followCounts] = await Promise.all([
+      this.prisma.userProgress.findUnique({
+        where: { userId: targetUserId },
+      }),
+      this.prisma.achievementUnlock.findMany({
+        where: { userId: targetUserId },
+        include: { achievement: true },
+        orderBy: { unlockedAt: 'desc' },
+        take: 10,
+      }),
+      this.getFollowCounts(targetUserId),
+    ]);
+
+    return {
+      ...user,
+      progress,
+      achievements: achievements.map((a) => a.achievement),
+      ...followCounts,
+    };
+  }
+
+  async updateBio(userId: string, bio: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { bio },
+      select: { id: true, bio: true },
+    });
   }
 }

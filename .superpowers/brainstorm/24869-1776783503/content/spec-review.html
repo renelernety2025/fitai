@@ -1,0 +1,109 @@
+<h2>Tier 1 Features — Design Spec</h2>
+<p class="subtitle">Zkontroluj a potvrd, nebo rekni co zmenit</p>
+
+<div class="section">
+  <h3>1. AI Chat Coach <code>/ai-chat</code></h3>
+  <div style="background:#111;border-radius:12px;padding:20px;margin:12px 0;font-size:14px;line-height:1.7;color:#ccc;">
+    <p><strong style="color:#A8FF00;">Layout:</strong> Hero + Chat</p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li>Hero nahore: Alex avatar (gradient kruh), jmeno, popis, 3-4 suggested prompt pills</li>
+      <li>Chat zona: scrollovatelne bubliny (user = gradient vpravo, Alex = tmava vlevo s avatarem)</li>
+      <li>Input dole: rounded input + send button, Enter = odeslat, Shift+Enter = novy radek</li>
+      <li>Streaming pres SSE — text se objevuje token po tokenu</li>
+      <li>Hero se sroluje nahoru jak konverzace roste</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">Backend (3 nove endpointy):</strong></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li><code>POST /api/coaching/chat</code> — SSE streaming, conversationId pro memory (poslednih 20 zprav jako Claude kontext)</li>
+      <li><code>GET /api/coaching/conversations</code> — seznam konverzaci uzivatele</li>
+      <li><code>GET /api/coaching/conversations/:id/messages</code> — zpravy jedne konverzace</li>
+      <li>Auto-title po prvni odpovedi (3-5 slov)</li>
+      <li>Schema: pridat <code>title</code> field na CoachingSession</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">System prompt:</strong></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li>Sdileny <code>buildUserPromptContext()</code> (vek, zraneni, cil, streak, vybaveni)</li>
+      <li>Delsi odpovedi nez pri workoutu (max 200 slov vs 12 slov)</li>
+      <li>Markdown OK, konverzacni ton, prompt injection ochrana</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">Nove soubory:</strong></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li><code>apps/web/src/app/(app)/ai-chat/page.tsx</code></li>
+      <li><code>apps/web/src/components/chat/ChatBubble.tsx</code></li>
+      <li><code>apps/web/src/components/chat/ChatInput.tsx</code></li>
+      <li><code>apps/api/src/coaching/dto/chat-message.dto.ts</code></li>
+      <li><code>apps/api/src/coaching/coaching-chat-prompt.ts</code></li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Workout Streak Calendar <code>/habity</code></h3>
+  <div style="background:#111;border-radius:12px;padding:20px;margin:12px 0;font-size:14px;line-height:1.7;color:#ccc;">
+    <p><strong style="color:#A8FF00;">Komponenta:</strong> GitHub-style ActivityHeatmap</p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li>Mrizka 7 radku (Po-Ne) x 12 sloupcu (12 tydnu = 3 mesice)</li>
+      <li>Bunka ~14x14px, gap 3px, zaoblene rohy</li>
+      <li>Barva podle recovery score:
+        <span style="display:inline-block;width:12px;height:12px;background:#1a1a1a;border-radius:2px;vertical-align:middle;margin:0 2px;"></span> zadny check-in
+        <span style="display:inline-block;width:12px;height:12px;background:#FF375F;opacity:0.6;border-radius:2px;vertical-align:middle;margin:0 2px;"></span> 0-40
+        <span style="display:inline-block;width:12px;height:12px;background:#FF9500;opacity:0.6;border-radius:2px;vertical-align:middle;margin:0 2px;"></span> 41-60
+        <span style="display:inline-block;width:12px;height:12px;background:#A8FF00;opacity:0.6;border-radius:2px;vertical-align:middle;margin:0 2px;"></span> 61-80
+        <span style="display:inline-block;width:12px;height:12px;background:#A8FF00;border-radius:2px;vertical-align:middle;margin:0 2px;"></span> 81-100
+      </li>
+      <li>Dnesek: bily border ring</li>
+      <li>Hover tooltip: datum + recovery score</li>
+      <li>Pod heatmapou: "X check-inu · Nejdelsi streak: Y dni · Aktualni: Z dni"</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">Data:</strong> Existujici <code>getHabitsHistory(84)</code> — jen zvysit parametr z 14 na 84</p>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">Novy soubor:</strong> <code>apps/web/src/components/habits/ActivityHeatmap.tsx</code></p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. "Co dnes?" Smart Widget <code>/dashboard</code></h3>
+  <div style="background:#111;border-radius:12px;padding:20px;margin:12px 0;font-size:14px;line-height:1.7;color:#ccc;">
+    <p><strong style="color:#A8FF00;">Umisteni:</strong> Nova karta NAD Daily Brief — prvni vec na dashboardu</p>
+
+    <p style="margin-top:12px;"><strong style="color:#A8FF00;">Vizual:</strong></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li>Gradient background (meni se podle typu akce)</li>
+      <li>Headline (1 veta, max 60 znaku) + rationale (1 veta)</li>
+      <li>CTA button + dismiss (x) — po dismissu schovano do konce dne</li>
+    </ul>
+
+    <p style="margin-top:12px;"><strong style="color:#A8FF00;">Logika doporuceni (priorita):</strong></p>
+    <ol style="margin:8px 0;padding-left:20px;">
+      <li><strong>Streak v ohrozeni</strong> (streak &gt; 3, dnes necvicil) → micro-workout</li>
+      <li><strong>Vysoka bolestivost</strong> (soreness &ge; 4) → recovery den</li>
+      <li><strong>Dlouho necvicil</strong> (3+ dny) → lehky trenink</li>
+      <li><strong>Slaba vyziva</strong> (kcal &lt; 70% cile) → doplnit bilkoviny</li>
+      <li><strong>Vse OK</strong> → motivacni akce z Daily Brief</li>
+    </ol>
+
+    <p style="margin-top:12px;"><strong style="color:#A8FF00;">Backend:</strong> <code>GET /api/ai-insights/today-action</code></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li>Rules-based, zadny Claude call (instant response)</li>
+      <li>Cache 1h per user</li>
+    </ul>
+
+    <p style="margin-top:16px;"><strong style="color:#A8FF00;">Nove soubory:</strong></p>
+    <ul style="margin:8px 0;padding-left:20px;">
+      <li><code>apps/web/src/components/dashboard/TodayActionCard.tsx</code></li>
+      <li><code>apps/api/src/ai-insights/today-action.ts</code></li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Souhrn souboru</h3>
+  <div style="background:#111;border-radius:12px;padding:20px;margin:12px 0;font-size:14px;line-height:1.7;color:#ccc;">
+    <p><strong style="color:#A8FF00;">8 novych souboru</strong> + <strong>9 modifikaci</strong></p>
+    <p style="margin-top:8px;"><strong>Out of scope:</strong> Conversation sidebar, voice I/O, mobile parity, chat search, export</p>
+  </div>
+</div>

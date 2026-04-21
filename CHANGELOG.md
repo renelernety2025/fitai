@@ -7,6 +7,52 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Social Platform — Stories, Reactions, Buddy Finder, DMs, Props, Flash] 2026-04-22
+
+### Workout Stories (Instagram)
+- Auto-generated 24h story cards from workout data
+- Stories bar on community feed (horizontal scroll, lime ring for unviewed)
+- Fullscreen story viewer with auto-advance timer + keyboard nav
+
+### Reactions & Comments (Instagram/TikTok)
+- 5 emoji reactions (fire, muscle, clap, heart, 100) on feed items + stories
+- Comment section under feed items (expandable, flat v1)
+
+### Gym Buddy Finder (Tinder/Bumble)
+- `/gym-buddy` with buddy profile + swipe card stack
+- Native drag gestures (left=pass, right=interested)
+- Mutual match detection + match animation
+
+### Direct Messages
+- `/messages` split-panel chat (conversations left, messages right)
+- Start conversation requires mutual follow or buddy match
+- 10s polling for new messages
+
+### Props/Kudos System
+- "Dát props" button on profiles + feed items (max 5/day)
+- Props counter on public profiles
+
+### Flash Challenges
+- 1-hour pop-up challenges with countdown timer
+- Floating banner on community, mini leaderboard (top 3)
+
+### Share to Feed
+- One-tap sharing of workouts, PRs, journal entries, recipes
+- Auto-generated attractive feed cards
+
+### Enhanced Profiles
+- `/profile/:id` public profile with stats, achievements, bio
+- Follow/props/message buttons
+- Transformation highlights
+
+### Backend
+- Extended social module: 17 new endpoints
+- New modules: buddy (5 endpoints), messages (5 endpoints)
+- 10 new Prisma models
+- User model extended with bio + propsReceived
+
+---
+
 ## [Priority 1 — Mobile parity, Dark/Light mode, Onboarding tour] 2026-04-22
 
 ### Mobile Parity (4 new screens)
