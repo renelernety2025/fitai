@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -129,9 +129,17 @@ export class ExportService {
     // Include the full "to" day
     toDate.setDate(toDate.getDate() + 1);
 
+    // Guard: max 365 days range
+    const diffDays =
+      (toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays > 365) {
+      throw new BadRequestException('Date range must not exceed 365 days');
+    }
+
     const logs = await this.prisma.foodLog.findMany({
       where: { userId, date: { gte: fromDate, lt: toDate } },
       orderBy: { date: 'asc' },
+      take: 5000,
     });
 
     const headers = [

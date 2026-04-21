@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -56,12 +57,17 @@ export class WorkoutJournalService {
     userId: string,
     month: string,
   ): Promise<DayData[]> {
+    if (month && !/^\d{4}-\d{2}$/.test(month)) {
+      throw new BadRequestException(
+        'Invalid month format. Use YYYY-MM.',
+      );
+    }
     const start = new Date(`${month}-01`);
     const end = new Date(start);
     end.setMonth(end.getMonth() + 1);
 
     const [entries, sessions] = await Promise.all([
-      (this.prisma as any).journalEntry.findMany({
+      this.prisma.journalEntry.findMany({
         where: {
           userId,
           date: { gte: start, lt: end },
@@ -69,12 +75,12 @@ export class WorkoutJournalService {
         include: { photos: true },
         orderBy: { date: 'asc' },
       }),
-      (this.prisma as any).gymSession.findMany({
+      this.prisma.gymSession.findMany({
         where: {
           userId,
-          createdAt: { gte: start, lt: end },
+          startedAt: { gte: start, lt: end },
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { startedAt: 'asc' },
       }),
     ]);
 
@@ -85,7 +91,7 @@ export class WorkoutJournalService {
 
     const sessionByDate = new Map<string, any>();
     for (const s of sessions) {
-      const key = toDateStr(s.createdAt);
+      const key = toDateStr(s.startedAt);
       if (!sessionByDate.has(key)) {
         sessionByDate.set(key, s);
       }
@@ -121,7 +127,7 @@ export class WorkoutJournalService {
       );
     }
 
-    return (this.prisma as any).journalEntry.upsert({
+    return this.prisma.journalEntry.upsert({
       where: {
         userId_date: { userId, date },
       },
@@ -129,9 +135,11 @@ export class WorkoutJournalService {
         gymSessionId: dto.gymSessionId ?? undefined,
         notes: dto.notes ?? undefined,
         rating: dto.rating ?? undefined,
-        mood: dto.mood ?? undefined,
+        mood: (dto.mood as any) ?? undefined,
         tags: dto.tags ?? undefined,
-        measurements: dto.measurements ?? undefined,
+        measurements: dto.measurements
+          ? (dto.measurements as any)
+          : undefined,
       },
       create: {
         userId,
@@ -139,9 +147,11 @@ export class WorkoutJournalService {
         gymSessionId: dto.gymSessionId ?? null,
         notes: dto.notes ?? null,
         rating: dto.rating ?? null,
-        mood: dto.mood ?? null,
+        mood: dto.mood as any ?? null,
         tags: dto.tags ?? [],
-        measurements: dto.measurements ?? null,
+        measurements: dto.measurements
+          ? (dto.measurements as any)
+          : null,
       },
       include: { photos: true },
     });
@@ -184,7 +194,7 @@ export class WorkoutJournalService {
       },
     });
 
-    await (this.prisma as any).journalPhoto.create({
+    await this.prisma.journalPhoto.create({
       data: {
         id: photoId,
         journalEntryId: entry.id,
@@ -222,7 +232,7 @@ export class WorkoutJournalService {
       );
     }
 
-    await (this.prisma as any).journalPhoto.delete({
+    await this.prisma.journalPhoto.delete({
       where: { id: photoId },
     });
     return { deleted: true };
@@ -242,11 +252,11 @@ export class WorkoutJournalService {
     end.setMonth(end.getMonth() + 1);
 
     const [entries, sessions] = await Promise.all([
-      (this.prisma as any).journalEntry.findMany({
+      this.prisma.journalEntry.findMany({
         where: { userId, date: { gte: start, lt: end } },
       }),
-      (this.prisma as any).gymSession.findMany({
-        where: { userId, createdAt: { gte: start, lt: end } },
+      this.prisma.gymSession.findMany({
+        where: { userId, startedAt: { gte: start, lt: end } },
       }),
     ]);
 
@@ -269,13 +279,13 @@ export class WorkoutJournalService {
   async getMilestones(userId: string): Promise<Milestone[]> {
     const [progress, sessionCount, entryCount] =
       await Promise.all([
-        (this.prisma as any).userProgress.findUnique({
+        this.prisma.userProgress.findUnique({
           where: { userId },
         }),
-        (this.prisma as any).gymSession.count({
+        this.prisma.gymSession.count({
           where: { userId },
         }),
-        (this.prisma as any).journalEntry.count({
+        this.prisma.journalEntry.count({
           where: { userId },
         }),
       ]);
@@ -354,7 +364,7 @@ export class WorkoutJournalService {
       recentEntries,
     );
 
-    await (this.prisma as any).journalEntry.update({
+    await this.prisma.journalEntry.update({
       where: { id: entry.id },
       data: { aiInsight: insight },
     });

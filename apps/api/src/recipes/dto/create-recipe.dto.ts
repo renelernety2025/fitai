@@ -7,7 +7,23 @@ import {
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class IngredientDto {
+  @IsString()
+  @MaxLength(200)
+  name!: string;
+
+  @IsString()
+  @MaxLength(50)
+  amount!: string;
+
+  @IsString()
+  @MaxLength(30)
+  unit!: string;
+}
 
 export class CreateRecipeDto {
   @IsString()
@@ -20,7 +36,9 @@ export class CreateRecipeDto {
   description?: string;
 
   @IsArray()
-  ingredients!: any[]; // [{name, amount, unit}]
+  @ValidateNested({ each: true })
+  @Type(() => IngredientDto)
+  ingredients!: IngredientDto[];
 
   @IsOptional()
   @IsString()

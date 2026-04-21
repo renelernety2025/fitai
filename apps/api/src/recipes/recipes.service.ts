@@ -55,7 +55,7 @@ export class RecipesService {
         userId,
         name: dto.name,
         description: dto.description,
-        ingredients: dto.ingredients,
+        ingredients: dto.ingredients as unknown as any[],
         instructions: dto.instructions,
         prepMinutes: dto.prepMinutes,
         cookMinutes: dto.cookMinutes,
@@ -79,7 +79,7 @@ export class RecipesService {
           description: dto.description,
         }),
         ...(dto.ingredients !== undefined && {
-          ingredients: dto.ingredients,
+          ingredients: dto.ingredients as unknown as any[],
         }),
         ...(dto.instructions !== undefined && {
           instructions: dto.instructions,
@@ -248,7 +248,7 @@ DULEZITE: Vsechny texty cesky. Ingredience realisticky.`,
         fatG: 10,
         servings: 1,
         confidence: 0,
-        note: `Analyza selhala: ${e.message}`,
+        note: 'Analyza selhala. Zkus to znovu.',
       };
     }
   }

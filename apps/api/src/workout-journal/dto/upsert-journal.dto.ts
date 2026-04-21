@@ -1,14 +1,18 @@
 import {
+  ArrayMaxSize,
   IsArray,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 enum JournalMoodDto {
   GREAT = 'GREAT',
@@ -16,6 +20,38 @@ enum JournalMoodDto {
   NEUTRAL = 'NEUTRAL',
   TIRED = 'TIRED',
   BAD = 'BAD',
+}
+
+class MeasurementsDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(500)
+  weightKg?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(200)
+  chestCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(200)
+  waistCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  armCm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(200)
+  thighCm?: number;
 }
 
 export class UpsertJournalDto {
@@ -40,9 +76,13 @@ export class UpsertJournalDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   tags?: string[];
 
   @IsOptional()
-  measurements?: Record<string, number>;
+  @ValidateNested()
+  @Type(() => MeasurementsDto)
+  measurements?: MeasurementsDto;
 }
