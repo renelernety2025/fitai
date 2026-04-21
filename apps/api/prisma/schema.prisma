@@ -240,6 +240,9 @@ model PlannedExercise {
   targetWeight Float?
   restSeconds  Int     @default(90)
   notes        String?
+  groupId      String? // shared UUID groups exercises into superset/circuit
+  groupType    String? // superset, circuit, giant, drop
+  groupOrder   Int?    // order within group (0-based)
 
   workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
   exercise   Exercise   @relation(fields: [exerciseId], references: [id])
