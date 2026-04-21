@@ -43,11 +43,20 @@ export default function SportViewer({ clipPath, speed }: SportViewerProps) {
   );
 }
 
-/** GLB character + FBX animation with track name conversion. */
 function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: number }) {
   const { scene } = useGLTF(CHARACTER_PATH);
   const character = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+
+  const hipsRestQuat = useMemo(() => {
+    let q: THREE.Quaternion | null = null;
+    character.traverse((child) => {
+      if (child.name === 'mixamorig:Hips' && (child as THREE.Bone).isBone) {
+        q = child.quaternion.clone();
+      }
+    });
+    return q;
+  }, [character]);
 
   useEffect(() => {
     const mixer = new THREE.AnimationMixer(character);
@@ -59,21 +68,21 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
       (fbx) => {
         if (fbx.animations.length === 0) return;
         mixer.stopAllAction();
-        const clip = convertFBXClipForGLB(fbx.animations[0]);
+        const clip = convertClip(fbx.animations[0], hipsRestQuat);
         const action = mixer.clipAction(clip);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.timeScale = speed;
         action.play();
       },
       undefined,
-      (err) => console.error('Sport animation load error:', err),
+      (err) => console.error('Animation load error:', err),
     );
 
     return () => {
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [character, clipPath, speed]);
+  }, [character, clipPath, speed, hipsRestQuat]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
@@ -83,43 +92,43 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
   return <primitive object={character} scale={1} position={[0, -1, 0]} />;
 }
 
-// Compensation: -90° around X axis (converts FBX Z-up bone space to GLB Y-up)
-const FBX_COMPENSATION = new THREE.Quaternion()
-  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+function convertClip(
+  clip: THREE.AnimationClip,
+  hipsRestQuat: THREE.Quaternion | null,
+): THREE.AnimationClip {
+  const tracks: THREE.KeyframeTrack[] = [];
 
-function convertFBXClipForGLB(clip: THREE.AnimationClip): THREE.AnimationClip {
-  const newTracks = clip.tracks.map((track) => {
+  for (const track of clip.tracks) {
     const dotIdx = track.name.lastIndexOf('.');
     const prop = track.name.slice(dotIdx);
     const bonePath = track.name.slice(0, dotIdx);
     const segments = bonePath.split('/');
     const boneName = segments[segments.length - 1];
 
-    // Compensate Hips quaternion for FBX→GLB coordinate system
-    if (boneName === 'mixamorig:Hips' && prop === '.quaternion') {
-      const values = Float32Array.from(track.values);
-      const q = new THREE.Quaternion();
-      for (let i = 0; i < values.length; i += 4) {
-        q.set(values[i], values[i + 1], values[i + 2], values[i + 3]);
-        q.premultiply(FBX_COMPENSATION);
-        values[i] = q.x;
-        values[i + 1] = q.y;
-        values[i + 2] = q.z;
-        values[i + 3] = q.w;
-      }
-      return new THREE.QuaternionKeyframeTrack(
-        boneName + prop, Array.from(track.times), Array.from(values),
-      );
+    if (boneName === 'mixamorig:Hips' && prop === '.position') {
+      continue;
     }
 
-    return new (track.constructor as any)(
+    if (boneName === 'mixamorig:Hips' && prop === '.quaternion' && hipsRestQuat) {
+      const times = [0, clip.duration];
+      const values = [
+        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
+        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
+      ];
+      tracks.push(new THREE.QuaternionKeyframeTrack(
+        boneName + prop, times, values,
+      ));
+      continue;
+    }
+
+    tracks.push(new (track.constructor as any)(
       boneName + prop,
       track.times,
       track.values,
-    );
-  });
+    ));
+  }
 
-  return new THREE.AnimationClip(clip.name, clip.duration, newTracks);
+  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
 }
 
 useGLTF.preload(CHARACTER_PATH);
