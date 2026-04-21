@@ -34,6 +34,7 @@ import { HabitsModule } from './habits/habits.module';
 import { AiInsightsModule } from './ai-insights/ai-insights.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
+import { WorkoutJournalModule } from './workout-journal/workout-journal.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -108,6 +109,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AiInsightsModule,
     AchievementsModule,
     ProgressPhotosModule,
+    WorkoutJournalModule,
   ],
   providers: [
     {
