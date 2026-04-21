@@ -102,8 +102,8 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - ~~**Superset/Circuit builder**~~ ✅ — DnD editor, superset/circuit/giant/drop grouping, inline edit
 
 ### Tier 3 — Škálování
-- **Social challenges** — 7-day výzvy s přáteli
-- **Export dat** — CSV/PDF workout history
+- ~~**Social challenges**~~ ✅ — user-created challenges, invite, detail page, leaderboard
+- ~~**Export dat**~~ ✅ — CSV/PDF workout history, journal, nutrition. /export page
 - **Dark/light mode** přepínač
 
 ## Střední priorita (infrastructure)
@@ -161,8 +161,8 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 - **29 NestJS modules**
 - **30+ DB models** (+ CoachPersonality enum)
-- **23 web pages** (v2 design, +ai-chat, +journal, +recepty)
-- **30 NestJS modules** (+recipes)
+- **26+ web pages** (v2 design, +ai-chat, +journal, +recepty, +export, +challenge detail, +plan editor)
+- **32 NestJS modules** (+recipes, +export, +workout-journal)
 - **18 mobile screens** (v2 design)
 - **17 achievements**
 - **60 exercises** with 3D animated viewer

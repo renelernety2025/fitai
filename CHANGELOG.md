@@ -7,6 +7,31 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Tier 3 — Social Challenges + Export CSV/PDF] 2026-04-21
+
+### Enhanced Social Challenges (`/community`)
+- User-created challenges: name, type (workouts/volume/streak/steps), target, 7/14/30 day duration
+- Challenge detail page with hero, progress bars, leaderboard ranking
+- Invite friends via search panel
+- Progress bars on challenge cards in community feed
+- creatorId field on Challenge model
+
+### Export (`/export` + buttons on pages)
+- Dedicated export page with 4 options (workouts CSV, workouts print, journal, nutrition)
+- `GET /api/export/workouts?format=csv|pdf` — last 100 sessions
+- `GET /api/export/journal?month=YYYY-MM` — journal entries with mood/rating/notes
+- `GET /api/export/nutrition?from=...&to=...` — food log with macros/source
+- CSV with UTF-8 BOM for Excel compatibility
+- HTML print page for workout "PDF" (Ctrl+P)
+- Download buttons on /progress, /journal, /vyziva pages
+
+### Backend
+- New NestJS module: `export` (3 endpoints)
+- Enhanced social: createChallenge, getChallengeDetail, inviteToChallenge
+- Challenge model: +creatorId field
+
+---
+
 ## [Superset/Circuit Builder — drag-and-drop workout editor] 2026-04-21
 
 ### Plan Editor (`/plans/[id]/edit`)
