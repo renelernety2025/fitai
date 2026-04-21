@@ -17,6 +17,8 @@ import {
   type QuickFood,
   type NutritionTip,
 } from '@/lib/api';
+import FoodCamera from '@/components/nutrition/FoodCamera';
+import FoodLogItem from '@/components/nutrition/FoodLogItem';
 
 const nutritionTipColors: Record<string, string> = {
   protein: '#FF375F',
@@ -47,6 +49,8 @@ export default function NutritionV2Page() {
   const [foods, setFoods] = useState<QuickFood[]>([]);
   const [tips, setTips] = useState<NutritionTip[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraMeal, setCameraMeal] = useState('breakfast');
   const [meal, setMeal] = useState('breakfast');
 
   const reload = () => {
@@ -98,6 +102,23 @@ export default function NutritionV2Page() {
         <V2Ring value={data.totals.proteinG} total={data.goals.dailyProteinG} color="#FF375F" label="Protein" unit="g" />
         <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="#A8FF00" label="Sacharidy" unit="g" />
         <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} color="#00E5FF" label="Tuky" unit="g" />
+      </section>
+
+      {/* Photo recognition button */}
+      <section className="mb-24 flex justify-center">
+        <button
+          onClick={() => { setCameraMeal(guessCurrentMeal()); setShowCamera(true); }}
+          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-5 transition hover:border-white/20 hover:bg-white/[0.06]"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A8FF00" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <div className="text-left">
+            <div className="text-sm font-bold text-white">Vyfotit jidlo</div>
+            <div className="text-[11px] text-white/40">AI rozpozna makra z fotky</div>
+          </div>
+        </button>
       </section>
 
       {/* Quick add chips */}
@@ -156,36 +177,26 @@ export default function NutritionV2Page() {
               </button>
             </div>
             {m.items.length === 0 ? (
-              <div className="text-sm text-white/30">Žádné jídlo</div>
+              <div className="text-sm text-white/30">Zadne jidlo</div>
             ) : (
-              <ul className="space-y-3">
+              <ul>
                 {m.items.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center justify-between border-b border-white/8 pb-3"
-                  >
-                    <div>
-                      <div className="text-base text-white">{item.name}</div>
-                      <div className="text-xs text-white/40">
-                        {item.kcal} kcal · P {item.proteinG}g · S {item.carbsG}g · T {item.fatG}g
-                      </div>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        await deleteFoodLog(item.id);
-                        reload();
-                      }}
-                      className="text-xs text-white/30 transition hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </li>
+                  <FoodLogItem key={item.id} item={item} onDeleted={reload} />
                 ))}
               </ul>
             )}
           </div>
         ))}
       </section>
+
+      {/* Food camera modal */}
+      {showCamera && (
+        <FoodCamera
+          mealType={cameraMeal}
+          onClose={() => setShowCamera(false)}
+          onLogged={reload}
+        />
+      )}
 
       {/* Quick add modal */}
       {showAdd && (

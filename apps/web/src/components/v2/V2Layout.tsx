@@ -15,6 +15,7 @@ const NAV = [
   { href: '/progress', label: 'Pokrok' },
   { href: '/uspechy', label: 'Úspěchy' },
   { href: '/progres-fotky', label: 'Fotky' },
+  { href: '/recepty', label: 'Recepty' },
   { href: '/jidelnicek', label: 'Jídelníček' },
   { href: '/journal', label: 'Deník' },
 ];
