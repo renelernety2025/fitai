@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import CreateChallengeModal from '@/components/social/CreateChallengeModal';
+import StoriesBar from '@/components/social/StoriesBar';
+import StoryViewer from '@/components/social/StoryViewer';
+import ReactionBar from '@/components/social/ReactionBar';
+import CommentSection from '@/components/social/CommentSection';
+import FlashBanner from '@/components/social/FlashBanner';
 import {
   getSocialFeed,
   getChallenges,
@@ -12,6 +17,7 @@ import {
   searchUsers,
   followUser,
   getFollowCounts,
+  getStories,
   type FeedItem,
   type ChallengeData,
 } from '@/lib/api';
@@ -34,12 +40,15 @@ export default function CommunityV2Page() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [stories, setStories] = useState<any[]>([]);
+  const [viewerStory, setViewerStory] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     getSocialFeed().then(setFeed).catch(console.error);
     getChallenges().then(setChallenges).catch(console.error);
     getFollowCounts().then(setCounts).catch(console.error);
+    getStories().then(setStories).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -60,6 +69,25 @@ export default function CommunityV2Page() {
           {counts.following} sleduji · {counts.followers} sledujících
         </p>
       </section>
+
+      {/* Stories */}
+      <StoriesBar
+        stories={stories}
+        onSelect={(s) => {
+          const idx = stories.findIndex((st: any) => st.id === s.id);
+          setViewerStory(idx >= 0 ? idx : 0);
+        }}
+      />
+      {viewerStory !== null && (
+        <StoryViewer
+          stories={stories}
+          initialIndex={viewerStory}
+          onClose={() => setViewerStory(null)}
+        />
+      )}
+
+      {/* Flash Challenge */}
+      <FlashBanner />
 
       {/* Tabs */}
       <div className="mb-16 flex gap-2">
@@ -96,6 +124,14 @@ export default function CommunityV2Page() {
               </div>
               <p className="text-base text-white">{item.title}</p>
               <p className="text-sm text-white/55">{item.body}</p>
+              <div className="mt-3">
+                <ReactionBar
+                  targetType="feedItem"
+                  targetId={item.id}
+                  reactions={[]}
+                />
+              </div>
+              <CommentSection feedItemId={item.id} commentCount={0} />
             </div>
           ))}
         </section>

@@ -23,6 +23,8 @@ const MORE_NAV = [
   { href: '/sports', label: 'Sporty' },
   { href: '/exercises', label: 'Cviky' },
   { href: '/community', label: 'Komunita' },
+  { href: '/gym-buddy', label: 'Trenak' },
+  { href: '/messages', label: 'Zpravy' },
   { href: '/lekce', label: 'Lekce' },
   { href: '/uspechy', label: 'Úspěchy' },
   { href: '/progres-fotky', label: 'Fotky' },

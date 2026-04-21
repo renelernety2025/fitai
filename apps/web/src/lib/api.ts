@@ -1607,3 +1607,147 @@ export async function downloadExport(
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// --- Social: Stories ---
+export function getStories(): Promise<any[]> {
+  return request('/social/stories');
+}
+export function createStory(data: any): Promise<any> {
+  return request('/social/stories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+export function viewStory(id: string): Promise<void> {
+  return request(`/social/stories/${id}/view`, { method: 'POST' });
+}
+
+// --- Social: Reactions ---
+export function addReaction(
+  targetType: string,
+  targetId: string,
+  emoji: string,
+): Promise<any> {
+  return request('/social/react', {
+    method: 'POST',
+    body: JSON.stringify({ targetType, targetId, emoji }),
+  });
+}
+export function removeReaction(id: string): Promise<void> {
+  return request(`/social/react/${id}`, { method: 'DELETE' });
+}
+export function getReactions(
+  targetType: string,
+  targetId: string,
+): Promise<any[]> {
+  return request(`/social/reactions/${targetType}/${targetId}`);
+}
+
+// --- Social: Comments ---
+export function addComment(
+  feedItemId: string,
+  content: string,
+): Promise<any> {
+  return request('/social/comments', {
+    method: 'POST',
+    body: JSON.stringify({ feedItemId, content }),
+  });
+}
+export function getComments(feedItemId: string): Promise<any[]> {
+  return request(`/social/comments/${feedItemId}`);
+}
+export function deleteComment(id: string): Promise<void> {
+  return request(`/social/comments/${id}`, { method: 'DELETE' });
+}
+
+// --- Social: Props ---
+export function giveProps(
+  toUserId: string,
+  reason?: string,
+): Promise<any> {
+  return request('/social/props', {
+    method: 'POST',
+    body: JSON.stringify({ toUserId, reason }),
+  });
+}
+export function getReceivedProps(): Promise<any[]> {
+  return request('/social/props/received');
+}
+
+// --- Social: Flash Challenge ---
+export function getActiveFlash(): Promise<any> {
+  return request('/social/flash-challenge/active');
+}
+export function joinFlash(id: string): Promise<any> {
+  return request(`/social/flash-challenge/${id}/join`, {
+    method: 'POST',
+  });
+}
+
+// --- Social: Share ---
+export function shareToFeed(
+  type: string,
+  referenceId: string,
+): Promise<any> {
+  return request('/social/share', {
+    method: 'POST',
+    body: JSON.stringify({ type, referenceId }),
+  });
+}
+
+// --- Social: Public Profile ---
+export function getPublicProfile(id: string): Promise<any> {
+  return request(`/social/profile/${id}`);
+}
+export function updateBio(bio: string): Promise<any> {
+  return request('/social/profile/bio', {
+    method: 'PUT',
+    body: JSON.stringify({ bio }),
+  });
+}
+
+// --- Buddy ---
+export function getBuddyCards(): Promise<any[]> {
+  return request('/buddy/cards');
+}
+export function upsertBuddyProfile(data: any): Promise<any> {
+  return request('/buddy/profile', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+export function getBuddyProfile(): Promise<any> {
+  return request('/buddy/profile');
+}
+export function swipeBuddy(
+  targetId: string,
+  direction: string,
+): Promise<any> {
+  return request('/buddy/swipe', {
+    method: 'POST',
+    body: JSON.stringify({ targetId, direction }),
+  });
+}
+export function getBuddyMatches(): Promise<any[]> {
+  return request('/buddy/matches');
+}
+
+// --- Messages ---
+export function getConversations(): Promise<any[]> {
+  return request('/messages/conversations');
+}
+export function getMessages(conversationId: string): Promise<any[]> {
+  return request(`/messages/${conversationId}`);
+}
+export function sendDirectMessage(
+  conversationId: string,
+  content: string,
+): Promise<any> {
+  return request(`/messages/${conversationId}`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+}
+export function startConversation(userId: string): Promise<any> {
+  return request(`/messages/start/${userId}`, { method: 'POST' });
+}
