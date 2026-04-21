@@ -37,6 +37,11 @@ import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
 import { WorkoutJournalModule } from './workout-journal/workout-journal.module';
 import { RecipesModule } from './recipes/recipes.module';
 import { ExportModule } from './export/export.module';
+import { WrappedModule } from './wrapped/wrapped.module';
+import { LeaguesModule } from './leagues/leagues.module';
+import { SkillTreeModule } from './skill-tree/skill-tree.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { SeasonsModule } from './seasons/seasons.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -114,6 +119,11 @@ import { ScheduleModule } from '@nestjs/schedule';
     WorkoutJournalModule,
     RecipesModule,
     ExportModule,
+    WrappedModule,
+    LeaguesModule,
+    SkillTreeModule,
+    CalendarModule,
+    SeasonsModule,
   ],
   providers: [
     {
