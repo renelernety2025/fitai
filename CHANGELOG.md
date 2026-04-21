@@ -7,6 +7,45 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Cross-industry features — Wrapped, Leagues, Skill Tree, Calendar, Battle Pass] 2026-04-21
+
+### FitAI Wrapped (`/wrapped`)
+- Spotify-inspired monthly/yearly stats recap
+- Total workouts, hours, volume, PRs, top exercises, most active day
+- AI motivational summary (Claude Haiku)
+- Share-ready card layout with gradient backgrounds
+
+### Leagues & Divisions (`/leagues`)
+- Weekly XP competition with 5 tiers (Bronze → Legend)
+- Auto-assignment by total XP level
+- Leaderboard with promotion (top 3) / relegation (bottom 3) indicators
+- Week countdown timer
+
+### Skill Tree (`/skill-tree`)
+- 21 skills across 4 branches: Strength, Endurance, Form, Nutrition
+- Progressive unlocking with prerequisites
+- Visual tree with connected nodes (unlocked/available/locked states)
+- Real data evaluation (max weights, streak, sessions, form %)
+
+### Workout Calendar (`/calendar`)
+- Monthly calendar grid with planned/completed/missed indicators
+- Schedule workouts with plan link, CRUD operations
+- Color-coded dots and side panel detail view
+
+### Battle Pass / Seasons (`/season`)
+- 30-day seasons with 10 missions (daily/weekly/challenge)
+- Level progression (100 XP = 1 level) with horizontal track
+- Mission progress bars, XP rewards, auto-completion checking
+- Initial season: "Jarní výzva 2026"
+
+### Backend
+- 5 new NestJS modules: wrapped, leagues, skill-tree, calendar, seasons
+- 7 new Prisma models
+- League tier auto-assignment, weekly ranking with promotion/relegation
+- Skill tree evaluation against real user data
+
+---
+
 ## [Tier 3 — Social Challenges + Export CSV/PDF] 2026-04-21
 
 ### Enhanced Social Challenges (`/community`)

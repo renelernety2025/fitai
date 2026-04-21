@@ -106,6 +106,13 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - ~~**Export dat**~~ ✅ — CSV/PDF workout history, journal, nutrition. /export page
 - **Dark/light mode** přepínač
 
+### Cross-industry ✅
+- ~~**FitAI Wrapped**~~ ✅ — Spotify-style monthly/yearly recap, AI summary, shareable
+- ~~**Ligy/Divize**~~ ✅ — Weekly XP competition, 5 tiers, promotion/relegation
+- ~~**Skill Tree**~~ ✅ — 21 skills, 4 branches, progressive unlocking
+- ~~**Workout Kalendář**~~ ✅ — Monthly calendar, schedule workouts, plan linking
+- ~~**Battle Pass / Sezóny**~~ ✅ — 30-day seasons, 10 missions, level progression
+
 ## Střední priorita (infrastructure)
 
 - **Apple HealthKit + Google Fit** — mobile čte sleep/steps/HR/HRV. Vyžaduje EAS build.
@@ -162,7 +169,8 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - **29 NestJS modules**
 - **30+ DB models** (+ CoachPersonality enum)
 - **26+ web pages** (v2 design, +ai-chat, +journal, +recepty, +export, +challenge detail, +plan editor)
-- **32 NestJS modules** (+recipes, +export, +workout-journal)
+- **37 NestJS modules** (+recipes, +export, +workout-journal, +wrapped, +leagues, +skill-tree, +calendar, +seasons)
+- **31+ web pages** (+wrapped, +leagues, +skill-tree, +calendar, +season)
 - **18 mobile screens** (v2 design)
 - **17 achievements**
 - **60 exercises** with 3D animated viewer
