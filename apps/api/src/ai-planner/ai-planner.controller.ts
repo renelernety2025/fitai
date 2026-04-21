@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { AIPlannerService } from './ai-planner.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -17,6 +18,7 @@ export class AIPlannerController {
     return this.aiPlannerService.updateProfile(req.user.id, dto);
   }
 
+  @Throttle({ default: { limit: 3, ttl: seconds(86400) } })
   @Post('generate')
   generatePlan(@Request() req: any) {
     return this.aiPlannerService.generatePlan(req.user.id);

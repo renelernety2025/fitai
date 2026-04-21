@@ -11,6 +11,7 @@ import { ChatMessageDto } from './dto/chat-message.dto';
 export class CoachingController {
   constructor(private coachingService: CoachingService) {}
 
+  @Throttle({ default: { limit: 60, ttl: seconds(60) } })
   @Post('feedback')
   generateFeedback(@Request() req: any, @Body() dto: any) {
     return this.coachingService.generateFeedback({
@@ -27,6 +28,7 @@ export class CoachingController {
     });
   }
 
+  @Throttle({ default: { limit: 30, ttl: seconds(3600) } })
   @Post('tts')
   synthesize(
     @Body('text') text: string,

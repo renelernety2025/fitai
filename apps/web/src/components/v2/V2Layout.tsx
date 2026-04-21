@@ -2,27 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 
-const NAV = [
+const PRIMARY_NAV = [
   { href: '/dashboard', label: 'Dnes' },
   { href: '/gym', label: 'Trénink' },
-  { href: '/micro-workout', label: 'Micro' },
-  { href: '/sports', label: 'Sporty' },
-  { href: '/ai-chat', label: 'AI Chat' },
   { href: '/vyziva', label: 'Výživa' },
   { href: '/habity', label: 'Habity' },
-  { href: '/lekce', label: 'Lekce' },
+  { href: '/journal', label: 'Deník' },
   { href: '/progress', label: 'Pokrok' },
+  { href: '/ai-chat', label: 'AI Chat' },
+  { href: '/calendar', label: 'Kalendář' },
+  { href: '/season', label: 'Sezóna' },
+  { href: '/leagues', label: 'Ligy' },
+];
+
+const MORE_NAV = [
+  { href: '/micro-workout', label: 'Micro' },
+  { href: '/sports', label: 'Sporty' },
+  { href: '/exercises', label: 'Cviky' },
+  { href: '/community', label: 'Komunita' },
+  { href: '/lekce', label: 'Lekce' },
   { href: '/uspechy', label: 'Úspěchy' },
   { href: '/progres-fotky', label: 'Fotky' },
   { href: '/recepty', label: 'Recepty' },
   { href: '/jidelnicek', label: 'Jídelníček' },
-  { href: '/journal', label: 'Deník' },
+  { href: '/export', label: 'Export' },
   { href: '/wrapped', label: 'Wrapped' },
-  { href: '/leagues', label: 'Ligy' },
   { href: '/skill-tree', label: 'Skills' },
-  { href: '/calendar', label: 'Kalendář' },
-  { href: '/season', label: 'Sezóna' },
   { href: '/body-portfolio', label: 'Portfolio' },
   { href: '/bloodwork', label: 'Krev' },
   { href: '/rehab', label: 'Rehab' },
@@ -31,6 +38,50 @@ const NAV = [
   { href: '/discover-weekly', label: 'Objev' },
   { href: '/gym-finder', label: 'Gymy' },
 ];
+
+function MoreDropdown({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const isMoreActive = MORE_NAV.some((i) => pathname === i.href);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`transition hover:text-white ${isMoreActive ? 'text-white' : ''}`}
+      >
+        Vice...
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-2 grid max-h-[70vh] w-56 grid-cols-2 gap-1 overflow-y-auto rounded-lg border border-white/10 bg-black/95 p-2 shadow-xl backdrop-blur-md">
+          {MORE_NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={`rounded px-2 py-1.5 text-[12px] transition hover:bg-white/10 hover:text-white ${
+                pathname === item.href ? 'text-white' : 'text-white/55'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function V2Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,8 +99,8 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
         <Link href="/dashboard" className="text-sm font-bold tracking-tight">
           FitAI
         </Link>
-        <nav className="hidden gap-7 text-[13px] font-medium text-white/55 sm:flex">
-          {NAV.map((item) => (
+        <nav className="hidden items-center gap-7 text-[13px] font-medium text-white/55 sm:flex">
+          {PRIMARY_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -60,6 +111,7 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
               {item.label}
             </Link>
           ))}
+          <MoreDropdown pathname={pathname} />
         </nav>
         <div className="hidden items-center gap-4 sm:flex">
           <Link href="/notifications" className="text-white/40 transition hover:text-white" title="Notifikace">
