@@ -5,6 +5,10 @@ import { testPushNotification } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
 
 const SECONDARY = [
+  { screen: 'AIChat', label: 'AI Chat', color: v2.green },
+  { screen: 'Journal', label: 'Deník', color: v2.blue },
+  { screen: 'Calendar', label: 'Kalendář', color: v2.orange },
+  { screen: 'Leagues', label: 'Ligy', color: v2.purple },
   { screen: 'Uspechy', label: 'Úspěchy', color: v2.yellow },
   { screen: 'ProgressPhotos', label: 'Progress fotky', color: v2.purple },
   { screen: 'Jidelnicek', label: 'Jídelníček (AI)', color: v2.yellow },

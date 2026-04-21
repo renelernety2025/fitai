@@ -35,6 +35,10 @@ import { UspechyScreen } from '../screens/UspechyScreen';
 import { ProgressPhotosScreen } from '../screens/ProgressPhotosScreen';
 import { JidelnicekScreen } from '../screens/JidelnicekScreen';
 import { CameraWorkoutProScreen } from '../screens/CameraWorkoutProScreen';
+import { AIChatScreen } from '../screens/AIChatScreen';
+import { JournalScreen } from '../screens/JournalScreen';
+import { CalendarScreen } from '../screens/CalendarScreen';
+import { LeaguesScreen } from '../screens/LeaguesScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -151,6 +155,10 @@ export function AppNavigator() {
             <Stack.Screen name="ProgressPhotos" component={ProgressPhotosScreen} />
             <Stack.Screen name="Jidelnicek" component={JidelnicekScreen} />
             <Stack.Screen name="CameraWorkoutPro" component={CameraWorkoutProScreen} options={{ gestureEnabled: false }} />
+            <Stack.Screen name="AIChat" component={AIChatScreen} />
+            <Stack.Screen name="Journal" component={JournalScreen} />
+            <Stack.Screen name="Calendar" component={CalendarScreen} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} />
           </>
         ) : (
           <>

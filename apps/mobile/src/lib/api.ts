@@ -311,6 +311,88 @@ export function deleteProgressPhoto(id: string) {
   return request<{ deleted: true }>(`/progress-photos/${id}`, { method: 'DELETE' });
 }
 
+// ── AI Chat ──
+export async function sendChatMessage(
+  message: string,
+  conversationId: string | null,
+  onDelta: (text: string) => void,
+  onConversationId: (id: string) => void,
+): Promise<void> {
+  const token = await getToken();
+  const body: Record<string, string> = { message };
+  if (conversationId) body.conversationId = conversationId;
+
+  const res = await fetch(`${API_URL}/coaching/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`Chat failed: ${res.status}`);
+  if (!res.body) throw new Error('No response body');
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        if (event.type === 'text_delta') onDelta(event.delta);
+        if (event.type === 'conversation_id') onConversationId(event.id);
+      } catch {
+        /* ignore parse errors from partial SSE chunks */
+      }
+    }
+  }
+}
+
+// ── Journal ──
+export function getJournalMonth(month: string) {
+  return request<any>(`/journal?month=${month}`);
+}
+export function upsertJournalEntry(date: string, body: Record<string, unknown>) {
+  return request<any>(`/journal/${date}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+}
+export function generateJournalInsight(date: string) {
+  return request<any>(`/journal/${date}/ai-insight`, { method: 'POST' });
+}
+
+// ── Calendar ──
+export function getCalendarMonth(month: string) {
+  return request<any>(`/calendar?month=${month}`);
+}
+export function scheduleWorkout(data: Record<string, unknown>) {
+  return request<any>('/calendar', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+export function deleteScheduledWorkout(id: string) {
+  return request<void>(`/calendar/${id}`, { method: 'DELETE' });
+}
+
+// ── Leagues ──
+export function getLeagueCurrent() {
+  return request<any>('/leagues/current');
+}
+export function joinLeague() {
+  return request<any>('/leagues/join', { method: 'POST' });
+}
+
 // ── Section L: Generative Meal Planning ──
 export function getCurrentMealPlan() { return request<any>('/nutrition/meal-plan/current'); }
 export function getMealPlanHistory(limit = 8) { return request<any[]>(`/nutrition/meal-plan/history?limit=${limit}`); }
