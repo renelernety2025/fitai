@@ -687,6 +687,39 @@ export function getLeaderboard(challengeId: string) {
   );
 }
 
+export function createChallenge(data: {
+  name: string;
+  description?: string;
+  type: string;
+  targetValue: number;
+  durationDays: number;
+}): Promise<ChallengeData> {
+  return request('/social/challenges', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getChallengeDetail(id: string): Promise<
+  ChallengeData & {
+    creator: { id: string; name: string; avatarUrl: string | null } | null;
+    daysRemaining: number;
+    isExpired: boolean;
+  }
+> {
+  return request(`/social/challenges/${id}`);
+}
+
+export function inviteToChallenge(
+  challengeId: string,
+  userId: string,
+): Promise<{ ok: boolean }> {
+  return request(`/social/challenges/${challengeId}/invite`, {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  });
+}
+
 export function searchUsers(query: string) {
   return request<{ id: string; name: string; avatarUrl: string | null; level: string }[]>(
     `/social/search?q=${encodeURIComponent(query)}`,
@@ -1336,4 +1369,28 @@ export function analyzeFoodPhoto(
     method: 'POST',
     body: JSON.stringify({ s3Key }),
   });
+}
+
+// ─── Data Export ───────────────────────────────────────
+
+/** Download a file from the export API and trigger browser save dialog. */
+export async function downloadExport(
+  path: string,
+  filename: string,
+): Promise<void> {
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('fitai_token')
+      : null;
+  const res = await fetch(`${API_URL}/${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }

@@ -36,6 +36,7 @@ import { AchievementsModule } from './achievements/achievements.module';
 import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
 import { WorkoutJournalModule } from './workout-journal/workout-journal.module';
 import { RecipesModule } from './recipes/recipes.module';
+import { ExportModule } from './export/export.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -112,6 +113,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProgressPhotosModule,
     WorkoutJournalModule,
     RecipesModule,
+    ExportModule,
   ],
   providers: [
     {
