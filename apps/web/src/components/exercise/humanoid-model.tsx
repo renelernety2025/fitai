@@ -82,9 +82,8 @@ export default function HumanoidModel({
  */
 function sanitizeClip(clip: THREE.AnimationClip): THREE.AnimationClip {
   const filtered = clip.tracks.filter((track) => {
-    if (track.name.includes('Hips') && track.name.endsWith('.position')) {
-      return false;
-    }
+    if (track.name.includes('Hips') && track.name.endsWith('.position')) return false;
+    if (track.name.includes('Hips') && track.name.endsWith('.quaternion')) return false;
     return true;
   });
   return new THREE.AnimationClip(clip.name, clip.duration, filtered);

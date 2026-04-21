@@ -97,12 +97,16 @@ function AnimatedCharacter({
  * Mixamo FBX often includes Hips position/rotation that relocates the model.
  * Keep only bone rotation tracks (quaternion) — let the character stand in place.
  */
+/**
+ * Remove Hips position AND quaternion tracks from FBX animation.
+ * Mixamo FBX uses Z-up coordinate system — the Hips tracks flip the model
+ * 90° so it lays flat. Stripping both tracks keeps the character standing
+ * while all limb animations play correctly.
+ */
 function sanitizeClip(clip: THREE.AnimationClip): THREE.AnimationClip {
   const filtered = clip.tracks.filter((track) => {
-    // Remove position tracks for root bone (causes model to fly/lay down)
-    if (track.name.includes('Hips') && track.name.endsWith('.position')) {
-      return false;
-    }
+    if (track.name.includes('Hips') && track.name.endsWith('.position')) return false;
+    if (track.name.includes('Hips') && track.name.endsWith('.quaternion')) return false;
     return true;
   });
   return new THREE.AnimationClip(clip.name, clip.duration, filtered);
