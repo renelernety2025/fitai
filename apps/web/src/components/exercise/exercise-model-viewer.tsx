@@ -29,9 +29,9 @@ interface ExerciseModelViewerProps {
 }
 
 const CAMERA_VIEWS = {
-  front: new THREE.Vector3(0, 0, 3),
-  side: new THREE.Vector3(3, 0, 0),
-  back: new THREE.Vector3(0, 0, -3),
+  front: new THREE.Vector3(0, 100, 300),
+  side: new THREE.Vector3(300, 100, 0),
+  back: new THREE.Vector3(0, 100, -300),
 } as const;
 
 /** 3D animated exercise model viewer with playback controls. */
@@ -72,7 +72,7 @@ export default function ExerciseModelViewer({
     <div className="mb-12">
       <div className="relative aspect-[16/10] max-h-[500px] w-full overflow-hidden rounded-2xl border border-white/8 bg-black/50">
         <Canvas
-          camera={{ position: [0, 0.3, 2.2], fov: 50 }}
+          camera={{ position: [0, 100, 300], fov: 45 }}
           gl={{ antialias: true, alpha: true }}
         >
           {/* @ts-ignore R3F v8 JSX types incompatible with TS 5.9 */}
@@ -90,9 +90,9 @@ export default function ExerciseModelViewer({
           <OrbitControls
             ref={controlsRef}
             enablePan={false}
-            minDistance={2}
-            maxDistance={5}
-            target={[0, 0, 0]}
+            minDistance={150}
+            maxDistance={500}
+            target={[0, 100, 0]}
           />
         </Canvas>
       </div>
