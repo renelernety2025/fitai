@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
@@ -11,7 +11,7 @@ interface SportViewerProps {
   speed: number;
 }
 
-/** Minimal 3D viewer — loads FBX complete (model + animation). */
+/** Minimal 3D viewer — loads complete FBX (model + animation). */
 export default function SportViewer({ clipPath, speed }: SportViewerProps) {
   return (
     <div className="mb-8">
@@ -41,32 +41,19 @@ export default function SportViewer({ clipPath, speed }: SportViewerProps) {
   );
 }
 
-/**
- * Load complete FBX (mesh + skeleton + animation) and play.
- * FBX uses centimeters — no scale conversion needed since camera is adjusted.
- */
+/** Load complete FBX and render via primitive. */
 function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) {
-  const { scene } = useThree();
+  const [model, setModel] = useState<THREE.Group | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const modelRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
+    setModel(null);
+    if (mixerRef.current) mixerRef.current.stopAllAction();
+
     const loader = new FBXLoader();
     loader.load(
       clipPath,
       (fbx) => {
-        // Remove previous model
-        if (modelRef.current) {
-          scene.remove(modelRef.current);
-          modelRef.current = null;
-        }
-        if (mixerRef.current) {
-          mixerRef.current.stopAllAction();
-        }
-
-        modelRef.current = fbx;
-        scene.add(fbx);
-
         if (fbx.animations.length > 0) {
           const mixer = new THREE.AnimationMixer(fbx);
           mixerRef.current = mixer;
@@ -75,26 +62,27 @@ function FBXCharacter({ clipPath, speed }: { clipPath: string; speed: number }) 
           action.timeScale = speed;
           action.play();
         }
+        setModel(fbx);
       },
       undefined,
       (err) => console.error('FBX load error:', err),
     );
 
     return () => {
-      if (modelRef.current) {
-        scene.remove(modelRef.current);
-        modelRef.current = null;
-      }
       if (mixerRef.current) {
         mixerRef.current.stopAllAction();
         mixerRef.current = null;
       }
     };
-  }, [clipPath, speed, scene]);
+  }, [clipPath, speed]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
   });
 
-  return null;
+  if (!model) return null;
+
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
+  // @ts-ignore R3F v8 JSX
+  return <primitive object={model} />;
 }
