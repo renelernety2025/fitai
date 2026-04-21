@@ -69,6 +69,8 @@ model User {
   passwordHash String
   name         String
   avatarUrl    String?
+  bio          String?
+  propsReceived Int      @default(0)
   level        UserLevel @default(BEGINNER)
   isAdmin      Boolean  @default(false)
   expoPushToken String?
@@ -113,6 +115,17 @@ model User {
   marketplacePurchases MarketplacePurchase[]
   bossAttempts       BossAttempt[]
   gymReviews         GymReview[]
+  stories            Story[]
+  reactions          Reaction[]
+  comments           Comment[]
+  buddyProfile       BuddyProfile?
+  sentSwipes         BuddySwipe[]       @relation("Swiper")
+  sentMessages       DirectMessage[]     @relation("MessageSender")
+  conversations1     Conversation[]      @relation("Participant1")
+  conversations2     Conversation[]      @relation("Participant2")
+  propsGiven         Props[]             @relation("PropsGiver")
+  propsReceiv        Props[]             @relation("PropsReceiver")
+  flashParticipations FlashParticipant[]
 }
 
 model UserProgress {
@@ -847,6 +860,154 @@ model GymReview {
   @@index([userId])
 }
 
+// ── Social: Stories, Reactions, Comments ──
+
+model Story {
+  id           String   @id @default(uuid())
+  userId       String
+  gymSessionId String?
+  cardData     Json
+  expiresAt    DateTime
+  viewCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Reaction {
+  id         String   @id @default(uuid())
+  userId     String
+  targetType String   // feed_item, story
+  targetId   String
+  emoji      String   // fire, muscle, clap, heart, hundred
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  userId     String
+  feedItemId String
+  content    String
+  createdAt  DateTime @default(now())
+
+  user     User             @relation(fields: [userId], references: [id])
+  feedItem ActivityFeedItem @relation(fields: [feedItemId], references: [id], onDelete: Cascade)
+
+  @@index([feedItemId])
+}
+
+// ── Gym Buddy Finder ──
+
+model BuddyProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  gym        String?
+  schedule   String?  // morning, afternoon, evening
+  goals      String?
+  bio        String?
+  lookingFor String?  // buddy, spotter, group
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model BuddySwipe {
+  id        String   @id @default(uuid())
+  swiperId  String
+  targetId  String
+  direction String   // right, left
+  createdAt DateTime @default(now())
+
+  swiper User @relation("Swiper", fields: [swiperId], references: [id])
+
+  @@unique([swiperId, targetId])
+  @@index([targetId, direction])
+}
+
+// ── Direct Messages ──
+
+model Conversation {
+  id             String   @id @default(uuid())
+  participant1Id String
+  participant2Id String
+  lastMessageAt  DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  participant1 User            @relation("Participant1", fields: [participant1Id], references: [id])
+  participant2 User            @relation("Participant2", fields: [participant2Id], references: [id])
+  messages     DirectMessage[]
+
+  @@unique([participant1Id, participant2Id])
+}
+
+model DirectMessage {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+// ── Props/Kudos ──
+
+model Props {
+  id         String   @id @default(uuid())
+  fromUserId String
+  toUserId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  from User @relation("PropsGiver", fields: [fromUserId], references: [id])
+  to   User @relation("PropsReceiver", fields: [toUserId], references: [id])
+
+  @@index([toUserId])
+}
+
+// ── Flash Challenges ──
+
+model FlashChallenge {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  targetValue Int
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  participants FlashParticipant[]
+}
+
+model FlashParticipant {
+  id          String    @id @default(uuid())
+  challengeId String
+  userId      String
+  value       Int       @default(0)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  challenge FlashChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id])
+
+  @@unique([challengeId, userId])
+}
+
 model EducationLesson {
   id          String   @id @default(uuid())
   slug        String   @unique
@@ -962,7 +1123,8 @@ model ActivityFeedItem {
   data      Json?
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  comments Comment[]
 
   @@index([userId])
   @@index([createdAt])
