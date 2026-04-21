@@ -34,6 +34,7 @@ import { HabitsModule } from './habits/habits.module';
 import { AiInsightsModule } from './ai-insights/ai-insights.module';
 import { AchievementsModule } from './achievements/achievements.module';
 import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 /**
  * Global throttler config — layered limits:
@@ -76,6 +77,7 @@ import { ProgressPhotosModule } from './progress-photos/progress-photos.module';
       { name: 'medium', ttl: 60_000, limit: 200 },
       { name: 'long', ttl: 3_600_000, limit: 3000 },
     ]),
+    ScheduleModule.forRoot(),
     PrismaModule,
     CacheModule,
     MetricsModule,

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import * as webpush from 'web-push';
 
@@ -74,6 +75,8 @@ export class NotificationService {
     return { sent };
   }
 
+  /** Runs daily at 19:00 Prague time (17:00 UTC). */
+  @Cron('0 17 * * *')
   async sendStreakReminders() {
     // Find users who haven't worked out today but have active streaks
     const today = new Date();

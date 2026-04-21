@@ -373,6 +373,26 @@ export function getMyGymSessions() {
   return request<GymSessionData[]>('/gym-sessions/my');
 }
 
+// Notification preferences
+export interface NotificationPrefs {
+  workoutReminder: boolean;
+  streakWarning: boolean;
+  achievements: boolean;
+  quietHoursStart: number;
+  quietHoursEnd: number;
+}
+
+export function getNotificationPrefs() {
+  return request<NotificationPrefs>('/notifications/preferences');
+}
+
+export function updateNotificationPrefs(data: Partial<NotificationPrefs>) {
+  return request<NotificationPrefs>('/notifications/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 // Education (Section D)
 export interface Lesson {
   id: string;
@@ -540,7 +560,15 @@ export interface FitnessProfileData {
   hasGymAccess: boolean;
   equipment: string[];
   injuries: string[];
+  priorityMuscles: string[];
   notes: string | null;
+  age: number | null;
+  weightKg: number | null;
+  heightCm: number | null;
+  dailyKcal: number | null;
+  dailyProteinG: number | null;
+  dailyCarbsG: number | null;
+  dailyFatG: number | null;
 }
 
 export interface AsymmetryReport {

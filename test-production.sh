@@ -113,6 +113,7 @@ api_endpoints=(
   "/api/progress-photos/stats"
   "/api/nutrition/meal-plan/current"
   "/api/nutrition/meal-plan/history"
+  "/api/exercises/micro-workout"
 )
 for ep in "${api_endpoints[@]}"; do
   check "GET $ep" "200" "$(http_status "$ALB$ep" "$AUTH")"
@@ -123,6 +124,9 @@ echo ""
 echo "$(yellow '[3] Content sanity')"
 EX=$(curl -s "$ALB/api/exercises" -H "$AUTH")
 check_contains "exercises has ≥1 item" '"id"' "$EX"
+
+MICRO=$(curl -s "$ALB/api/exercises/micro-workout" -H "$AUTH")
+check_contains "micro-workout has exercises" '"exercises"' "$MICRO"
 
 LESSONS=$(curl -s "$ALB/api/education/lessons" -H "$AUTH")
 check_contains "lessons has ≥1 item" '"slug"' "$LESSONS"
@@ -154,6 +158,13 @@ pages=(
   "/uspechy"
   "/progres-fotky"
   "/jidelnicek"
+  "/micro-workout"
+  "/sports"
+  "/shadow-boxing"
+  "/golf-lab"
+  "/soccer-drills"
+  "/workout-mode"
+  "/sequences"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"

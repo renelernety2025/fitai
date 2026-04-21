@@ -8,18 +8,21 @@ import {
   V2Stat,
 } from '@/components/v2/V2Layout';
 import Link from 'next/link';
-import { getMyStats, getInsights, getMyGymSessions, type StatsData, type Insights, type GymSessionData } from '@/lib/api';
+import { getMyStats, getInsights, getMyGymSessions, getMyWeeklyVolume, type StatsData, type Insights, type GymSessionData, type WeeklyVolumeEntry } from '@/lib/api';
 import ActivityHeatmap from '@/components/progress/ActivityHeatmap';
+import VolumeChart from '@/components/progress/VolumeChart';
 
 export default function ProgressV2Page() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [sessions, setSessions] = useState<GymSessionData[]>([]);
+  const [volume, setVolume] = useState<WeeklyVolumeEntry[]>([]);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
     getMyGymSessions().then(setSessions).catch(console.error);
+    getMyWeeklyVolume().then(setVolume).catch(console.error);
   }, []);
 
   if (!stats) {
@@ -84,6 +87,14 @@ export default function ProgressV2Page() {
           min na cvičení
         </p>
       </section>
+
+      {/* Weekly volume */}
+      {volume.length > 0 && (
+        <section className="mb-32">
+          <V2SectionLabel>Tydenni objem (svalove skupiny)</V2SectionLabel>
+          <VolumeChart data={volume} />
+        </section>
+      )}
 
       {/* Recovery */}
       {insights?.recovery && (
