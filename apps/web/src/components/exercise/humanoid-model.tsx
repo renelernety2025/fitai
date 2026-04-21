@@ -23,15 +23,29 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
   const hipsRestQuatRef = useRef<THREE.Quaternion | null>(null);
   const hipsRestPosRef = useRef<THREE.Vector3 | null>(null);
 
-  // Find Hips bone and save rest pose BEFORE animation
+  // Find root bones and save rest pose BEFORE animation
+  const rootBonesRef = useRef<{ bone: THREE.Bone; quat: THREE.Quaternion; pos: THREE.Vector3 }[]>([]);
+
   useEffect(() => {
+    const roots: typeof rootBonesRef.current = [];
     character.traverse((child) => {
-      if ((child as THREE.Bone).isBone && child.name.includes('Hips')) {
-        hipsBoneRef.current = child as THREE.Bone;
-        hipsRestQuatRef.current = child.quaternion.clone();
-        hipsRestPosRef.current = child.position.clone();
+      if (!(child as THREE.Bone).isBone) return;
+      const n = child.name;
+      // Lock Hips + Spine chain — prevents FBX coordinate flip
+      if (n.includes('Hips') || n.includes('Spine')) {
+        roots.push({
+          bone: child as THREE.Bone,
+          quat: child.quaternion.clone(),
+          pos: child.position.clone(),
+        });
       }
     });
+    rootBonesRef.current = roots;
+    if (roots.length > 0) {
+      hipsBoneRef.current = roots[0].bone;
+      hipsRestQuatRef.current = roots[0].quat;
+      hipsRestPosRef.current = roots[0].pos;
+    }
   }, [character]);
 
   // Load and play FBX animation
@@ -73,14 +87,10 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
     // Let mixer animate ALL bones (including Hips)
     mixerRef.current.update(delta);
 
-    // Then override Hips rotation/position to keep model upright
-    // All child bones (spine, arms, legs) keep their animated values
-    const hips = hipsBoneRef.current;
-    if (hips && hipsRestQuatRef.current) {
-      hips.quaternion.copy(hipsRestQuatRef.current);
-    }
-    if (hips && hipsRestPosRef.current) {
-      hips.position.copy(hipsRestPosRef.current);
+    // Override Hips + Spine to keep torso upright
+    for (const { bone, quat, pos } of rootBonesRef.current) {
+      bone.quaternion.copy(quat);
+      bone.position.copy(pos);
     }
   });
 

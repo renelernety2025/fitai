@@ -19,7 +19,7 @@ export default function SportViewer({ clipPath, speed }: SportViewerProps) {
     <div className="mb-8">
       <div className="relative aspect-[16/10] max-h-[450px] w-full overflow-hidden rounded-2xl border border-white/8 bg-black/50">
         <Canvas
-          camera={{ position: [1.5, 1.2, 2.5], fov: 40 }}
+          camera={{ position: [0.8, 0.8, 2.8], fov: 40 }}
           gl={{ antialias: true, alpha: true }}
         >
           {/* @ts-ignore */}
@@ -47,18 +47,22 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
   const { scene } = useGLTF(CHARACTER_PATH);
   const character = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
-  const hipsBoneRef = useRef<THREE.Bone | null>(null);
-  const hipsRestQuatRef = useRef<THREE.Quaternion | null>(null);
-  const hipsRestPosRef = useRef<THREE.Vector3 | null>(null);
+  const rootBonesRef = useRef<{ bone: THREE.Bone; quat: THREE.Quaternion; pos: THREE.Vector3 }[]>([]);
 
   useEffect(() => {
+    const roots: typeof rootBonesRef.current = [];
     character.traverse((child) => {
-      if ((child as THREE.Bone).isBone && child.name.includes('Hips')) {
-        hipsBoneRef.current = child as THREE.Bone;
-        hipsRestQuatRef.current = child.quaternion.clone();
-        hipsRestPosRef.current = child.position.clone();
+      if (!(child as THREE.Bone).isBone) return;
+      const n = child.name;
+      if (n.includes('Hips') || n.includes('Spine')) {
+        roots.push({
+          bone: child as THREE.Bone,
+          quat: child.quaternion.clone(),
+          pos: child.position.clone(),
+        });
       }
     });
+    rootBonesRef.current = roots;
   }, [character]);
 
   useEffect(() => {
@@ -90,12 +94,9 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
     if (!mixerRef.current) return;
     mixerRef.current.update(delta);
 
-    const hips = hipsBoneRef.current;
-    if (hips && hipsRestQuatRef.current) {
-      hips.quaternion.copy(hipsRestQuatRef.current);
-    }
-    if (hips && hipsRestPosRef.current) {
-      hips.position.copy(hipsRestPosRef.current);
+    for (const { bone, quat, pos } of rootBonesRef.current) {
+      bone.quaternion.copy(quat);
+      bone.position.copy(pos);
     }
   });
 
