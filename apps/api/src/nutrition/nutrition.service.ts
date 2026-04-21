@@ -105,6 +105,14 @@ export class NutritionService {
       fatG?: number;
       servings?: number;
       date?: string;
+      photoS3Key?: string;
+      source?: string;
+      sourceDetail?: string;
+      ingredients?: string;
+      recipeId?: string;
+      rating?: number;
+      notes?: string;
+      confidence?: number;
     },
   ) {
     const date = body.date ? new Date(body.date) : new Date();
@@ -120,6 +128,14 @@ export class NutritionService {
         carbsG: body.carbsG ?? 0,
         fatG: body.fatG ?? 0,
         servings: body.servings ?? 1,
+        photoS3Key: body.photoS3Key,
+        source: body.source,
+        sourceDetail: body.sourceDetail,
+        ingredients: body.ingredients,
+        recipeId: body.recipeId,
+        rating: body.rating,
+        notes: body.notes,
+        confidence: body.confidence,
       },
     });
   }
@@ -572,9 +588,12 @@ PRAVIDLA:
 ČESKÉ POTRAVINY které znáš: kedlubna, kohlrabi, řepa, celer, petržel, brambory, knedlíky, řízek, svíčková, guláš, bramborák, šopský salát, olomoucké tvarůžky, trdelník, palačinky, ovocné knedlíky, chlebíčky, utopenci, tatarák, smažák.
 
 Vrať POUZE JSON:
-{"name":"Kedlubna","kcal":27,"proteinG":1.7,"carbsG":6.2,"fatG":0.1,"confidence":90}
+{"name":"Kedlubna","kcal":27,"proteinG":1.7,"carbsG":6.2,"fatG":0.1,"confidence":90,"ingredients":"kedlubna","source":"home"}
 
-DŮLEŽITÉ: "name" musí být ČESKÝ název. Ne anglický, ne překlad. Pokud nepoznáváš, vrať name: "Nerozpoznáno" s confidence: 0.`,
+DŮLEŽITÉ:
+- "name" musí být ČESKÝ název. Ne anglický, ne překlad. Pokud nepoznáváš, vrať name: "Nerozpoznáno" s confidence: 0.
+- "ingredients" je čárkami oddělený seznam ingrediencí česky (prázdný string pokud nepoznáš)
+- "source" je odhad původu: "home" (domácí), "restaurant", "store" (obchod), "delivery"`,
               },
             ],
           },
@@ -594,6 +613,8 @@ DŮLEŽITÉ: "name" musí být ČESKÝ název. Ne anglický, ne překlad. Pokud 
         carbsG: typeof parsed.carbsG === 'number' ? parsed.carbsG : 40,
         fatG: typeof parsed.fatG === 'number' ? parsed.fatG : 10,
         confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 50,
+        ingredients: typeof parsed.ingredients === 'string' ? parsed.ingredients : '',
+        source: typeof parsed.source === 'string' ? parsed.source : 'home',
       };
     } catch (e: any) {
       this.logger.error(`Food photo analysis failed: ${e.message}`);

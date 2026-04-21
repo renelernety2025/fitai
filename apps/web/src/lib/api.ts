@@ -1240,3 +1240,89 @@ export function generateJournalInsight(date: string) {
     method: 'POST',
   });
 }
+
+// ─── Recipes ────────────────────────────────────────────
+
+export interface Recipe {
+  id: string;
+  name: string;
+  description: string | null;
+  ingredients: Array<{ name: string; amount: string; unit: string }>;
+  instructions: string | null;
+  prepMinutes: number | null;
+  cookMinutes: number | null;
+  servings: number;
+  kcalPerServing: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  photoS3Key: string | null;
+  tags: string[];
+  isFavorite: boolean;
+}
+
+export function getRecipes(): Promise<Recipe[]> {
+  return request('/recipes');
+}
+
+export function createRecipe(data: Partial<Recipe>): Promise<Recipe> {
+  return request('/recipes', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateRecipe(
+  id: string,
+  data: Partial<Recipe>,
+): Promise<Recipe> {
+  return request(`/recipes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteRecipe(id: string): Promise<void> {
+  return request(`/recipes/${id}`, { method: 'DELETE' });
+}
+
+export function toggleRecipeFavorite(id: string): Promise<void> {
+  return request(`/recipes/${id}/favorite`, { method: 'POST' });
+}
+
+export function generateRecipeFromPhoto(
+  s3Key: string,
+): Promise<Partial<Recipe>> {
+  return request('/recipes/from-photo', {
+    method: 'POST',
+    body: JSON.stringify({ s3Key }),
+  });
+}
+
+// ─── Food Photo Recognition ─────────────────────────────
+
+export interface FoodPhotoAnalysis {
+  name: string;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  ingredients?: string;
+  confidence?: number;
+}
+
+export function getFoodPhotoUploadUrl(): Promise<{
+  uploadUrl: string;
+  s3Key: string;
+}> {
+  return request('/nutrition/photo-upload-url', { method: 'POST' });
+}
+
+export function analyzeFoodPhoto(
+  s3Key: string,
+): Promise<FoodPhotoAnalysis> {
+  return request('/nutrition/analyze-photo', {
+    method: 'POST',
+    body: JSON.stringify({ s3Key }),
+  });
+}
