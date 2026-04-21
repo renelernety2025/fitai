@@ -97,7 +97,7 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ### Tier 2 — Diferenciace
 - **AI Form Coach split-screen** — kamera + 3D model vedle sebe
-- **Workout journal** — post-workout deník s Claude analýzou trendů
+- ~~**Workout journal**~~ ✅ — /journal s timeline feed, book-style karty, fotky, AI insights, milestones
 - **AI food recognition** — Claude Vision na fotku jídla → makra
 - **Superset/Circuit builder** — drag-and-drop workout editor
 
@@ -161,7 +161,7 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 - **29 NestJS modules**
 - **30+ DB models** (+ CoachPersonality enum)
-- **21 web pages** (v2 design, +ai-chat)
+- **22 web pages** (v2 design, +ai-chat, +journal)
 - **18 mobile screens** (v2 design)
 - **17 achievements**
 - **60 exercises** with 3D animated viewer

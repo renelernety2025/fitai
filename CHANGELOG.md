@@ -7,6 +7,37 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Workout Journal — full fitness diary] 2026-04-21
+
+### Journal Page (`/journal`)
+- Timeline feed with book-style day cards (two-column: stats left, notes/photos right)
+- Monthly chapters with serif titles, AI summary (Claude Haiku), stats + month-over-month comparison
+- Milestone badges in timeline ("100. trénink!", "30denní streak!")
+- Month navigation (left/right arrows)
+- Hero with total stats (entries, PRs, workouts, streak)
+
+### Day Cards
+- Auto-populated from GymSession data (exercises, sets, reps, weight, form %)
+- PR badges (gold) for personal bests
+- Rating (1-5 stars), mood selector (5 emojis), custom tags
+- Notes field (serif font, book-like feel)
+- Photo grid (up to 4 per day, S3 presigned upload)
+- Body measurements (weight, arms, chest, waist — expandable)
+- AI insight per entry (Claude Haiku, 1-2 sentences about performance)
+- Rest day variant (centered, minimal)
+
+### Post-Workout Integration
+- "Zapsat do deníku" button on GymWorkoutSummary
+
+### Backend
+- New NestJS module: `workout-journal` (7 endpoints)
+- JournalEntry + JournalPhoto models (Prisma)
+- S3 presigned URL photo upload (reuses progress-photos pattern)
+- Claude monthly summary + per-day AI insights
+- Milestones calculation (sessions, streak, journal thresholds)
+
+---
+
 ## [Tier 1 — AI Chat Coach + Activity Heatmap + Smart Widget] 2026-04-21
 
 ### AI Chat Coach (`/ai-chat`)
