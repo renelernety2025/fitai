@@ -610,7 +610,7 @@ PRAVIDLA:
       const history = await this.prisma.coachingMessage.findMany({
         where: { coachingSessionId: session.id },
         orderBy: { createdAt: 'asc' },
-        take: 20,
+        take: -20, // negative: last 20 in chronological order
       });
 
       const messages = history.map((m) => ({
