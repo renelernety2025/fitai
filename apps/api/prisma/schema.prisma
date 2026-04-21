@@ -100,6 +100,12 @@ model User {
   mealPlans         MealPlan[]
   journalEntries    JournalEntry[]
   recipes           Recipe[]
+  createdChallenges Challenge[]        @relation("ChallengeCreator")
+  leagueMemberships LeagueMembership[]
+  skillUnlocks      SkillUnlock[]
+  scheduledWorkouts ScheduledWorkout[]
+  seasonProgress    SeasonProgress[]
+  missionCompletions MissionCompletion[]
 }
 
 model UserProgress {
@@ -213,7 +219,8 @@ model WorkoutPlan {
   user        User?            @relation(fields: [userId], references: [id])
   days        WorkoutDay[]
   gymSessions GymSession[]
-  aiPlans     AIGeneratedPlan[]
+  aiPlans           AIGeneratedPlan[]
+  scheduledWorkouts ScheduledWorkout[]
 }
 
 model WorkoutDay {
@@ -571,6 +578,123 @@ model Recipe {
   @@index([userId])
 }
 
+// ── Leagues & Divisions ──
+
+enum LeagueTier {
+  BRONZE
+  SILVER
+  GOLD
+  DIAMOND
+  LEGEND
+}
+
+model LeagueMembership {
+  id        String     @id @default(uuid())
+  userId    String
+  tier      LeagueTier @default(BRONZE)
+  weekStart DateTime   @db.Date
+  weeklyXP  Int        @default(0)
+  rank      Int?
+  promoted  Boolean    @default(false)
+  relegated Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, weekStart])
+  @@index([weekStart, tier])
+}
+
+// ── Skill Tree ──
+
+model SkillUnlock {
+  id         String   @id @default(uuid())
+  userId     String
+  skillCode  String
+  unlockedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, skillCode])
+  @@index([userId])
+}
+
+// ── Workout Calendar ──
+
+model ScheduledWorkout {
+  id            String   @id @default(uuid())
+  userId        String
+  date          DateTime @db.Date
+  title         String
+  workoutPlanId String?
+  workoutDayIdx Int?
+  notes         String?
+  completed     Boolean  @default(false)
+  gymSessionId  String?
+  createdAt     DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id])
+  workoutPlan WorkoutPlan? @relation(fields: [workoutPlanId], references: [id])
+
+  @@index([userId, date])
+}
+
+// ── Battle Pass / Seasons ──
+
+model Season {
+  id        String   @id @default(uuid())
+  name      String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  missions          SeasonMission[]
+  playerProgression SeasonProgress[]
+}
+
+model SeasonMission {
+  id          String @id @default(uuid())
+  seasonId    String
+  code        String
+  titleCs     String
+  description String
+  type        String // daily, weekly, challenge
+  targetValue Int
+  xpReward    Int
+  orderIndex  Int
+
+  season Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonId, code])
+}
+
+model SeasonProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  seasonId  String
+  level     Int      @default(1)
+  totalXP   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User   @relation(fields: [userId], references: [id])
+  season  Season @relation(fields: [seasonId], references: [id])
+
+  @@unique([userId, seasonId])
+}
+
+model MissionCompletion {
+  id        String   @id @default(uuid())
+  userId    String
+  missionId String
+  completedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, missionId])
+}
+
 model EducationLesson {
   id          String   @id @default(uuid())
   slug        String   @unique
@@ -702,8 +826,10 @@ model Challenge {
   startDate   DateTime
   endDate     DateTime
   isActive    Boolean  @default(true)
+  creatorId   String?
   createdAt   DateTime @default(now())
 
+  creator      User?                  @relation("ChallengeCreator", fields: [creatorId], references: [id])
   participants ChallengeParticipant[]
 }
 
