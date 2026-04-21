@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ElevenLabsService } from './elevenlabs.service';
 import { buildCoachingSystemPrompt, buildCoachingUserMessage, type CoachingContext } from './coaching-prompt';
+import { buildChatSystemPrompt } from './coaching-chat-prompt';
 import { checkSafetyRules } from './safety-rules';
 import {
   buildUserPromptContext,
@@ -523,5 +524,201 @@ PRAVIDLA:
       where: { id: session.id },
       data: { messagesCount: { increment: 1 } },
     });
+  }
+
+  // ── AI Chat Coach ────────────────────────────────────────────
+
+  /** List all chat conversations for a user (newest first). */
+  async getConversations(userId: string) {
+    return this.prisma.coachingSession.findMany({
+      where: { userId, sessionType: 'chat' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+  }
+
+  /** Return all messages for a conversation (ownership-checked). */
+  async getConversationMessages(userId: string, conversationId: string) {
+    const session = await this.prisma.coachingSession.findUnique({
+      where: { id: conversationId },
+    });
+    if (!session || session.userId !== userId) {
+      throw new ForbiddenException('Conversation not found');
+    }
+    return this.prisma.coachingMessage.findMany({
+      where: { coachingSessionId: conversationId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Stream a chat response from Claude. Creates or reuses a conversation,
+   * loads history, builds the personalized system prompt, and emits SSE
+   * events via the `emit` callback.
+   */
+  async chatStream(
+    userId: string,
+    message: string,
+    conversationId: string | undefined,
+    emit: (event: StreamEvent | { type: 'conversation_id'; id: string }) => void,
+  ): Promise<void> {
+    // Find or create conversation session
+    let session = conversationId
+      ? await this.prisma.coachingSession.findFirst({
+          where: { id: conversationId, userId, sessionType: 'chat' },
+        })
+      : null;
+
+    if (!session) {
+      session = await this.prisma.coachingSession.create({
+        data: {
+          userId,
+          sessionType: 'chat',
+          sessionId: `chat-${Date.now()}`,
+        },
+      });
+    }
+
+    emit({ type: 'conversation_id', id: session.id });
+
+    // Save user message
+    await this.prisma.coachingMessage.create({
+      data: {
+        coachingSessionId: session.id,
+        role: 'user',
+        content: message,
+        priority: 'info',
+      },
+    });
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      const fallback = 'Omlouvám se, momentálně nemohu odpovědět. Zkus to později.';
+      emit({ type: 'text_delta', delta: fallback });
+      emit({ type: 'text_done' });
+      await this.saveChatReply(session.id, fallback);
+      return;
+    }
+
+    try {
+      // Load conversation history (last 20 messages for context window)
+      const history = await this.prisma.coachingMessage.findMany({
+        where: { coachingSessionId: session.id },
+        orderBy: { createdAt: 'asc' },
+        take: 20,
+      });
+
+      const messages = history.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
+      const userCtx = await buildUserPromptContext(this.prisma, userId);
+      const systemPrompt = buildChatSystemPrompt(userCtx);
+
+      const Anthropic = require('@anthropic-ai/sdk').default;
+      const client = new Anthropic({ apiKey });
+
+      const stream = client.messages.stream({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        system: systemPrompt,
+        messages,
+      });
+
+      let fullResponse = '';
+
+      for await (const event of stream) {
+        if (
+          event.type !== 'content_block_delta' ||
+          event.delta?.type !== 'text_delta'
+        ) {
+          continue;
+        }
+        const chunk: string = event.delta.text || '';
+        if (chunk.length === 0) continue;
+        emit({ type: 'text_delta', delta: chunk });
+        fullResponse += chunk;
+      }
+
+      emit({ type: 'text_done' });
+
+      // Save assistant reply
+      await this.saveChatReply(session.id, fullResponse);
+
+      // Auto-generate title for new conversations (no title yet, first exchange)
+      if (!session.title && fullResponse.length > 0) {
+        this.generateTitle(session.id, message, fullResponse).catch((e) =>
+          this.logger.warn(`Title generation failed: ${e.message}`),
+        );
+      }
+    } catch (e: any) {
+      this.logger.error(`Chat stream failed: ${e.message}`);
+      const fallback = 'Omlouvám se, něco se pokazilo. Zkus to znovu.';
+      emit({ type: 'text_delta', delta: fallback });
+      emit({ type: 'text_done' });
+      await this.saveChatReply(session.id, fallback);
+    }
+  }
+
+  /** Save assistant reply and bump message count. */
+  private async saveChatReply(
+    sessionId: string,
+    content: string,
+  ): Promise<void> {
+    await this.prisma.coachingMessage.create({
+      data: {
+        coachingSessionId: sessionId,
+        role: 'assistant',
+        content,
+        priority: 'info',
+      },
+    });
+    await this.prisma.coachingSession.update({
+      where: { id: sessionId },
+      data: { messagesCount: { increment: 2 } },
+    });
+  }
+
+  /** Generate a short 3-5 word title for a chat conversation. */
+  private async generateTitle(
+    sessionId: string,
+    question: string,
+    answer: string,
+  ): Promise<void> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return;
+
+    const Anthropic = require('@anthropic-ai/sdk').default;
+    const client = new Anthropic({ apiKey });
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 20,
+      system: 'Generate a 3-5 word Czech title for this fitness conversation. Return ONLY the title, nothing else.',
+      messages: [
+        {
+          role: 'user',
+          content: `Q: ${question.slice(0, 200)}\nA: ${answer.slice(0, 200)}`,
+        },
+      ],
+    });
+
+    const title =
+      response.content[0]?.type === 'text'
+        ? response.content[0].text.trim().slice(0, 100)
+        : null;
+
+    if (title) {
+      await this.prisma.coachingSession.update({
+        where: { id: sessionId },
+        data: { title },
+      });
+    }
   }
 }
