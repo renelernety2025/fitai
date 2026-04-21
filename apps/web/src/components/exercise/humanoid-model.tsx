@@ -71,10 +71,9 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
  * hierarchy path. Strip hierarchy prefix so AnimationMixer finds bones
  * by name directly.
  */
-// FBX→Three.js: 90° rotation around X (Z-up → Y-up). Inverse for compensation.
+// Compensation: -90° around X axis (converts FBX Z-up bone space to GLB Y-up)
 const FBX_COMPENSATION = new THREE.Quaternion()
-  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2)
-  .invert();
+  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
 function convertFBXClipForGLB(
   clip: THREE.AnimationClip,
@@ -93,7 +92,7 @@ function convertFBXClipForGLB(
       const q = new THREE.Quaternion();
       for (let i = 0; i < values.length; i += 4) {
         q.set(values[i], values[i + 1], values[i + 2], values[i + 3]);
-        q.multiply(FBX_COMPENSATION);
+        q.premultiply(FBX_COMPENSATION);
         values[i] = q.x;
         values[i + 1] = q.y;
         values[i + 2] = q.z;
