@@ -7,6 +7,29 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Priority 1 — Mobile parity, Dark/Light mode, Onboarding tour] 2026-04-22
+
+### Mobile Parity (4 new screens)
+- AI Chat: SSE streaming chat with Alex, suggested prompts, keyboard avoiding
+- Journal: month navigation, day cards, mood/rating/tags, AI insights
+- Calendar: monthly grid, colored dots (planned/completed/missed), CRUD
+- Leagues: tier badge hero, leaderboard, weekly XP, join flow, countdown
+- All accessible from Profile "Vice" menu
+
+### Dark/Light Mode
+- ThemeProvider with CSS custom properties (11 variables)
+- Sun/moon toggle in V2Layout header
+- localStorage persistence (default: dark)
+- V2Layout + V2AuthLayout fully theme-aware
+
+### Onboarding Tour
+- 7-step guided spotlight tour for new users
+- Highlights: dashboard, rings, AI chat, gym, journal, leagues, more menu
+- localStorage persistence (shows once)
+- "Restart tour" button on profile page
+
+---
+
 ## [9 cross-industry features — Portfolio, Bloodwork, Rehab, Marketplace, Boss, and more] 2026-04-21
 
 ### Body Portfolio (`/body-portfolio`)
