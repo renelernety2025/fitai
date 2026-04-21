@@ -72,6 +72,7 @@ export class AiInsightsService {
   private reviewCache = new Map<string, CachedItem<WeeklyReview>>();
   private nutritionCache = new Map<string, CachedItem<NutritionTip[]>>();
   private dailyBriefCache = new Map<string, CachedItem<DailyBrief>>();
+  private motivationCache = new Map<string, CachedItem<string>>();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(
@@ -809,8 +810,8 @@ Pravidla:
   /** Personalized daily motivation — short Claude-generated message. Cached 12h. */
   async getMotivation(userId: string) {
     const cacheKey = `motivation:${userId}`;
-    const cached = this.insightsCache.get(cacheKey);
-    if (cached) return { message: cached, source: 'cache' };
+    const cached = this.motivationCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return { message: cached.data, source: 'cache' };
 
     const [user, progress, profile] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
@@ -833,19 +834,19 @@ Pravidla:
       const Anthropic = require('@anthropic-ai/sdk');
       const client = new Anthropic.default({ apiKey });
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 150,
+        system: 'Jsi motivační fitness trenér. Generuješ 1 krátkou motivační větu (max 20 slov) v češtině. Buď energický, osobní, konkrétní. Odpověz POUZE textem věty.',
         messages: [{
           role: 'user',
-          content: `Vygeneruj 1 krátkou motivační větu (max 20 slov) pro fitness uživatele. Česky. Jméno: ${name}. Streak: ${streak} dní. Celkem tréninků: ${sessions}. Cíl: ${goal}. Buď energický, osobní, konkrétní. Pouze text věty, nic jiného.`,
+          content: `Jméno: ${name}. Streak: ${streak} dní. Celkem tréninků: ${sessions}. Cíl: ${goal}.`,
         }],
       });
       const text = response.content[0]?.type === 'text'
         ? response.content[0].text.trim()
         : this.fallbackMotivation(name, streak);
 
-      this.insightsCache.set(cacheKey, text);
-      setTimeout(() => this.insightsCache.delete(cacheKey), 12 * 3600 * 1000);
+      this.motivationCache.set(cacheKey, { data: text, expiresAt: Date.now() + 12 * 3600 * 1000 });
       return { message: text, source: 'claude' };
     } catch {
       return { message: this.fallbackMotivation(name, streak), source: 'fallback' };

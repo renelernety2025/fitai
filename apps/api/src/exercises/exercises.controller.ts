@@ -17,6 +17,7 @@ export class ExercisesController {
   }
 
   @Get('micro-workout')
+  @UseGuards(JwtAuthGuard)
   getMicroWorkout() {
     return this.exercisesService.getMicroWorkout();
   }

@@ -139,18 +139,19 @@ function SequenceCharacter({
     const mixer = new THREE.AnimationMixer(character);
     mixerRef.current = mixer;
 
-    mixer.addEventListener('finished', () => {
+    const onFinished = () => {
       repeatCountRef.current++;
       const step = steps[loadedIdxRef.current];
       if (step && repeatCountRef.current >= step.repeats) {
         repeatCountRef.current = 0;
         onClipFinished();
       }
-    });
+    };
+    mixer.addEventListener('finished', onFinished);
 
     return () => {
       mixer.stopAllAction();
-      mixer.removeEventListener('finished', () => {});
+      mixer.removeEventListener('finished', onFinished);
       mixerRef.current = null;
     };
   }, [character]);
