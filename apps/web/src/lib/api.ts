@@ -1051,3 +1051,87 @@ export function generateMealPlan(opts: {
 export function deleteMealPlan(id: string) {
   return request<{ deleted: boolean }>(`/nutrition/meal-plan/${id}`, { method: 'DELETE' });
 }
+
+// ─── AI Chat Coach ──────────────────────────────────────
+
+export interface ChatConversation {
+  id: string;
+  title: string;
+  lastMessage: string;
+  messageCount: number;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
+}
+
+export function getChatConversations(): Promise<{ conversations: ChatConversation[] }> {
+  return request('/coaching/conversations');
+}
+
+export function getChatMessages(conversationId: string): Promise<{ messages: ChatMessage[] }> {
+  return request(`/coaching/conversations/${conversationId}/messages`);
+}
+
+export async function sendChatMessage(
+  message: string,
+  conversationId: string | null,
+  onDelta: (text: string) => void,
+  onConversationId: (id: string) => void,
+): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('fitai_token') : null;
+  const body: Record<string, string> = { message };
+  if (conversationId) body.conversationId = conversationId;
+
+  const res = await fetch(`${API_URL}/coaching/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`Chat failed: ${res.status}`);
+  if (!res.body) throw new Error('No response body');
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        if (event.type === 'text_delta') onDelta(event.delta);
+        if (event.type === 'conversation_id') onConversationId(event.id);
+      } catch {
+        /* ignore parse errors from partial SSE chunks */
+      }
+    }
+  }
+}
+
+// ─── Today Action (Smart Widget) ────────────────────────
+
+export interface TodayAction {
+  type: 'streak' | 'recovery' | 'comeback' | 'nutrition' | 'default';
+  headline: string;
+  rationale: string;
+  ctaLabel: string;
+  ctaLink: string;
+}
+
+export function getTodayAction(): Promise<TodayAction> {
+  return request('/ai-insights/today-action');
+}

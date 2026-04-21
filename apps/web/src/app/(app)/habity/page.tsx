@@ -12,6 +12,7 @@ import {
   type HabitsStats,
   type RecoveryTip,
 } from '@/lib/api';
+import { ActivityHeatmap } from '@/components/habits/ActivityHeatmap';
 
 const tipColors: Record<string, string> = {
   sleep: '#0A84FF',
@@ -102,7 +103,7 @@ export default function HabityPage() {
   const reload = () => {
     getHabitsToday().then(setToday).catch(console.error);
     getHabitsStats().then(setStats).catch(console.error);
-    getHabitsHistory(14).then(setHistory).catch(console.error);
+    getHabitsHistory(84).then(setHistory).catch(console.error);
     getRecoveryTips().then((r) => setTips(r.tips)).catch(console.error);
   };
   useEffect(reload, []);
@@ -184,6 +185,18 @@ export default function HabityPage() {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* Activity heatmap */}
+      {history.length > 0 && stats && (
+        <section className="mb-24">
+          <V2SectionLabel>Aktivita</V2SectionLabel>
+          <ActivityHeatmap
+            history={history}
+            streakDays={stats.streakDays}
+            totalCheckIns={stats.totalCheckIns}
+          />
         </section>
       )}
 
