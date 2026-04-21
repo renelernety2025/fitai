@@ -83,11 +83,11 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
   return <primitive object={character} scale={1} position={[0, -1, 0]} />;
 }
 
-/**
- * Simplify FBX track names to just "boneName.property".
- * FBX tracks sometimes use hierarchy paths that AnimationMixer
- * can't resolve on the GLB scene graph.
- */
+// FBX→Three.js: 90° rotation around X (Z-up → Y-up). Inverse for compensation.
+const FBX_COMPENSATION = new THREE.Quaternion()
+  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2)
+  .invert();
+
 function convertFBXClipForGLB(clip: THREE.AnimationClip): THREE.AnimationClip {
   const newTracks = clip.tracks.map((track) => {
     const dotIdx = track.name.lastIndexOf('.');
@@ -95,6 +95,23 @@ function convertFBXClipForGLB(clip: THREE.AnimationClip): THREE.AnimationClip {
     const bonePath = track.name.slice(0, dotIdx);
     const segments = bonePath.split('/');
     const boneName = segments[segments.length - 1];
+
+    // Compensate Hips quaternion for FBX→GLB coordinate system
+    if (boneName === 'mixamorig:Hips' && prop === '.quaternion') {
+      const values = Float32Array.from(track.values);
+      const q = new THREE.Quaternion();
+      for (let i = 0; i < values.length; i += 4) {
+        q.set(values[i], values[i + 1], values[i + 2], values[i + 3]);
+        q.multiply(FBX_COMPENSATION);
+        values[i] = q.x;
+        values[i + 1] = q.y;
+        values[i + 2] = q.z;
+        values[i + 3] = q.w;
+      }
+      return new THREE.QuaternionKeyframeTrack(
+        boneName + prop, Array.from(track.times), Array.from(values),
+      );
+    }
 
     return new (track.constructor as any)(
       boneName + prop,

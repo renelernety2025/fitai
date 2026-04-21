@@ -71,29 +71,38 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
  * hierarchy path. Strip hierarchy prefix so AnimationMixer finds bones
  * by name directly.
  */
+// FBX→Three.js: 90° rotation around X (Z-up → Y-up). Inverse for compensation.
+const FBX_COMPENSATION = new THREE.Quaternion()
+  .setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2)
+  .invert();
+
 function convertFBXClipForGLB(
   clip: THREE.AnimationClip,
   fbxScene: THREE.Group,
 ): THREE.AnimationClip {
-  // Build a map of FBX bone paths to bone names
-  const boneNameMap = new Map<string, string>();
-  fbxScene.traverse((child) => {
-    if ((child as THREE.Bone).isBone) {
-      // FBX track names use full path: "Armature|mixamorig:Hips|..."
-      // GLB bones are found by name: "mixamorig:Hips"
-      boneNameMap.set(child.name, child.name);
-    }
-  });
-
   const newTracks = clip.tracks.map((track) => {
-    // Track name format: "boneName.property" or "hierarchy/boneName.property"
     const dotIdx = track.name.lastIndexOf('.');
-    const prop = track.name.slice(dotIdx); // .quaternion, .position, .scale
+    const prop = track.name.slice(dotIdx);
     const bonePath = track.name.slice(0, dotIdx);
-
-    // Extract just the bone name (last segment of path)
     const segments = bonePath.split('/');
     const boneName = segments[segments.length - 1];
+
+    // Compensate Hips quaternion for FBX→GLB coordinate system
+    if (boneName === 'mixamorig:Hips' && prop === '.quaternion') {
+      const values = Float32Array.from(track.values);
+      const q = new THREE.Quaternion();
+      for (let i = 0; i < values.length; i += 4) {
+        q.set(values[i], values[i + 1], values[i + 2], values[i + 3]);
+        q.multiply(FBX_COMPENSATION);
+        values[i] = q.x;
+        values[i + 1] = q.y;
+        values[i + 2] = q.z;
+        values[i + 3] = q.w;
+      }
+      return new THREE.QuaternionKeyframeTrack(
+        boneName + prop, Array.from(track.times), Array.from(values),
+      );
+    }
 
     return new (track.constructor as any)(
       boneName + prop,
