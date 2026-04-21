@@ -7,6 +7,46 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Sport modules + workout mode + profile + polish] 2026-04-21
+
+### Sport Training Modules
+- /sports hub — 7 sport modules linked
+- /shadow-boxing — 9 moves, 10 combos, difficulty filter, round generator
+- /golf-lab — 8 shot types (drive/chip/putt + setup/post-swing/victory)
+- /soccer-drills — 7 skills (header, pass, tackle, dribble, GK drills)
+- /workout-mode — follow-along timer with 3D, beep signals, rest overlays
+- /sequences — composable multi-clip training routines with crossfade
+
+### Mixamo Animation System
+- 50+ FBX in git, 160+ on disk. Character/animation separation architecture
+- Brute-force Hips+Spine lock (rest pose override every frame) fixes orientation
+- sport-animations.ts + exercise-animations.ts mapping system
+- workout-audio.ts — Web Audio API beep signals
+
+### New Pages & Features
+- /profile — fitness profile, stats, level progress bar
+- /notifications — toggle preferences (workout/streak/achievements)
+- /progress: weekly volume bar chart (muscle groups, color-coded status)
+- /progress: activity heatmap (12 weeks GitHub-style)
+- Landing page: features grid (8 cards) + stats section
+- V2Layout header: bell + user profile icons
+- V2Tooltip component for onboarding
+
+### Backend
+- @nestjs/schedule cron: streak reminders daily at 19:00
+- GET /api/exercises/micro-workout
+- GET /api/exercises/:id/personal-best
+- Notification preferences API
+
+### Quality
+- 69+ regression tests (8 new endpoints + pages)
+- Error boundary for 3D viewer
+- Exercise search (client-side fulltext)
+- Difficulty filter chips
+- Empty states (progress, dashboard)
+
+---
+
 ## [3D exercise viewer + coach personality + engagement features] 2026-04-20
 
 ### 3D Animated Exercise Viewer (web)
