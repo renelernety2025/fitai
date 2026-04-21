@@ -19,18 +19,22 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
   const { scene } = useGLTF(CHARACTER_PATH);
   const character = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const hipsBoneRef = useRef<THREE.Bone | null>(null);
+  const hipsRestQuatRef = useRef<THREE.Quaternion | null>(null);
+  const hipsRestPosRef = useRef<THREE.Vector3 | null>(null);
 
-  // Capture Hips rest quaternion from GLB before any animation
-  const hipsRestQuat = useMemo(() => {
-    let q: THREE.Quaternion | null = null;
+  // Find Hips bone and save rest pose BEFORE animation
+  useEffect(() => {
     character.traverse((child) => {
-      if (child.name === 'mixamorig:Hips' && (child as THREE.Bone).isBone) {
-        q = child.quaternion.clone();
+      if ((child as THREE.Bone).isBone && child.name.includes('Hips')) {
+        hipsBoneRef.current = child as THREE.Bone;
+        hipsRestQuatRef.current = child.quaternion.clone();
+        hipsRestPosRef.current = child.position.clone();
       }
     });
-    return q;
   }, [character]);
 
+  // Load and play FBX animation
   useEffect(() => {
     const mapping = exerciseName
       ? getAnimationForExercise(exerciseName)
@@ -45,7 +49,8 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
       mapping.clipPath,
       (fbx) => {
         if (fbx.animations.length === 0) return;
-        const clip = convertClip(fbx.animations[0], hipsRestQuat);
+        // Use FBX animation as-is — we fix orientation in useFrame
+        const clip = fbx.animations[0];
         const action = mixer.clipAction(clip);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.timeScale = mapping.speed;
@@ -59,63 +64,28 @@ export default function HumanoidModel({ exerciseName }: HumanoidModelProps) {
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [character, exerciseName, hipsRestQuat]);
+  }, [character, exerciseName]);
 
+  // Every frame: advance animation, then FORCE Hips back to rest pose
   useFrame((_, delta) => {
-    mixerRef.current?.update(delta);
+    if (!mixerRef.current) return;
+
+    // Let mixer animate ALL bones (including Hips)
+    mixerRef.current.update(delta);
+
+    // Then override Hips rotation/position to keep model upright
+    // All child bones (spine, arms, legs) keep their animated values
+    const hips = hipsBoneRef.current;
+    if (hips && hipsRestQuatRef.current) {
+      hips.quaternion.copy(hipsRestQuatRef.current);
+    }
+    if (hips && hipsRestPosRef.current) {
+      hips.position.copy(hipsRestPosRef.current);
+    }
   });
 
   // @ts-ignore R3F v8 JSX
   return <primitive object={character} scale={1} position={[0, -1, 0]} />;
-}
-
-/**
- * Convert FBX clip for GLB:
- * 1. Simplify track names (strip hierarchy paths)
- * 2. Replace Hips quaternion with GLB rest quaternion (prevents flip)
- * 3. Remove Hips position track (prevents relocation)
- */
-function convertClip(
-  clip: THREE.AnimationClip,
-  hipsRestQuat: THREE.Quaternion | null,
-): THREE.AnimationClip {
-  const tracks: THREE.KeyframeTrack[] = [];
-
-  for (const track of clip.tracks) {
-    const dotIdx = track.name.lastIndexOf('.');
-    const prop = track.name.slice(dotIdx);
-    const bonePath = track.name.slice(0, dotIdx);
-    const segments = bonePath.split('/');
-    const boneName = segments[segments.length - 1];
-
-    // Skip Hips position — prevents model from flying away
-    if (boneName === 'mixamorig:Hips' && prop === '.position') {
-      continue;
-    }
-
-    // Replace Hips quaternion with constant rest quaternion
-    // This keeps the model upright while all limb animations play
-    if (boneName === 'mixamorig:Hips' && prop === '.quaternion' && hipsRestQuat) {
-      const times = [0, clip.duration];
-      const values = [
-        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
-        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
-      ];
-      tracks.push(new THREE.QuaternionKeyframeTrack(
-        boneName + prop, times, values,
-      ));
-      continue;
-    }
-
-    // All other tracks: just fix the name
-    tracks.push(new (track.constructor as any)(
-      boneName + prop,
-      track.times,
-      track.values,
-    ));
-  }
-
-  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
 }
 
 useGLTF.preload(CHARACTER_PATH);

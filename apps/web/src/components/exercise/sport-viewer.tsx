@@ -47,15 +47,18 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
   const { scene } = useGLTF(CHARACTER_PATH);
   const character = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const hipsBoneRef = useRef<THREE.Bone | null>(null);
+  const hipsRestQuatRef = useRef<THREE.Quaternion | null>(null);
+  const hipsRestPosRef = useRef<THREE.Vector3 | null>(null);
 
-  const hipsRestQuat = useMemo(() => {
-    let q: THREE.Quaternion | null = null;
+  useEffect(() => {
     character.traverse((child) => {
-      if (child.name === 'mixamorig:Hips' && (child as THREE.Bone).isBone) {
-        q = child.quaternion.clone();
+      if ((child as THREE.Bone).isBone && child.name.includes('Hips')) {
+        hipsBoneRef.current = child as THREE.Bone;
+        hipsRestQuatRef.current = child.quaternion.clone();
+        hipsRestPosRef.current = child.position.clone();
       }
     });
-    return q;
   }, [character]);
 
   useEffect(() => {
@@ -68,8 +71,7 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
       (fbx) => {
         if (fbx.animations.length === 0) return;
         mixer.stopAllAction();
-        const clip = convertClip(fbx.animations[0], hipsRestQuat);
-        const action = mixer.clipAction(clip);
+        const action = mixer.clipAction(fbx.animations[0]);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.timeScale = speed;
         action.play();
@@ -82,53 +84,23 @@ function AnimatedCharacter({ clipPath, speed }: { clipPath: string; speed: numbe
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [character, clipPath, speed, hipsRestQuat]);
+  }, [character, clipPath, speed]);
 
   useFrame((_, delta) => {
-    mixerRef.current?.update(delta);
+    if (!mixerRef.current) return;
+    mixerRef.current.update(delta);
+
+    const hips = hipsBoneRef.current;
+    if (hips && hipsRestQuatRef.current) {
+      hips.quaternion.copy(hipsRestQuatRef.current);
+    }
+    if (hips && hipsRestPosRef.current) {
+      hips.position.copy(hipsRestPosRef.current);
+    }
   });
 
   // @ts-ignore R3F v8 JSX
   return <primitive object={character} scale={1} position={[0, -1, 0]} />;
-}
-
-function convertClip(
-  clip: THREE.AnimationClip,
-  hipsRestQuat: THREE.Quaternion | null,
-): THREE.AnimationClip {
-  const tracks: THREE.KeyframeTrack[] = [];
-
-  for (const track of clip.tracks) {
-    const dotIdx = track.name.lastIndexOf('.');
-    const prop = track.name.slice(dotIdx);
-    const bonePath = track.name.slice(0, dotIdx);
-    const segments = bonePath.split('/');
-    const boneName = segments[segments.length - 1];
-
-    if (boneName === 'mixamorig:Hips' && prop === '.position') {
-      continue;
-    }
-
-    if (boneName === 'mixamorig:Hips' && prop === '.quaternion' && hipsRestQuat) {
-      const times = [0, clip.duration];
-      const values = [
-        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
-        hipsRestQuat.x, hipsRestQuat.y, hipsRestQuat.z, hipsRestQuat.w,
-      ];
-      tracks.push(new THREE.QuaternionKeyframeTrack(
-        boneName + prop, times, values,
-      ));
-      continue;
-    }
-
-    tracks.push(new (track.constructor as any)(
-      boneName + prop,
-      track.times,
-      track.values,
-    ));
-  }
-
-  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
 }
 
 useGLTF.preload(CHARACTER_PATH);
