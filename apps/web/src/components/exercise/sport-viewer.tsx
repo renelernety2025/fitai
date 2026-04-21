@@ -20,7 +20,7 @@ export default function SportViewer({ clipPath, speed }: SportViewerProps) {
     <div className="mb-8">
       <div className="relative aspect-[16/10] max-h-[450px] w-full overflow-hidden rounded-2xl border border-white/8 bg-black/50">
         <Canvas
-          camera={{ position: [0, 0.3, 2.2], fov: 50 }}
+          camera={{ position: [0, 0.5, 3], fov: 45 }}
           gl={{ antialias: true, alpha: true }}
         >
           {/* @ts-ignore R3F v8 */}
@@ -65,7 +65,8 @@ function AnimatedCharacter({
       (fbx) => {
         if (fbx.animations.length === 0) return;
         mixer.stopAllAction();
-        const action = mixer.clipAction(fbx.animations[0]);
+        const clip = sanitizeClip(fbx.animations[0]);
+        const action = mixer.clipAction(clip);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.timeScale = speed;
         action.play();
@@ -89,6 +90,22 @@ function AnimatedCharacter({
     // @ts-ignore R3F v8 JSX
     <primitive object={character} scale={1} position={[0, -1, 0]} />
   );
+}
+
+/**
+ * Remove root bone position tracks from FBX animation.
+ * Mixamo FBX often includes Hips position/rotation that relocates the model.
+ * Keep only bone rotation tracks (quaternion) — let the character stand in place.
+ */
+function sanitizeClip(clip: THREE.AnimationClip): THREE.AnimationClip {
+  const filtered = clip.tracks.filter((track) => {
+    // Remove position tracks for root bone (causes model to fly/lay down)
+    if (track.name.includes('Hips') && track.name.endsWith('.position')) {
+      return false;
+    }
+    return true;
+  });
+  return new THREE.AnimationClip(clip.name, clip.duration, filtered);
 }
 
 useGLTF.preload(CHARACTER_PATH);

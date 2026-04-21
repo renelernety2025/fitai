@@ -48,7 +48,7 @@ export default function HumanoidModel({
       mapping.clipPath,
       (fbx) => {
         if (fbx.animations.length === 0) return;
-        const clip = fbx.animations[0];
+        const clip = sanitizeClip(fbx.animations[0]);
         const action = mixer.clipAction(clip);
         action.setLoop(THREE.LoopRepeat, Infinity);
         action.timeScale = mapping.speed;
@@ -74,6 +74,20 @@ export default function HumanoidModel({
     // @ts-ignore R3F v8 JSX
     <primitive object={character} scale={1} position={[0, -1, 0]} />
   );
+}
+
+/**
+ * Remove root bone position tracks from FBX animation.
+ * Mixamo FBX includes Hips position that relocates/flips the model.
+ */
+function sanitizeClip(clip: THREE.AnimationClip): THREE.AnimationClip {
+  const filtered = clip.tracks.filter((track) => {
+    if (track.name.includes('Hips') && track.name.endsWith('.position')) {
+      return false;
+    }
+    return true;
+  });
+  return new THREE.AnimationClip(clip.name, clip.duration, filtered);
 }
 
 useGLTF.preload(CHARACTER_PATH);
