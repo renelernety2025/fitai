@@ -1,9 +1,10 @@
-import { Controller, Post, Body, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, UseGuards, Request, Res } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { CoachingService, type StreamEvent } from './coaching.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AskCoachDto } from './dto/ask-coach.dto';
+import { ChatMessageDto } from './dto/chat-message.dto';
 
 @Controller('coaching')
 @UseGuards(JwtAuthGuard)
@@ -96,6 +97,63 @@ export class CoachingController {
       await this.coachingService.answerQuestionStream(
         req.user.id,
         dto,
+        write,
+      );
+    } catch (e: any) {
+      write({ type: 'error', message: 'stream failed' });
+    } finally {
+      if (!res.writableEnded) res.end();
+    }
+  }
+
+  // ── AI Chat Coach ────────────────────────────────────────────
+
+  /** List all chat conversations for the authenticated user. */
+  @Get('conversations')
+  getConversations(@Request() req: any) {
+    return this.coachingService.getConversations(req.user.id);
+  }
+
+  /** Get all messages for a specific conversation. */
+  @Get('conversations/:id/messages')
+  getConversationMessages(
+    @Request() req: any,
+    @Param('id') id: string,
+  ) {
+    return this.coachingService.getConversationMessages(req.user.id, id);
+  }
+
+  /** Chat with AI coach — streaming SSE response. */
+  @Throttle({ default: { limit: 30, ttl: seconds(3600) } })
+  @Post('chat')
+  async chat(
+    @Request() req: any,
+    @Body() dto: ChatMessageDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const write = (
+      event: StreamEvent | { type: 'conversation_id'; id: string },
+    ): void => {
+      if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      }
+    };
+
+    req.on('close', () => {
+      if (!res.writableEnded) res.end();
+    });
+
+    try {
+      await this.coachingService.chatStream(
+        req.user.id,
+        dto.message,
+        dto.conversationId,
         write,
       );
     } catch (e: any) {
