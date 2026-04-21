@@ -37,6 +37,12 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
         </div>
         <V2Display size="xl">{plan.nameCs}</V2Display>
         <p className="mt-4 max-w-2xl text-base text-white/55">{plan.description}</p>
+        <Link
+          href={`/plans/${params.id}/edit`}
+          className="mt-6 inline-block rounded-full border border-white/15 px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-[#A8FF00]/40 hover:text-[#A8FF00]"
+        >
+          Upravit
+        </Link>
       </section>
 
       <section className="space-y-20">

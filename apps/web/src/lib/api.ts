@@ -296,6 +296,10 @@ export interface WorkoutPlanData {
       targetReps: number;
       targetWeight: number | null;
       restSeconds: number;
+      notes?: string;
+      groupId?: string | null;
+      groupType?: string | null;
+      groupOrder?: number | null;
       exercise: { id: string; name: string; nameCs: string; muscleGroups: string[] };
     }[];
   }[];
@@ -311,6 +315,13 @@ export function getWorkoutPlan(id: string) {
 
 export function cloneWorkoutPlan(id: string) {
   return request<WorkoutPlanData>(`/workout-plans/${id}/clone`, { method: 'POST' });
+}
+
+export function updateWorkoutPlan(id: string, data: Record<string, unknown>) {
+  return request<WorkoutPlanData>(`/workout-plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
 }
 
 // Gym Sessions
