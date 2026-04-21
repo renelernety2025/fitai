@@ -7,6 +7,15 @@ import type { SequenceStep } from '@/components/exercise/sequence-viewer';
 
 const BASE = '/models/animations/exercises';
 
+export interface WorkoutStep {
+  name: string;
+  nameCs: string;
+  clipPath: string;
+  speed: number;
+  durationSec: number;
+  restAfterSec: number;
+}
+
 export interface TrainingSequence {
   id: string;
   name: string;
@@ -15,6 +24,8 @@ export interface TrainingSequence {
   category: 'warmup' | 'boxing' | 'hiit' | 'golf' | 'cooldown';
   durationMin: number;
   steps: SequenceStep[];
+  /** Follow-along workout version with timers */
+  workout?: WorkoutStep[];
 }
 
 export const TRAINING_SEQUENCES: TrainingSequence[] = [
@@ -50,6 +61,14 @@ export const TRAINING_SEQUENCES: TrainingSequence[] = [
       { name: 'Squat', nameCs: 'Drep', clipPath: `${BASE}/Air Squat.fbx`, speed: 0.5, repeats: 3 },
       { name: 'Bicycle Crunch', nameCs: 'Bicykl', clipPath: `${BASE}/Bicycle Crunch.fbx`, speed: 0.6, repeats: 3 },
     ],
+    workout: [
+      { name: 'Jumping Jacks', nameCs: 'Jumping Jacks', clipPath: `${BASE}/Jumping Jacks.fbx`, speed: 0.7, durationSec: 30, restAfterSec: 10 },
+      { name: 'Burpees', nameCs: 'Burpees', clipPath: `${BASE}/Burpee.fbx`, speed: 0.5, durationSec: 30, restAfterSec: 10 },
+      { name: 'Box Jump', nameCs: 'Box Jump', clipPath: `${BASE}/Box Jump.fbx`, speed: 0.5, durationSec: 30, restAfterSec: 10 },
+      { name: 'Plank', nameCs: 'Plank', clipPath: `${BASE}/Start Plank.fbx`, speed: 0.3, durationSec: 45, restAfterSec: 15 },
+      { name: 'Squat', nameCs: 'Drepy', clipPath: `${BASE}/Air Squat.fbx`, speed: 0.5, durationSec: 30, restAfterSec: 10 },
+      { name: 'Bicycle Crunch', nameCs: 'Bicykl', clipPath: `${BASE}/Bicycle Crunch.fbx`, speed: 0.6, durationSec: 30, restAfterSec: 0 },
+    ],
   },
   {
     id: 'golf-full-practice',
@@ -81,6 +100,13 @@ export const TRAINING_SEQUENCES: TrainingSequence[] = [
       { name: 'Push Up', nameCs: 'Kliky', clipPath: `${BASE}/Push Up To Idle.fbx`, speed: 0.5, repeats: 3 },
       { name: 'Plank', nameCs: 'Plank', clipPath: `${BASE}/Start Plank.fbx`, speed: 0.3, repeats: 2 },
       { name: 'Kettlebell', nameCs: 'Kettlebell', clipPath: `${BASE}/Kettlebell Swing.fbx`, speed: 0.5, repeats: 3 },
+    ],
+    workout: [
+      { name: 'Jumping Jacks', nameCs: 'Jumping Jacks', clipPath: `${BASE}/Jumping Jacks.fbx`, speed: 0.6, durationSec: 30, restAfterSec: 10 },
+      { name: 'Squat', nameCs: 'Drepy', clipPath: `${BASE}/Air Squat.fbx`, speed: 0.5, durationSec: 30, restAfterSec: 10 },
+      { name: 'Push Up', nameCs: 'Kliky', clipPath: `${BASE}/Push Up To Idle.fbx`, speed: 0.5, durationSec: 20, restAfterSec: 10 },
+      { name: 'Plank', nameCs: 'Plank', clipPath: `${BASE}/Start Plank.fbx`, speed: 0.3, durationSec: 30, restAfterSec: 10 },
+      { name: 'Kettlebell', nameCs: 'Kettlebell', clipPath: `${BASE}/Kettlebell Swing.fbx`, speed: 0.5, durationSec: 30, restAfterSec: 0 },
     ],
   },
   {
