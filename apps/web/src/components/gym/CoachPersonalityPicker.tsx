@@ -38,7 +38,7 @@ const PERSONALITIES: {
 ];
 
 const ICONS: Record<string, string> = {
-  sergeant: '\u{1F3D6}',
+  sergeant: '\u{1F4AA}',
   fire: '\u{1F525}',
   peace: '\u{270C}',
 };

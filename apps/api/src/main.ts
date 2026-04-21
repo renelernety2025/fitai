@@ -27,7 +27,12 @@ async function bootstrap() {
   });
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'production'
+      ? ['https://fitai.bfevents.cz']
+      : [/localhost/, /127\.0\.0\.1/],
+    credentials: true,
+  });
   app.setGlobalPrefix('api', { exclude: ['health'] });
   const port = process.env.PORT || 3001;
   await app.listen(port);

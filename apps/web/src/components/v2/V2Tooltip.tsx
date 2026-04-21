@@ -17,14 +17,16 @@ export function V2Tooltip({ id, children, tip, position = 'bottom' }: V2TooltipP
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const key = `fitai_tip_${id}`;
-    if (!localStorage.getItem(key)) {
-      setTimeout(() => setVisible(true), 1000);
-    }
+    try {
+      const key = `fitai_tip_${id}`;
+      if (!localStorage.getItem(key)) {
+        setTimeout(() => setVisible(true), 1000);
+      }
+    } catch { /* private browsing / storage full */ }
   }, [id]);
 
   function dismiss() {
-    localStorage.setItem(`fitai_tip_${id}`, '1');
+    try { localStorage.setItem(`fitai_tip_${id}`, '1'); } catch {}
     setVisible(false);
   }
 

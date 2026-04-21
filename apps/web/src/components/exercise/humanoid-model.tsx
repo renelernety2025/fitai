@@ -10,7 +10,6 @@ import { getAnimationForExercise } from '@/lib/exercise-animations';
 
 interface HumanoidModelProps {
   exerciseName?: string;
-  muscleGroups: string[];
 }
 
 const CHARACTER_PATH = '/models/characters/default.glb';

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -46,13 +46,12 @@ export default function ExerciseModelViewer({
 
   // Sync with external phase selection (from text section)
   const prevExternal = useRef(externalPhaseIndex);
-  if (
-    externalPhaseIndex !== undefined &&
-    externalPhaseIndex !== prevExternal.current
-  ) {
-    prevExternal.current = externalPhaseIndex;
-    animation.jumpToPhase(externalPhaseIndex);
-  }
+  useEffect(() => {
+    if (externalPhaseIndex !== undefined && externalPhaseIndex !== prevExternal.current) {
+      prevExternal.current = externalPhaseIndex;
+      animation.jumpToPhase(externalPhaseIndex);
+    }
+  }, [externalPhaseIndex, animation]);
 
   const setView = useCallback(
     (view: 'front' | 'side' | 'back') => {
@@ -84,7 +83,6 @@ export default function ExerciseModelViewer({
           <Suspense fallback={null}>
             <HumanoidModel
               exerciseName={exerciseName}
-              muscleGroups={muscleGroups}
             />
           </Suspense>
           <OrbitControls
