@@ -45,4 +45,10 @@ export class AiInsightsController {
   motivation(@Request() req: any) {
     return this.service.getMotivation(req.user.id);
   }
+
+  @Get('today-action')
+  @Throttle({ default: { limit: 20, ttl: seconds(3600) } })
+  todayAction(@Request() req: any) {
+    return this.service.getTodayAction(req.user.id);
+  }
 }

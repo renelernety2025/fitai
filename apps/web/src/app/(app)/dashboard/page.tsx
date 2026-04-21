@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { V2Layout } from '@/components/v2/V2Layout';
 import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
+import TodayActionCard from '@/components/dashboard/TodayActionCard';
 import {
   getMyStats,
   getInsights,
@@ -21,6 +22,7 @@ import {
   getDailyBrief,
   getDailyMotivation,
   getMicroWorkout,
+  getTodayAction,
   type StatsData,
   type Insights,
   type Lesson,
@@ -28,6 +30,7 @@ import {
   type WeeklyReview,
   type DailyBrief,
   type MicroWorkoutData,
+  type TodayAction,
 } from '@/lib/api';
 
 function TripleRing({
@@ -87,6 +90,7 @@ export default function DashboardV2Page() {
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [micro, setMicro] = useState<MicroWorkoutData | null>(null);
   const [motivation, setMotivation] = useState<string | null>(null);
+  const [todayAction, setTodayAction] = useState<TodayAction | null>(null);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -97,6 +101,7 @@ export default function DashboardV2Page() {
     getDailyBrief().then((r) => setBrief(r.brief)).catch(console.error);
     getMicroWorkout().then(setMicro).catch(console.error);
     getDailyMotivation().then((r) => setMotivation(r.message)).catch(console.error);
+    getTodayAction().then(setTodayAction).catch(console.error);
   }, []);
 
   if (isLoading) {
@@ -206,6 +211,9 @@ export default function DashboardV2Page() {
             </span>
           </div>
         </section>
+
+        {/* ── TODAY ACTION (smart widget) ── */}
+        {todayAction && <TodayActionCard action={todayAction} />}
 
         {/* ── DAILY BRIEF (AI Coach flagship) ── */}
         {brief && <V2DailyBrief brief={brief} />}

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { determineTodayAction, type TodayAction } from './today-action';
 
 export interface RecoveryTip {
   category: 'sleep' | 'nutrition' | 'recovery' | 'stress' | 'training';
@@ -73,6 +74,7 @@ export class AiInsightsService {
   private nutritionCache = new Map<string, CachedItem<NutritionTip[]>>();
   private dailyBriefCache = new Map<string, CachedItem<DailyBrief>>();
   private motivationCache = new Map<string, CachedItem<string>>();
+  private todayActionCache = new Map<string, CachedItem<TodayAction>>();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(
@@ -857,5 +859,76 @@ Pravidla:
     if (streak >= 7) return `${name}, ${streak} dni v rade! Takhle se to dela.`;
     if (streak >= 3) return `${name}, mas rozjeto! Dnes to nebalime.`;
     return `${name}, kazdy trenink se pocita. Jdeme na to!`;
+  }
+
+  // ── Today Action (smart widget) ──
+
+  async getTodayAction(userId: string): Promise<TodayAction> {
+    const cached = this.todayActionCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+    const todayStart = this.todayDateUtc();
+    const yesterdayStart = this.yesterdayDateUtc();
+    const yesterdayEnd = new Date(todayStart);
+
+    const [user, progress, profile, todayCheckIn, yesterdayLogs, todaySessions] =
+      await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId } }),
+        this.prisma.userProgress.findUnique({ where: { userId } }),
+        this.prisma.fitnessProfile.findUnique({ where: { userId } }),
+        this.prisma.dailyCheckIn.findFirst({
+          where: { userId, date: { gte: todayStart } },
+        }),
+        this.prisma.foodLog.findMany({
+          where: { userId, date: { gte: yesterdayStart, lt: yesterdayEnd } },
+        }),
+        this.prisma.workoutSession.findMany({
+          where: { userId, completedAt: { gte: todayStart } },
+          take: 1,
+        }),
+      ]);
+
+    const daysSinceLastWorkout = progress?.lastWorkoutDate
+      ? Math.floor(
+          (Date.now() - new Date(progress.lastWorkoutDate).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+      : null;
+
+    const yesterdayKcal = yesterdayLogs.length > 0
+      ? yesterdayLogs.reduce(
+          (sum, l) => sum + ((l.kcal as number) || 0) * ((l.servings as number) || 1),
+          0,
+        )
+      : null;
+
+    const action = determineTodayAction({
+      currentStreak: progress?.currentStreak ?? 0,
+      daysSinceLastWorkout,
+      todaySoreness: (todayCheckIn?.soreness as number) ?? null,
+      yesterdayKcal,
+      dailyKcalGoal: profile?.dailyKcal ?? null,
+      hasWorkoutToday: todaySessions.length > 0,
+      firstName: user?.name?.split(' ')[0] || 'Athlete',
+    });
+
+    this.todayActionCache.set(userId, {
+      data: action,
+      expiresAt: Date.now() + this.CACHE_TTL_MS,
+    });
+    return action;
+  }
+
+  private todayDateUtc(): Date {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private yesterdayDateUtc(): Date {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - 1);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
   }
 }

@@ -8,6 +8,7 @@ const NAV = [
   { href: '/gym', label: 'Trénink' },
   { href: '/micro-workout', label: 'Micro' },
   { href: '/sports', label: 'Sporty' },
+  { href: '/ai-chat', label: 'AI Chat' },
   { href: '/vyziva', label: 'Výživa' },
   { href: '/habity', label: 'Habity' },
   { href: '/lekce', label: 'Lekce' },
