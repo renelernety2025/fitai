@@ -103,6 +103,55 @@ export default function LandingV2Page() {
         </div>
       </section>
 
+      {/* Features grid */}
+      <section className="mx-auto max-w-5xl px-6 pb-32">
+        <div className="mb-12 text-center">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+            Co vsechno umime
+          </div>
+          <h2
+            className="font-bold tracking-tight text-white"
+            style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em' }}
+          >
+            Vsechno na jednom miste.
+          </h2>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {[
+            { label: '60 cviku', desc: 'S instrukcemi a 3D animaci' },
+            { label: 'AI Coach', desc: '3 osobnosti trenera' },
+            { label: 'Pose Detection', desc: 'Oprava formy v realnem case' },
+            { label: 'Shadow Boxing', desc: 'Kombinace uderu a obrana' },
+            { label: 'Golf Swing Lab', desc: 'Drive, chip, putt vizualizace' },
+            { label: 'Micro Workout', desc: '5-minutovy denni challenge' },
+            { label: 'Vyživa', desc: 'Makra, jidelnicek, AI tipy' },
+            { label: 'Follow-Along', desc: 'Casovane treninky s 3D' },
+          ].map((f) => (
+            <div key={f.label} className="rounded-xl border border-white/8 p-5">
+              <div className="text-sm font-semibold text-white">{f.label}</div>
+              <div className="mt-1 text-[11px] text-white/40">{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="mx-auto max-w-4xl px-6 pb-32">
+        <div className="grid grid-cols-2 gap-8 text-center sm:grid-cols-4">
+          {[
+            { value: '60+', label: 'Cviku' },
+            { value: '160+', label: 'Animaci' },
+            { value: '5', label: 'Sportu' },
+            { value: '29', label: 'AI modulu' },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="text-3xl font-black tabular-nums text-white">{s.value}</div>
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="mx-auto max-w-3xl px-6 pb-32 text-center">
         <h2

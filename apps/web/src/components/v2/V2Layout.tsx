@@ -46,6 +46,14 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="hidden items-center gap-4 sm:flex">
+          <Link href="/notifications" className="text-white/40 transition hover:text-white" title="Notifikace">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </Link>
+          <Link href="/profile" className="text-white/40 transition hover:text-white" title="Profil">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+          </Link>
+        </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 pb-32">{children}</main>
     </div>
