@@ -141,6 +141,12 @@ export class RecipesService {
   }
 
   async generateFromPhoto(userId: string, s3Key: string) {
+    if (
+      !s3Key.startsWith(`recipe-photos/${userId}/`) &&
+      !s3Key.startsWith(`food-photos/${userId}/`)
+    ) {
+      throw new ForbiddenException('Invalid photo key');
+    }
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return {

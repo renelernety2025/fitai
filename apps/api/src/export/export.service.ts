@@ -192,10 +192,14 @@ function buildCSV(
   return lines.join('\n');
 }
 
-/** Escape a CSV field — wrap in quotes if it contains comma, newline or quote. */
+/** Escape a CSV field — wrap in quotes if it contains comma, newline or quote.
+ *  Also prevents CSV formula injection (=, +, -, @, |). */
 function escapeCSV(val: CellValue): string {
   if (val === null || val === undefined) return '';
   const str = String(val);
+  if (/^[=+\-@|]/.test(str)) {
+    return `"'${str.replace(/"/g, '""')}"`;
+  }
   if (str.includes(',') || str.includes('\n') || str.includes('"')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

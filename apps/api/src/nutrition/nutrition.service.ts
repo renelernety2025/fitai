@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -539,7 +539,10 @@ Pravidla:
     return { uploadUrl, s3Key };
   }
 
-  async analyzeFoodPhoto(s3Key: string) {
+  async analyzeFoodPhoto(userId: string, s3Key: string) {
+    if (!s3Key.startsWith(`food-photos/${userId}/`)) {
+      throw new ForbiddenException('Invalid photo key');
+    }
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return {

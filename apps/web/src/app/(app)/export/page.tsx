@@ -81,14 +81,24 @@ export default function ExportPage() {
           title="Treninky — tisk"
           description="HTML stranka pro tisk (Ctrl+P / Cmd+P). Prehledna tabulka."
           loading={loading === 'workouts-pdf'}
-          onExport={() => {
-            const token = localStorage.getItem('fitai_token') || '';
-            const base =
-              process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-            window.open(
-              `${base}/api/export/workouts?format=pdf&token=${token}`,
-              '_blank',
-            );
+          onExport={async () => {
+            setLoading('workouts-pdf');
+            setError(null);
+            try {
+              const token = localStorage.getItem('fitai_token');
+              const base =
+                process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+              const res = await fetch(`${base}/api/export/workouts?format=pdf`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              const html = await res.text();
+              const win = window.open('', '_blank');
+              if (win) { win.document.write(html); win.document.close(); }
+            } catch {
+              setError('Export "workouts-pdf" selhal. Zkus to znovu.');
+            } finally {
+              setLoading(null);
+            }
           }}
           buttonLabel="Otevrit pro tisk"
         />

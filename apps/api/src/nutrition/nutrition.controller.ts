@@ -107,6 +107,6 @@ export class NutritionController {
   @Post('analyze-photo')
   @Throttle({ default: { limit: 20, ttl: seconds(86400) } })
   analyzeFoodPhoto(@Request() req: any, @Body() body: { s3Key: string }) {
-    return this.service.analyzeFoodPhoto(body.s3Key);
+    return this.service.analyzeFoodPhoto(req.user.id, body.s3Key);
   }
 }
