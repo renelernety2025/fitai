@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { LeagueTier } from '@prisma/client';
 
@@ -87,6 +88,12 @@ export class LeaguesService {
     } catch {
       // Not joined this week — ignore silently
     }
+  }
+
+  @Cron('0 0 * * 1') // Every Monday 00:00
+  async handleWeekEnd() {
+    this.logger.log('Processing league week end...');
+    await this.processWeekEnd().catch(e => this.logger.error(`League week end failed: ${e.message}`));
   }
 
   async processWeekEnd() {

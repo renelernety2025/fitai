@@ -5,5 +5,6 @@ import { SkillTreeService } from './skill-tree.service';
 @Module({
   controllers: [SkillTreeController],
   providers: [SkillTreeService],
+  exports: [SkillTreeService],
 })
 export class SkillTreeModule {}

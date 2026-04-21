@@ -4,7 +4,9 @@ import {
   ConflictException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
@@ -15,7 +17,32 @@ import { ShareDto } from './dto/share.dto';
 
 @Injectable()
 export class SocialService {
+  private readonly logger = new Logger(SocialService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  // ── Flash Challenge Cron ──
+
+  @Cron('0 */4 * * *')
+  async generateFlashChallenge() {
+    const active = await this.prisma.flashChallenge.findFirst({
+      where: { isActive: true, endsAt: { gt: new Date() } },
+    });
+    if (active) return;
+    const options = [
+      { name: '50 kliků za hodinu!', description: 'Stihneš 50 kliků?', targetValue: 50 },
+      { name: '100 dřepů challenge', description: 'Pokoř stovku!', targetValue: 100 },
+      { name: '30 burpees', description: 'Zvládni 30 burpees!', targetValue: 30 },
+      { name: '200 jumping jacks', description: 'Rozskákej se!', targetValue: 200 },
+      { name: '60 výpadů', description: '30 na každou nohu!', targetValue: 60 },
+    ];
+    const pick = options[Math.floor(Math.random() * options.length)];
+    const now = new Date();
+    await this.prisma.flashChallenge.create({
+      data: { ...pick, startsAt: now, endsAt: new Date(now.getTime() + 3600000), isActive: true },
+    });
+    this.logger.log(`Flash challenge created: ${pick.name}`);
+  }
 
   // ── Follow System ──
 

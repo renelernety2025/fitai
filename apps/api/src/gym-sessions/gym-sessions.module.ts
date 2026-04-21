@@ -2,9 +2,12 @@ import { Module } from '@nestjs/common';
 import { GymSessionsController } from './gym-sessions.controller';
 import { GymSessionsService } from './gym-sessions.service';
 import { ProgressModule } from '../progress/progress.module';
+import { LeaguesModule } from '../leagues/leagues.module';
+import { SeasonsModule } from '../seasons/seasons.module';
+import { SkillTreeModule } from '../skill-tree/skill-tree.module';
 
 @Module({
-  imports: [ProgressModule],
+  imports: [ProgressModule, LeaguesModule, SeasonsModule, SkillTreeModule],
   controllers: [GymSessionsController],
   providers: [GymSessionsService],
 })

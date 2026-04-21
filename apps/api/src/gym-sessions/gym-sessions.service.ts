@@ -1,14 +1,22 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, Optional, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
+import { LeaguesService } from '../leagues/leagues.service';
+import { SeasonsService } from '../seasons/seasons.service';
+import { SkillTreeService } from '../skill-tree/skill-tree.service';
 import { StartGymSessionDto } from './dto/start-gym-session.dto';
 import { CompleteSetDto } from './dto/complete-set.dto';
 
 @Injectable()
 export class GymSessionsService {
+  private readonly logger = new Logger(GymSessionsService.name);
+
   constructor(
     private prisma: PrismaService,
     private progressService: ProgressService,
+    @Optional() private leaguesService: LeaguesService,
+    @Optional() private seasonsService: SeasonsService,
+    @Optional() private skillTreeService: SkillTreeService,
   ) {}
 
   async startSession(userId: string, dto: StartGymSessionDto) {
@@ -278,6 +286,18 @@ export class GymSessionsService {
     const goodFormReps = completedSets
       .filter((s) => s.formScore >= 70)
       .reduce((sum, s) => sum + s.actualReps, 0);
+
+    // Gamification fan-out (fire-and-forget, never blocks response)
+    const xpGained = progressResult?.xpGained || 0;
+    if (this.leaguesService) {
+      this.leaguesService.addXP(userId, xpGained).catch(e => this.logger.warn(`League XP: ${e.message}`));
+    }
+    if (this.seasonsService) {
+      this.seasonsService.checkMissions(userId).catch(e => this.logger.warn(`Season missions: ${e.message}`));
+    }
+    if (this.skillTreeService) {
+      this.skillTreeService.checkAndUnlock(userId).catch(e => this.logger.warn(`Skill tree: ${e.message}`));
+    }
 
     return { session: updated, progress: { ...progressResult, bonusRepXP: goodFormReps }, totalReps, avgForm };
   }
