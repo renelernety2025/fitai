@@ -27,6 +27,15 @@ Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 scree
 - Backend PCM opt-in — `audioFormat` DTO field, backwards compat (default MP3)
 - Doc infrastructure — archive rhythm, ADR table (15 entries), verify-docs-integrity.sh, /resume-session skill
 
+**Navíc od 2026-04-21:**
+- Security audit fixes — CORS whitelist, motivationCache, auth guard, prompt injection fix, dead props
+- AI Daily Motivation — personalized Claude message on dashboard
+- Exercise favorites (heart + localStorage filter)
+- Workout keyboard shortcuts (Space/N/Escape)
+- Landing page features grid + stats section
+- Header profile/notification icons
+- V2Tooltip onboarding component
+
 **Navíc od 2026-04-20:**
 - 3D exercise viewer — Three.js/R3F animated humanoid (Michelle model), phase controls, speed, camera presets, angle overlay, muscle highlighting
 - Coach personality modes — Drill Sergeant / Chill / Motivational, per-session selection
@@ -78,11 +87,30 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ---
 
-## Střední priorita
+## Další priorita (next session)
 
-- **Apple HealthKit + Google Fit** — mobile čte sleep/steps/HR/HRV, auto-sync do wearables modulu, recovery score se zlepší. Vyžaduje EAS build.
-- **Phase E-3 mobile streaming** — playChunk + finalizeStream (Swift) + streamSpeak (TS) + react-native-sse client. Gated na VoiceEngine fix. TS skeleton už committed (dormant).
-- **Phase E-4 fast VAD** — committed (SILENCE_FAST_MS=500), aktivuje se po Metro reload s expo-speech-recognition stackem.
+### Tier 1 — Okamžitá hodnota
+- **AI Chat Coach** — web konverzační UI na /ai-chat (backend /coaching/ask existuje)
+- **Workout streak calendar** — heatmap daily check-in na habits stránce
+- **"Co dnes?" smart widget** — AI doporučení 1 akce na dashboard
+
+### Tier 2 — Diferenciace
+- **AI Form Coach split-screen** — kamera + 3D model vedle sebe
+- **Workout journal** — post-workout deník s Claude analýzou trendů
+- **AI food recognition** — Claude Vision na fotku jídla → makra
+- **Superset/Circuit builder** — drag-and-drop workout editor
+
+### Tier 3 — Škálování
+- **Social challenges** — 7-day výzvy s přáteli
+- **Export dat** — CSV/PDF workout history
+- **Dark/light mode** přepínač
+
+## Střední priorita (infrastructure)
+
+- **Apple HealthKit + Google Fit** — mobile čte sleep/steps/HR/HRV. Vyžaduje EAS build.
+- **Phase E-3 mobile streaming** — gated na VoiceEngine fix.
+- **Mobile parity** — coach personality, micro-workout, search na mobile.
+- **3D animace fix** — With Skin FBX pro přímé načtení (bez GLB retarget)
 
 ## Nízká priorita / nice to have
 
