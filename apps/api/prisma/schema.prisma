@@ -106,6 +106,13 @@ model User {
   scheduledWorkouts ScheduledWorkout[]
   seasonProgress    SeasonProgress[]
   missionCompletions MissionCompletion[]
+  bloodworkEntries   BloodworkEntry[]
+  rehabPlans         RehabPlan[]
+  streakFreezes      StreakFreeze[]
+  marketplaceListings MarketplaceListing[] @relation("ListingAuthor")
+  marketplacePurchases MarketplacePurchase[]
+  bossAttempts       BossAttempt[]
+  gymReviews         GymReview[]
 }
 
 model UserProgress {
@@ -693,6 +700,151 @@ model MissionCompletion {
   user User @relation(fields: [userId], references: [id])
 
   @@unique([userId, missionId])
+}
+
+// ── Bloodwork Tracker ──
+
+model BloodworkEntry {
+  id             String   @id @default(uuid())
+  userId         String
+  date           DateTime @db.Date
+  testType       String   // testosterone, iron, vitaminD, crp, cholesterol, glucose, hba1c
+  value          Float
+  unit           String
+  referenceMin   Float?
+  referenceMax   Float?
+  lab            String?
+  notes          String?
+  aiInsight      String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, testType, date])
+}
+
+// ── Injury Rehab Planner ──
+
+model RehabPlan {
+  id           String   @id @default(uuid())
+  userId       String
+  injuryType   String
+  bodyPart     String
+  severity     String   // mild, moderate, severe
+  startDate    DateTime @db.Date
+  targetDate   DateTime? @db.Date
+  status       String   @default("active") // active, completed, paused
+  aiPlan       Json?    // structured rehab plan from Claude
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id])
+  sessions RehabSession[]
+
+  @@index([userId])
+}
+
+model RehabSession {
+  id          String   @id @default(uuid())
+  rehabPlanId String
+  date        DateTime @db.Date
+  exercises   Json     // [{name, sets, reps, notes}]
+  painLevel   Int?     // 0-10
+  notes       String?
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  rehabPlan RehabPlan @relation(fields: [rehabPlanId], references: [id], onDelete: Cascade)
+
+  @@index([rehabPlanId])
+}
+
+// ── Streak Freeze ──
+
+model StreakFreeze {
+  id       String   @id @default(uuid())
+  userId   String
+  usedDate DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, usedDate])
+  @@index([userId])
+}
+
+// ── Marketplace ──
+
+model MarketplaceListing {
+  id          String   @id @default(uuid())
+  authorId    String
+  title       String
+  description String?
+  type        String   // workout_plan, meal_plan, challenge
+  planId      String?  // link to WorkoutPlan
+  priceXP     Int      @default(0) // 0 = free
+  rating      Float    @default(0)
+  ratingCount Int      @default(0)
+  downloads   Int      @default(0)
+  isPublished Boolean  @default(true)
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author    User                  @relation("ListingAuthor", fields: [authorId], references: [id])
+  purchases MarketplacePurchase[]
+
+  @@index([authorId])
+  @@index([type, isPublished])
+}
+
+model MarketplacePurchase {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  xpPaid    Int
+  createdAt DateTime @default(now())
+
+  user    User               @relation(fields: [userId], references: [id])
+  listing MarketplaceListing @relation(fields: [listingId], references: [id])
+
+  @@unique([userId, listingId])
+}
+
+// ── Boss Fights ──
+
+model BossAttempt {
+  id          String   @id @default(uuid())
+  userId      String
+  bossCode    String
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  score       Int      @default(0)
+  defeated    Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, bossCode])
+}
+
+// ── Gym Finder ──
+
+model GymReview {
+  id        String   @id @default(uuid())
+  userId    String
+  gymName   String
+  address   String?
+  lat       Float?
+  lng       Float?
+  rating    Int      // 1-5
+  equipment String[] // barbells, dumbbells, machines, cables, cardio, etc.
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model EducationLesson {
