@@ -99,7 +99,7 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - **AI Form Coach split-screen** — kamera + 3D model vedle sebe
 - ~~**Workout journal**~~ ✅ — /journal s timeline feed, book-style karty, fotky, AI insights, milestones
 - ~~**AI food recognition**~~ ✅ — Claude Vision fotka→makra, recipe kniha, food camera, source tracking
-- **Superset/Circuit builder** — drag-and-drop workout editor
+- ~~**Superset/Circuit builder**~~ ✅ — DnD editor, superset/circuit/giant/drop grouping, inline edit
 
 ### Tier 3 — Škálování
 - **Social challenges** — 7-day výzvy s přáteli

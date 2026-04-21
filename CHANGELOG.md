@@ -7,6 +7,26 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Superset/Circuit Builder — drag-and-drop workout editor] 2026-04-21
+
+### Plan Editor (`/plans/[id]/edit`)
+- HTML5 drag-and-drop exercise reordering (no external libs)
+- Day tabs with add/delete day
+- Inline editing: click to edit sets, reps, weight, rest seconds
+- Exercise picker modal with search + muscle group filters
+
+### Exercise Grouping
+- Multi-select exercises → group as Superset (blue), Circuit (lime), Giant Set (purple), Drop Set (orange)
+- Colored bracket connecting grouped exercises
+- Ungroup button to split groups
+
+### Backend
+- `PUT /api/workout-plans/:id` — full plan update with delete-recreate pattern
+- PlannedExercise: +groupId, groupType, groupOrder fields
+- Ownership check + class-validator DTO with nested validation
+
+---
+
 ## [AI Food Recognition + Recipe Book] 2026-04-21
 
 ### Food Camera (`/vyziva`)
