@@ -39,6 +39,17 @@ export default function FollowAlongWorkout({
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.code === 'Space') { e.preventDefault(); setPaused((p) => !p); }
+      if (e.code === 'KeyN' || e.code === 'ArrowRight') advanceStep();
+      if (e.code === 'Escape') { clearTick(); onFinish(totalTimeRef.current); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stepIdx, steps.length]);
+
   // Main timer logic
   useEffect(() => {
     if (paused) return;

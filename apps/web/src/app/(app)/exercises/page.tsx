@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getExercises, type ExerciseData } from '@/lib/api';
+import { isFavorite, toggleFavorite, getFavoriteIds } from '@/lib/favorites';
 
 const MUSCLES = [
   { v: 'ALL', l: 'Vše' },
@@ -42,21 +43,32 @@ export default function ExercisesV2Page() {
   const [filter, setFilter] = useState('ALL');
   const [diffFilter, setDiffFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [showFavs, setShowFavs] = useState(false);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     getExercises().then(setAllExercises).catch(console.error);
+    setFavIds(new Set(getFavoriteIds()));
   }, []);
+
+  function handleToggleFav(id: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(id);
+    setFavIds(new Set(getFavoriteIds()));
+  }
 
   const exercises = useMemo(() => {
     const q = search.toLowerCase().trim();
     return allExercises.filter((ex) => {
+      if (showFavs && !favIds.has(ex.id)) return false;
       if (filter !== 'ALL' && !ex.muscleGroups.includes(filter)) return false;
       if (diffFilter !== 'ALL' && ex.difficulty !== diffFilter) return false;
       if (q && !ex.nameCs.toLowerCase().includes(q) && !ex.name.toLowerCase().includes(q)
         && !ex.muscleGroups.some((g) => g.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [allExercises, filter, diffFilter, search]);
+  }, [allExercises, filter, diffFilter, search, showFavs, favIds]);
 
   return (
     <V2Layout>
@@ -68,14 +80,24 @@ export default function ExercisesV2Page() {
         </p>
       </section>
 
-      <div className="mb-6">
+      <div className="mb-6 flex gap-3">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Hledej cvik..."
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25"
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25"
         />
+        <button
+          onClick={() => setShowFavs((p) => !p)}
+          className={`rounded-xl border px-4 py-3 text-sm transition ${
+            showFavs
+              ? 'border-[#FF375F] bg-[#FF375F]/10 text-[#FF375F]'
+              : 'border-white/10 text-white/40 hover:text-white'
+          }`}
+        >
+          {showFavs ? 'Oblibene' : 'Vse'}
+        </button>
       </div>
 
       <div className="mb-6 flex flex-wrap gap-2">
@@ -145,8 +167,16 @@ export default function ExercisesV2Page() {
                 {ex.descriptionCs}
               </p>
             </div>
-            <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
-              →
+            <div className="flex items-center gap-3">
+              <button
+                onClick={(e) => handleToggleFav(ex.id, e)}
+                className={`text-lg transition ${favIds.has(ex.id) ? 'text-[#FF375F]' : 'text-white/15 hover:text-white/40'}`}
+              >
+                {favIds.has(ex.id) ? '\u2665' : '\u2661'}
+              </button>
+              <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
+                →
+              </div>
             </div>
           </Link>
         ))}
