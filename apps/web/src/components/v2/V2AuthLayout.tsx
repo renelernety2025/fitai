@@ -2,18 +2,21 @@
 
 export function V2AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-6 text-white antialiased">
+    <div
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 antialiased"
+      style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            'radial-gradient(circle at 50% 30%, rgba(255, 55, 95, 0.10) 0%, rgba(0, 0, 0, 1) 60%)',
+            'radial-gradient(circle at 50% 30%, var(--gradient-accent) 0%, var(--gradient-base) 60%)',
         }}
       />
-      <div className="absolute top-10 text-sm font-bold tracking-tight">FitAI</div>
+      <div className="absolute top-10 text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>FitAI</div>
       <div className="w-full max-w-md">{children}</div>
-      <div className="absolute bottom-8 text-[9px] font-semibold uppercase tracking-[0.4em] text-white/20">
+      <div className="absolute bottom-8 text-[9px] font-semibold uppercase tracking-[0.4em]" style={{ color: 'var(--text-muted)' }}>
         Designed for performance
       </div>
     </div>
@@ -39,7 +42,7 @@ export function V2Input({
 }) {
   return (
     <label className="block">
-      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)' }}>
         {label}
       </div>
       <input
@@ -49,7 +52,8 @@ export function V2Input({
         placeholder={placeholder}
         required={required}
         minLength={minLength}
-        className="w-full border-b border-white/15 bg-transparent py-3 text-lg text-white placeholder-white/20 transition focus:border-white focus:outline-none"
+        className="w-full bg-transparent py-3 text-lg transition focus:outline-none"
+        style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border-strong)' }}
       />
     </label>
   );

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { AuthProvider } from '@/lib/auth-context';
+import { ThemeProvider } from '@/lib/theme-context';
 import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar';
 import './globals.css';
 
@@ -30,8 +31,10 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-screen antialiased" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+        <AuthProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthProvider>
         <ServiceWorkerRegistrar />
       </body>
     </html>

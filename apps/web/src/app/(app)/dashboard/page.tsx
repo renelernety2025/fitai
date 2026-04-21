@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { V2Layout } from '@/components/v2/V2Layout';
 import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
 import TodayActionCard from '@/components/dashboard/TodayActionCard';
+import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import {
   getMyStats,
   getInsights,
@@ -178,7 +179,7 @@ export default function DashboardV2Page() {
         )}
 
         {/* ── HERO ── */}
-        <section className="flex flex-col items-center pt-12 pb-24 text-center">
+        <section data-tour="dashboard-hero" className="flex flex-col items-center pt-12 pb-24 text-center">
           <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
             {greeting}
           </div>
@@ -197,7 +198,7 @@ export default function DashboardV2Page() {
           )}
 
           {/* Ring with overlay */}
-          <div className="relative w-full max-w-[440px]">
+          <div data-tour="activity-rings" className="relative w-full max-w-[440px]">
             <TripleRing move={move} exercise={exercise} stand={stand} />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <div
@@ -440,6 +441,8 @@ export default function DashboardV2Page() {
         <div className="text-center text-[9px] font-semibold uppercase tracking-[0.4em] text-white/20">
           FitAI
         </div>
+
+        <OnboardingTour />
       </>
     </V2Layout>
   );

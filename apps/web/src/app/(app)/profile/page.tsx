@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { V2Layout, V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import { getFitnessProfile, getMyStats, type FitnessProfileData, type StatsData } from '@/lib/api';
+import { resetOnboardingTour } from '@/components/onboarding/OnboardingTour';
 
 const GOAL_LABELS: Record<string, string> = {
   STRENGTH: 'Sila', HYPERTROPHY: 'Hypertrofie', ENDURANCE: 'Vytrvalost',
@@ -14,6 +15,7 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<FitnessProfileData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [tourRestarted, setTourRestarted] = useState(false);
 
   useEffect(() => {
     getFitnessProfile().then(setProfile).catch(console.error);
@@ -79,6 +81,24 @@ export default function ProfilePage() {
           </p>
         </section>
       )}
+
+      {/* Restart onboarding tour */}
+      <section className="mb-24">
+        <V2SectionLabel>Pruvodce</V2SectionLabel>
+        {tourRestarted ? (
+          <p className="text-sm text-[#A8FF00]">Pruvodce restartovan. Prejdi na dashboard.</p>
+        ) : (
+          <button
+            onClick={() => {
+              resetOnboardingTour();
+              setTourRestarted(true);
+            }}
+            className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
+          >
+            Spustit pruvodce znovu
+          </button>
+        )}
+      </section>
     </V2Layout>
   );
 }
