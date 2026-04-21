@@ -1374,6 +1374,219 @@ export function analyzeFoodPhoto(
 // ─── Data Export ───────────────────────────────────────
 
 /** Download a file from the export API and trigger browser save dialog. */
+// ─── Wrapped ──────────────────────────────────────────
+
+export function getWrapped(period: string, month?: string) {
+  const q = month ? `?period=${period}&month=${month}` : `?period=${period}`;
+  return request<any>(`/wrapped${q}`);
+}
+
+// ─── Leagues ──────────────────────────────────────────
+
+export function getLeagueCurrent() {
+  return request<any>('/leagues/current');
+}
+
+export function joinLeague() {
+  return request<any>('/leagues/join', { method: 'POST' });
+}
+
+// ─── Skill Tree ───────────────────────────────────────
+
+export function getSkillTree() {
+  return request<any>('/skill-tree');
+}
+
+export function checkSkillTree() {
+  return request<any>('/skill-tree/check', { method: 'POST' });
+}
+
+// ─── Workout Calendar ─────────────────────────────────
+
+export function getCalendarMonth(month: string) {
+  return request<any>(`/calendar?month=${month}`);
+}
+
+export function scheduleWorkout(data: Record<string, unknown>) {
+  return request<any>('/calendar', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateScheduledWorkout(
+  id: string,
+  data: Record<string, unknown>,
+) {
+  return request<any>(`/calendar/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteScheduledWorkout(id: string) {
+  return request<void>(`/calendar/${id}`, { method: 'DELETE' });
+}
+
+// ─── Seasons / Battle Pass ────────────────────────────
+
+export function getCurrentSeason() {
+  return request<any>('/seasons/current');
+}
+
+export function joinSeason() {
+  return request<any>('/seasons/join', { method: 'POST' });
+}
+
+export function checkSeasonMissions() {
+  return request<any>('/seasons/check-missions', { method: 'POST' });
+}
+
+// ─── Data Export ───────────────────────────────────────
+
+/** Download a file from the export API and trigger browser save dialog. */
+// ─── Body Portfolio ─────────────────────────────────────
+
+export function getBodyPortfolio(): Promise<any> {
+  return request('/body-portfolio');
+}
+
+// ─── Bloodwork Tracker ──────────────────────────────────
+
+export function getBloodwork(): Promise<any[]> {
+  return request('/bloodwork');
+}
+
+export function addBloodwork(data: any): Promise<any> {
+  return request('/bloodwork', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export function deleteBloodwork(id: string): Promise<void> {
+  return request(`/bloodwork/${id}`, { method: 'DELETE' });
+}
+
+export function getBloodworkAnalysis(): Promise<any> {
+  return request('/bloodwork/analysis');
+}
+
+// ─── Rehab ──────────────────────────────────────────────
+
+export function getRehabPlans(): Promise<any[]> {
+  return request('/rehab');
+}
+
+export function createRehabPlan(data: any): Promise<any> {
+  return request('/rehab', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export function logRehabSession(planId: string, data: any): Promise<any> {
+  return request(`/rehab/${planId}/session`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getRehabSessions(planId: string): Promise<any[]> {
+  return request(`/rehab/${planId}/sessions`);
+}
+
+// ─── Streak Freeze ──────────────────────────────────────
+
+export function getStreakFreezeStatus(): Promise<any> {
+  return request('/streak-freeze/status');
+}
+
+export function useStreakFreeze(): Promise<any> {
+  return request('/streak-freeze/use', { method: 'POST' });
+}
+
+// ─── Marketplace ────────────────────────────────────────
+
+export function getMarketplace(
+  params?: string,
+): Promise<any[]> {
+  return request(`/marketplace${params ? `?${params}` : ''}`);
+}
+
+export function getMarketplaceListing(id: string): Promise<any> {
+  return request(`/marketplace/${id}`);
+}
+
+export function createListing(data: any): Promise<any> {
+  return request('/marketplace', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function purchaseListing(id: string): Promise<any> {
+  return request(`/marketplace/${id}/purchase`, { method: 'POST' });
+}
+
+export function rateListing(
+  id: string,
+  rating: number,
+): Promise<any> {
+  return request(`/marketplace/${id}/rate`, {
+    method: 'POST',
+    body: JSON.stringify({ rating }),
+  });
+}
+
+// ─── Boss Fights ────────────────────────────────────────
+
+export function getBossFights(): Promise<any> {
+  return request('/boss-fights');
+}
+
+export function startBoss(code: string): Promise<any> {
+  return request(`/boss-fights/${code}/start`, { method: 'POST' });
+}
+
+export function completeBoss(
+  code: string,
+  data: any,
+): Promise<any> {
+  return request(`/boss-fights/${code}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ─── Discover Weekly ────────────────────────────────────
+
+export function getDiscoverWeekly(): Promise<any> {
+  return request('/discover-weekly');
+}
+
+// ─── Recommendations ────────────────────────────────────
+
+export function getRecommendations(): Promise<any> {
+  return request('/recommendations');
+}
+
+// ─── Gym Finder ─────────────────────────────────────────
+
+export function getGymReviews(): Promise<any[]> {
+  return request('/gym-finder');
+}
+
+export function addGymReview(data: any): Promise<any> {
+  return request('/gym-finder', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getNearbyGyms(
+  lat: number,
+  lng: number,
+): Promise<any[]> {
+  return request(`/gym-finder/nearby?lat=${lat}&lng=${lng}`);
+}
+
+// ─── Data Export ───────────────────────────────────────
+
 export async function downloadExport(
   path: string,
   filename: string,

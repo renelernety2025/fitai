@@ -23,6 +23,8 @@ import {
   getDailyMotivation,
   getMicroWorkout,
   getTodayAction,
+  getStreakFreezeStatus,
+  useStreakFreeze,
   type StatsData,
   type Insights,
   type Lesson,
@@ -91,6 +93,9 @@ export default function DashboardV2Page() {
   const [micro, setMicro] = useState<MicroWorkoutData | null>(null);
   const [motivation, setMotivation] = useState<string | null>(null);
   const [todayAction, setTodayAction] = useState<TodayAction | null>(null);
+  const [freezeStatus, setFreezeStatus] = useState<any>(null);
+  const [freezeModal, setFreezeModal] = useState(false);
+  const [freezing, setFreezing] = useState(false);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
@@ -102,7 +107,19 @@ export default function DashboardV2Page() {
     getMicroWorkout().then(setMicro).catch(console.error);
     getDailyMotivation().then((r) => setMotivation(r.message)).catch(console.error);
     getTodayAction().then(setTodayAction).catch(console.error);
+    getStreakFreezeStatus().then(setFreezeStatus).catch(() => {});
   }, []);
+
+  async function handleFreeze() {
+    setFreezing(true);
+    try {
+      await useStreakFreeze();
+      setFreezeStatus((prev: any) => prev ? { ...prev, remaining: prev.remaining - 1, usedToday: true } : prev);
+      setFreezeModal(false);
+    } catch { /* noop */ } finally {
+      setFreezing(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -192,8 +209,42 @@ export default function DashboardV2Page() {
               <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
                 Dní v řadě
               </div>
+              {freezeStatus && !freezeStatus.usedToday && freezeStatus.remaining > 0 && (
+                <button
+                  onClick={() => setFreezeModal(true)}
+                  className="mt-3 pointer-events-auto rounded-full border border-[#00E5FF]/30 px-3 py-1 text-[10px] font-semibold text-[#00E5FF] transition hover:bg-[#00E5FF]/10"
+                  title="Zmrazit streak"
+                >
+                  Zmrazit
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Streak freeze modal */}
+          {freezeModal && (
+            <div className="pointer-events-auto absolute inset-0 z-10 flex items-center justify-center">
+              <div className="rounded-2xl border border-[#00E5FF]/20 bg-black/95 p-8 text-center shadow-2xl backdrop-blur">
+                <div className="mb-3 text-3xl">&#10052;</div>
+                <div className="mb-2 text-sm font-semibold text-white">Zmrazit streak?</div>
+                <p className="mb-4 text-xs text-white/50">
+                  Mas {freezeStatus?.remaining ?? 0}/2 zmrazeni tento mesic.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={() => setFreezeModal(false)}
+                    className="rounded-full border border-white/15 px-5 py-2 text-xs text-white/50 transition hover:text-white"
+                  >
+                    Zrusit
+                  </button>
+                  <button onClick={handleFreeze} disabled={freezing}
+                    className="rounded-full bg-[#00E5FF] px-5 py-2 text-xs font-semibold text-black transition hover:bg-[#00E5FF]/80 disabled:opacity-50"
+                  >
+                    {freezing ? '...' : 'Zmrazit dnes'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Legend */}
           <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">

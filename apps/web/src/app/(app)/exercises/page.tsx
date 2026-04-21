@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { getExercises, type ExerciseData } from '@/lib/api';
+import { getExercises, getRecommendations, type ExerciseData } from '@/lib/api';
 import { isFavorite, toggleFavorite, getFavoriteIds } from '@/lib/favorites';
 
 const MUSCLES = [
@@ -45,10 +45,14 @@ export default function ExercisesV2Page() {
   const [search, setSearch] = useState('');
   const [showFavs, setShowFavs] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [recs, setRecs] = useState<any[]>([]);
 
   useEffect(() => {
     getExercises().then(setAllExercises).catch(console.error);
     setFavIds(new Set(getFavoriteIds()));
+    getRecommendations()
+      .then((r) => setRecs(r?.exercises || r?.recommendations || []))
+      .catch(() => {});
   }, []);
 
   function handleToggleFav(id: string, e: React.MouseEvent) {
@@ -79,6 +83,32 @@ export default function ExercisesV2Page() {
           Detailní instrukce, fáze pohybu, dýchání, tempo. Forma má přednost před váhou.
         </p>
       </section>
+
+      {/* Recommendations section */}
+      {recs.length > 0 && (
+        <section className="mb-12">
+          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#BF5AF2]">
+            Doporuceni pro tebe
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+            {recs.slice(0, 5).map((rec: any) => (
+              <Link key={rec.id || rec.exerciseId} href={`/exercises/${rec.id || rec.exerciseId}`}
+                className="rounded-xl border border-[#BF5AF2]/15 bg-[#BF5AF2]/5 p-4 transition hover:border-[#BF5AF2]/30"
+              >
+                <div className="text-sm font-semibold text-white">{rec.nameCs || rec.name}</div>
+                <div className="mt-1 text-[10px] text-white/40">
+                  {rec.muscleGroups?.slice(0, 2).join(' · ') || ''}
+                </div>
+                {rec.matchPercent && (
+                  <div className="mt-2 text-[10px] font-semibold text-[#BF5AF2]">
+                    {rec.matchPercent}% uzivatelu jako ty
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mb-6 flex gap-3">
         <input

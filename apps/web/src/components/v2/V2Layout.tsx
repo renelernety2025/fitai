@@ -18,6 +18,18 @@ const NAV = [
   { href: '/recepty', label: 'Recepty' },
   { href: '/jidelnicek', label: 'Jídelníček' },
   { href: '/journal', label: 'Deník' },
+  { href: '/wrapped', label: 'Wrapped' },
+  { href: '/leagues', label: 'Ligy' },
+  { href: '/skill-tree', label: 'Skills' },
+  { href: '/calendar', label: 'Kalendář' },
+  { href: '/season', label: 'Sezóna' },
+  { href: '/body-portfolio', label: 'Portfolio' },
+  { href: '/bloodwork', label: 'Krev' },
+  { href: '/rehab', label: 'Rehab' },
+  { href: '/marketplace', label: 'Market' },
+  { href: '/boss-fights', label: 'Aréna' },
+  { href: '/discover-weekly', label: 'Objev' },
+  { href: '/gym-finder', label: 'Gymy' },
 ];
 
 export function V2Layout({ children }: { children: React.ReactNode }) {
