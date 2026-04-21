@@ -16,6 +16,7 @@ const NAV = [
   { href: '/uspechy', label: 'Úspěchy' },
   { href: '/progres-fotky', label: 'Fotky' },
   { href: '/jidelnicek', label: 'Jídelníček' },
+  { href: '/journal', label: 'Deník' },
 ];
 
 export function V2Layout({ children }: { children: React.ReactNode }) {

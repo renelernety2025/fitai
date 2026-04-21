@@ -80,6 +80,12 @@ export function GymWorkoutSummary({
         >
           Zpět na plány
         </Link>
+        <Link
+          href="/journal"
+          className="mt-3 block w-full rounded-xl border border-white/10 py-3 text-center text-sm font-medium text-white/60 transition hover:border-[#A8FF00]/30 hover:text-[#A8FF00]"
+        >
+          Zapsat do deníku
+        </Link>
       </div>
     </div>
   );

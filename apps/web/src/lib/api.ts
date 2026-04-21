@@ -1135,3 +1135,108 @@ export interface TodayAction {
 export function getTodayAction(): Promise<TodayAction> {
   return request('/ai-insights/today-action');
 }
+
+// ─── Workout Journal ────────────────────────────────────
+
+export interface JournalDay {
+  date: string;
+  entry: JournalEntry | null;
+  gymSession: JournalGymSession | null;
+}
+
+export interface JournalEntry {
+  id: string;
+  date: string;
+  notes: string | null;
+  rating: number | null;
+  mood: string | null;
+  tags: string[];
+  measurements: Record<string, number> | null;
+  aiInsight: string | null;
+  photos: JournalPhoto[];
+}
+
+export interface JournalPhoto {
+  id: string;
+  s3Key: string;
+  caption: string | null;
+}
+
+export interface JournalGymSession {
+  id: string;
+  startedAt: string;
+  completedAt: string | null;
+  totalReps: number;
+  averageFormScore: number;
+  durationSeconds: number;
+  coachPersonality: string;
+  exerciseSets: Array<{
+    exerciseName: string;
+    sets: number;
+    totalReps: number;
+    avgWeight: number;
+    avgFormScore: number;
+    avgRpe: number;
+  }>;
+  workoutPlanName: string | null;
+}
+
+export interface MonthlySummary {
+  summary: string;
+  stats: {
+    workouts: number;
+    totalVolume: number;
+    prCount: number;
+    avgForm: number;
+  };
+  comparison: {
+    workoutsDiff: number;
+    volumeDiff: number;
+  } | null;
+}
+
+export interface Milestone {
+  type: string;
+  label: string;
+  achievedAt: string | null;
+}
+
+export function getJournalMonth(month: string) {
+  return request<{ days: JournalDay[] }>(`/journal?month=${month}`);
+}
+
+export function upsertJournalEntry(date: string, body: Record<string, unknown>) {
+  return request<JournalEntry>(`/journal/${date}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+}
+
+export function getJournalPhotoUrl(date: string, contentType: string) {
+  return request<{ uploadUrl: string; photoId: string; s3Key: string }>(
+    `/journal/${date}/photo-url`,
+    { method: 'POST', body: JSON.stringify({ contentType }) },
+  );
+}
+
+export function deleteJournalPhoto(photoId: string) {
+  return request<{ deleted: boolean }>(`/journal/photo/${photoId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getJournalMonthlySummary(month: string) {
+  return request<MonthlySummary>(
+    `/journal/monthly-summary?month=${month}`,
+  );
+}
+
+export function getJournalMilestones() {
+  return request<{ milestones: Milestone[] }>('/journal/milestones');
+}
+
+export function generateJournalInsight(date: string) {
+  return request<{ insight: string }>(`/journal/${date}/ai-insight`, {
+    method: 'POST',
+  });
+}
