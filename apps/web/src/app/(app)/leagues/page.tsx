@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
 import { getLeagueCurrent, joinLeague } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { SkeletonCard } from '@/components/v2/Skeleton';
 
 const TIER_COLORS: Record<string, string> = {
   bronze: '#CD7F32',
@@ -105,8 +106,8 @@ export default function LeaguesPage() {
         )}
 
         {loading && (
-          <div className="flex items-center justify-center py-32">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+          <div className="py-8">
+            <SkeletonCard lines={8} />
           </div>
         )}
 

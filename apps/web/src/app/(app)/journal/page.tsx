@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { SkeletonCard } from '@/components/v2/Skeleton';
 import { MonthChapter } from '@/components/journal/MonthChapter';
 import { DayCard } from '@/components/journal/DayCard';
 import { MilestoneBadge } from '@/components/journal/MilestoneBadge';
@@ -235,7 +236,11 @@ export default function JournalPage() {
 
       {/* Days */}
       {loading ? (
-        <div className="py-20 text-center text-white/30">Načítám...</div>
+        <div className="space-y-4 py-8">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={2} />
+        </div>
       ) : sortedDays.length === 0 ? (
         <div className="py-20 text-center text-white/20">
           Žádné záznamy pro tento měsíc

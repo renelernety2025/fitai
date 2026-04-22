@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { SkeletonCard } from '@/components/v2/Skeleton';
 import { getMarketplace, getMarketplaceListing, createListing, purchaseListing, rateListing } from '@/lib/api';
 
 const TYPE_BADGES: Record<string, { label: string; color: string }> = {
@@ -97,8 +98,13 @@ export default function MarketplacePage() {
       </section>
 
       {loading && (
-        <div className="flex items-center justify-center py-32">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+        <div className="grid grid-cols-1 gap-4 py-8 sm:grid-cols-2 lg:grid-cols-3">
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
         </div>
       )}
 

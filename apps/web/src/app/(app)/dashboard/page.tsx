@@ -14,6 +14,9 @@ import { V2Layout } from '@/components/v2/V2Layout';
 import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
 import TodayActionCard from '@/components/dashboard/TodayActionCard';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
+import { FadeIn } from '@/components/v2/motion';
+import { NumberTicker } from '@/components/v2/motion';
+import { DashboardSkeleton } from '@/components/v2/Skeleton';
 import {
   getMyStats,
   getInsights,
@@ -128,8 +131,8 @@ export default function DashboardV2Page() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+      <div className="flex min-h-screen items-center justify-center bg-black px-6">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -183,6 +186,7 @@ export default function DashboardV2Page() {
         )}
 
         {/* ── HERO ── */}
+        <FadeIn delay={0.1}>
         <section data-tour="dashboard-hero" className="flex flex-col items-center pt-12 pb-24 text-center">
           <div className="mb-3 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
             {greeting}
@@ -273,6 +277,7 @@ export default function DashboardV2Page() {
             </span>
           </div>
         </section>
+        </FadeIn>
 
         {/* ── TODAY ACTION (smart widget) ── */}
         {todayAction && <TodayActionCard action={todayAction} />}
@@ -281,14 +286,17 @@ export default function DashboardV2Page() {
         {brief && <V2DailyBrief brief={brief} />}
 
         {/* ── STATS ── */}
+        <FadeIn delay={0.3}>
         <section className="mb-32 grid grid-cols-3 gap-6 border-y border-white/10 py-16 text-center">
-          <Stat value={stats?.totalSessions || 0} label="Cvičení" />
+          <Stat value={stats?.totalSessions || 0} label="Cviceni" />
           <Stat value={Math.floor((stats?.totalMinutes || 0) / 60)} label="Hodin" />
           <Stat value={stats?.totalXP || 0} label="XP" />
         </section>
+        </FadeIn>
 
         {/* ── WEEKLY REVIEW (AI) ── */}
         {weekly && (
+          <FadeIn delay={0.4}>
           <section className="mb-32">
             <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
               AI Týdenní review
@@ -332,6 +340,7 @@ export default function DashboardV2Page() {
               <p className="mt-2 text-lg text-white">{weekly.nextWeekFocus}</p>
             </div>
           </section>
+          </FadeIn>
         )}
 
         {/* ── LESSON ── */}
@@ -465,7 +474,7 @@ function Stat({ value, label }: { value: number; label: string }) {
         className="font-bold tracking-tight tabular-nums text-white"
         style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
       >
-        {value.toLocaleString('cs-CZ')}
+        <NumberTicker value={value} />
       </div>
       <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
         {label}

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import CreateChallengeModal from '@/components/social/CreateChallengeModal';
+import { FeedSkeleton } from '@/components/v2/Skeleton';
 import StoriesBar from '@/components/social/StoriesBar';
 import StoryViewer from '@/components/social/StoryViewer';
 import ReactionBar from '@/components/social/ReactionBar';
@@ -43,12 +44,13 @@ export default function CommunityV2Page() {
   const [createOpen, setCreateOpen] = useState(false);
   const [stories, setStories] = useState<any[]>([]);
   const [viewerStory, setViewerStory] = useState<number | null>(null);
+  const [feedLoading, setFeedLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => { document.title = 'FitAI — Komunita'; }, []);
 
   useEffect(() => {
-    getSocialFeed().then(setFeed).catch(console.error);
+    getSocialFeed().then(setFeed).catch(console.error).finally(() => setFeedLoading(false));
     getChallenges().then(setChallenges).catch(console.error);
     getFollowCounts().then(setCounts).catch(console.error);
     getStories().then(setStories).catch(() => {});
@@ -118,9 +120,10 @@ export default function CommunityV2Page() {
       {/* Feed */}
       {tab === 'feed' && (
         <section className="space-y-1">
-          {feed.length === 0 && (
+          {feedLoading && <FeedSkeleton />}
+          {!feedLoading && feed.length === 0 && (
             <p className="py-12 text-center text-sm text-white/40">
-              Feed je prázdný. Sleduj další cvičence nebo začni cvičit.
+              Feed je prazdny. Sleduj dalsi cvicence nebo zacni cvicit.
             </p>
           )}
           {feed.map((item) => (
