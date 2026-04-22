@@ -39,8 +39,7 @@ export class BuddyService {
     const profile = await this.prisma.buddyProfile.findUnique({
       where: { userId },
     });
-    if (!profile) throw new NotFoundException('Buddy profil nenalezen');
-    return profile;
+    return profile || { userId, gym: null, schedule: null, goals: null, bio: null, lookingFor: null, isActive: false };
   }
 
   async swipe(userId: string, targetId: string, direction: string) {
