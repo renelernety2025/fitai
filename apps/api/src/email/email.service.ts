@@ -17,9 +17,8 @@ export class EmailService {
     email: string,
     token: string,
   ): Promise<void> {
-    const resetUrl =
-      `https://fitai.bfevents.cz/reset-password?token=${token}`;
-    this.logger.log(`[EMAIL] Password reset: ${email} -> ${resetUrl}`);
+    // Never log the token — it would leak credentials to CloudWatch
+    this.logger.log(`[EMAIL] Password reset requested: ${email}`);
   }
 
   async sendWeeklyDigest(

@@ -82,8 +82,8 @@ export class AuthService {
         data: { userId: user.id, token, expiresAt },
       });
       await this.emailService.sendPasswordReset(user.email, token);
-      return { message: 'If email exists, reset link sent', token };
     }
+    // Always return identical response regardless of email existence
     return { message: 'If email exists, reset link sent' };
   }
 
@@ -106,8 +106,9 @@ export class AuthService {
         where: { id: record.userId },
         data: { passwordHash },
       }),
-      this.prisma.passwordResetToken.update({
-        where: { id: record.id },
+      // Invalidate ALL tokens for this user (not just the used one)
+      this.prisma.passwordResetToken.updateMany({
+        where: { userId: record.userId, usedAt: null },
         data: { usedAt: new Date() },
       }),
     ]);
