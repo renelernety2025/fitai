@@ -8,6 +8,8 @@ export default function NotificationsPage() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Notifikace'; }, []);
+
   useEffect(() => {
     getNotificationPrefs().then(setPrefs).catch(console.error);
   }, []);

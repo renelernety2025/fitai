@@ -48,6 +48,8 @@ export default function ExercisesV2Page() {
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [recs, setRecs] = useState<any[]>([]);
 
+  useEffect(() => { document.title = 'FitAI — Cviky'; }, []);
+
   useEffect(() => {
     getExercises().then(setAllExercises).catch(console.error).finally(() => setLoading(false));
     setFavIds(new Set(getFavoriteIds()));

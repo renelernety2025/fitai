@@ -131,6 +131,8 @@ export default function SeasonPage() {
   const [newlyCompleted, setNewlyCompleted] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Sezóna'; }, []);
+
   useEffect(() => {
     getCurrentSeason()
       .then(setData)

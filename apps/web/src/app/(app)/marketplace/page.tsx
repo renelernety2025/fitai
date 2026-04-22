@@ -42,6 +42,8 @@ export default function MarketplacePage() {
   });
   const [purchasing, setPurchasing] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Marketplace'; }, []);
+
   useEffect(() => {
     getMarketplace()
       .then(setListings)
@@ -226,7 +228,7 @@ export default function MarketplacePage() {
           const badge = TYPE_BADGES[l.type];
           return (
             <button key={l.id} onClick={() => setSelected(l)}
-              className="rounded-2xl border border-white/8 p-5 text-left transition hover:border-white/20"
+              className="rounded-2xl border border-white/8 p-5 text-left transition hover:border-white/20 hover:bg-white/[0.02]"
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold"

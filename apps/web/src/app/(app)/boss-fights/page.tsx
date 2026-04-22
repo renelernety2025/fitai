@@ -28,6 +28,8 @@ export default function BossFightsPage() {
   const [completing, setCompleting] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Aréna'; }, []);
+
   useEffect(() => {
     getBossFights().then(setData).catch(() => {});
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
@@ -116,7 +118,7 @@ export default function BossFightsPage() {
               className={`rounded-2xl border p-6 transition ${
                 isDefeated
                   ? 'border-[#FFD600]/40 bg-[#FFD600]/5'
-                  : 'border-white/8 hover:border-white/20'
+                  : 'border-white/8 hover:border-white/20 hover:bg-white/[0.02]'
               }`}
             >
               <div className="mb-3 flex items-center justify-between">

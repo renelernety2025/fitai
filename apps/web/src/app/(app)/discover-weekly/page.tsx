@@ -9,6 +9,8 @@ export default function DiscoverWeeklyPage() {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Objev týdne'; }, []);
+
   useEffect(() => {
     getDiscoverWeekly().then(setData).catch(() => setErr(true));
   }, []);

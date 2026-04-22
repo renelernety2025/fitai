@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { V2Layout, V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { getFitnessProfile, getMyStats, type FitnessProfileData, type StatsData } from '@/lib/api';
 import { resetOnboardingTour } from '@/components/onboarding/OnboardingTour';
@@ -17,6 +18,8 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [tourRestarted, setTourRestarted] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Profil'; }, []);
+
   useEffect(() => {
     getFitnessProfile().then(setProfile).catch(console.error);
     getMyStats().then(setStats).catch(console.error);
@@ -24,6 +27,9 @@ export default function ProfilePage() {
 
   return (
     <V2Layout>
+      <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
+        &larr; Dashboard
+      </Link>
       <section className="pt-12 pb-16">
         <V2SectionLabel>Tvuj ucet</V2SectionLabel>
         <V2Display size="xl">{user?.name || 'Athlete'}</V2Display>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
 import { MonthChapter } from '@/components/journal/MonthChapter';
 import { DayCard } from '@/components/journal/DayCard';
@@ -49,6 +50,8 @@ export default function JournalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Deník'; }, []);
+
   const loadMonth = useCallback(async (month: string) => {
     setLoading(true);
     setError(null);
@@ -70,6 +73,15 @@ export default function JournalPage() {
   useEffect(() => {
     loadMonth(currentMonth);
   }, [currentMonth, loadMonth]);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') goToPreviousMonth();
+      if (e.key === 'ArrowRight') goToNextMonth();
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   async function handleLoadSummary() {
     try {
@@ -177,6 +189,12 @@ export default function JournalPage() {
         >
           &rarr;
         </button>
+        <button onClick={() => loadMonth(currentMonth)} className="text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 4v6h6M23 20v-6h-6"/>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+          </svg>
+        </button>
         <button
           type="button"
           onClick={() => downloadExport(`export/journal?month=${currentMonth}`, `fitai-journal-${currentMonth}.csv`).catch(console.error)}
@@ -189,6 +207,16 @@ export default function JournalPage() {
           </svg>
           CSV
         </button>
+      </div>
+
+      {/* Cross-links */}
+      <div className="mb-6 flex gap-3">
+        <Link href="/wrapped" className="rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/40 transition hover:text-white hover:border-white/25">
+          Wrapped shrnutí
+        </Link>
+        <Link href="/gym" className="rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/40 transition hover:text-white hover:border-white/25">
+          Začít trénink
+        </Link>
       </div>
 
       {/* Month chapter */}

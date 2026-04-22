@@ -16,6 +16,8 @@ export default function GymV2Page() {
   const [plans, setPlans] = useState<WorkoutPlanData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Trénink'; }, []);
+
   useEffect(() => {
     getWorkoutPlans().then(setPlans).catch(console.error);
     getMyStats().then(setStats).catch(console.error);

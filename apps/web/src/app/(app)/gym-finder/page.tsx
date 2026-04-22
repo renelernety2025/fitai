@@ -31,6 +31,8 @@ export default function GymFinderPage() {
     name: '', address: '', rating: 4, equipment: [] as string[], notes: '',
   });
 
+  useEffect(() => { document.title = 'FitAI — Posilovny'; }, []);
+
   useEffect(() => {
     getGymReviews()
       .then(setGyms)
@@ -186,7 +188,7 @@ export default function GymFinderPage() {
       <section className="space-y-3">
         {filtered.map((g, i) => (
           <div key={g.id || i}
-            className="rounded-2xl border border-white/8 p-5 transition hover:border-white/15"
+            className="rounded-2xl border border-white/8 p-5 transition hover:border-white/20 hover:bg-white/[0.02]"
           >
             <div className="flex items-start justify-between">
               <div>

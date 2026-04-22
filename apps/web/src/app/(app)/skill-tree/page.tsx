@@ -92,6 +92,8 @@ export default function SkillTreePage() {
   const [newUnlocked, setNewUnlocked] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Skill Tree'; }, []);
+
   useEffect(() => {
     getSkillTree()
       .then(setData)

@@ -54,6 +54,8 @@ export default function NutritionV2Page() {
   const [cameraMeal, setCameraMeal] = useState('breakfast');
   const [meal, setMeal] = useState('breakfast');
 
+  useEffect(() => { document.title = 'FitAI — Výživa'; }, []);
+
   const reload = () => {
     getNutritionToday().then(setData).catch(console.error);
     getQuickFoods().then(setFoods).catch(console.error);

@@ -78,6 +78,8 @@ export default function BloodworkPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [form, setForm] = useState({ testType: 'testosterone', value: '', date: '', lab: '' });
 
+  useEffect(() => { document.title = 'FitAI — Krevní testy'; }, []);
+
   useEffect(() => {
     getBloodwork()
       .then(setEntries)
@@ -215,7 +217,7 @@ export default function BloodworkPage() {
               const t = TEST_TYPES.find((tt) => tt.value === e.testType);
               const inRange = t ? e.value >= t.min && e.value <= t.max : true;
               return (
-                <div key={e.id} className="flex items-center justify-between rounded-xl border border-white/8 px-5 py-3">
+                <div key={e.id} className="flex items-center justify-between rounded-xl border border-white/8 px-5 py-3 transition hover:border-white/20">
                   <div>
                     <span className="text-sm font-semibold text-white">{t?.label || e.testType}</span>
                     <span className={`ml-3 text-sm font-bold tabular-nums ${inRange ? 'text-[#A8FF00]' : 'text-[#FF375F]'}`}>

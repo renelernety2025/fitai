@@ -32,6 +32,8 @@ export default function JidelnicekPage() {
   const [showPrefs, setShowPrefs] = useState(false);
   const [prefs, setPrefs] = useState({ preferences: '', allergies: '', cuisine: '' });
 
+  useEffect(() => { document.title = 'FitAI — Jídelníček'; }, []);
+
   useEffect(() => {
     getCurrentMealPlan()
       .then(setPlan)

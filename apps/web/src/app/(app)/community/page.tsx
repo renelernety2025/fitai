@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import CreateChallengeModal from '@/components/social/CreateChallengeModal';
@@ -43,6 +44,8 @@ export default function CommunityV2Page() {
   const [stories, setStories] = useState<any[]>([]);
   const [viewerStory, setViewerStory] = useState<number | null>(null);
   const router = useRouter();
+
+  useEffect(() => { document.title = 'FitAI — Komunita'; }, []);
 
   useEffect(() => {
     getSocialFeed().then(setFeed).catch(console.error);
@@ -90,7 +93,7 @@ export default function CommunityV2Page() {
       <FlashBanner />
 
       {/* Tabs */}
-      <div className="mb-16 flex gap-2">
+      <div className="mb-16 flex items-center gap-2">
         {(['feed', 'challenges', 'people'] as const).map((t) => (
           <button
             key={t}
@@ -104,6 +107,12 @@ export default function CommunityV2Page() {
             {t === 'feed' ? 'Feed' : t === 'challenges' ? 'Výzvy' : 'Lidé'}
           </button>
         ))}
+        <button onClick={() => { getSocialFeed().then(setFeed).catch(console.error); getChallenges().then(setChallenges).catch(console.error); }} className="ml-auto text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 4v6h6M23 20v-6h-6"/>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+          </svg>
+        </button>
       </div>
 
       {/* Feed */}
@@ -117,7 +126,9 @@ export default function CommunityV2Page() {
           {feed.map((item) => (
             <div key={item.id} className="border-b border-white/8 py-6">
               <div className="mb-2 flex items-baseline gap-3">
-                <span className="font-semibold text-white">{item.user.name}</span>
+                <Link href={`/profile/${item.user.id}`}>
+                  <span className="font-medium text-white hover:text-[#A8FF00] transition cursor-pointer">{item.user.name}</span>
+                </Link>
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                   {timeAgo(item.createdAt)}
                 </span>

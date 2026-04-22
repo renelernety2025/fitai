@@ -30,6 +30,8 @@ export default function AiChatPage() {
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { document.title = 'FitAI — AI Chat'; }, []);
+
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({

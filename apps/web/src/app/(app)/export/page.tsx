@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   V2Layout,
   V2SectionLabel,
@@ -22,6 +22,8 @@ function getDefaultRange(): { from: string; to: string } {
 }
 
 export default function ExportPage() {
+  useEffect(() => { document.title = 'FitAI — Export'; }, []);
+
   const [journalMonth, setJournalMonth] = useState(getCurrentMonth());
   const [nutritionRange, setNutritionRange] = useState(getDefaultRange);
   const [loading, setLoading] = useState<string | null>(null);

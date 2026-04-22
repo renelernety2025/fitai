@@ -31,6 +31,8 @@ export default function RehabPage() {
   const [form, setForm] = useState({ injuryType: '', bodyPart: 'Koleno', severity: 'mild' });
   const [logForm, setLogForm] = useState({ painLevel: 5, notes: '', exercises: [] as string[] });
 
+  useEffect(() => { document.title = 'FitAI — Rehabilitace'; }, []);
+
   useEffect(() => {
     getRehabPlans()
       .then(setPlans)
@@ -135,7 +137,7 @@ export default function RehabPage() {
       <section className="mb-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
           <button key={plan.id} onClick={() => selectPlan(plan)}
-            className={`rounded-2xl border p-5 text-left transition hover:border-white/25 ${
+            className={`rounded-2xl border p-5 text-left transition hover:border-white/25 hover:bg-white/[0.02] ${
               selected?.id === plan.id ? 'border-[#A8FF00]/40 bg-[#A8FF00]/5' : 'border-white/8'
             }`}
           >

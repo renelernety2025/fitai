@@ -24,6 +24,8 @@ export default function LessonsV2Page() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [cat, setCat] = useState('all');
 
+  useEffect(() => { document.title = 'FitAI — Lekce'; }, []);
+
   useEffect(() => {
     getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error);
   }, [cat]);

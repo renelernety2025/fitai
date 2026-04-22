@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 
@@ -63,6 +64,8 @@ const SPORTS = [
 ];
 
 export default function SportsHubPage() {
+  useEffect(() => { document.title = 'FitAI — Sporty'; }, []);
+
   return (
     <V2Layout>
       <section className="pt-12 pb-16">

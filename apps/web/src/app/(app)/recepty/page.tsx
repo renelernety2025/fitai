@@ -26,6 +26,8 @@ export default function RecipesPage() {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Recepty'; }, []);
+
   const reload = () => {
     setError(null);
     getRecipes()

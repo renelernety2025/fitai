@@ -19,6 +19,8 @@ export default function MicroWorkoutPage() {
       .finally(() => setLoading(false));
   }
 
+  useEffect(() => { document.title = 'FitAI — Micro Workout'; }, []);
+
   useEffect(() => { loadChallenge(); }, []);
 
   return (

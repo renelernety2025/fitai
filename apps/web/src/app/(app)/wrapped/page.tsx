@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
 import { getWrapped } from '@/lib/api';
 
@@ -69,6 +70,8 @@ export default function WrappedPage() {
   const [month, setMonth] = useState(currentMonth);
   const [data, setData] = useState<WrappedData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => { document.title = 'FitAI — Wrapped'; }, []);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -207,6 +210,10 @@ export default function WrappedPage() {
         {!loading && !data && (
           <p className="py-24 text-center text-white/40">Zadna data pro toto obdobi.</p>
         )}
+
+        <Link href="/journal" className="mt-6 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
+          Zobrazit deník &rarr;
+        </Link>
       </section>
     </V2Layout>
   );

@@ -18,6 +18,8 @@ export default function ProgressV2Page() {
   const [sessions, setSessions] = useState<GymSessionData[]>([]);
   const [volume, setVolume] = useState<WeeklyVolumeEntry[]>([]);
 
+  useEffect(() => { document.title = 'FitAI — Pokrok'; }, []);
+
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);

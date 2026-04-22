@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
 import PropsButton from '@/components/social/PropsButton';
 import {
@@ -48,6 +49,8 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => { document.title = 'FitAI — Profil'; }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -107,6 +110,9 @@ export default function PublicProfilePage() {
 
   return (
     <V2Layout>
+      <Link href="/community" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
+        &larr; Komunita
+      </Link>
       <section className="pt-12 pb-12">
         <V2SectionLabel>Profil</V2SectionLabel>
 

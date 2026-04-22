@@ -85,6 +85,8 @@ export default function CalendarPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Kalendář'; }, []);
+
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
@@ -95,6 +97,15 @@ export default function CalendarPage() {
   }, [month]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') setMonth((m) => shiftMonth(m, -1));
+      if (e.key === 'ArrowRight') setMonth((m) => shiftMonth(m, 1));
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   const grid = buildGrid(month);
   const dayMap = new Map(days.map((d) => [d.date, d]));

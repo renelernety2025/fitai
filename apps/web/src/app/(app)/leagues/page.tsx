@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
 import { getLeagueCurrent, joinLeague } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -65,6 +66,8 @@ export default function LeaguesPage() {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Ligy'; }, []);
+
   useEffect(() => {
     getLeagueCurrent()
       .then(setData)
@@ -111,7 +114,15 @@ export default function LeaguesPage() {
           <>
             {/* Hero: tier + rank + XP */}
             <div className="mb-12 flex flex-col items-center gap-6 text-center">
-              {tierIcon(data.tier, 80)}
+              <div className="flex items-center gap-3">
+                {tierIcon(data.tier, 80)}
+                <button onClick={() => getLeagueCurrent().then(setData).catch(() => {})} className="text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 4v6h6M23 20v-6h-6"/>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                  </svg>
+                </button>
+              </div>
               <div className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: TIER_COLORS[data.tier.toLowerCase()] }}>
                 {data.tier}
               </div>
@@ -142,6 +153,13 @@ export default function LeaguesPage() {
                 </div>
               </div>
             )}
+
+            {/* CTA */}
+            <div className="mb-12 text-center">
+              <Link href="/gym" className="mt-4 inline-block rounded-full px-5 py-2 text-sm font-semibold text-black" style={{ backgroundColor: '#A8FF00' }}>
+                Získej XP tréninkem
+              </Link>
+            </div>
 
             {/* Timer */}
             <div className="mb-12 text-center text-sm text-white/40">

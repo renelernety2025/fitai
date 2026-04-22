@@ -82,6 +82,8 @@ export default function BodyPortfolioPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Portfolio'; }, []);
+
   useEffect(() => {
     getBodyPortfolio()
       .then(setData)

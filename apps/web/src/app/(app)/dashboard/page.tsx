@@ -98,7 +98,9 @@ export default function DashboardV2Page() {
   const [freezeModal, setFreezeModal] = useState(false);
   const [freezing, setFreezing] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { document.title = 'FitAI — Dashboard'; }, []);
+
+  function reload() {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
     getLessonOfTheWeek().then(setLesson).catch(console.error);
@@ -109,7 +111,9 @@ export default function DashboardV2Page() {
     getDailyMotivation().then((r) => setMotivation(r.message)).catch(console.error);
     getTodayAction().then(setTodayAction).catch(console.error);
     getStreakFreezeStatus().then(setFreezeStatus).catch(() => {});
-  }, []);
+  }
+
+  useEffect(() => { reload(); }, []);
 
   async function handleFreeze() {
     setFreezing(true);
@@ -180,8 +184,14 @@ export default function DashboardV2Page() {
 
         {/* ── HERO ── */}
         <section data-tour="dashboard-hero" className="flex flex-col items-center pt-12 pb-24 text-center">
-          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
+          <div className="mb-3 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
             {greeting}
+            <button onClick={reload} className="text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 4v6h6M23 20v-6h-6"/>
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+              </svg>
+            </button>
           </div>
           <h1
             className="mb-12 font-bold tracking-tight text-white"

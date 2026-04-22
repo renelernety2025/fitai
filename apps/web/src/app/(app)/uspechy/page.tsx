@@ -28,6 +28,8 @@ export default function UspechyPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [filter, setFilter] = useState<string>('all');
 
+  useEffect(() => { document.title = 'FitAI — Úspěchy'; }, []);
+
   useEffect(() => {
     // Trigger check first, then load
     checkAchievements()

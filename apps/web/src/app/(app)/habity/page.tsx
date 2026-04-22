@@ -100,6 +100,8 @@ export default function HabityPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
+  useEffect(() => { document.title = 'FitAI — Habity'; }, []);
+
   const reload = () => {
     getHabitsToday().then(setToday).catch(console.error);
     getHabitsStats().then(setStats).catch(console.error);
