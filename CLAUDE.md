@@ -37,7 +37,7 @@ fitai/
 - **Local dev Web:** `cd apps/web && npm run dev`
 - **Mobile dev:** `cd apps/mobile && npx expo start --dev-client --clear` (iPhone scanne QR)
 - **Load test:** `k6 run load-tests/01-smoke.js`
-- **Smoke test prod:** `bash test-production.sh` (61 testů proti `fitai.bfevents.cz`)
+- **Smoke test prod:** `bash test-production.sh` (115 testů proti `fitai.bfevents.cz`)
 - **Migrate DB:** GitHub Actions deploy workflow to spustí automaticky
 - **Manual migrate:** `aws ecs run-task --task-definition fitai-migrate:2 ...` (viz [GITHUB_ACTIONS_SETUP](./docs/GITHUB_ACTIONS_SETUP.md))
 
@@ -69,7 +69,7 @@ fitai/
 - **Cache layer:** `CacheService` (Redis) pro read-heavy endpointy (7d TTL pro static content, 1h pro per-user)
 
 ## Testing & review
-- **Po KAŽDÉ větší změně:** `bash test-production.sh` (smoke test proti produkci — musí 61/61)
+- **Po KAŽDÉ větší změně:** `bash test-production.sh` (smoke test proti produkci — musí 115/115)
 - **Po KAŽDÉM kroku:** `git diff --stat` → ověř že jsi změnil JEN relevantní soubory
 - **Po KAŽDÉ feature:** security audit (input validace, auth guard, secrets, rate limit, error handling)
 - **Při úpravě existujícího kódu:** testy i pro závislé soubory (grep importů)

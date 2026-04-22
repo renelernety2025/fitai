@@ -71,7 +71,7 @@ CodeBuild (base: public.ecr.aws/docker/library/node:20-alpine — no DockerHub r
   - `dorny/paths-filter@v3` detekuje api/web/schema změny
   - Paralelní `aws codebuild start-build` pro relevantní projekty
   - Auto-spuštění `fitai-migrate:2` task při změně `prisma/schema.prisma`
-  - Smoke test `test-production.sh` (61/61) po deployi
+  - Smoke test `test-production.sh` (115/115) po deployi
   - Concurrency lock `deploy-production`
 - **CI** (`.github/workflows/ci.yml`): PR lint + typecheck (nedeployuje)
 
