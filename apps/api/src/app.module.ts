@@ -55,6 +55,21 @@ import { BuddyModule } from './buddy/buddy.module';
 import { MessagesModule } from './messages/messages.module';
 import { EmailModule } from './email/email.module';
 import { AdminModule } from './admin/admin.module';
+import { DuelsModule } from './duels/duels.module';
+import { SquadsModule } from './squads/squads.module';
+import { SupplementsModule } from './supplements/supplements.module';
+import { GearModule } from './gear/gear.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { CoachingMemoryModule } from './coaching-memory/coaching-memory.module';
+import { RecordsModule } from './records/records.module';
+import { ClipsModule } from './clips/clips.module';
+import { ExperiencesModule } from './experiences/experiences.module';
+import { TrainersModule } from './trainers/trainers.module';
+import { RoutineBuilderModule } from './routine-builder/routine-builder.module';
+import { DropsModule } from './drops/drops.module';
+import { VipModule } from './vip/vip.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { BundlesModule } from './bundles/bundles.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -150,6 +165,21 @@ import { ScheduleModule } from '@nestjs/schedule';
     MessagesModule,
     EmailModule,
     AdminModule,
+    DuelsModule,
+    SquadsModule,
+    SupplementsModule,
+    GearModule,
+    MaintenanceModule,
+    CoachingMemoryModule,
+    RecordsModule,
+    ClipsModule,
+    ExperiencesModule,
+    TrainersModule,
+    RoutineBuilderModule,
+    DropsModule,
+    VipModule,
+    WishlistModule,
+    BundlesModule,
   ],
   providers: [
     {

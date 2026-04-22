@@ -64,69 +64,101 @@ enum SetStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  avatarUrl    String?
-  bio          String?
-  propsReceived Int      @default(0)
-  level        UserLevel @default(BEGINNER)
-  isAdmin      Boolean  @default(false)
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  bio           String?
+  propsReceived Int       @default(0)
+  level         UserLevel @default(BEGINNER)
+  isAdmin       Boolean   @default(false)
   expoPushToken String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  sessions        WorkoutSession[]
-  progress        UserProgress?
-  workoutPlans    WorkoutPlan[]
-  gymSessions      GymSession[]
-  exerciseHistory  ExerciseHistory[]
-  coachingSessions CoachingSession[]
-  safetyEvents     SafetyEvent[]
-  fitnessProfile    FitnessProfile?
-  aiPlans           AIGeneratedPlan[]
-  pushSubscriptions PushSubscription[]
-  notificationPrefs NotificationPreference?
-  following         Follow[]              @relation("follower")
-  followers         Follow[]              @relation("followed")
-  feedItems         ActivityFeedItem[]
-  challengeEntries  ChallengeParticipant[]
-  wearableData      WearableData[]
-  contentImports    ContentImport[]
-  marketplaceItems  MarketplaceItem[]
-  foodLogs          FoodLog[]
-  dailyCheckIns     DailyCheckIn[]
-  achievementUnlocks AchievementUnlock[]
-  bodyPhotos        BodyPhoto[]
-  mealPlans         MealPlan[]
-  journalEntries    JournalEntry[]
-  recipes           Recipe[]
-  createdChallenges Challenge[]        @relation("ChallengeCreator")
-  leagueMemberships LeagueMembership[]
-  skillUnlocks      SkillUnlock[]
-  scheduledWorkouts ScheduledWorkout[]
-  seasonProgress    SeasonProgress[]
-  missionCompletions MissionCompletion[]
-  bloodworkEntries   BloodworkEntry[]
-  rehabPlans         RehabPlan[]
-  streakFreezes      StreakFreeze[]
-  marketplaceListings MarketplaceListing[] @relation("ListingAuthor")
+  sessions             WorkoutSession[]
+  progress             UserProgress?
+  workoutPlans         WorkoutPlan[]
+  gymSessions          GymSession[]
+  exerciseHistory      ExerciseHistory[]
+  coachingSessions     CoachingSession[]
+  safetyEvents         SafetyEvent[]
+  fitnessProfile       FitnessProfile?
+  aiPlans              AIGeneratedPlan[]
+  pushSubscriptions    PushSubscription[]
+  notificationPrefs    NotificationPreference?
+  following            Follow[]                @relation("follower")
+  followers            Follow[]                @relation("followed")
+  feedItems            ActivityFeedItem[]
+  challengeEntries     ChallengeParticipant[]
+  wearableData         WearableData[]
+  contentImports       ContentImport[]
+  marketplaceItems     MarketplaceItem[]
+  foodLogs             FoodLog[]
+  dailyCheckIns        DailyCheckIn[]
+  achievementUnlocks   AchievementUnlock[]
+  bodyPhotos           BodyPhoto[]
+  mealPlans            MealPlan[]
+  journalEntries       JournalEntry[]
+  recipes              Recipe[]
+  createdChallenges    Challenge[]             @relation("ChallengeCreator")
+  leagueMemberships    LeagueMembership[]
+  skillUnlocks         SkillUnlock[]
+  scheduledWorkouts    ScheduledWorkout[]
+  seasonProgress       SeasonProgress[]
+  missionCompletions   MissionCompletion[]
+  bloodworkEntries     BloodworkEntry[]
+  rehabPlans           RehabPlan[]
+  streakFreezes        StreakFreeze[]
+  marketplaceListings  MarketplaceListing[]    @relation("ListingAuthor")
   marketplacePurchases MarketplacePurchase[]
-  bossAttempts       BossAttempt[]
-  gymReviews         GymReview[]
-  stories            Story[]
-  reactions          Reaction[]
-  comments           Comment[]
-  buddyProfile       BuddyProfile?
-  sentSwipes         BuddySwipe[]       @relation("Swiper")
-  sentMessages       DirectMessage[]     @relation("MessageSender")
-  conversations1     Conversation[]      @relation("Participant1")
-  conversations2     Conversation[]      @relation("Participant2")
-  propsGiven         Props[]             @relation("PropsGiver")
-  propsReceiv        Props[]             @relation("PropsReceiver")
-  flashParticipations FlashParticipant[]
-  passwordResets      PasswordResetToken[]
+  bossAttempts         BossAttempt[]
+  gymReviews           GymReview[]
+  stories              Story[]
+  reactions            Reaction[]
+  comments             Comment[]
+  buddyProfile         BuddyProfile?
+  sentSwipes           BuddySwipe[]            @relation("Swiper")
+  sentMessages         DirectMessage[]         @relation("MessageSender")
+  conversations1       Conversation[]          @relation("Participant1")
+  conversations2       Conversation[]          @relation("Participant2")
+  propsGiven           Props[]                 @relation("PropsGiver")
+  propsReceiv          Props[]                 @relation("PropsReceiver")
+  flashParticipations  FlashParticipant[]
+  passwordResets       PasswordResetToken[]
+  // Phase 1: Performance Core
+  maintenanceSchedules MaintenanceSchedule[]
+  maintenanceAlerts    MaintenanceAlert[]
+  coachingMemories     CoachingMemory[]
+  // Phase 2: Social Expansion
+  duelsAsChallenger    Duel[]                  @relation("DuelChallenger")
+  duelsAsChallenged    Duel[]                  @relation("DuelChallenged")
+  squadMemberships     SquadMembership[]
+  personStreaksA       PersonStreak[]          @relation("PersonStreakA")
+  personStreaksB       PersonStreak[]          @relation("PersonStreakB")
+  userSupplements      UserSupplement[]
+  gearItems            GearItem[]
+  gearReviews          GearReview[]
+  // Phase 3: Content & UGC
+  clips                Clip[]
+  clipLikes            ClipLike[]
+  clipComments         ClipComment[]
+  duetComparisons      DuetComparison[]
+  playlistLinks        PlaylistLink[]
+  // Phase 4: Marketplace
+  trainerProfile       TrainerProfile?
+  trainerReviews       TrainerReview[]
+  bookings             Booking[]
+  routines             Routine[]
+  bundles              Bundle[]
+  wishlistItems        Wishlist[]
+  planTrials           PlanTrial[]
+  // Phase 5: Exclusivity
+  dropPurchases        DropPurchase[]
+  vipMembership        VIPMembership?
+  userTitles           UserTitle[]
+  userBrand            UserBrand?
 }
 
 model UserProgress {
@@ -145,22 +177,22 @@ model UserProgress {
 }
 
 model Video {
-  id                   String              @id @default(uuid())
-  title                String
-  description          String
-  category             VideoCategory
-  difficulty           VideoDifficulty
-  durationSeconds      Int
-  thumbnailUrl         String
-  hlsUrl               String?
-  s3RawKey             String
-  choreographyUrl      String?
-  preprocessingStatus  PreprocessingStatus @default(PENDING)
-  preprocessingError   String?
-  preprocessingJobId   String?
-  isPublished          Boolean             @default(false)
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  id                  String              @id @default(uuid())
+  title               String
+  description         String
+  category            VideoCategory
+  difficulty          VideoDifficulty
+  durationSeconds     Int
+  thumbnailUrl        String
+  hlsUrl              String?
+  s3RawKey            String
+  choreographyUrl     String?
+  preprocessingStatus PreprocessingStatus @default(PENDING)
+  preprocessingError  String?
+  preprocessingJobId  String?
+  isPublished         Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   sessions WorkoutSession[]
 }
@@ -176,9 +208,9 @@ model WorkoutSession {
   accuracyScore   Float     @default(0)
   poseData        Json?
 
-  user       User        @relation(fields: [userId], references: [id])
-  video      Video?      @relation(fields: [videoId], references: [id])
-  gymSession GymSession? @relation(fields: [gymSessionId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+  video      Video?         @relation(fields: [videoId], references: [id])
+  gymSession GymSession?    @relation(fields: [gymSessionId], references: [id])
   snapshots  PoseSnapshot[]
 
   @@index([userId])
@@ -202,26 +234,30 @@ model PoseSnapshot {
 // ── Gym / Exercise System ──
 
 model Exercise {
-  id            String        @id @default(uuid())
-  name          String        @unique
-  nameCs        String
-  description   String
-  descriptionCs String
-  muscleGroups    MuscleGroup[]
-  difficulty      VideoDifficulty
-  category        String        @default("isolation") // compound | isolation | accessory
-  equipment       String[]      @default([]) // [] = bodyweight; barbell, dumbbell, machine, band, kettlebell
-  phases          Json
-  instructions    Json?
-  thumbnailUrl    String?
-  instructionUrl  String?
-  videoUrl        String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String          @id @default(uuid())
+  name           String          @unique
+  nameCs         String
+  description    String
+  descriptionCs  String
+  muscleGroups   MuscleGroup[]
+  difficulty     VideoDifficulty
+  category       String          @default("isolation") // compound | isolation | accessory
+  equipment      String[]        @default([]) // [] = bodyweight; barbell, dumbbell, machine, band, kettlebell
+  phases         Json
+  instructions   Json?
+  thumbnailUrl   String?
+  instructionUrl String?
+  videoUrl       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-  plannedExercises PlannedExercise[]
-  exerciseSets     ExerciseSet[]
-  exerciseHistory  ExerciseHistory[]
+  plannedExercises  PlannedExercise[]
+  exerciseSets      ExerciseSet[]
+  exerciseHistory   ExerciseHistory[]
+  coachingMemories  CoachingMemory[]
+  clips             Clip[]
+  playlistLinks     PlaylistLink[]
+  craftmanshipStory CraftmanshipStory?
 }
 
 model WorkoutPlan {
@@ -237,11 +273,12 @@ model WorkoutPlan {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  user        User?            @relation(fields: [userId], references: [id])
-  days        WorkoutDay[]
-  gymSessions GymSession[]
+  user              User?              @relation(fields: [userId], references: [id])
+  days              WorkoutDay[]
+  gymSessions       GymSession[]
   aiPlans           AIGeneratedPlan[]
   scheduledWorkouts ScheduledWorkout[]
+  planTrials        PlanTrial[]
 }
 
 model WorkoutDay {
@@ -270,7 +307,7 @@ model PlannedExercise {
   notes        String?
   groupId      String? // shared UUID groups exercises into superset/circuit
   groupType    String? // superset, circuit, giant, drop
-  groupOrder   Int?    // order within group (0-based)
+  groupOrder   Int? // order within group (0-based)
 
   workoutDay WorkoutDay @relation(fields: [workoutDayId], references: [id], onDelete: Cascade)
   exercise   Exercise   @relation(fields: [exerciseId], references: [id])
@@ -279,19 +316,20 @@ model PlannedExercise {
 }
 
 model GymSession {
-  id               String            @id @default(uuid())
+  id               String           @id @default(uuid())
   userId           String
   workoutPlanId    String?
   workoutDayIndex  Int?
-  coachPersonality CoachPersonality  @default(MOTIVATIONAL)
-  startedAt        DateTime          @default(now())
+  coachPersonality CoachPersonality @default(MOTIVATIONAL)
+  workoutMode      WorkoutMode      @default(SPORT)
+  startedAt        DateTime         @default(now())
   completedAt      DateTime?
-  totalReps        Int               @default(0)
-  averageFormScore Float             @default(0)
-  durationSeconds  Int               @default(0)
+  totalReps        Int              @default(0)
+  averageFormScore Float            @default(0)
+  durationSeconds  Int              @default(0)
 
-  user           User             @relation(fields: [userId], references: [id])
-  workoutPlan    WorkoutPlan?     @relation(fields: [workoutPlanId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  workoutPlan    WorkoutPlan?    @relation(fields: [workoutPlanId], references: [id])
   workoutSession WorkoutSession?
   exerciseSets   ExerciseSet[]
   journalEntry   JournalEntry?
@@ -309,16 +347,17 @@ model ExerciseSet {
   targetWeight Float?
   actualWeight Float?
   formScore    Float     @default(0)
-  rpe          Int?      // Rate of Perceived Exertion 1-10
+  rpe          Int? // Rate of Perceived Exertion 1-10
   isWarmup     Boolean   @default(false)
-  tempoSeconds Float?    // Average tempo (rep duration)
+  tempoSeconds Float? // Average tempo (rep duration)
   status       SetStatus @default(PENDING)
   startedAt    DateTime?
   completedAt  DateTime?
   repData      Json?
 
-  gymSession GymSession @relation(fields: [gymSessionId], references: [id], onDelete: Cascade)
-  exercise   Exercise   @relation(fields: [exerciseId], references: [id])
+  gymSession  GymSession   @relation(fields: [gymSessionId], references: [id], onDelete: Cascade)
+  exercise    Exercise     @relation(fields: [exerciseId], references: [id])
+  sectorTimes SectorTime[]
 
   @@index([gymSessionId])
 }
@@ -416,18 +455,18 @@ enum JournalMood {
 }
 
 model JournalEntry {
-  id            String       @id @default(uuid())
-  userId        String
-  date          DateTime     @db.Date
-  gymSessionId  String?      @unique
-  notes         String?
-  rating        Int?
-  mood          JournalMood?
-  tags          String[]
-  measurements  Json?
-  aiInsight     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String       @id @default(uuid())
+  userId       String
+  date         DateTime     @db.Date
+  gymSessionId String?      @unique
+  notes        String?
+  rating       Int?
+  mood         JournalMood?
+  tags         String[]
+  measurements Json?
+  aiInsight    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   user       User           @relation(fields: [userId], references: [id])
   gymSession GymSession?    @relation(fields: [gymSessionId], references: [id])
@@ -485,7 +524,7 @@ model FitnessProfile {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
   oneRepMax OneRepMax[]
 
   // Nutrition goals (Section F)
@@ -496,17 +535,17 @@ model FitnessProfile {
 }
 
 model Achievement {
-  id          String   @id @default(uuid())
-  code        String   @unique // first_workout, streak_7, total_100_reps...
-  title       String
-  titleCs     String
-  description String
+  id            String   @id @default(uuid())
+  code          String   @unique // first_workout, streak_7, total_100_reps...
+  title         String
+  titleCs       String
+  description   String
   descriptionCs String
-  category    String   // training, streak, milestone, social, exploration
-  icon        String   // emoji nebo SVG ref
-  xpReward    Int      @default(0)
-  threshold   Int?     // např. 7 pro streak_7, 100 pro 100 reps
-  createdAt   DateTime @default(now())
+  category      String // training, streak, milestone, social, exploration
+  icon          String // emoji nebo SVG ref
+  xpReward      Int      @default(0)
+  threshold     Int? // např. 7 pro streak_7, 100 pro 100 reps
+  createdAt     DateTime @default(now())
 
   unlocks AchievementUnlock[]
 }
@@ -528,14 +567,14 @@ model DailyCheckIn {
   id           String   @id @default(uuid())
   userId       String
   date         DateTime @db.Date
-  sleepHours   Float?   // 0-12
-  sleepQuality Int?     // 1-5
-  hydrationL   Float?   // liters of water
+  sleepHours   Float? // 0-12
+  sleepQuality Int? // 1-5
+  hydrationL   Float? // liters of water
   steps        Int?
-  mood         Int?     // 1-5
-  energy       Int?     // 1-5 — physical energy
-  soreness     Int?     // 1-5 — muscle soreness
-  stress       Int?     // 1-5
+  mood         Int? // 1-5
+  energy       Int? // 1-5 — physical energy
+  soreness     Int? // 1-5 — muscle soreness
+  stress       Int? // 1-5
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -550,7 +589,7 @@ model FoodLog {
   id           String   @id @default(uuid())
   userId       String
   date         DateTime @db.Date
-  mealType     String   // breakfast, lunch, dinner, snack
+  mealType     String // breakfast, lunch, dinner, snack
   name         String
   kcal         Int
   proteinG     Float    @default(0)
@@ -558,13 +597,13 @@ model FoodLog {
   fatG         Float    @default(0)
   servings     Float    @default(1)
   photoS3Key   String?
-  source       String?  // home, restaurant, store, delivery
-  sourceDetail String?  // restaurant name, store name, etc.
-  ingredients  String?  // free-text ingredients list
+  source       String? // home, restaurant, store, delivery
+  sourceDetail String? // restaurant name, store name, etc.
+  ingredients  String? // free-text ingredients list
   recipeId     String?
-  rating       Int?     // 1-5
+  rating       Int? // 1-5
   notes        String?
-  confidence   Float?   // AI confidence 0-1
+  confidence   Float? // AI confidence 0-1
   createdAt    DateTime @default(now())
 
   user   User    @relation(fields: [userId], references: [id])
@@ -574,24 +613,24 @@ model FoodLog {
 }
 
 model Recipe {
-  id           String   @id @default(uuid())
-  userId       String
-  name         String
-  description  String?
-  ingredients  Json     // [{name, amount, unit}]
-  instructions String?
-  prepMinutes  Int?
-  cookMinutes  Int?
-  servings     Int      @default(1)
+  id             String   @id @default(uuid())
+  userId         String
+  name           String
+  description    String?
+  ingredients    Json // [{name, amount, unit}]
+  instructions   String?
+  prepMinutes    Int?
+  cookMinutes    Int?
+  servings       Int      @default(1)
   kcalPerServing Int?
-  proteinG     Float?
-  carbsG       Float?
-  fatG         Float?
-  photoS3Key   String?
-  tags         String[]
-  isFavorite   Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  proteinG       Float?
+  carbsG         Float?
+  fatG           Float?
+  photoS3Key     String?
+  tags           String[]
+  isFavorite     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   user     User      @relation(fields: [userId], references: [id])
   foodLogs FoodLog[]
@@ -699,16 +738,16 @@ model SeasonProgress {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user    User   @relation(fields: [userId], references: [id])
-  season  Season @relation(fields: [seasonId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  season Season @relation(fields: [seasonId], references: [id])
 
   @@unique([userId, seasonId])
 }
 
 model MissionCompletion {
-  id        String   @id @default(uuid())
-  userId    String
-  missionId String
+  id          String   @id @default(uuid())
+  userId      String
+  missionId   String
   completedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -719,18 +758,18 @@ model MissionCompletion {
 // ── Bloodwork Tracker ──
 
 model BloodworkEntry {
-  id             String   @id @default(uuid())
-  userId         String
-  date           DateTime @db.Date
-  testType       String   // testosterone, iron, vitaminD, crp, cholesterol, glucose, hba1c
-  value          Float
-  unit           String
-  referenceMin   Float?
-  referenceMax   Float?
-  lab            String?
-  notes          String?
-  aiInsight      String?
-  createdAt      DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  date         DateTime @db.Date
+  testType     String // testosterone, iron, vitaminD, crp, cholesterol, glucose, hba1c
+  value        Float
+  unit         String
+  referenceMin Float?
+  referenceMax Float?
+  lab          String?
+  notes        String?
+  aiInsight    String?
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
@@ -740,20 +779,20 @@ model BloodworkEntry {
 // ── Injury Rehab Planner ──
 
 model RehabPlan {
-  id           String   @id @default(uuid())
-  userId       String
-  injuryType   String
-  bodyPart     String
-  severity     String   // mild, moderate, severe
-  startDate    DateTime @db.Date
-  targetDate   DateTime? @db.Date
-  status       String   @default("active") // active, completed, paused
-  aiPlan       Json?    // structured rehab plan from Claude
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String    @id @default(uuid())
+  userId     String
+  injuryType String
+  bodyPart   String
+  severity   String // mild, moderate, severe
+  startDate  DateTime  @db.Date
+  targetDate DateTime? @db.Date
+  status     String    @default("active") // active, completed, paused
+  aiPlan     Json? // structured rehab plan from Claude
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  user     User          @relation(fields: [userId], references: [id])
+  user     User           @relation(fields: [userId], references: [id])
   sessions RehabSession[]
 
   @@index([userId])
@@ -763,8 +802,8 @@ model RehabSession {
   id          String   @id @default(uuid())
   rehabPlanId String
   date        DateTime @db.Date
-  exercises   Json     // [{name, sets, reps, notes}]
-  painLevel   Int?     // 0-10
+  exercises   Json // [{name, sets, reps, notes}]
+  painLevel   Int? // 0-10
   notes       String?
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -777,9 +816,9 @@ model RehabSession {
 // ── Streak Freeze ──
 
 model StreakFreeze {
-  id       String   @id @default(uuid())
-  userId   String
-  usedDate DateTime @db.Date
+  id        String   @id @default(uuid())
+  userId    String
+  usedDate  DateTime @db.Date
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -795,8 +834,8 @@ model MarketplaceListing {
   authorId    String
   title       String
   description String?
-  type        String   // workout_plan, meal_plan, challenge
-  planId      String?  // link to WorkoutPlan
+  type        String // workout_plan, meal_plan, challenge
+  planId      String? // link to WorkoutPlan
   priceXP     Int      @default(0) // 0 = free
   rating      Float    @default(0)
   ratingCount Int      @default(0)
@@ -830,13 +869,13 @@ model MarketplacePurchase {
 // ── Boss Fights ──
 
 model BossAttempt {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   bossCode    String
-  startedAt   DateTime @default(now())
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
-  score       Int      @default(0)
-  defeated    Boolean  @default(false)
+  score       Int       @default(0)
+  defeated    Boolean   @default(false)
 
   user User @relation(fields: [userId], references: [id])
 
@@ -852,7 +891,7 @@ model GymReview {
   address   String?
   lat       Float?
   lng       Float?
-  rating    Int      // 1-5
+  rating    Int // 1-5
   equipment String[] // barbells, dumbbells, machines, cables, cardio, etc.
   notes     String?
   createdAt DateTime @default(now())
@@ -882,9 +921,9 @@ model Story {
 model Reaction {
   id         String   @id @default(uuid())
   userId     String
-  targetType String   // feed_item, story
+  targetType String // feed_item, story
   targetId   String
-  emoji      String   // fire, muscle, clap, heart, hundred
+  emoji      String // fire, muscle, clap, heart, hundred
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -912,10 +951,10 @@ model BuddyProfile {
   id         String   @id @default(uuid())
   userId     String   @unique
   gym        String?
-  schedule   String?  // morning, afternoon, evening
+  schedule   String? // morning, afternoon, evening
   goals      String?
   bio        String?
-  lookingFor String?  // buddy, spotter, group
+  lookingFor String? // buddy, spotter, group
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -927,7 +966,7 @@ model BuddySwipe {
   id        String   @id @default(uuid())
   swiperId  String
   targetId  String
-  direction String   // right, left
+  direction String // right, left
   createdAt DateTime @default(now())
 
   swiper User @relation("Swiper", fields: [swiperId], references: [id])
@@ -1015,7 +1054,7 @@ model EducationLesson {
   slug        String   @unique
   title       String
   titleCs     String
-  category    String   // nutrition, recovery, technique, mindset
+  category    String // nutrition, recovery, technique, mindset
   body        String
   bodyCs      String
   durationMin Int      @default(3)
@@ -1025,13 +1064,13 @@ model EducationLesson {
 }
 
 model GlossaryTerm {
-  id          String   @id @default(uuid())
-  term        String
-  termCs      String
-  definition  String
+  id           String   @id @default(uuid())
+  term         String
+  termCs       String
+  definition   String
   definitionCs String
-  category    String?
-  createdAt   DateTime @default(now())
+  category     String?
+  createdAt    DateTime @default(now())
 
   @@unique([termCs])
 }
@@ -1075,11 +1114,11 @@ model AIGeneratedPlan {
 // ── Push Notifications ──
 
 model PushSubscription {
-  id       String   @id @default(uuid())
-  userId   String
-  endpoint String
-  p256dh   String
-  auth     String
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
@@ -1166,15 +1205,15 @@ model ChallengeParticipant {
 // ── Wearables ──
 
 model WearableData {
-  id           String   @id @default(uuid())
-  userId       String
-  sessionId    String?
-  provider     String   // apple_health, google_fit, garmin
-  dataType     String   // heart_rate, calories, steps, hrv, sleep
-  value        Float
-  unit         String   // bpm, kcal, steps, ms
-  timestamp    DateTime
-  createdAt    DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  sessionId String?
+  provider  String // apple_health, google_fit, garmin
+  dataType  String // heart_rate, calories, steps, hrv, sleep
+  value     Float
+  unit      String // bpm, kcal, steps, ms
+  timestamp DateTime
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
@@ -1205,14 +1244,14 @@ model ContentImport {
 // so we can iterate without schema migrations.
 
 model MealPlan {
-  id           String   @id @default(uuid())
-  userId       String
-  weekStart    DateTime @db.Date // Monday of the week
-  generatedAt  DateTime @default(now())
-  source       String   @default("claude") // claude | rules
-  modelUsed    String   @default("claude-haiku-4-5")
-  payload      Json     // { days: [{date, meals: [{type, name, kcal, protein, carbs, fat, ingredients[], prepMinutes, notes?}]}], shoppingList: [{item, qty, unit, category}], totalKcal, avgProtein, ... }
-  notes        String?
+  id          String   @id @default(uuid())
+  userId      String
+  weekStart   DateTime @db.Date // Monday of the week
+  generatedAt DateTime @default(now())
+  source      String   @default("claude") // claude | rules
+  modelUsed   String   @default("claude-haiku-4-5")
+  payload     Json // { days: [{date, meals: [{type, name, kcal, protein, carbs, fat, ingredients[], prepMinutes, notes?}]}], shoppingList: [{item, qty, unit, category}], totalKcal, avgProtein, ... }
+  notes       String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1234,18 +1273,18 @@ enum PhotoSide {
 }
 
 model BodyPhoto {
-  id          String     @id @default(uuid())
-  userId      String
-  s3Key       String     // s3://fitai-assets-production/progress-photos/{userId}/{id}.jpg
-  side        PhotoSide  @default(FRONT)
-  takenAt     DateTime   @default(now())
-  weightKg    Float?     // optional metadata at time of photo
-  bodyFatPct  Float?     // user-entered, may be different from analysis
-  notes       String?
-  isAnalyzed  Boolean    @default(false)
-  createdAt   DateTime   @default(now())
+  id         String    @id @default(uuid())
+  userId     String
+  s3Key      String // s3://fitai-assets-production/progress-photos/{userId}/{id}.jpg
+  side       PhotoSide @default(FRONT)
+  takenAt    DateTime  @default(now())
+  weightKg   Float? // optional metadata at time of photo
+  bodyFatPct Float? // user-entered, may be different from analysis
+  notes      String?
+  isAnalyzed Boolean   @default(false)
+  createdAt  DateTime  @default(now())
 
-  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   analysis BodyAnalysis?
 
   @@index([userId, takenAt(sort: Desc)])
@@ -1255,13 +1294,13 @@ model BodyPhoto {
 model BodyAnalysis {
   id                  String   @id @default(uuid())
   bodyPhotoId         String   @unique
-  estimatedBodyFatPct Float?   // Claude Vision estimate
-  estimatedMuscleMass String?  // qualitative: "low|moderate|high|elite"
-  postureNotes        String?  // anterior pelvic tilt, kyphosis, etc.
+  estimatedBodyFatPct Float? // Claude Vision estimate
+  estimatedMuscleMass String? // qualitative: "low|moderate|high|elite"
+  postureNotes        String? // anterior pelvic tilt, kyphosis, etc.
   visibleStrengths    String[] @default([])
   areasToWork         String[] @default([])
-  comparisonNotes     String?  // vs previous photo of same angle
-  rawClaudeResponse   String?  // full text for debugging
+  comparisonNotes     String? // vs previous photo of same angle
+  rawClaudeResponse   String? // full text for debugging
   modelUsed           String   @default("claude-haiku-4-5")
   createdAt           DateTime @default(now())
 
@@ -1273,7 +1312,7 @@ model BodyAnalysis {
 model MarketplaceItem {
   id          String   @id @default(uuid())
   trainerId   String
-  type        String   // exercise, plan, program
+  type        String // exercise, plan, program
   title       String
   titleCs     String
   description String
@@ -1282,7 +1321,7 @@ model MarketplaceItem {
   rating      Float    @default(0)
   ratingCount Int      @default(0)
   isPublished Boolean  @default(false)
-  linkedId    String?  // exerciseId or workoutPlanId
+  linkedId    String? // exerciseId or workoutPlanId
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -1303,4 +1342,678 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id])
 
   @@index([token])
+}
+
+// ── Cross-Industry Features: Phase 1 — Performance Core ──
+
+enum WorkoutMode {
+  CRUISE
+  SPORT
+  TRACK
+}
+
+enum MaintenanceStatus {
+  FRESH
+  DUE
+  OVERDUE
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum CoachingCategory {
+  FORM
+  TECHNIQUE
+  RECOVERY
+  NUTRITION
+  MINDSET
+}
+
+model SectorTime {
+  id            String @id @default(uuid())
+  exerciseSetId String
+  eccentricMs   Int
+  holdMs        Int
+  concentricMs  Int
+  totalMs       Int
+
+  exerciseSet ExerciseSet @relation(fields: [exerciseSetId], references: [id], onDelete: Cascade)
+
+  @@index([exerciseSetId])
+}
+
+model MaintenanceSchedule {
+  id                  String            @id @default(uuid())
+  userId              String
+  muscleGroup         String
+  sessionsSinceDeload Int               @default(0)
+  lastDeloadDate      DateTime?
+  nextRecommendedDate DateTime?
+  status              MaintenanceStatus @default(FRESH)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, muscleGroup])
+  @@index([userId])
+}
+
+model MaintenanceAlert {
+  id          String        @id @default(uuid())
+  userId      String
+  muscleGroup String
+  severity    AlertSeverity
+  message     String
+  isDismissed Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isDismissed])
+}
+
+model CoachingMemory {
+  id             String           @id @default(uuid())
+  userId         String
+  exerciseId     String?
+  date           DateTime         @default(now())
+  insight        String
+  category       CoachingCategory
+  metricBefore   Float?
+  metricAfter    Float?
+  improvementPct Float?
+
+  user     User      @relation(fields: [userId], references: [id])
+  exercise Exercise? @relation(fields: [exerciseId], references: [id])
+
+  @@index([userId, exerciseId])
+  @@index([userId, date])
+}
+
+// ── Cross-Industry Features: Phase 2 — Social Expansion ──
+
+enum DuelType {
+  MAX_REPS
+  HEAVIEST_LIFT
+  LONGEST_HOLD
+  FASTEST_DISTANCE
+}
+
+enum DuelDuration {
+  HOUR_1
+  HOUR_6
+  HOUR_24
+  HOUR_48
+  WEEK
+}
+
+enum DuelStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  DECLINED
+  EXPIRED
+}
+
+enum SupplementCategory {
+  PROTEIN
+  CREATINE
+  PRE_WORKOUT
+  VITAMIN
+  AMINO
+  OTHER
+}
+
+enum SupplementTiming {
+  MORNING
+  PRE_WORKOUT
+  DURING
+  POST_WORKOUT
+  EVENING
+  WITH_MEAL
+}
+
+enum GearCategory {
+  SHOES
+  BELT
+  GLOVES
+  WRAPS
+  CLOTHING
+  EQUIPMENT
+  OTHER_GEAR
+}
+
+model Duel {
+  id              String       @id @default(uuid())
+  challengerId    String
+  challengedId    String
+  type            DuelType
+  metric          String
+  duration        DuelDuration
+  xpBet           Int          @default(0)
+  status          DuelStatus   @default(PENDING)
+  challengerScore Float        @default(0)
+  challengedScore Float        @default(0)
+  winnerId        String?
+  startedAt       DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime     @default(now())
+
+  challenger User @relation("DuelChallenger", fields: [challengerId], references: [id])
+  challenged User @relation("DuelChallenged", fields: [challengedId], references: [id])
+
+  @@index([challengerId, status])
+  @@index([challengedId, status])
+}
+
+model Squad {
+  id        String   @id @default(uuid())
+  name      String
+  avatarUrl String?
+  motto     String?
+  createdAt DateTime @default(now())
+
+  members SquadMembership[]
+}
+
+model SquadMembership {
+  id       String   @id @default(uuid())
+  squadId  String
+  userId   String
+  role     String   @default("MEMBER") // LEADER or MEMBER
+  joinedAt DateTime @default(now())
+
+  squad Squad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([squadId, userId])
+  @@index([userId])
+}
+
+model PersonStreak {
+  id            String    @id @default(uuid())
+  userAId       String
+  userBId       String
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastBothDate  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userA User @relation("PersonStreakA", fields: [userAId], references: [id])
+  userB User @relation("PersonStreakB", fields: [userBId], references: [id])
+
+  @@unique([userAId, userBId])
+}
+
+model Supplement {
+  id            String             @id @default(uuid())
+  name          String
+  brand         String?
+  category      SupplementCategory
+  defaultDosage String
+  description   String?
+  createdAt     DateTime           @default(now())
+
+  userSupplements UserSupplement[]
+}
+
+model UserSupplement {
+  id            String           @id @default(uuid())
+  userId        String
+  supplementId  String
+  dosage        String
+  timing        SupplementTiming
+  monthlyCostKc Float?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+
+  user       User            @relation(fields: [userId], references: [id])
+  supplement Supplement      @relation(fields: [supplementId], references: [id])
+  logs       SupplementLog[]
+
+  @@unique([userId, supplementId])
+}
+
+model SupplementLog {
+  id               String   @id @default(uuid())
+  userSupplementId String
+  date             DateTime @db.Date
+  taken            Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  userSupplement UserSupplement @relation(fields: [userSupplementId], references: [id], onDelete: Cascade)
+
+  @@unique([userSupplementId, date])
+}
+
+model GearItem {
+  id           String       @id @default(uuid())
+  userId       String
+  category     GearCategory
+  brand        String
+  model        String
+  purchaseDate DateTime?
+  priceKc      Float?
+  photoS3Key   String?
+  sessionCount Int          @default(0)
+  maxSessions  Int?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  user    User         @relation(fields: [userId], references: [id])
+  reviews GearReview[]
+
+  @@index([userId])
+}
+
+model GearReview {
+  id         String   @id @default(uuid())
+  gearItemId String
+  userId     String
+  rating     Int // 1-5
+  text       String?
+  createdAt  DateTime @default(now())
+
+  gearItem GearItem @relation(fields: [gearItemId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([gearItemId, userId])
+}
+
+// ── Cross-Industry Features: Phase 3 — Content & UGC ──
+
+model Clip {
+  id              String   @id @default(uuid())
+  userId          String
+  s3Key           String
+  thumbnailS3Key  String?
+  durationSeconds Int
+  exerciseId      String?
+  tags            String[]
+  caption         String?
+  overlayConfig   Json?
+  viewCount       Int      @default(0)
+  likeCount       Int      @default(0)
+  commentCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  user     User             @relation(fields: [userId], references: [id])
+  exercise Exercise?        @relation(fields: [exerciseId], references: [id])
+  likes    ClipLike[]
+  comments ClipComment[]
+  duetsA   DuetComparison[] @relation("DuetClipA")
+  duetsB   DuetComparison[] @relation("DuetClipB")
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ClipLike {
+  id        String   @id @default(uuid())
+  clipId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  clip Clip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clipId, userId])
+}
+
+model ClipComment {
+  id        String   @id @default(uuid())
+  clipId    String
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  clip Clip @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([clipId, createdAt])
+}
+
+model DuetComparison {
+  id         String   @id @default(uuid())
+  clipAId    String
+  clipBId    String
+  userId     String
+  aiAnalysis Json?
+  createdAt  DateTime @default(now())
+
+  clipA Clip @relation("DuetClipA", fields: [clipAId], references: [id])
+  clipB Clip @relation("DuetClipB", fields: [clipBId], references: [id])
+  user  User @relation(fields: [userId], references: [id])
+}
+
+model PlaylistLink {
+  id            String   @id @default(uuid())
+  userId        String
+  exerciseId    String?
+  workoutType   String?
+  spotifyUrl    String?
+  appleMusicUrl String?
+  title         String
+  bpm           Int?
+  createdAt     DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  exercise Exercise? @relation(fields: [exerciseId], references: [id])
+
+  @@index([exerciseId])
+}
+
+model CraftmanshipStory {
+  id                   String   @id @default(uuid())
+  exerciseId           String   @unique
+  origin               String
+  biomechanics         String
+  history              String
+  expertQuotes         Json     @default("[]")
+  funFacts             String[]
+  scientificReferences String[]
+  createdAt            DateTime @default(now())
+
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+}
+
+// ── Cross-Industry Features: Phase 4 — Marketplace & Monetization ──
+
+enum ExperienceCategory {
+  GROUP
+  OUTDOOR
+  WELLNESS
+  COMBAT
+  ADVENTURE
+  NUTRITION_WORKSHOP
+}
+
+enum CancellationPolicy {
+  FLEXIBLE
+  MODERATE
+  STRICT
+}
+
+enum BookingStatus {
+  BOOKING_PENDING
+  CONFIRMED
+  CANCELLED
+  BOOKING_COMPLETED
+  NO_SHOW
+}
+
+enum RoutineItemType {
+  SUPPLEMENT_ITEM
+  WORKOUT_ITEM
+  MEAL_ITEM
+  RECOVERY_ITEM
+  CUSTOM_ITEM
+}
+
+enum RoutineTime {
+  RT_MORNING
+  RT_PRE_WORKOUT
+  RT_DURING
+  RT_POST_WORKOUT
+  RT_EVENING
+  RT_NIGHT
+}
+
+enum WishlistItemType {
+  WISH_EXERCISE
+  WISH_PLAN
+  WISH_RECIPE
+  WISH_EXPERIENCE
+  WISH_BUNDLE
+  WISH_CLIP
+}
+
+enum TrialStatus {
+  TRIAL_ACTIVE
+  TRIAL_COMPLETED
+  TRIAL_CONVERTED
+  TRIAL_DISMISSED
+}
+
+model TrainerProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  bio                String?
+  certifications     String[]
+  specializations    String[]
+  videoIntroUrl      String?
+  supertrainer       Boolean  @default(false)
+  responseRate       Float    @default(100)
+  avgResponseMinutes Int      @default(0)
+  totalSessions      Int      @default(0)
+  isVerified         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id])
+  reviews     TrainerReview[]
+  experiences Experience[]
+}
+
+model TrainerReview {
+  id        String   @id @default(uuid())
+  trainerId String
+  userId    String
+  bookingId String?
+  rating    Int // 1-5
+  text      String?
+  createdAt DateTime @default(now())
+
+  trainer TrainerProfile @relation(fields: [trainerId], references: [id])
+  user    User           @relation(fields: [userId], references: [id])
+
+  @@index([trainerId])
+}
+
+model Experience {
+  id                 String             @id @default(uuid())
+  trainerId          String
+  title              String
+  description        String
+  locationLat        Float?
+  locationLng        Float?
+  locationAddress    String
+  dateTime           DateTime
+  durationMinutes    Int
+  capacity           Int
+  currentBookings    Int                @default(0)
+  priceXP            Int                @default(0)
+  priceKc            Float              @default(0)
+  difficulty         String             @default("intermediate")
+  category           ExperienceCategory
+  cancellationPolicy CancellationPolicy @default(FLEXIBLE)
+  photos             String[]
+  isActive           Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+
+  trainer  TrainerProfile @relation(fields: [trainerId], references: [id])
+  bookings Booking[]
+
+  @@index([trainerId])
+  @@index([category, dateTime])
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  userId       String
+  experienceId String
+  status       BookingStatus @default(BOOKING_PENDING)
+  bookedAt     DateTime      @default(now())
+  cancelledAt  DateTime?
+  checkedInAt  DateTime?
+  rating       Int?
+  reviewText   String?
+
+  user       User       @relation(fields: [userId], references: [id])
+  experience Experience @relation(fields: [experienceId], references: [id])
+
+  @@index([userId])
+  @@index([experienceId, status])
+}
+
+model Routine {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id])
+  items RoutineItem[]
+
+  @@index([userId])
+}
+
+model RoutineItem {
+  id            String          @id @default(uuid())
+  routineId     String
+  type          RoutineItemType
+  timing        RoutineTime
+  referenceId   String?
+  referenceName String
+  notes         String?
+  sortOrder     Int             @default(0)
+
+  routine Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  @@index([routineId])
+}
+
+model Bundle {
+  id          String   @id @default(uuid())
+  creatorId   String
+  name        String
+  description String?
+  items       Json     @default("[]")
+  priceXP     Int      @default(0)
+  isPublic    Boolean  @default(true)
+  giftable    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  creator User @relation(fields: [creatorId], references: [id])
+
+  @@index([creatorId])
+}
+
+model Wishlist {
+  id       String           @id @default(uuid())
+  userId   String
+  itemType WishlistItemType
+  itemId   String
+  addedAt  DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, itemType, itemId])
+  @@index([userId])
+}
+
+model PlanTrial {
+  id                  String      @id @default(uuid())
+  userId              String
+  planId              String
+  startDate           DateTime
+  endDate             DateTime
+  status              TrialStatus @default(TRIAL_ACTIVE)
+  convertedToPurchase Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+
+  user User        @relation(fields: [userId], references: [id])
+  plan WorkoutPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+}
+
+// ── Cross-Industry Features: Phase 5 — Exclusivity & Brand ──
+
+enum DropCategory {
+  DROP_WORKOUT_PLAN
+  DROP_CHALLENGE
+  DROP_BOSS_FIGHT
+  DROP_BADGE
+  DROP_EXPERIENCE
+}
+
+enum VIPTier {
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+model Drop {
+  id                  String       @id @default(uuid())
+  name                String
+  description         String
+  totalEditions       Int
+  remainingEditions   Int
+  releaseDate         DateTime
+  endDate             DateTime
+  priceXP             Int          @default(0)
+  exclusiveRewardType String
+  exclusiveRewardData Json         @default("{}")
+  category            DropCategory
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+
+  purchases DropPurchase[]
+}
+
+model DropPurchase {
+  id            String   @id @default(uuid())
+  dropId        String
+  userId        String
+  editionNumber Int
+  purchasedAt   DateTime @default(now())
+
+  drop Drop @relation(fields: [dropId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([dropId, userId])
+}
+
+model VIPMembership {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  tier        VIPTier  @default(GOLD)
+  invitedAt   DateTime @default(now())
+  invitedById String?
+  privileges  String[]
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model UserTitle {
+  id              String   @id @default(uuid())
+  userId          String
+  title           String
+  earnedCondition String
+  isActive        Boolean  @default(false)
+  earnedAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isActive])
+}
+
+model UserBrand {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  colorTheme   String?
+  avatarConfig Json?
+  monogram     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }

@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Delete,
+  Param,
   Body,
   UseGuards,
   Request,
@@ -12,6 +14,7 @@ import { ProgressService } from '../progress/progress.service';
 import { UsersService } from './users.service';
 import { UpdateNameDto } from './dto/update-name.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateBrandDto } from './dto/update-brand.dto';
 
 @Controller('users')
 export class UsersController {
@@ -46,5 +49,29 @@ export class UsersController {
   @Delete('me')
   deleteAccount(@Request() req: any) {
     return this.usersService.deleteAccount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('titles')
+  getTitles(@Request() req: any) {
+    return this.usersService.getTitles(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('titles/:id/activate')
+  activateTitle(@Request() req: any, @Param('id') id: string) {
+    return this.usersService.activateTitle(req.user.id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('brand')
+  getBrand(@Request() req: any) {
+    return this.usersService.getBrand(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('brand')
+  updateBrand(@Request() req: any, @Body() dto: UpdateBrandDto) {
+    return this.usersService.updateBrand(req.user.id, dto);
   }
 }

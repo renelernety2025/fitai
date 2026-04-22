@@ -1751,3 +1751,296 @@ export function sendDirectMessage(
 export function startConversation(userId: string): Promise<any> {
   return request(`/messages/start/${userId}`, { method: 'POST' });
 }
+
+// ══════════════════════════════════════════════
+// Cross-Industry Features (Phases 1-5)
+// ══════════════════════════════════════════════
+
+// --- Duels ---
+export function challengeDuel(data: { challengedId: string; type: string; metric: string; duration: string; xpBet: number }): Promise<any> {
+  return request('/duels/challenge', { method: 'POST', body: JSON.stringify(data) });
+}
+export function acceptDuel(id: string): Promise<any> {
+  return request(`/duels/${id}/accept`, { method: 'POST' });
+}
+export function declineDuel(id: string): Promise<any> {
+  return request(`/duels/${id}/decline`, { method: 'POST' });
+}
+export function submitDuelScore(id: string, score: number): Promise<any> {
+  return request(`/duels/${id}/score`, { method: 'POST', body: JSON.stringify({ score }) });
+}
+export function getActiveDuels(): Promise<any[]> {
+  return request('/duels/active');
+}
+export function getDuelHistory(): Promise<any[]> {
+  return request('/duels/history');
+}
+
+// --- Squads ---
+export function createSquad(data: { name: string; motto?: string }): Promise<any> {
+  return request('/squads', { method: 'POST', body: JSON.stringify(data) });
+}
+export function getMySquad(): Promise<any> {
+  return request('/squads/mine');
+}
+export function inviteToSquad(squadId: string, userId: string): Promise<any> {
+  return request(`/squads/${squadId}/invite`, { method: 'POST', body: JSON.stringify({ userId }) });
+}
+export function getSquadDetail(id: string): Promise<any> {
+  return request(`/squads/${id}`);
+}
+export function getSquadLeaderboard(): Promise<any[]> {
+  return request('/squads/leaderboard');
+}
+export function leaveSquad(id: string): Promise<any> {
+  return request(`/squads/${id}/leave`, { method: 'DELETE' });
+}
+
+// --- Supplements ---
+export function getSupplementCatalog(): Promise<any[]> {
+  return request('/supplements/catalog');
+}
+export function getMyStack(): Promise<any[]> {
+  return request('/supplements/stack');
+}
+export function addToStack(data: { supplementId: string; dosage: string; timing: string; monthlyCostKc?: number }): Promise<any> {
+  return request('/supplements/stack', { method: 'POST', body: JSON.stringify(data) });
+}
+export function removeFromStack(id: string): Promise<any> {
+  return request(`/supplements/stack/${id}`, { method: 'DELETE' });
+}
+export function logSupplement(userSupplementId: string): Promise<any> {
+  return request('/supplements/log', { method: 'POST', body: JSON.stringify({ userSupplementId }) });
+}
+export function getSupplementLog(date: string): Promise<any[]> {
+  return request(`/supplements/log/${date}`);
+}
+
+// --- Gear ---
+export function getMyGear(): Promise<any[]> {
+  return request('/gear');
+}
+export function addGearItem(data: { category: string; brand: string; model: string; purchaseDate?: string; priceKc?: number; maxSessions?: number }): Promise<any> {
+  return request('/gear', { method: 'POST', body: JSON.stringify(data) });
+}
+export function updateGearItem(id: string, data: any): Promise<any> {
+  return request(`/gear/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+export function deleteGearItem(id: string): Promise<any> {
+  return request(`/gear/${id}`, { method: 'DELETE' });
+}
+export function reviewGear(id: string, data: { rating: number; text?: string }): Promise<any> {
+  return request(`/gear/${id}/review`, { method: 'POST', body: JSON.stringify(data) });
+}
+
+// --- Maintenance ---
+export function getMaintenanceStatus(): Promise<any[]> {
+  return request('/maintenance');
+}
+export function getMaintenanceAlerts(): Promise<any[]> {
+  return request('/maintenance/alerts');
+}
+export function markDeload(muscleGroup: string): Promise<any> {
+  return request(`/maintenance/${muscleGroup}/deload`, { method: 'POST' });
+}
+export function dismissAlert(id: string): Promise<any> {
+  return request(`/maintenance/alerts/${id}/dismiss`, { method: 'POST' });
+}
+export function getBodyMileage(): Promise<any> {
+  return request('/maintenance/mileage');
+}
+
+// --- Coaching Memory ---
+export function getCoachingMemories(page = 1, limit = 20): Promise<any> {
+  return request(`/coaching-memory?page=${page}&limit=${limit}`);
+}
+export function searchCoachingMemory(q: string): Promise<any[]> {
+  return request(`/coaching-memory/search?q=${encodeURIComponent(q)}`);
+}
+export function getCoachingProgress(exerciseId: string): Promise<any[]> {
+  return request(`/coaching-memory/progress/${exerciseId}`);
+}
+export function saveCoachingMemory(data: { exerciseId?: string; insight: string; category: string; metricBefore?: number; metricAfter?: number }): Promise<any> {
+  return request('/coaching-memory', { method: 'POST', body: JSON.stringify(data) });
+}
+
+// --- Personal Records ---
+export interface PersonalRecord { exerciseId: string; exerciseName: string; category: string; bestWeight: number; bestReps: number; date: string; deltaWeight: number | null; deltaReps: number | null }
+export function getPersonalRecords(): Promise<PersonalRecord[]> {
+  return request('/records');
+}
+export function getExerciseRecords(exerciseId: string): Promise<any> {
+  return request(`/records/${exerciseId}`);
+}
+export function getSectorTimes(exerciseSetId: string): Promise<any> {
+  return request(`/records/sectors/${exerciseSetId}`);
+}
+
+// --- Clips ---
+export function getClipUploadUrl(data: { fileName: string; contentType: string }): Promise<any> {
+  return request('/clips/upload-url', { method: 'POST', body: JSON.stringify(data) });
+}
+export function getClipsFeed(page = 1, limit = 10): Promise<any[]> {
+  return request(`/clips/feed?page=${page}&limit=${limit}`);
+}
+export function getClipDetail(id: string): Promise<any> {
+  return request(`/clips/${id}`);
+}
+export function createClip(data: { s3Key: string; durationSeconds: number; exerciseId?: string; tags?: string[]; caption?: string }): Promise<any> {
+  return request('/clips', { method: 'POST', body: JSON.stringify(data) });
+}
+export function toggleClipLike(id: string): Promise<any> {
+  return request(`/clips/${id}/like`, { method: 'POST' });
+}
+export function commentOnClip(id: string, text: string): Promise<any> {
+  return request(`/clips/${id}/comment`, { method: 'POST', body: JSON.stringify({ text }) });
+}
+export function deleteClip(id: string): Promise<any> {
+  return request(`/clips/${id}`, { method: 'DELETE' });
+}
+
+// --- Experiences ---
+export function getExperiences(params?: { category?: string; difficulty?: string; search?: string }): Promise<any[]> {
+  const qs = params ? new URLSearchParams(params as Record<string, string>).toString() : '';
+  return request(`/experiences${qs ? `?${qs}` : ''}`);
+}
+export function getExperienceDetail(id: string): Promise<any> {
+  return request(`/experiences/${id}`);
+}
+export function createExperience(data: any): Promise<any> {
+  return request('/experiences', { method: 'POST', body: JSON.stringify(data) });
+}
+export function bookExperience(id: string): Promise<any> {
+  return request(`/experiences/${id}/book`, { method: 'POST' });
+}
+export function cancelBooking(id: string): Promise<any> {
+  return request(`/bookings/${id}/cancel`, { method: 'POST' });
+}
+export function checkinBooking(id: string): Promise<any> {
+  return request(`/bookings/${id}/checkin`, { method: 'POST' });
+}
+export function reviewBooking(id: string, data: { rating: number; reviewText?: string }): Promise<any> {
+  return request(`/bookings/${id}/review`, { method: 'POST', body: JSON.stringify(data) });
+}
+export function getMyBookings(): Promise<any[]> {
+  return request('/experiences/my-bookings');
+}
+
+// --- Trainers ---
+export interface Trainer { id: string; userId: string; bio: string; supertrainer: boolean; responseRate: number; totalSessions: number; isVerified: boolean; specializations: string[]; certifications: string[]; user: { name: string; avatarUrl?: string }; _count?: { reviews: number }; avgRating?: number }
+export interface TrainerDetail extends Trainer { reviews: any[]; experiences: any[] }
+export function getTrainers(search?: string): Promise<Trainer[]> {
+  return request(`/trainers${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+}
+export function getTrainerDetail(id: string): Promise<TrainerDetail> {
+  return request(`/trainers/${id}`);
+}
+export function applyAsTrainer(data: { bio: string; certifications: string[]; specializations: string[] }): Promise<any> {
+  return request('/trainers/apply', { method: 'POST', body: JSON.stringify(data) });
+}
+export function updateTrainerProfile(data: any): Promise<any> {
+  return request('/trainers/profile', { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+// --- Routine Builder ---
+export interface Routine { id: string; name: string; isPublic: boolean; items: RoutineItem[] }
+export interface RoutineItem { id: string; type: string; timing: string; referenceName: string; notes?: string; sortOrder: number }
+export function getMyRoutines(): Promise<Routine[]> {
+  return request('/routines/mine');
+}
+export function createRoutine(data: { name: string; isPublic?: boolean }): Promise<any> {
+  return request('/routines', { method: 'POST', body: JSON.stringify(data) });
+}
+export function deleteRoutine(id: string): Promise<any> {
+  return request(`/routines/${id}`, { method: 'DELETE' });
+}
+export function addRoutineItem(routineId: string, data: any): Promise<any> {
+  return request(`/routines/${routineId}/items`, { method: 'POST', body: JSON.stringify(data) });
+}
+export function removeRoutineItem(routineId: string, itemId: string): Promise<any> {
+  return request(`/routines/${routineId}/items/${itemId}`, { method: 'DELETE' });
+}
+export function getPublicRoutines(): Promise<Routine[]> {
+  return request('/routines/public');
+}
+
+// --- Limited Drops ---
+export function getDrops(): Promise<any[]> {
+  return request('/drops');
+}
+export function getDropDetail(id: string): Promise<any> {
+  return request(`/drops/${id}`);
+}
+export function purchaseDrop(id: string): Promise<any> {
+  return request(`/drops/${id}/purchase`, { method: 'POST' });
+}
+export function getMyDropPurchases(): Promise<any[]> {
+  return request('/drops/my-purchases');
+}
+
+// --- VIP ---
+export interface VIPStatus { id: string; tier: string; invitedAt: string; privileges: string[] }
+export interface VIPEligibility { eligible: boolean; xpRank: number; totalUsers: number; streak: number; avgForm: number }
+export function getVIPStatus(): Promise<VIPStatus | null> {
+  return request('/vip/status');
+}
+export function acceptVIP(): Promise<any> {
+  return request('/vip/accept', { method: 'POST' });
+}
+export function checkVIPEligibility(): Promise<VIPEligibility> {
+  return request('/vip/check-eligibility');
+}
+
+// --- Wishlist ---
+export interface WishlistItem { id: string; itemType: string; itemId: string; addedAt: string }
+export function getWishlist(): Promise<WishlistItem[]> {
+  return request('/wishlist');
+}
+export function addToWishlist(data: { itemType: string; itemId: string }): Promise<any> {
+  return request('/wishlist', { method: 'POST', body: JSON.stringify(data) });
+}
+export function removeFromWishlist(id: string): Promise<any> {
+  return request(`/wishlist/${id}`, { method: 'DELETE' });
+}
+export function getWishlistCount(itemType: string, itemId: string): Promise<number> {
+  return request(`/wishlist/count/${itemType}/${itemId}`);
+}
+
+// --- Bundles ---
+export interface Bundle { id: string; name: string; description?: string; items: any[]; priceXP: number; giftable: boolean; creator: { name: string } }
+export function getBundles(): Promise<Bundle[]> {
+  return request('/bundles');
+}
+export function getBundleDetail(id: string): Promise<any> {
+  return request(`/bundles/${id}`);
+}
+export function createBundle(data: any): Promise<any> {
+  return request('/bundles', { method: 'POST', body: JSON.stringify(data) });
+}
+export function purchaseBundle(id: string): Promise<any> {
+  return request(`/bundles/${id}/purchase`, { method: 'POST' });
+}
+
+// --- User Titles & Brand ---
+export function getUserTitles(): Promise<any[]> {
+  return request('/users/titles');
+}
+export function activateTitle(id: string): Promise<any> {
+  return request(`/users/titles/${id}/activate`, { method: 'PATCH' });
+}
+export function getUserBrand(): Promise<any> {
+  return request('/users/brand');
+}
+export function updateUserBrand(data: { colorTheme?: string; avatarConfig?: any; monogram?: string }): Promise<any> {
+  return request('/users/brand', { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+// --- Playlists ---
+export interface PlaylistLink { id: string; title: string; spotifyUrl?: string; appleMusicUrl?: string; bpm?: number; workoutType?: string; user: { name: string } }
+export function getPlaylists(params?: { exerciseId?: string; workoutType?: string }): Promise<PlaylistLink[]> {
+  const qs = params ? new URLSearchParams(params as Record<string, string>).toString() : '';
+  return request(`/playlists${qs ? `?${qs}` : ''}`);
+}
+export function addPlaylistLink(data: { exerciseId?: string; workoutType?: string; spotifyUrl?: string; appleMusicUrl?: string; title: string; bpm?: number }): Promise<any> {
+  return request('/playlists', { method: 'POST', body: JSON.stringify(data) });
+}

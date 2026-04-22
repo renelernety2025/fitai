@@ -1,10 +1,13 @@
 import {
   Injectable,
   BadRequestException,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserLevel } from '@prisma/client';
+import { UpdateBrandDto } from './dto/update-brand.dto';
 
 @Injectable()
 export class UsersService {
@@ -145,5 +148,58 @@ export class UsersService {
       this.prisma.user.delete({ where: { id: userId } }),
     ]);
     return { message: 'Account deleted' };
+  }
+
+  // ── User Titles ──
+
+  async getTitles(userId: string) {
+    return (this.prisma as any).userTitle.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async activateTitle(userId: string, titleId: string) {
+    const title = await (this.prisma as any).userTitle.findUnique({
+      where: { id: titleId },
+    });
+    if (!title) throw new NotFoundException('Title not found');
+    if (title.userId !== userId) {
+      throw new ForbiddenException('Not your title');
+    }
+    await (this.prisma as any).userTitle.updateMany({
+      where: { userId, isActive: true },
+      data: { isActive: false },
+    });
+    return (this.prisma as any).userTitle.update({
+      where: { id: titleId },
+      data: { isActive: true },
+    });
+  }
+
+  // ── User Brand ──
+
+  async getBrand(userId: string) {
+    const brand = await (this.prisma as any).userBrand.findUnique({
+      where: { userId },
+    });
+    return brand ?? { colorTheme: null, avatarConfig: null, monogram: null };
+  }
+
+  async updateBrand(userId: string, dto: UpdateBrandDto) {
+    return (this.prisma as any).userBrand.upsert({
+      where: { userId },
+      update: {
+        ...(dto.colorTheme !== undefined ? { colorTheme: dto.colorTheme } : {}),
+        ...(dto.avatarConfig !== undefined ? { avatarConfig: dto.avatarConfig } : {}),
+        ...(dto.monogram !== undefined ? { monogram: dto.monogram } : {}),
+      },
+      create: {
+        userId,
+        colorTheme: dto.colorTheme ?? null,
+        avatarConfig: dto.avatarConfig ?? null,
+        monogram: dto.monogram ?? null,
+      },
+    });
   }
 }
