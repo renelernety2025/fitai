@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsDateString,
   IsIn,
+  MaxLength,
 } from 'class-validator';
 
 const VALID_TESTS = [
@@ -20,6 +21,7 @@ export class CreateBloodworkDto {
   value: number;
 
   @IsString()
+  @MaxLength(50)
   unit: string;
 
   @IsDateString()
@@ -27,9 +29,11 @@ export class CreateBloodworkDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   lab?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   notes?: string;
 }

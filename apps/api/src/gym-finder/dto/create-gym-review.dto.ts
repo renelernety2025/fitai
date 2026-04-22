@@ -5,15 +5,18 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
 export class CreateGymReviewDto {
   @IsString()
+  @MaxLength(200)
   gymName: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   address?: string;
 
   @IsOptional()
@@ -36,5 +39,6 @@ export class CreateGymReviewDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   notes?: string;
 }

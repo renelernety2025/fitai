@@ -75,6 +75,12 @@ export class BossFightsService {
       throw new BadRequestException('No active attempt');
     }
 
+    const elapsed =
+      (Date.now() - pending.startedAt.getTime()) / 1000;
+    if (elapsed < 30) {
+      throw new BadRequestException('Suspicious completion time');
+    }
+
     await this.prisma.bossAttempt.update({
       where: { id: pending.id },
       data: {

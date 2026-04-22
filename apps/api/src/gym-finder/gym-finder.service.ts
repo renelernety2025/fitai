@@ -9,6 +9,7 @@ export class GymFinderService {
   async getAll() {
     return this.prisma.gymReview.findMany({
       orderBy: { createdAt: 'desc' },
+      take: 100,
       include: { user: { select: { id: true, name: true } } },
     });
   }
@@ -31,6 +32,7 @@ export class GymFinderService {
   async getNearby(lat: number, lng: number, radiusKm: number) {
     const reviews = await this.prisma.gymReview.findMany({
       where: { lat: { not: null }, lng: { not: null } },
+      take: 100,
       include: { user: { select: { id: true, name: true } } },
     });
 

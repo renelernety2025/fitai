@@ -10,10 +10,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
+import { IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RecipesService } from './recipes.service';
 import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { UpdateRecipeDto } from './dto/update-recipe.dto';
+
+class GenerateFromPhotoDto {
+  @IsString()
+  @MaxLength(200)
+  s3Key!: string;
+}
 
 @Controller('recipes')
 @UseGuards(JwtAuthGuard)
@@ -64,8 +71,8 @@ export class RecipesController {
   @Throttle({ default: { limit: 10, ttl: seconds(86400) } })
   generateFromPhoto(
     @Request() req: any,
-    @Body() body: { s3Key: string },
+    @Body() dto: GenerateFromPhotoDto,
   ) {
-    return this.service.generateFromPhoto(req.user.id, body.s3Key);
+    return this.service.generateFromPhoto(req.user.id, dto.s3Key);
   }
 }

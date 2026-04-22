@@ -28,6 +28,7 @@ export class MarketplaceService {
     return this.prisma.marketplaceListing.findMany({
       where,
       orderBy,
+      take: 50,
       include: { author: { select: { id: true, name: true } } },
     });
   }
@@ -85,27 +86,29 @@ export class MarketplaceService {
       throw new BadRequestException('Already purchased');
     }
 
-    if (listing.priceXP > 0) {
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
-      });
-      const xp = progress?.totalXP ?? 0;
-      if (xp < listing.priceXP) {
-        throw new BadRequestException('Not enough XP');
+    await this.prisma.$transaction(async (tx) => {
+      if (listing.priceXP > 0) {
+        const progress = await tx.userProgress.findUnique({
+          where: { userId },
+        });
+        const xp = progress?.totalXP ?? 0;
+        if (xp < listing.priceXP) {
+          throw new BadRequestException('Not enough XP');
+        }
+        await tx.userProgress.update({
+          where: { userId },
+          data: { totalXP: { decrement: listing.priceXP } },
+        });
       }
-      await this.prisma.userProgress.update({
-        where: { userId },
-        data: { totalXP: { decrement: listing.priceXP } },
+
+      await tx.marketplacePurchase.create({
+        data: { userId, listingId, xpPaid: listing.priceXP },
       });
-    }
 
-    await this.prisma.marketplacePurchase.create({
-      data: { userId, listingId, xpPaid: listing.priceXP },
-    });
-
-    await this.prisma.marketplaceListing.update({
-      where: { id: listingId },
-      data: { downloads: { increment: 1 } },
+      await tx.marketplaceListing.update({
+        where: { id: listingId },
+        data: { downloads: { increment: 1 } },
+      });
     });
 
     return { success: true, xpPaid: listing.priceXP };
@@ -124,9 +127,26 @@ export class MarketplaceService {
     });
     if (!listing) throw new NotFoundException();
 
-    const newCount = listing.ratingCount + 1;
-    const newRating =
-      (listing.rating * listing.ratingCount + rating) / newCount;
+    let newCount: number;
+    let newRating: number;
+
+    if (purchased.userRating !== null) {
+      // Re-rating: replace old rating in aggregate
+      const oldRating = purchased.userRating;
+      newCount = listing.ratingCount;
+      const totalSum = listing.rating * listing.ratingCount;
+      newRating = (totalSum - oldRating + rating) / newCount;
+    } else {
+      // First rating
+      newCount = listing.ratingCount + 1;
+      newRating =
+        (listing.rating * listing.ratingCount + rating) / newCount;
+    }
+
+    await this.prisma.marketplacePurchase.update({
+      where: { userId_listingId: { userId, listingId } },
+      data: { userRating: rating },
+    });
 
     await this.prisma.marketplaceListing.update({
       where: { id: listingId },

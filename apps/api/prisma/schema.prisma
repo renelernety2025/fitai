@@ -813,11 +813,12 @@ model MarketplaceListing {
 }
 
 model MarketplacePurchase {
-  id        String   @id @default(uuid())
-  userId    String
-  listingId String
-  xpPaid    Int
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  listingId  String
+  xpPaid     Int
+  userRating Int?
+  createdAt  DateTime @default(now())
 
   user    User               @relation(fields: [userId], references: [id])
   listing MarketplaceListing @relation(fields: [listingId], references: [id])
