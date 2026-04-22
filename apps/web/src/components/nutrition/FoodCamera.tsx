@@ -24,7 +24,7 @@ interface Props {
 }
 
 export default function FoodCamera({ mealType, onClose, onLogged }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const [step, setStep] = useState<'pick' | 'analyzing' | 'result'>('pick');
   const [result, setResult] = useState<FoodPhotoAnalysis | null>(null);
   const [s3Key, setS3Key] = useState('');
@@ -151,10 +151,9 @@ function PickStep({
         Vyfotit jidlo
       </button>
       <input
-        ref={fileRef}
+        ref={fileRef as React.LegacyRef<HTMLInputElement>}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];

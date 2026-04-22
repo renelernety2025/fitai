@@ -5,16 +5,15 @@ WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-# Copy only web and shared package definitions — skip root mobile deps
+# Copy only web and shared package definitions
 COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
 
-# Create minimal root package.json for workspace install (no mobile deps)
-RUN echo '{"private":true,"workspaces":["apps/*","packages/*"]}' > package.json
+# Workspace root — only web + shared, no mobile deps that bring React 19
+RUN echo '{"private":true,"workspaces":["apps/web","packages/shared"]}' > package.json
 
-# Install without lockfile to avoid root-level react 19 conflicts
-RUN cd apps/web && npm install --legacy-peer-deps
-RUN cd packages/shared && npm install 2>/dev/null || true
+# Install with nested strategy to prevent cross-package React hoisting
+RUN npm install --legacy-peer-deps --install-strategy=nested 2>/dev/null || npm install --legacy-peer-deps
 
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
