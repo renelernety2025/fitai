@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { StaggerContainer, StaggerItem, SPRING_GENTLE } from '@/components/v2/motion';
+import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
 import { MonthChapter } from '@/components/journal/MonthChapter';
 import { DayCard } from '@/components/journal/DayCard';
@@ -248,14 +247,8 @@ export default function JournalPage() {
           Žádné záznamy pro tento měsíc
         </div>
       ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentMonth}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={SPRING_GENTLE}
-          >
+        <div key={currentMonth} className="animate-fadeIn">
+          <div>
             <V2SectionLabel>Záznamy</V2SectionLabel>
             <div className="relative">
               {/* Timeline line */}
@@ -280,8 +273,8 @@ export default function JournalPage() {
                 })}
               </StaggerContainer>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        </div>
       )}
 
       {/* Load older */}

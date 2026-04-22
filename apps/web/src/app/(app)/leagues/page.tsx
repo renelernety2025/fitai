@@ -7,7 +7,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
 import { getLeagueCurrent, joinLeague } from '@/lib/api';
@@ -207,8 +206,7 @@ export default function LeaguesPage() {
                 const relegated = entry.rank > data.leaderboard.length - data.relegationLine;
                 return (
                   <StaggerItem key={entry.userId}>
-                  <motion.div
-                    layout
+                  <div
                     className={`flex items-center gap-4 rounded-xl border px-5 py-4 transition ${
                       isMe
                         ? 'border-[#A8FF00]/30 bg-[#A8FF00]/5'
@@ -225,7 +223,7 @@ export default function LeaguesPage() {
                       {isMe && ' (ty)'}
                     </span>
                     <span className="text-sm tabular-nums text-white/50">{entry.weeklyXP.toLocaleString('cs-CZ')} XP</span>
-                  </motion.div>
+                  </div>
                   </StaggerItem>
                 );
               })}

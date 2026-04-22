@@ -6,9 +6,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { FadeIn, SPRING_BOUNCY } from '@/components/v2/motion';
+import { FadeIn } from '@/components/v2/motion';
 import { getSkillTree, checkSkillTree } from '@/lib/api';
 
 const BRANCH_COLORS: Record<string, string> = {
@@ -56,12 +55,9 @@ function NodeCircle({
   const locked = !unlocked && !available;
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      className="group relative flex flex-col items-center"
-      initial={unlocked ? { scale: 0 } : { scale: 1 }}
-      animate={{ scale: 1 }}
-      transition={unlocked ? SPRING_BOUNCY : undefined}
+      className={`group relative flex flex-col items-center ${unlocked ? 'animate-scaleIn' : ''}`}
     >
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-full border-2 text-xs font-bold transition-all ${
@@ -85,7 +81,7 @@ function NodeCircle({
       }`}>
         {node.name}
       </span>
-    </motion.button>
+    </button>
   );
 }
 
@@ -242,7 +238,7 @@ export default function SkillTreePage() {
                             }}
                           />
                         )}
-                        <motion.div
+                        <div
                           className={newUnlocked.includes(node.id) ? 'animate-bounce' : ''}
                           style={newUnlocked.includes(node.id) ? { filter: `drop-shadow(0 0 12px ${branch.color})` } : {}}
                         >
@@ -251,7 +247,7 @@ export default function SkillTreePage() {
                             color={branch.color}
                             onClick={() => setTooltip(node)}
                           />
-                        </motion.div>
+                        </div>
                       </div>
                     ))}
                   </div>

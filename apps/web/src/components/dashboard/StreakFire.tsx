@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 const particles = Array.from({ length: 8 }, (_, i) => ({
   id: i,
   x: (Math.sin(i * 1.2) * 0.5) * 40,
@@ -18,7 +16,7 @@ export function StreakFire({ streak }: { streak: number }) {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {particles.map(p => (
-        <motion.div
+        <div
           key={p.id}
           className="absolute rounded-full"
           style={{
@@ -27,13 +25,7 @@ export function StreakFire({ streak }: { streak: number }) {
             width: p.size,
             height: p.size,
             background: `hsl(${p.hue}, 100%, ${p.lightness}%)`,
-          }}
-          animate={{ y: [-10, -60], opacity: [0.8, 0], scale: [1, 0.5] }}
-          transition={{
-            duration: p.duration,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: 'easeOut',
+            animation: `fireParticle ${p.duration}s ease-out ${p.delay}s infinite`,
           }}
         />
       ))}

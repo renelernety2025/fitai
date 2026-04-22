@@ -1,7 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
 function formatContent(raw: string): string {
   let html = raw
     .replace(/&/g, '&amp;')
@@ -46,11 +44,12 @@ export function ChatBubble({
         <div className="rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 px-4 py-3">
           <div className="flex gap-1 items-center h-4">
             {[0, 1, 2].map(i => (
-              <motion.div
+              <div
                 key={i}
                 className="w-2 h-2 rounded-full bg-[#A8FF00]"
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
+                style={{
+                  animation: `typingDot 0.6s ease-in-out ${i * 0.15}s infinite`,
+                }}
               />
             ))}
           </div>

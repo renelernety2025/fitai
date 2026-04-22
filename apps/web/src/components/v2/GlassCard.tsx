@@ -1,8 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { SPRING_SNAPPY } from './motion';
-
 interface GlassCardProps {
   children: React.ReactNode;
   className?: string;
@@ -13,11 +10,11 @@ interface GlassCardProps {
 
 export function GlassCard({ children, className = '', hover = true, glow, onClick }: GlassCardProps) {
   return (
-    <motion.div
-      whileHover={hover ? { scale: 1.01, borderColor: 'rgba(255,255,255,0.15)' } : undefined}
-      transition={SPRING_SNAPPY}
+    <div
       onClick={onClick}
-      className={`rounded-2xl border border-white/8 backdrop-blur-sm ${className}`}
+      className={`rounded-2xl border border-white/8 backdrop-blur-sm transition-all duration-200 ${
+        hover ? 'hover:scale-[1.01] hover:border-white/15' : ''
+      } ${className}`}
       style={{
         background: 'rgba(255, 255, 255, 0.03)',
         boxShadow: glow ? `0 0 30px ${glow}` : undefined,
@@ -25,6 +22,6 @@ export function GlassCard({ children, className = '', hover = true, glow, onClic
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

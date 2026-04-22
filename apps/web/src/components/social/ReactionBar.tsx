@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { addReaction, removeReaction } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -69,12 +68,10 @@ export default function ReactionBar({
         const count = countFor(e.key);
         const active = isActive(e.key);
         return (
-          <motion.button
+          <button
             key={e.key}
-            whileTap={{ scale: 1.3 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={() => toggle(e.key)}
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition"
+            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-transform active:scale-[1.3]"
             style={{
               backgroundColor: active
                 ? 'rgba(168,255,0,0.15)'
@@ -87,7 +84,7 @@ export default function ReactionBar({
           >
             <span>{e.label}</span>
             {count > 0 && <span>{count}</span>}
-          </motion.button>
+          </button>
         );
       })}
     </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { getBossFights, startBoss, completeBoss } from '@/lib/api';
@@ -90,14 +89,15 @@ export default function BossFightsPage() {
           <h3 className="mb-1 text-xl font-bold text-white">{activeBoss.nameCs || activeBoss.name}</h3>
           {instructions && <p className="mb-6 text-sm text-white/55">{instructions}</p>}
 
-          <motion.div
+          <div
             className="mb-6 text-5xl font-bold tabular-nums text-[#FFD600]"
-            style={{ letterSpacing: '-0.03em' }}
-            animate={running ? { textShadow: ['0 0 10px #FFD60066', '0 0 30px #FFD600AA', '0 0 10px #FFD60066'] } : {}}
-            transition={running ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } : {}}
+            style={{
+              letterSpacing: '-0.03em',
+              animation: running ? 'timerPulse 1.5s ease-in-out infinite' : undefined,
+            }}
           >
             {formatTime(timer)}
-          </motion.div>
+          </div>
 
           {running ? (
             <div className="flex flex-col items-center gap-4">

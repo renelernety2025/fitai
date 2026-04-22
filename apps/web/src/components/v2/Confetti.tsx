@@ -1,6 +1,5 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 const COLORS = ['#A8FF00', '#FF375F', '#00E5FF', '#FFD600', '#BF5AF2'];
@@ -28,25 +27,21 @@ export function Confetti({ trigger }: { trigger: boolean }) {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      <AnimatePresence>
-        {particles.map(p => (
-          <motion.div
-            key={p.id}
-            className="absolute rounded-sm"
-            style={{
-              left: '50%',
-              top: '40%',
-              width: p.size,
-              height: p.size,
-              background: p.color,
-            }}
-            initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
-            animate={{ x: p.x, y: p.y, rotate: p.rotation, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: 'easeOut' }}
-          />
-        ))}
-      </AnimatePresence>
+      {particles.map(p => (
+        <div
+          key={p.id}
+          className="absolute rounded-sm"
+          style={{
+            left: '50%',
+            top: '40%',
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            animation: `confettiPop 1.5s ease-out forwards`,
+            transform: `translate(${p.x}px, ${p.y}px) rotate(${p.rotation}deg)`,
+          }}
+        />
+      ))}
     </div>
   );
 }
