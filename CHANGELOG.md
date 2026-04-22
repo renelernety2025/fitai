@@ -53,6 +53,55 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Infrastructure — Legal, SEO, Landing, Password Reset, Settings, Email, Admin] 2026-04-22
+
+### Legal Pages
+- /privacy — GDPR privacy policy (data, AI, cookies, rights)
+- /terms — Terms of Service
+- /ai-disclaimer — AI is not medical advice
+- Footer links on all pages
+
+### SEO
+- Meta tags, OG, Twitter cards on layout
+- robots.txt (blocks /api/, /admin/)
+- sitemap.xml (public pages only)
+
+### Landing Page Redesign
+- Hero + features grid (6 features) + how it works (3 steps)
+- Pricing table (Free/Pro 199Kc/Premium 399Kc)
+- Professional dark theme design
+
+### Error Pages
+- Custom 404 + 500 error pages
+
+### Password Reset
+- POST /auth/forgot-password + /auth/reset-password
+- Crypto UUID tokens, 1h expiry, single-use, bcrypt
+- /forgot-password + /reset-password web pages
+
+### Account Settings (/settings)
+- Change name, change password
+- GDPR account deletion ($transaction, 55+ models)
+- Export data link
+
+### Email System
+- EmailService with sendWelcome, sendPasswordReset, sendWeeklyDigest, sendStreakWarning
+- Logger-only (ready for SES/Resend)
+- Weekly digest cron (Friday 18:00)
+
+### Admin Dashboard (/admin)
+- Stats: total users, active today, sessions, food logs, check-ins, AI calls
+- isAdmin server-side check
+
+### Security Fixes
+- Password reset token removed from API response (was account takeover)
+- Token no longer logged to CloudWatch
+- All old tokens invalidated on successful reset
+- 25 missing models added to GDPR deletion
+- Sitemap restricted to public pages
+
+---
+
 ## [Priority 1 — Mobile parity, Dark/Light mode, Onboarding tour] 2026-04-22
 
 ### Mobile Parity (4 new screens)
