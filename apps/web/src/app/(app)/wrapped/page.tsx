@@ -8,6 +8,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { SlideUp, NumberTicker } from '@/components/v2/motion';
 import { getWrapped } from '@/lib/api';
 
 type Period = 'monthly' | 'yearly';
@@ -56,7 +57,9 @@ function StatCard({ value, label, gradient }: {
         className="font-bold tabular-nums tracking-tight text-white"
         style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
       >
-        {typeof value === 'number' ? value.toLocaleString('cs-CZ') : value}
+        {typeof value === 'number'
+          ? <NumberTicker value={value} />
+          : value}
       </div>
       <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/50">
         {label}
@@ -152,6 +155,7 @@ export default function WrappedPage() {
         {!loading && data && (
           <>
             {/* Stats grid */}
+            <SlideUp>
             <div className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-3">
               <StatCard value={data.totalWorkouts} label="Treninku" gradient="linear-gradient(135deg, #FF375F33 0%, #FF375F11 100%)" />
               <StatCard value={data.totalHours.toFixed(1)} label="Hodin" gradient="linear-gradient(135deg, #A8FF0033 0%, #A8FF0011 100%)" />
@@ -160,8 +164,10 @@ export default function WrappedPage() {
               <StatCard value={data.longestStreak} label="Nejdelsi streak" gradient="linear-gradient(135deg, #BF5AF233 0%, #BF5AF211 100%)" />
               <StatCard value={`${data.avgFormPercent}%`} label="Prumer forma" gradient="linear-gradient(135deg, #FF9F0A33 0%, #FF9F0A11 100%)" />
             </div>
+            </SlideUp>
 
             {/* Top exercises */}
+            <SlideUp delay={0.1}>
             <V2SectionLabel>Top 5 cviku</V2SectionLabel>
             {data.topExercises.length === 0 && (
               <p className="mb-16 text-sm text-white/30">Zatim zadna data o cvicich.</p>
@@ -175,8 +181,10 @@ export default function WrappedPage() {
                 </div>
               ))}
             </div>
+            </SlideUp>
 
             {/* Extra stats row */}
+            <SlideUp delay={0.2}>
             <div className="mb-16 grid grid-cols-2 gap-6">
               <div>
                 <V2SectionLabel>Nejaktivnejsi den</V2SectionLabel>
@@ -187,13 +195,16 @@ export default function WrappedPage() {
                 <div className="text-xl font-bold text-white">{data.avgRecoveryScore}/100</div>
               </div>
             </div>
+            </SlideUp>
 
             {/* AI summary */}
             {data.aiSummary && (
+              <SlideUp delay={0.3}>
               <div className="mb-12 rounded-2xl border border-[#A8FF00]/20 bg-[#A8FF00]/5 p-8">
                 <V2SectionLabel>AI shruti</V2SectionLabel>
                 <p className="text-base leading-relaxed text-white/70">{data.aiSummary}</p>
               </div>
+              </SlideUp>
             )}
 
             {/* Share button */}

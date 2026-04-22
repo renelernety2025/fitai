@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { useAuth } from '@/lib/auth-context';
 import CreateChallengeModal from '@/components/social/CreateChallengeModal';
 import { FeedSkeleton } from '@/components/v2/Skeleton';
@@ -126,8 +127,10 @@ export default function CommunityV2Page() {
               Feed je prazdny. Sleduj dalsi cvicence nebo zacni cvicit.
             </p>
           )}
+          <StaggerContainer>
           {feed.map((item) => (
-            <div key={item.id} className="border-b border-white/8 py-6">
+            <StaggerItem key={item.id}>
+            <div className="border-b border-white/8 py-6">
               <div className="mb-2 flex items-baseline gap-3">
                 <Link href={`/profile/${item.user.id}`}>
                   <span className="font-medium text-white hover:text-[#A8FF00] transition cursor-pointer">{item.user.name}</span>
@@ -147,7 +150,9 @@ export default function CommunityV2Page() {
               </div>
               <CommentSection feedItemId={item.id} commentCount={0} />
             </div>
+            </StaggerItem>
           ))}
+          </StaggerContainer>
         </section>
       )}
 

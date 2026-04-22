@@ -28,6 +28,10 @@ function formatDuration(seconds: number): string {
   return `${m} min`;
 }
 
+const MOOD_COLORS: Record<string, string> = {
+  GREAT: '#A8FF00', GOOD: '#00E5FF', NEUTRAL: '#FF9500', TIRED: '#BF5AF2', BAD: '#FF375F',
+};
+
 export function DayCard({ day, onUpdate, onRequestInsight }: DayCardProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -44,11 +48,13 @@ export function DayCard({ day, onUpdate, onRequestInsight }: DayCardProps) {
   const entry = day.entry;
   const session = day.gymSession;
   const hasSession = session !== null;
+  const borderColor = entry?.mood ? MOOD_COLORS[entry.mood] || 'transparent' : 'transparent';
+  const moodBorderStyle = entry?.mood ? { borderLeftColor: borderColor, borderLeftWidth: 3 } : {};
 
   // Rest day layout
   if (!hasSession) {
     return (
-      <div className="mb-6 rounded-xl border border-white/5 bg-white/[0.02] p-6">
+      <div className="mb-6 rounded-xl border border-white/5 bg-white/[0.02] p-6" style={moodBorderStyle}>
         <DayHeader date={day.date} tags={entry?.tags || []} onTagsChange={(t) => debouncedUpdate('tags', t)} />
         <div className="flex flex-col items-center py-8 text-white/30">
           <span className="mb-2 text-3xl">{'\uD83D\uDCA4'}</span>
@@ -74,7 +80,7 @@ export function DayCard({ day, onUpdate, onRequestInsight }: DayCardProps) {
   const hasPR = session.averageFormScore > 80;
 
   return (
-    <div className="mb-6 rounded-xl border border-white/5 bg-white/[0.02] p-6">
+    <div className="mb-6 rounded-xl border border-white/5 bg-white/[0.02] p-6" style={moodBorderStyle}>
       <DayHeader date={day.date} tags={entry?.tags || []} onTagsChange={(t) => debouncedUpdate('tags', t)} />
 
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">

@@ -6,7 +6,9 @@
  */
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { FadeIn, SPRING_BOUNCY } from '@/components/v2/motion';
 import { getSkillTree, checkSkillTree } from '@/lib/api';
 
 const BRANCH_COLORS: Record<string, string> = {
@@ -54,9 +56,12 @@ function NodeCircle({
   const locked = !unlocked && !available;
 
   return (
-    <button
+    <motion.button
       onClick={onClick}
       className="group relative flex flex-col items-center"
+      initial={unlocked ? { scale: 0 } : { scale: 1 }}
+      animate={{ scale: 1 }}
+      transition={unlocked ? SPRING_BOUNCY : undefined}
     >
       <div
         className={`flex h-14 w-14 items-center justify-center rounded-full border-2 text-xs font-bold transition-all ${
@@ -80,7 +85,7 @@ function NodeCircle({
       }`}>
         {node.name}
       </span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -169,7 +174,7 @@ export default function SkillTreePage() {
         )}
 
         {!loading && data && (
-          <>
+          <FadeIn>
             {/* Tooltip overlay */}
             {tooltip && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setTooltip(null)}>
@@ -199,13 +204,29 @@ export default function SkillTreePage() {
 
             {/* Branch columns */}
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-              {branches.map((branch) => (
+              {branches.map((branch) => {
+                const unlockedInBranch = branch.nodes.filter(n => n.unlocked).length;
+                const totalInBranch = branch.nodes.length;
+                const branchPct = totalInBranch > 0 ? (unlockedInBranch / totalInBranch) * 100 : 0;
+                return (
                 <div key={branch.key} className="flex flex-col items-center">
                   <div
-                    className="mb-6 text-[10px] font-semibold uppercase tracking-[0.3em]"
+                    className="mb-2 text-[10px] font-semibold uppercase tracking-[0.3em]"
                     style={{ color: branch.color }}
                   >
                     {branch.label}
+                  </div>
+                  {/* Branch progress bar */}
+                  <div className="mb-4 w-full max-w-[80px]">
+                    <div className="mb-1 text-center text-[9px] tabular-nums text-white/30">
+                      {unlockedInBranch}/{totalInBranch}
+                    </div>
+                    <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${branchPct}%`, background: branch.color }}
+                      />
+                    </div>
                   </div>
                   <div className="relative flex flex-col items-center gap-2">
                     {branch.nodes.map((node, i) => (
@@ -221,20 +242,24 @@ export default function SkillTreePage() {
                             }}
                           />
                         )}
-                        <div className={newUnlocked.includes(node.id) ? 'animate-bounce' : ''}>
+                        <motion.div
+                          className={newUnlocked.includes(node.id) ? 'animate-bounce' : ''}
+                          style={newUnlocked.includes(node.id) ? { filter: `drop-shadow(0 0 12px ${branch.color})` } : {}}
+                        >
                           <NodeCircle
                             node={node}
                             color={branch.color}
                             onClick={() => setTooltip(node)}
                           />
-                        </div>
+                        </motion.div>
                       </div>
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
-          </>
+          </FadeIn>
         )}
 
         {!loading && !data && (

@@ -14,8 +14,9 @@ import { V2Layout } from '@/components/v2/V2Layout';
 import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
 import TodayActionCard from '@/components/dashboard/TodayActionCard';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
-import { FadeIn } from '@/components/v2/motion';
-import { NumberTicker } from '@/components/v2/motion';
+import { FadeIn, StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
+import { StreakFire } from '@/components/dashboard/StreakFire';
+import { useInView } from '@/hooks/useInView';
 import { DashboardSkeleton } from '@/components/v2/Skeleton';
 import {
   getMyStats,
@@ -145,6 +146,7 @@ export default function DashboardV2Page() {
   const firstName = user?.name?.split(' ')[0] || 'Athlete';
 
   const isNewUser = stats?.totalSessions === 0;
+  const { ref: belowFoldRef, inView: belowFoldVisible } = useInView();
 
   return (
     <V2Layout>
@@ -214,6 +216,7 @@ export default function DashboardV2Page() {
           {/* Ring with overlay */}
           <div data-tour="activity-rings" className="relative w-full max-w-[440px]">
             <TripleRing move={move} exercise={exercise} stand={stand} />
+            <StreakFire streak={stats?.currentStreak || 0} />
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <div
                 className="font-bold tracking-tight tabular-nums text-white"
@@ -279,20 +282,24 @@ export default function DashboardV2Page() {
         </section>
         </FadeIn>
 
+        {/* Below-fold lazy render trigger */}
+        <div ref={belowFoldRef} />
+        {belowFoldVisible && (
+        <StaggerContainer>
         {/* ── TODAY ACTION (smart widget) ── */}
-        {todayAction && <TodayActionCard action={todayAction} />}
+        {todayAction && <StaggerItem><TodayActionCard action={todayAction} /></StaggerItem>}
 
         {/* ── DAILY BRIEF (AI Coach flagship) ── */}
-        {brief && <V2DailyBrief brief={brief} />}
+        {brief && <StaggerItem><V2DailyBrief brief={brief} /></StaggerItem>}
 
         {/* ── STATS ── */}
-        <FadeIn delay={0.3}>
+        <StaggerItem>
         <section className="mb-32 grid grid-cols-3 gap-6 border-y border-white/10 py-16 text-center">
           <Stat value={stats?.totalSessions || 0} label="Cviceni" />
           <Stat value={Math.floor((stats?.totalMinutes || 0) / 60)} label="Hodin" />
           <Stat value={stats?.totalXP || 0} label="XP" />
         </section>
-        </FadeIn>
+        </StaggerItem>
 
         {/* ── WEEKLY REVIEW (AI) ── */}
         {weekly && (
@@ -437,6 +444,9 @@ export default function DashboardV2Page() {
               Jiny challenge →
             </Link>
           </section>
+        )}
+
+        </StaggerContainer>
         )}
 
         {/* ── CTA ── */}

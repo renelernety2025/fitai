@@ -39,9 +39,12 @@ export function MonthChapter({ month, summary, onLoadSummary }: MonthChapterProp
   }
 
   return (
-    <div className="mb-10">
+    <div className="relative mb-10 rounded-2xl p-6">
+      <div className="absolute inset-0 rounded-2xl opacity-30" style={{
+        background: 'radial-gradient(circle at 30% 40%, rgba(168,255,0,0.1), transparent 60%), radial-gradient(circle at 70% 60%, rgba(0,229,255,0.08), transparent 50%)',
+      }} />
       <h2
-        className="mb-6 text-white/90"
+        className="relative mb-6 text-white/90"
         style={{ fontFamily: 'Georgia, serif', fontSize: '32px', fontStyle: 'italic' }}
       >
         {formatMonthTitle(month)}

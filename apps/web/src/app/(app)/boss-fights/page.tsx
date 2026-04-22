@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { getBossFights, startBoss, completeBoss } from '@/lib/api';
 
 const BOSS_EMOJI: Record<string, string> = {
@@ -88,9 +90,14 @@ export default function BossFightsPage() {
           <h3 className="mb-1 text-xl font-bold text-white">{activeBoss.nameCs || activeBoss.name}</h3>
           {instructions && <p className="mb-6 text-sm text-white/55">{instructions}</p>}
 
-          <div className="mb-6 text-5xl font-bold tabular-nums text-[#FFD600]" style={{ letterSpacing: '-0.03em' }}>
+          <motion.div
+            className="mb-6 text-5xl font-bold tabular-nums text-[#FFD600]"
+            style={{ letterSpacing: '-0.03em' }}
+            animate={running ? { textShadow: ['0 0 10px #FFD60066', '0 0 30px #FFD600AA', '0 0 10px #FFD60066'] } : {}}
+            transition={running ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' } : {}}
+          >
             {formatTime(timer)}
-          </div>
+          </motion.div>
 
           {running ? (
             <div className="flex flex-col items-center gap-4">
@@ -109,12 +116,13 @@ export default function BossFightsPage() {
       )}
 
       {/* Boss grid */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {bosses.map((boss: any) => {
           const isDefeated = defeatedCodes.has(boss.code);
           const best = defeated.find((d: any) => d.code === boss.code);
           return (
-            <div key={boss.code}
+            <StaggerItem key={boss.code}>
+            <div
               className={`rounded-2xl border p-6 transition ${
                 isDefeated
                   ? 'border-[#FFD600]/40 bg-[#FFD600]/5'
@@ -146,9 +154,10 @@ export default function BossFightsPage() {
                 Zahajit boj
               </button>
             </div>
+            </StaggerItem>
           );
         })}
-      </section>
+      </StaggerContainer>
 
       {bosses.length === 0 && !activeBoss && (
         <div className="flex items-center justify-center py-32">

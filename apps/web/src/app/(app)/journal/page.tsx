@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { StaggerContainer, StaggerItem, SPRING_GENTLE } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
 import { MonthChapter } from '@/components/journal/MonthChapter';
 import { DayCard } from '@/components/journal/DayCard';
@@ -246,22 +248,40 @@ export default function JournalPage() {
           Žádné záznamy pro tento měsíc
         </div>
       ) : (
-        <div>
-          <V2SectionLabel>Záznamy</V2SectionLabel>
-          {sortedDays.map((day) => {
-            const milestoneLabel = milestoneDateSet.get(day.date);
-            return (
-              <div key={day.date}>
-                {milestoneLabel && <MilestoneBadge label={milestoneLabel} />}
-                <DayCard
-                  day={day}
-                  onUpdate={handleUpdate}
-                  onRequestInsight={handleRequestInsight}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentMonth}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={SPRING_GENTLE}
+          >
+            <V2SectionLabel>Záznamy</V2SectionLabel>
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-white/5" />
+              <StaggerContainer>
+                {sortedDays.map((day) => {
+                  const milestoneLabel = milestoneDateSet.get(day.date);
+                  return (
+                    <StaggerItem key={day.date}>
+                      <div className="relative pl-12">
+                        {/* Timeline dot */}
+                        <div className="absolute left-[15px] top-8 h-2 w-2 rounded-full bg-white/20" />
+                        {milestoneLabel && <MilestoneBadge label={milestoneLabel} />}
+                        <DayCard
+                          day={day}
+                          onUpdate={handleUpdate}
+                          onRequestInsight={handleRequestInsight}
+                        />
+                      </div>
+                    </StaggerItem>
+                  );
+                })}
+              </StaggerContainer>
+            </div>
+          </motion.div>
+        </AnimatePresence>
       )}
 
       {/* Load older */}

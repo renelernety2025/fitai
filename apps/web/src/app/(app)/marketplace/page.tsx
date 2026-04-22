@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { SkeletonCard } from '@/components/v2/Skeleton';
+import { StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
+import { GlassCard } from '@/components/v2/GlassCard';
 import { getMarketplace, getMarketplaceListing, createListing, purchaseListing, rateListing } from '@/lib/api';
 
 const TYPE_BADGES: Record<string, { label: string; color: string }> = {
@@ -229,30 +231,32 @@ export default function MarketplacePage() {
       )}
 
       {/* Grid */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((l) => {
           const badge = TYPE_BADGES[l.type];
           return (
-            <button key={l.id} onClick={() => setSelected(l)}
-              className="rounded-2xl border border-white/8 p-5 text-left transition hover:border-white/20 hover:bg-white/[0.02]"
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold"
-                  style={{ background: badge?.color || '#555', color: '#000' }}
-                >
-                  {badge?.label || l.type}
-                </span>
-                <Stars rating={l.rating || 0} size={11} />
-              </div>
-              <div className="text-sm font-bold text-white">{l.title}</div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-xs font-bold tabular-nums text-[#FFD600]">{l.price || 0} XP</span>
-                <span className="text-[10px] text-white/30">{l.downloads || 0} stazeni</span>
-              </div>
-            </button>
+            <StaggerItem key={l.id}>
+              <GlassCard onClick={() => setSelected(l)} className="p-5 text-left">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold"
+                    style={{ background: badge?.color || '#555', color: '#000' }}
+                  >
+                    {badge?.label || l.type}
+                  </span>
+                  <Stars rating={l.rating || 0} size={11} />
+                </div>
+                <div className="text-sm font-bold text-white">{l.title}</div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs font-bold tabular-nums text-[#FFD600]">{l.price || 0} XP</span>
+                  <span className="text-[10px] text-white/30">
+                    <NumberTicker value={l.downloads || 0} /> stazeni
+                  </span>
+                </div>
+              </GlassCard>
+            </StaggerItem>
           );
         })}
-      </section>
+      </StaggerContainer>
 
       {filtered.length === 0 && (
         <div className="py-16 text-center text-white/30">Zadne listingy k zobrazeni.</div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { FadeIn } from '@/components/v2/motion';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { sendChatMessage } from '@/lib/api';
@@ -147,12 +148,13 @@ export default function AiChatPage() {
           {hasMessages && (
             <div className="space-y-4 pt-6">
               {messages.map((msg, i) => (
-                <ChatBubble
-                  key={i}
-                  role={msg.role}
-                  content={msg.content}
-                  isStreaming={msg.isStreaming}
-                />
+                <FadeIn key={i} delay={0.05}>
+                  <ChatBubble
+                    role={msg.role}
+                    content={msg.content}
+                    isStreaming={msg.isStreaming}
+                  />
+                </FadeIn>
               ))}
             </div>
           )}

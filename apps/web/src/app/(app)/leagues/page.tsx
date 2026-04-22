@@ -7,7 +7,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
 import { getLeagueCurrent, joinLeague } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { SkeletonCard } from '@/components/v2/Skeleton';
@@ -57,7 +59,18 @@ function formatCountdown(endsAt: string): string {
   if (diff <= 0) return 'Skonceno';
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
-  return `${days}d ${hours}h`;
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  return `${days}d ${hours}h ${mins}m ${secs}s`;
+}
+
+function LiveCountdown({ endsAt }: { endsAt: string }) {
+  const [text, setText] = useState(() => formatCountdown(endsAt));
+  useEffect(() => {
+    const id = setInterval(() => setText(formatCountdown(endsAt)), 1000);
+    return () => clearInterval(id);
+  }, [endsAt]);
+  return <span className="font-semibold text-white/70">{text}</span>;
 }
 
 export default function LeaguesPage() {
@@ -133,7 +146,7 @@ export default function LeaguesPage() {
               >
                 #{data.rank}
               </div>
-              <div className="text-sm text-white/50">{data.weeklyXP.toLocaleString('cs-CZ')} XP tento tyden</div>
+              <div className="text-sm text-white/50"><NumberTicker value={data.weeklyXP} /> XP tento tyden</div>
             </div>
 
             {/* XP progress bar */}
@@ -164,7 +177,7 @@ export default function LeaguesPage() {
 
             {/* Timer */}
             <div className="mb-12 text-center text-sm text-white/40">
-              Tyden konci za <span className="font-semibold text-white/70">{formatCountdown(data.endsAt)}</span>
+              Tyden konci za <LiveCountdown endsAt={data.endsAt} />
             </div>
 
             {/* Join button */}
@@ -187,14 +200,15 @@ export default function LeaguesPage() {
                 Zatim zadni soutezici. Bud prvni!
               </p>
             )}
-            <div className="space-y-2">
+            <StaggerContainer className="space-y-2">
               {data.leaderboard.map((entry) => {
                 const isMe = entry.userId === user?.id;
                 const promoted = entry.rank <= data.promotionLine;
                 const relegated = entry.rank > data.leaderboard.length - data.relegationLine;
                 return (
-                  <div
-                    key={entry.userId}
+                  <StaggerItem key={entry.userId}>
+                  <motion.div
+                    layout
                     className={`flex items-center gap-4 rounded-xl border px-5 py-4 transition ${
                       isMe
                         ? 'border-[#A8FF00]/30 bg-[#A8FF00]/5'
@@ -211,10 +225,11 @@ export default function LeaguesPage() {
                       {isMe && ' (ty)'}
                     </span>
                     <span className="text-sm tabular-nums text-white/50">{entry.weeklyXP.toLocaleString('cs-CZ')} XP</span>
-                  </div>
+                  </motion.div>
+                  </StaggerItem>
                 );
               })}
-            </div>
+            </StaggerContainer>
           </>
         )}
 

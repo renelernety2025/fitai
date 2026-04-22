@@ -7,6 +7,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
+import { Confetti } from '@/components/v2/Confetti';
 import { getCurrentSeason, joinSeason, checkSeasonMissions } from '@/lib/api';
 
 interface Mission {
@@ -129,6 +131,7 @@ export default function SeasonPage() {
   const [joining, setJoining] = useState(false);
   const [checking, setChecking] = useState(false);
   const [newlyCompleted, setNewlyCompleted] = useState<string[]>([]);
+  const [confettiTrigger, setConfettiTrigger] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { document.title = 'FitAI — Sezóna'; }, []);
@@ -157,8 +160,10 @@ export default function SeasonPage() {
     setError(null);
     try {
       const result = await checkSeasonMissions();
-      if (result.completed) {
+      if (result.completed && result.completed.length > 0) {
         setNewlyCompleted(result.completed.map((m: Mission) => m.id));
+        setConfettiTrigger(true);
+        setTimeout(() => setConfettiTrigger(false), 100);
       }
       const fresh = await getCurrentSeason();
       setData(fresh);
@@ -170,6 +175,7 @@ export default function SeasonPage() {
 
   return (
     <V2Layout>
+      <Confetti trigger={confettiTrigger} />
       <section className="pt-12 pb-24">
         <V2SectionLabel>Sezona</V2SectionLabel>
 
@@ -252,15 +258,16 @@ export default function SeasonPage() {
             {data.missions.length === 0 && (
               <p className="py-8 text-center text-sm text-white/30">Zatim zadne mise.</p>
             )}
-            <div className="space-y-3">
+            <StaggerContainer className="space-y-3">
               {data.missions.map((m) => (
-                <MissionCard
-                  key={m.id}
-                  mission={m}
-                  isNew={newlyCompleted.includes(m.id)}
-                />
+                <StaggerItem key={m.id}>
+                  <MissionCard
+                    mission={m}
+                    isNew={newlyCompleted.includes(m.id)}
+                  />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </>
         )}
 
