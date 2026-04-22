@@ -5,8 +5,18 @@ import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistr
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FitAI - AI-Powered Fitness',
-  description: 'Cvičte s AI trenérem který vás sleduje a opravuje v reálném čase',
+  title: 'FitAI — AI Personal Trainer',
+  description: 'AI-powered fitness platform. Personalized workout plans, real-time coaching, nutrition tracking, and social fitness community.',
+  keywords: ['fitness', 'AI trainer', 'workout', 'nutrition', 'gym', 'health'],
+  openGraph: {
+    title: 'FitAI — AI Personal Trainer',
+    description: 'Your AI fitness coach. Workout plans, nutrition, social challenges.',
+    url: 'https://fitai.bfevents.cz',
+    siteName: 'FitAI',
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: 'FitAI', description: 'AI-powered fitness platform' },
+  robots: { index: true, follow: true },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

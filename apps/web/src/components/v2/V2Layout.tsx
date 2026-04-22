@@ -166,6 +166,15 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
       </header>
       <main className="mx-auto max-w-5xl px-6 pb-32 sm:pb-32 pb-24">{children}</main>
 
+      <footer className="mt-auto border-t border-white/5 py-6 text-center text-xs text-white/20">
+        <div className="flex justify-center gap-4">
+          <Link href="/privacy">Ochrana soukromí</Link>
+          <Link href="/terms">Podmínky</Link>
+          <Link href="/ai-disclaimer">AI Disclaimer</Link>
+        </div>
+        <p className="mt-2">FitAI 2026. Powered by Claude AI.</p>
+      </footer>
+
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-white/10 bg-black/95 backdrop-blur-md py-2 sm:hidden">
         {[
