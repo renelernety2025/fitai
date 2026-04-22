@@ -53,6 +53,8 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
 import { GymFinderModule } from './gym-finder/gym-finder.module';
 import { BuddyModule } from './buddy/buddy.module';
 import { MessagesModule } from './messages/messages.module';
+import { EmailModule } from './email/email.module';
+import { AdminModule } from './admin/admin.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -146,6 +148,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     GymFinderModule,
     BuddyModule,
     MessagesModule,
+    EmailModule,
+    AdminModule,
   ],
   providers: [
     {

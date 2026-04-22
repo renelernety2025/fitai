@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserLevel } from '@prisma/client';
 
@@ -28,5 +32,94 @@ export class UsersService {
         level: data.level ?? 'BEGINNER',
       },
     });
+  }
+
+  async updateName(userId: string, name: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { name },
+    });
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+    return { message: 'Password changed successfully' };
+  }
+
+  async deleteAccount(userId: string) {
+    await this.prisma.$transaction([
+      this.prisma.journalPhoto.deleteMany({
+        where: { journalEntry: { userId } },
+      }),
+      this.prisma.journalEntry.deleteMany({ where: { userId } }),
+      this.prisma.foodLog.deleteMany({ where: { userId } }),
+      this.prisma.dailyCheckIn.deleteMany({ where: { userId } }),
+      this.prisma.exerciseSet.deleteMany({
+        where: { gymSession: { userId } },
+      }),
+      this.prisma.gymSession.deleteMany({ where: { userId } }),
+      this.prisma.exerciseHistory.deleteMany({ where: { userId } }),
+      this.prisma.weeklyVolume.deleteMany({ where: { userId } }),
+      this.prisma.poseSnapshot.deleteMany({
+        where: { session: { userId } },
+      }),
+      this.prisma.workoutSession.deleteMany({ where: { userId } }),
+      this.prisma.coachingMessage.deleteMany({
+        where: { coachingSession: { userId } },
+      }),
+      this.prisma.coachingSession.deleteMany({ where: { userId } }),
+      this.prisma.safetyEvent.deleteMany({ where: { userId } }),
+      this.prisma.achievementUnlock.deleteMany({ where: { userId } }),
+      this.prisma.bodyAnalysis.deleteMany({
+        where: { bodyPhoto: { userId } },
+      }),
+      this.prisma.bodyPhoto.deleteMany({ where: { userId } }),
+      this.prisma.mealPlan.deleteMany({ where: { userId } }),
+      this.prisma.passwordResetToken.deleteMany({ where: { userId } }),
+      this.prisma.pushSubscription.deleteMany({ where: { userId } }),
+      this.prisma.notificationPreference.deleteMany({
+        where: { userId },
+      }),
+      this.prisma.follow.deleteMany({
+        where: { OR: [{ followerId: userId }, { followedId: userId }] },
+      }),
+      this.prisma.activityFeedItem.deleteMany({ where: { userId } }),
+      this.prisma.challengeParticipant.deleteMany({ where: { userId } }),
+      this.prisma.oneRepMax.deleteMany({
+        where: { profile: { userId } },
+      }),
+      this.prisma.fitnessProfile.deleteMany({ where: { userId } }),
+      this.prisma.userProgress.deleteMany({ where: { userId } }),
+      this.prisma.plannedExercise.deleteMany({
+        where: { workoutDay: { workoutPlan: { userId } } },
+      }),
+      this.prisma.workoutDay.deleteMany({
+        where: { workoutPlan: { userId } },
+      }),
+      this.prisma.workoutPlan.deleteMany({ where: { userId } }),
+      this.prisma.aIGeneratedPlan.deleteMany({ where: { userId } }),
+      this.prisma.wearableData.deleteMany({ where: { userId } }),
+      this.prisma.recipe.deleteMany({ where: { userId } }),
+      this.prisma.user.delete({ where: { id: userId } }),
+    ]);
+    return { message: 'Account deleted' };
   }
 }

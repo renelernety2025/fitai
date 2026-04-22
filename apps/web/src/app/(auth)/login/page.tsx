@@ -71,10 +71,16 @@ export default function LoginV2Page() {
         </div>
       </form>
 
-      <p className="mt-10 text-center text-sm text-white/40">
-        Nemáš účet?{' '}
+      <p className="mt-6 text-center text-sm text-white/40">
+        <Link href="/forgot-password" className="text-white/50 underline-offset-4 hover:underline hover:text-white">
+          Zapomnel jsi heslo?
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-sm text-white/40">
+        Nemas ucet?{' '}
         <Link href="/register" className="text-white underline-offset-4 hover:underline">
-          Vytvoř si ho
+          Vytvor si ho
         </Link>
       </p>
     </V2AuthLayout>

@@ -112,6 +112,19 @@ export default function ProfilePage() {
         </FadeIn>
       )}
 
+      {/* Settings link */}
+      <FadeIn delay={0.25}>
+      <section className="mb-24">
+        <V2SectionLabel>Ucet</V2SectionLabel>
+        <Link
+          href="/settings"
+          className="inline-flex rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
+        >
+          Nastaveni
+        </Link>
+      </section>
+      </FadeIn>
+
       {/* Restart onboarding tour */}
       <section className="mb-24">
         <V2SectionLabel>Pruvodce</V2SectionLabel>
