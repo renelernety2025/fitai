@@ -157,26 +157,26 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ## Regression Prevention
 
-- **`test-production.sh`** — 61 testů, spouštět po každém deployi
+- **`test-production.sh`** — 115 testů, spouštět po každém deployi
 - **`CONTRACTS.md`** — zámčené API shapes + DB modely
 - **`scripts/verify-docs-integrity.sh`** — doc health check (size budgets, archive pointers, ADR count)
 - **`CHANGELOG-archive/`** — verbatim archive starších entries
 
 ---
 
-## Stats (2026-04-20)
+## Stats (2026-04-22)
 
-- **29 NestJS modules**
-- **30+ DB models** (+ CoachPersonality enum)
-- **26+ web pages** (v2 design, +ai-chat, +journal, +recepty, +export, +challenge detail, +plan editor)
-- **37 NestJS modules** (+recipes, +export, +workout-journal, +wrapped, +leagues, +skill-tree, +calendar, +seasons)
-- **31+ web pages** (+wrapped, +leagues, +skill-tree, +calendar, +season)
-- **18 mobile screens** (v2 design)
+- **51 NestJS modules** (canonical list: `apps/api/src/app.module.ts`)
+- **66 DB models** (+ enums: CoachPersonality, JournalMood, LeagueTier, WorkoutPlanType, etc.)
+- **42+ web pages** (v2 design, dark/light mode, CSS animations)
+- **29 mobile screens** (v2 design, +AI Chat, +Journal, +Calendar, +Leagues)
+- **250+ API endpoints**
 - **17 achievements**
 - **60 exercises** with 3D animated viewer
 - **3 coach personality modes** (Drill/Chill/Motivational)
-- **61/61 regression tests**
+- **115/115 regression tests**
 - **15 ADRs** v ARCHITECTURE.md
 - **2 archive files** (CHANGELOG + ROADMAP)
 - **Backend SSE streaming** deployed (Claude + ElevenLabs PCM pipeline)
 - **Three.js 3D viewer** with phase animation, controls, angle overlay
+- **5 cron jobs** (streak reminders, league week-end, flash challenges, weekly digest, season check)

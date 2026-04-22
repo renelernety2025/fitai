@@ -19,8 +19,8 @@ ALB
           ├── /api/* + /health → API (compat)
           └── default          → 301 → https://fitai.bfevents.cz/...
 
-ECS API (29 NestJS modules)
-    ├── PostgreSQL RDS (30+ tables, private subnet)
+ECS API (51 NestJS modules)
+    ├── PostgreSQL RDS (66 tables, private subnet)
     ├── Redis ElastiCache (private subnet)
     ├── S3 + CloudFront (videos, choreography, assets)
     ├── Secrets Manager (DB, JWT, Anthropic, OpenAI, ElevenLabs)
@@ -185,7 +185,7 @@ EducationLesson (slug, titleCs, category, bodyCs, durationMin, isPublished)
 GlossaryTerm (termCs, definitionCs, category)
 ```
 
-## Backend Modules (28)
+## Backend Modules (51)
 
 Všechny endpointy jsou pod prefixem `/api/*` (kromě `/health`). Pro aktuální seznam všech modulů + endpointů čti přímo kód — markdown kopie zastarává:
 
