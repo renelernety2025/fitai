@@ -127,7 +127,7 @@ export class FormCheckService {
       const parsed = JSON.parse(text) as FormAnalysis;
       return parsed;
     } catch (err) {
-      this.logger.warn('Claude form analysis failed, using fallback', err);
+      this.logger.warn(`Claude form analysis failed: ${err instanceof Error ? err.message : 'unknown'}`);
       return this.fallbackAnalysis(exercise, phases);
     }
   }

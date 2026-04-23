@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SmartNotificationsService } from './smart-notifications.service';
+import { SavePreferencesDto } from './dto/save-preferences.dto';
 
 @Controller('smart-notifications')
 export class SmartNotificationsController {
@@ -23,8 +24,8 @@ export class SmartNotificationsController {
   @Post('preferences')
   async savePreferences(
     @Request() req: any,
-    @Body() body: Record<string, boolean>,
+    @Body() dto: SavePreferencesDto,
   ) {
-    return this.service.savePreferences(req.user.id, body);
+    return this.service.savePreferences(req.user.id, dto);
   }
 }

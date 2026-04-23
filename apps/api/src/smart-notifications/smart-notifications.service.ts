@@ -35,48 +35,70 @@ export class SmartNotificationsService {
         }),
       ]);
 
-    // Inactivity reminder
-    if (lastSession?.startedAt) {
-      const daysSince = Math.floor(
-        (now.getTime() - lastSession.startedAt.getTime()) /
-          86400000,
-      );
-      if (daysSince >= 2) {
-        notifications.push({
-          type: 'inactivity',
-          message: `Uz ${daysSince} dny jsi netrenoval!`,
-          priority: daysSince >= 5 ? 'high' : 'medium',
-          ctaLabel: 'Zacit trenink',
-          ctaLink: '/gym/start',
-        });
-      }
-    }
+    this.checkInactivity(now, lastSession, notifications);
+    this.checkStreakRisk(now, lastSession, progress, notifications);
+    this.checkRecoveryReady(recentCheckIn, notifications);
+    await this.checkOptimalTime(userId, now, notifications);
 
-    // Streak at risk
+    return notifications.sort((a, b) => {
+      const p = { high: 0, medium: 1, low: 2 };
+      return p[a.priority] - p[b.priority];
+    });
+  }
+
+  private checkInactivity(
+    now: Date,
+    lastSession: { startedAt: Date } | null,
+    notifications: SmartNotification[],
+  ) {
+    if (!lastSession?.startedAt) return;
+    const daysSince = Math.floor(
+      (now.getTime() - lastSession.startedAt.getTime()) / 86400000,
+    );
+    if (daysSince >= 2) {
+      notifications.push({
+        type: 'inactivity',
+        message: `Uz ${daysSince} dny jsi netrenoval!`,
+        priority: daysSince >= 5 ? 'high' : 'medium',
+        ctaLabel: 'Zacit trenink',
+        ctaLink: '/gym/start',
+      });
+    }
+  }
+
+  private checkStreakRisk(
+    now: Date,
+    lastSession: { startedAt: Date } | null,
+    progress: { currentStreak: number } | null,
+    notifications: SmartNotification[],
+  ) {
     const streak = progress?.currentStreak || 0;
-    if (streak > 0 && lastSession?.startedAt) {
-      const today = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-      );
-      const sessionDay = new Date(
-        lastSession.startedAt.getFullYear(),
-        lastSession.startedAt.getMonth(),
-        lastSession.startedAt.getDate(),
-      );
-      if (sessionDay.getTime() < today.getTime()) {
-        notifications.push({
-          type: 'streak_risk',
-          message: `Tvuj ${streak}-denni streak je v ohrozeni!`,
-          priority: 'high',
-          ctaLabel: 'Zachranit streak',
-          ctaLink: '/micro-workout',
-        });
-      }
+    if (streak <= 0 || !lastSession?.startedAt) return;
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const sessionDay = new Date(
+      lastSession.startedAt.getFullYear(),
+      lastSession.startedAt.getMonth(),
+      lastSession.startedAt.getDate(),
+    );
+    if (sessionDay.getTime() < today.getTime()) {
+      notifications.push({
+        type: 'streak_risk',
+        message: `Tvuj ${streak}-denni streak je v ohrozeni!`,
+        priority: 'high',
+        ctaLabel: 'Zachranit streak',
+        ctaLink: '/micro-workout',
+      });
     }
+  }
 
-    // Recovery ready
+  private checkRecoveryReady(
+    recentCheckIn: { soreness: number | null; energy: number | null } | null,
+    notifications: SmartNotification[],
+  ) {
     if (
       recentCheckIn &&
       (recentCheckIn.soreness ?? 5) <= 2 &&
@@ -90,34 +112,33 @@ export class SmartNotificationsService {
         ctaLink: '/gym',
       });
     }
+  }
 
-    // Optimal training time (based on historical patterns)
+  private async checkOptimalTime(
+    userId: string,
+    now: Date,
+    notifications: SmartNotification[],
+  ) {
     const optimalHour = await this.getOptimalHour(userId);
-    if (optimalHour !== null) {
-      const currentHour = now.getHours();
-      if (
-        currentHour >= optimalHour - 1 &&
-        currentHour <= optimalHour + 1
-      ) {
-        notifications.push({
-          type: 'optimal_time',
-          message: 'Ted je tvuj nejlepsi cas na trenink!',
-          priority: 'low',
-          ctaLabel: 'Jdem na to',
-          ctaLink: '/gym/start',
-        });
-      }
+    if (optimalHour === null) return;
+    const currentHour = now.getHours();
+    if (
+      currentHour >= optimalHour - 1 &&
+      currentHour <= optimalHour + 1
+    ) {
+      notifications.push({
+        type: 'optimal_time',
+        message: 'Ted je tvuj nejlepsi cas na trenink!',
+        priority: 'low',
+        ctaLabel: 'Jdem na to',
+        ctaLink: '/gym/start',
+      });
     }
-
-    return notifications.sort((a, b) => {
-      const p = { high: 0, medium: 1, low: 2 };
-      return p[a.priority] - p[b.priority];
-    });
   }
 
   async savePreferences(
     userId: string,
-    prefs: Record<string, boolean>,
+    prefs: { workoutReminder?: boolean; streakWarning?: boolean; achievements?: boolean; socialActivity?: boolean; recoveryReady?: boolean },
   ) {
     return this.prisma.notificationPreference.upsert({
       where: { userId },

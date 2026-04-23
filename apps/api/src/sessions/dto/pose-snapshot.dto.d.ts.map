@@ -1,1 +1,0 @@
-{"version":3,"file":"pose-snapshot.dto.d.ts","sourceRoot":"","sources":["pose-snapshot.dto.ts"],"names":[],"mappings":"AAEA,qBAAa,eAAe;IAG1B,SAAS,EAAE,MAAM,CAAC;IAGlB,QAAQ,EAAE,MAAM,CAAC;IAGjB,SAAS,EAAE,OAAO,CAAC;IAInB,YAAY,CAAC,EAAE,MAAM,CAAC;IAGtB,WAAW,EAAE,MAAM,CAAC,MAAM,EAAE,MAAM,CAAC,CAAC;CACrC"}
