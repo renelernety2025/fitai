@@ -71,6 +71,7 @@ import { VipModule } from './vip/vip.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { BundlesModule } from './bundles/bundles.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { DailyQuestsModule } from './daily-quests/daily-quests.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -182,6 +183,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     WishlistModule,
     BundlesModule,
     PlaylistsModule,
+    DailyQuestsModule,
   ],
   providers: [
     {

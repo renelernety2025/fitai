@@ -47,10 +47,24 @@ export function StaggerItem({ children, className = '' }: { children: ReactNode;
 }
 
 // NumberTicker — animated count-up (pure JS)
-export function NumberTicker({ value, format, className = '' }: { value: number; format?: (n: number) => string; className?: string }) {
+export function NumberTicker({ value, format, className = '', prefix, suffix, delay = 0 }: {
+  value: number;
+  format?: (n: number) => string;
+  className?: string;
+  prefix?: string;
+  suffix?: string;
+  delay?: number;
+}) {
   const [display, setDisplay] = useState('0');
+  const [started, setStarted] = useState(delay === 0);
   const ref = useRef<number>(0);
   useEffect(() => {
+    if (delay <= 0) { setStarted(true); return; }
+    const t = setTimeout(() => setStarted(true), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
+  useEffect(() => {
+    if (!started) return;
     const start = ref.current;
     const diff = value - start;
     if (diff === 0) return;
@@ -66,8 +80,14 @@ export function NumberTicker({ value, format, className = '' }: { value: number;
       else ref.current = value;
     }
     requestAnimationFrame(tick);
-  }, [value, format]);
-  return <span className={className}>{display}</span>;
+  }, [value, format, started]);
+  return (
+    <span className={className}>
+      {prefix ? <span>{prefix}</span> : null}
+      {display}
+      {suffix ? <span>{suffix}</span> : null}
+    </span>
+  );
 }
 
 // PressableButton — CSS hover/active

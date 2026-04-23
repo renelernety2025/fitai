@@ -44,6 +44,10 @@ export class ProgressService {
       newStreak = 1;
     }
 
+    // Streak multiplier bonus
+    const multiplier = this.getStreakMultiplier(newStreak);
+    xpGained = Math.round(xpGained * multiplier);
+
     const newLongest = Math.max(progress.longestStreak, newStreak);
     const newTotalXP = progress.totalXP + xpGained;
 
@@ -116,5 +120,12 @@ export class ProgressService {
       daysSinceLastWorkout: days,
       message: `Chybíš nám! Série přerušena. Začni znovu ještě dnes.`,
     };
+  }
+
+  private getStreakMultiplier(currentStreak: number): number {
+    if (currentStreak >= 10) return 3;
+    if (currentStreak >= 5) return 2;
+    if (currentStreak >= 2) return 1.5;
+    return 1;
   }
 }

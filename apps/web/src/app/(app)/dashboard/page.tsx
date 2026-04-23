@@ -16,6 +16,8 @@ import TodayActionCard from '@/components/dashboard/TodayActionCard';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { FadeIn, StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
 import { StreakFire } from '@/components/dashboard/StreakFire';
+import DailyQuests from '@/components/dashboard/DailyQuests';
+import SocialProof from '@/components/dashboard/SocialProof';
 import { useInView } from '@/hooks/useInView';
 import { DashboardSkeleton } from '@/components/v2/Skeleton';
 import {
@@ -279,6 +281,9 @@ export default function DashboardV2Page() {
               XP
             </span>
           </div>
+
+          {/* Social proof */}
+          <SocialProof />
         </section>
         </FadeIn>
 
@@ -288,6 +293,9 @@ export default function DashboardV2Page() {
         <StaggerContainer>
         {/* ── TODAY ACTION (smart widget) ── */}
         {todayAction && <StaggerItem><TodayActionCard action={todayAction} /></StaggerItem>}
+
+        {/* ── DAILY QUESTS ── */}
+        <StaggerItem><DailyQuests /></StaggerItem>
 
         {/* ── DAILY BRIEF (AI Coach flagship) ── */}
         {brief && <StaggerItem><V2DailyBrief brief={brief} /></StaggerItem>}

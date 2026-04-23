@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/lib/theme-context';
+import { CommandPalette } from '@/components/v2/CommandPalette';
 
 const PRIMARY_NAV: { href: string; label: string; tour?: string }[] = [
   { href: '/dashboard', label: 'Dnes' },
@@ -191,6 +192,8 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
         </div>
         <p className="mt-2">FitAI 2026. Powered by Claude AI.</p>
       </footer>
+
+      <CommandPalette />
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-white/10 bg-black/95 backdrop-blur-md py-2 sm:hidden">

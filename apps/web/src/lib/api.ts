@@ -2044,3 +2044,11 @@ export function getPlaylists(params?: { exerciseId?: string; workoutType?: strin
 export function addPlaylistLink(data: { exerciseId?: string; workoutType?: string; spotifyUrl?: string; appleMusicUrl?: string; title: string; bpm?: number }): Promise<any> {
   return request('/playlists', { method: 'POST', body: JSON.stringify(data) });
 }
+
+// --- Daily Quests ---
+export function getDailyQuests(): Promise<any[]> {
+  return request('/daily-quests/today');
+}
+export function completeDailyQuest(id: string): Promise<any> {
+  return request(`/daily-quests/${id}/complete`, { method: 'POST' });
+}
