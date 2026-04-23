@@ -45,6 +45,18 @@ import { GearScreen } from '../screens/GearScreen';
 import { RecordsScreen } from '../screens/RecordsScreen';
 import { DropsScreen } from '../screens/DropsScreen';
 import { ExperiencesScreen } from '../screens/ExperiencesScreen';
+import { ClipsScreen } from '../screens/ClipsScreen';
+import { TrainersScreen } from '../screens/TrainersScreen';
+import { RoutineBuilderScreen } from '../screens/RoutineBuilderScreen';
+import { BundlesScreen } from '../screens/BundlesScreen';
+import { WishlistScreen } from '../screens/WishlistScreen';
+import { VIPScreen } from '../screens/VIPScreen';
+import { SquadsScreen } from '../screens/SquadsScreen';
+import { MaintenanceScreen } from '../screens/MaintenanceScreen';
+import { CoachingNotesScreen } from '../screens/CoachingNotesScreen';
+import { PlaylistsScreen } from '../screens/PlaylistsScreen';
+import { StreaksScreen } from '../screens/StreaksScreen';
+import { FormCheckScreen } from '../screens/FormCheckScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -171,6 +183,18 @@ export function AppNavigator() {
             <Stack.Screen name="Records" component={RecordsScreen} />
             <Stack.Screen name="Drops" component={DropsScreen} />
             <Stack.Screen name="Experiences" component={ExperiencesScreen} />
+            <Stack.Screen name="Clips" component={ClipsScreen} />
+            <Stack.Screen name="Trainers" component={TrainersScreen} />
+            <Stack.Screen name="RoutineBuilder" component={RoutineBuilderScreen} />
+            <Stack.Screen name="Bundles" component={BundlesScreen} />
+            <Stack.Screen name="Wishlist" component={WishlistScreen} />
+            <Stack.Screen name="VIP" component={VIPScreen} />
+            <Stack.Screen name="Squads" component={SquadsScreen} />
+            <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
+            <Stack.Screen name="CoachingNotes" component={CoachingNotesScreen} />
+            <Stack.Screen name="Playlists" component={PlaylistsScreen} />
+            <Stack.Screen name="Streaks" component={StreaksScreen} />
+            <Stack.Screen name="FormCheck" component={FormCheckScreen} />
           </>
         ) : (
           <>

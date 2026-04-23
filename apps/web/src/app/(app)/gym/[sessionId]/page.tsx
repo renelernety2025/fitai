@@ -35,6 +35,7 @@ import { RestTimerOverlay } from '@/components/gym/RestTimerOverlay';
 import { GymWorkoutSummary } from '@/components/gym/GymWorkoutSummary';
 import { RPEModal } from '@/components/gym/RPEModal';
 import { XPGainedOverlay } from '@/components/workout/XPGainedOverlay';
+import { WorkoutCelebration } from '@/components/gym/WorkoutCelebration';
 import type { PoseFeedback } from '@/lib/feedback-engine';
 
 export default function GymSessionV2Page({ params }: { params: { sessionId: string } }) {
@@ -56,6 +57,7 @@ export default function GymSessionV2Page({ params }: { params: { sessionId: stri
     'safety' | 'correction' | 'encouragement' | 'info' | null
   >(null);
   const [showRPE, setShowRPE] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const pendingSetCompletionRef = useRef<{
     setId: string;
     reps: number;
@@ -338,8 +340,17 @@ export default function GymSessionV2Page({ params }: { params: { sessionId: stri
           progress={progressResult}
           onComplete={() => {
             setShowXP(false);
-            setIsFinished(true);
+            setShowCelebration(true);
           }}
+        />
+      )}
+      {showCelebration && progressResult && (
+        <WorkoutCelebration
+          durationSeconds={Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)}
+          totalReps={session.exerciseSets.reduce((s, set) => s + set.actualReps, 0)}
+          avgFormScore={session.averageFormScore}
+          xpGained={progressResult.xpGained}
+          onDismiss={() => { setShowCelebration(false); setIsFinished(true); }}
         />
       )}
       {isFinished && progressResult && (

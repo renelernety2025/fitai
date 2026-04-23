@@ -439,3 +439,80 @@ export function getExperiences() { return request<any[]>('/experiences'); }
 export function bookExperience(id: string) {
   return request<any>(`/experiences/${id}/book`, { method: 'POST' });
 }
+
+// ── Clips ──
+export function getClipsFeed(page = 1, limit = 10) {
+  return request<any[]>(`/clips/feed?page=${page}&limit=${limit}`);
+}
+export function toggleClipLike(id: string) {
+  return request<any>(`/clips/${id}/like`, { method: 'POST' });
+}
+
+// ── Trainers ──
+export function getTrainers(search?: string) {
+  return request<any[]>(`/trainers${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+}
+
+// ── Routine Builder ──
+export function getMyRoutines() { return request<any[]>('/routines/mine'); }
+export function getPublicRoutines() { return request<any[]>('/routines/public'); }
+
+// ── Bundles ──
+export function getBundles() { return request<any[]>('/bundles'); }
+export function purchaseBundle(id: string) {
+  return request<any>(`/bundles/${id}/purchase`, { method: 'POST' });
+}
+
+// ── Wishlist ──
+export function getWishlist() { return request<any[]>('/wishlist'); }
+export function removeFromWishlist(id: string) {
+  return request<any>(`/wishlist/${id}`, { method: 'DELETE' });
+}
+
+// ── VIP ──
+export function getVIPStatus() { return request<any>('/vip/status'); }
+export function checkVIPEligibility() { return request<any>('/vip/check-eligibility'); }
+export function acceptVIP() { return request<any>('/vip/accept', { method: 'POST' }); }
+
+// ── Squads ──
+export function getMySquad() { return request<any>('/squads/mine'); }
+export function getSquadLeaderboard() { return request<any[]>('/squads/leaderboard'); }
+
+// ── Maintenance ──
+export function getMaintenanceStatus() { return request<any[]>('/maintenance'); }
+export function getMaintenanceAlerts() { return request<any[]>('/maintenance/alerts'); }
+export function markDeload(muscleGroup: string) {
+  return request<any>(`/maintenance/${muscleGroup}/deload`, { method: 'POST' });
+}
+
+// ── Coaching Memory ──
+export function getCoachingMemories(page = 1, limit = 20) {
+  return request<any>(`/coaching-memory?page=${page}&limit=${limit}`);
+}
+
+// ── Playlists ──
+export function getPlaylists() { return request<any[]>('/playlists'); }
+export function addPlaylistLink(data: any) {
+  return request<any>('/playlists', { method: 'POST', body: JSON.stringify(data) });
+}
+
+// ── Streaks ──
+export function getStreakFreezeStatus() { return request<any>('/streak-freeze/status'); }
+export function useStreakFreeze() {
+  return request<any>('/streak-freeze/use', { method: 'POST' });
+}
+
+// ── Form Check ──
+export function getFormCheckUploadUrl(data: { fileName: string; contentType: string }) {
+  return request<{ uploadUrl: string; s3Key: string }>('/form-check/upload-url', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+export function analyzeForm(data: { s3Key: string; exerciseId: string }) {
+  return request<any>('/form-check/analyze', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+export function getFormCheckHistory() { return request<any[]>('/form-check/history'); }

@@ -45,4 +45,74 @@ export class AdminService {
       aiCallsToday,
     };
   }
+
+  async getAnalytics() {
+    const now = new Date();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const weekAgo = new Date(today.getTime() - 7 * 86400000);
+    const monthAgo = new Date(today.getTime() - 30 * 86400000);
+
+    const [
+      totalUsers,
+      newUsersToday,
+      newUsersWeek,
+      newUsersMonth,
+      sessionsToday,
+      sessionsWeek,
+      activeToday,
+      activeWeek,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({
+        where: { createdAt: { gte: today } },
+      }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: weekAgo } },
+      }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: monthAgo } },
+      }),
+      this.prisma.gymSession.count({
+        where: { startedAt: { gte: today } },
+      }),
+      this.prisma.gymSession.count({
+        where: { startedAt: { gte: weekAgo } },
+      }),
+      this.prisma.gymSession
+        .findMany({
+          where: { startedAt: { gte: today } },
+          select: { userId: true },
+          distinct: ['userId'],
+        })
+        .then((r) => r.length),
+      this.prisma.gymSession
+        .findMany({
+          where: { startedAt: { gte: weekAgo } },
+          select: { userId: true },
+          distinct: ['userId'],
+        })
+        .then((r) => r.length),
+    ]);
+
+    const retentionRate =
+      totalUsers > 0
+        ? Math.round((activeWeek / totalUsers) * 100)
+        : 0;
+
+    return {
+      totalUsers,
+      newUsersToday,
+      newUsersWeek,
+      newUsersMonth,
+      sessionsToday,
+      sessionsWeek,
+      dauToday: activeToday,
+      wauWeek: activeWeek,
+      retentionRate,
+    };
+  }
 }

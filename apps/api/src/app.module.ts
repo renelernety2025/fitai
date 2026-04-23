@@ -72,6 +72,8 @@ import { WishlistModule } from './wishlist/wishlist.module';
 import { BundlesModule } from './bundles/bundles.module';
 import { PlaylistsModule } from './playlists/playlists.module';
 import { DailyQuestsModule } from './daily-quests/daily-quests.module';
+import { FormCheckModule } from './form-check/form-check.module';
+import { SmartNotificationsModule } from './smart-notifications/smart-notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -184,6 +186,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     BundlesModule,
     PlaylistsModule,
     DailyQuestsModule,
+    FormCheckModule,
+    SmartNotificationsModule,
   ],
   providers: [
     {

@@ -1585,6 +1585,39 @@ export function getNearbyGyms(
   return request(`/gym-finder/nearby?lat=${lat}&lng=${lng}`);
 }
 
+// ─── Form Check (AI Video Analysis) ───────────────────
+
+export interface FormCheckAnalysis {
+  overallScore: number;
+  phases: { name: string; score: number; feedback: string }[];
+  improvements: string[];
+  positives: string[];
+}
+
+export function getFormCheckUploadUrl(data: {
+  fileName: string;
+  contentType: string;
+}): Promise<{ uploadUrl: string; s3Key: string }> {
+  return request('/form-check/upload-url', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function analyzeForm(data: {
+  s3Key: string;
+  exerciseId: string;
+}): Promise<FormCheckAnalysis> {
+  return request('/form-check/analyze', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getFormCheckHistory(): Promise<any[]> {
+  return request('/form-check/history');
+}
+
 // ─── Data Export ───────────────────────────────────────
 
 export async function downloadExport(
@@ -2051,4 +2084,22 @@ export function getDailyQuests(): Promise<any[]> {
 }
 export function completeDailyQuest(id: string): Promise<any> {
   return request(`/daily-quests/${id}/complete`, { method: 'POST' });
+}
+
+// --- Admin Analytics ---
+export function getAdminAnalytics(): Promise<any> {
+  return request('/admin/analytics');
+}
+
+// --- Smart Notifications ---
+export function getSmartNotifications(): Promise<any[]> {
+  return request('/smart-notifications/upcoming');
+}
+export function saveNotificationPreferences(
+  data: Record<string, unknown>,
+): Promise<any> {
+  return request('/smart-notifications/preferences', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }

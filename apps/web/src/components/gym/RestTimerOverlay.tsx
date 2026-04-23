@@ -1,5 +1,7 @@
 'use client';
 
+import { getRandomFact } from '@/lib/fitness-facts';
+
 interface RestTimerOverlayProps {
   remaining: number;
   total: number;
@@ -51,6 +53,10 @@ export function RestTimerOverlay({
       >
         Přeskočit
       </button>
+
+      <p className="mt-6 max-w-xs text-center text-xs text-white/30 italic">
+        &#128161; {getRandomFact()}
+      </p>
     </div>
   );
 }

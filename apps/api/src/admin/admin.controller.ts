@@ -25,4 +25,14 @@ export class AdminController {
     }
     return this.adminService.getStats();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('analytics')
+  async getAnalytics(@Request() req: any) {
+    const user = await this.usersService.findById(req.user.id);
+    if (!user?.isAdmin) {
+      throw new ForbiddenException('Admin access required');
+    }
+    return this.adminService.getAnalytics();
+  }
 }

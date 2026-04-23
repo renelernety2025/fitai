@@ -58,6 +58,7 @@ const MORE_NAV = [
   { href: '/boss-fights', label: 'Aréna' },
   { href: '/discover-weekly', label: 'Objev' },
   { href: '/gym-finder', label: 'Gymy' },
+  { href: '/form-check', label: 'Form Check' },
 ];
 
 function MoreDropdown({ pathname }: { pathname: string }) {

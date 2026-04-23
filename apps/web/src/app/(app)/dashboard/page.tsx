@@ -16,7 +16,9 @@ import TodayActionCard from '@/components/dashboard/TodayActionCard';
 import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { FadeIn, StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
 import { StreakFire } from '@/components/dashboard/StreakFire';
+import { StreakBreak } from '@/components/dashboard/StreakBreak';
 import DailyQuests from '@/components/dashboard/DailyQuests';
+import DailyRewardCalendar from '@/components/dashboard/DailyRewardCalendar';
 import SocialProof from '@/components/dashboard/SocialProof';
 import { useInView } from '@/hooks/useInView';
 import { DashboardSkeleton } from '@/components/v2/Skeleton';
@@ -153,6 +155,11 @@ export default function DashboardV2Page() {
   return (
     <V2Layout>
       <>
+        <div className="gradient-mesh" />
+
+        {/* ── STREAK BREAK ── */}
+        {stats && <StreakBreak streak={stats.currentStreak || 0} />}
+
         {/* ── WELCOME for new users ── */}
         {isNewUser && (
           <section className="mb-16 rounded-2xl border border-[#A8FF00]/15 bg-[#A8FF00]/5 p-10 text-center">
@@ -296,6 +303,9 @@ export default function DashboardV2Page() {
 
         {/* ── DAILY QUESTS ── */}
         <StaggerItem><DailyQuests /></StaggerItem>
+
+        {/* ── DAILY REWARD CALENDAR ── */}
+        <StaggerItem><DailyRewardCalendar /></StaggerItem>
 
         {/* ── DAILY BRIEF (AI Coach flagship) ── */}
         {brief && <StaggerItem><V2DailyBrief brief={brief} /></StaggerItem>}

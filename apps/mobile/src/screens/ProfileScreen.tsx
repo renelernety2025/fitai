@@ -24,7 +24,19 @@ const SECONDARY = [
   { screen: 'Gear', label: 'Vybavení', color: v2.blue },
   { screen: 'Records', label: 'Rekordy', color: v2.orange },
   { screen: 'Drops', label: 'Limited Drops', color: v2.yellow },
-  { screen: 'Experiences', label: 'Zážitky', color: v2.purple },
+  { screen: 'Experiences', label: 'Zazitky', color: v2.purple },
+  { screen: 'Clips', label: 'Clips', color: v2.blue },
+  { screen: 'Trainers', label: 'Treneri', color: v2.green },
+  { screen: 'RoutineBuilder', label: 'Rutina', color: v2.orange },
+  { screen: 'Bundles', label: 'Balicky', color: v2.yellow },
+  { screen: 'Wishlist', label: 'Wishlist', color: v2.purple },
+  { screen: 'VIP', label: 'VIP', color: v2.yellow },
+  { screen: 'Squads', label: 'Squad', color: v2.blue },
+  { screen: 'Maintenance', label: 'Servis', color: v2.orange },
+  { screen: 'CoachingNotes', label: 'AI Notes', color: v2.purple },
+  { screen: 'Playlists', label: 'Playlisty', color: v2.green },
+  { screen: 'Streaks', label: 'Streaky', color: v2.red },
+  { screen: 'FormCheck', label: 'Form Check', color: v2.green },
 ];
 
 export function ProfileScreen({ navigation }: any) {

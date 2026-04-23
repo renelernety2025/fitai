@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { getMyStats, getInsights, getMyGymSessions, getMyWeeklyVolume, downloadExport, type StatsData, type Insights, type GymSessionData, type WeeklyVolumeEntry } from '@/lib/api';
 import ActivityHeatmap from '@/components/progress/ActivityHeatmap';
 import VolumeChart from '@/components/progress/VolumeChart';
+import { TrendArrow } from '@/components/v2/TrendArrow';
 
 export default function ProgressV2Page() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -66,12 +67,37 @@ export default function ProgressV2Page() {
         </section>
       )}
 
-      {/* Big stats */}
+      {/* Big stats with trend arrows */}
       <section className="mb-32 grid grid-cols-2 gap-y-16 sm:grid-cols-4">
-        <V2Stat value={stats.totalSessions} label="Cvičení" />
+        <div>
+          <V2Stat value={stats.totalSessions} label="Cvičení" />
+          {sessions.length > 0 && (
+            <div className="mt-2 text-center">
+              <TrendArrow
+                current={sessions.filter((s) => Date.now() - new Date(s.startedAt).getTime() < 7 * 86_400_000).length}
+                previous={sessions.filter((s) => {
+                  const age = Date.now() - new Date(s.startedAt).getTime();
+                  return age >= 7 * 86_400_000 && age < 14 * 86_400_000;
+                }).length}
+                suffix=" tento tyd."
+              />
+            </div>
+          )}
+        </div>
         <V2Stat value={stats.currentStreak} label="Streak" />
         <V2Stat value={stats.longestStreak || 0} label="Best Streak" />
-        <V2Stat value={stats.totalXP} label="XP" />
+        <div>
+          <V2Stat value={stats.totalXP} label="XP" />
+          {(stats as any).previousWeekXP !== undefined && (
+            <div className="mt-2 text-center">
+              <TrendArrow
+                current={(stats as any).weeklyXP || 0}
+                previous={(stats as any).previousWeekXP || 0}
+                suffix=" XP"
+              />
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Time breakdown */}

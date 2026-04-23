@@ -28,6 +28,7 @@ export default function ProfilePage() {
 
   return (
     <V2Layout>
+      <div className="gradient-mesh" />
       <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
         &larr; Dashboard
       </Link>

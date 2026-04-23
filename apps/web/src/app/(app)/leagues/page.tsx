@@ -72,6 +72,42 @@ function LiveCountdown({ endsAt }: { endsAt: string }) {
   return <span className="font-semibold text-white/70">{text}</span>;
 }
 
+function getHoursRemaining(endsAt: string): number {
+  return Math.max(0, (new Date(endsAt).getTime() - Date.now()) / 3_600_000);
+}
+
+function LeagueUrgencyBanner({ endsAt }: { endsAt: string }) {
+  const [hours, setHours] = useState(() => getHoursRemaining(endsAt));
+
+  useEffect(() => {
+    const id = setInterval(() => setHours(getHoursRemaining(endsAt)), 60_000);
+    return () => clearInterval(id);
+  }, [endsAt]);
+
+  if (hours > 24) return null;
+
+  const isUrgent = hours <= 2;
+
+  return (
+    <div
+      className={`mb-8 rounded-xl border px-6 py-4 text-center text-sm font-semibold ${
+        isUrgent
+          ? 'border-[#FF375F]/40 bg-[#FF375F]/10 text-[#FF375F]'
+          : 'border-[#FF9F0A]/30 bg-[#FF9F0A]/5 text-[#FF9F0A]'
+      }`}
+      style={{
+        animation: isUrgent
+          ? 'pulse 1.5s ease-in-out infinite'
+          : 'pulse 3s ease-in-out infinite',
+      }}
+    >
+      {isUrgent
+        ? `Posledni sance! Zbyva ${Math.max(1, Math.round(hours * 60))} minut do konce ligy!`
+        : `Zbyva ${Math.round(hours)} hodin do konce ligy!`}
+    </div>
+  );
+}
+
 export default function LeaguesPage() {
   const { user } = useAuth();
   const [data, setData] = useState<LeagueData | null>(null);
@@ -173,6 +209,9 @@ export default function LeaguesPage() {
                 Získej XP tréninkem
               </Link>
             </div>
+
+            {/* Urgency banner */}
+            <LeagueUrgencyBanner endsAt={data.endsAt} />
 
             {/* Timer */}
             <div className="mb-12 text-center text-sm text-white/40">

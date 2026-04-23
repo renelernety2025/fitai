@@ -24,6 +24,7 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
 
   return (
     <V2Layout>
+      <div className="cinematic-enter">
       <Link
         href="/gym"
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -88,6 +89,7 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
           </div>
         ))}
       </section>
+      </div>
     </V2Layout>
   );
 }
