@@ -39,6 +39,12 @@ import { AIChatScreen } from '../screens/AIChatScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { LeaguesScreen } from '../screens/LeaguesScreen';
+import { DuelsScreen } from '../screens/DuelsScreen';
+import { SupplementsScreen } from '../screens/SupplementsScreen';
+import { GearScreen } from '../screens/GearScreen';
+import { RecordsScreen } from '../screens/RecordsScreen';
+import { DropsScreen } from '../screens/DropsScreen';
+import { ExperiencesScreen } from '../screens/ExperiencesScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -159,6 +165,12 @@ export function AppNavigator() {
             <Stack.Screen name="Journal" component={JournalScreen} />
             <Stack.Screen name="Calendar" component={CalendarScreen} />
             <Stack.Screen name="Leagues" component={LeaguesScreen} />
+            <Stack.Screen name="Duels" component={DuelsScreen} />
+            <Stack.Screen name="Supplements" component={SupplementsScreen} />
+            <Stack.Screen name="Gear" component={GearScreen} />
+            <Stack.Screen name="Records" component={RecordsScreen} />
+            <Stack.Screen name="Drops" component={DropsScreen} />
+            <Stack.Screen name="Experiences" component={ExperiencesScreen} />
           </>
         ) : (
           <>

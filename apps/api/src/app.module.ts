@@ -70,6 +70,7 @@ import { DropsModule } from './drops/drops.module';
 import { VipModule } from './vip/vip.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { BundlesModule } from './bundles/bundles.module';
+import { PlaylistsModule } from './playlists/playlists.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -180,6 +181,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     VipModule,
     WishlistModule,
     BundlesModule,
+    PlaylistsModule,
   ],
   providers: [
     {

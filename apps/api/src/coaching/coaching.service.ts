@@ -190,7 +190,7 @@ export class CoachingService {
       const client = new Anthropic({ apiKey });
 
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 150,
         system: systemPrompt,
         messages: [{ role: 'user', content: question }],
@@ -269,7 +269,7 @@ export class CoachingService {
       // newer versions have it back; we're in the gap). Iterate raw
       // events and unwrap text deltas from content_block_delta frames.
       const stream = client.messages.stream({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 150,
         system: systemPrompt,
         messages: [{ role: 'user', content: dto.question }],
@@ -475,7 +475,7 @@ PRAVIDLA:
       const client = new Anthropic({ apiKey });
 
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 50,
         system: buildCoachingSystemPrompt(ctx),
         messages: [{ role: 'user', content: buildCoachingUserMessage(ctx) }],
@@ -625,7 +625,7 @@ PRAVIDLA:
       const client = new Anthropic({ apiKey });
 
       const stream = client.messages.stream({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 500,
         system: systemPrompt,
         messages,
@@ -658,8 +658,13 @@ PRAVIDLA:
         );
       }
     } catch (e: any) {
-      this.logger.error(`Chat stream failed: ${e.message}`);
-      const fallback = 'Omlouvám se, něco se pokazilo. Zkus to znovu.';
+      this.logger.error(`Chat stream failed: ${e.message}`, {
+        status: e.status,
+        type: e.type,
+        stack: e.stack?.slice(0, 500),
+      });
+      const fallback =
+        'Omlouvám se, AI asistent je momentálně nedostupný. Zkus to prosím za chvíli.';
       emit({ type: 'text_delta', delta: fallback });
       emit({ type: 'text_done' });
       await this.saveChatReply(session.id, fallback);
@@ -698,7 +703,7 @@ PRAVIDLA:
     const client = new Anthropic({ apiKey });
 
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-haiku-4-5',
       max_tokens: 20,
       system: 'Generate a 3-5 word Czech title for this fitness conversation. Return ONLY the title, nothing else.',
       messages: [

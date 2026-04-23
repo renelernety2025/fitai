@@ -314,7 +314,7 @@ Pravidla:
       const Anthropic = require('@anthropic-ai/sdk').default;
       const client = new Anthropic({ apiKey });
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       });

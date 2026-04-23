@@ -19,6 +19,12 @@ const SECONDARY = [
   { screen: 'AICoach', label: 'AI Trenér', color: v2.purple },
   { screen: 'Community', label: 'Komunita', color: v2.red },
   { screen: 'Slovnik', label: 'Slovník', color: v2.yellow },
+  { screen: 'Duels', label: 'Duely', color: v2.red },
+  { screen: 'Supplements', label: 'Suplementy', color: v2.green },
+  { screen: 'Gear', label: 'Vybavení', color: v2.blue },
+  { screen: 'Records', label: 'Rekordy', color: v2.orange },
+  { screen: 'Drops', label: 'Limited Drops', color: v2.yellow },
+  { screen: 'Experiences', label: 'Zážitky', color: v2.purple },
 ];
 
 export function ProfileScreen({ navigation }: any) {

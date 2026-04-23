@@ -402,3 +402,40 @@ export function generateMealPlan(opts: any = {}) {
 export function deleteMealPlan(id: string) {
   return request<{ deleted: boolean }>(`/nutrition/meal-plan/${id}`, { method: 'DELETE' });
 }
+
+// ── Duels ──
+export function getActiveDuels() { return request<any[]>('/duels/active'); }
+export function getDuelHistory() { return request<any[]>('/duels/history'); }
+export function submitDuelScore(id: string, score: number) {
+  return request<any>(`/duels/${id}/score`, { method: 'POST', body: JSON.stringify({ score }) });
+}
+export function challengeDuel(data: any) {
+  return request<any>('/duels/challenge', { method: 'POST', body: JSON.stringify(data) });
+}
+
+// ── Supplements ──
+export function getMyStack() { return request<any[]>('/supplements/stack'); }
+export function logSupplement(id: string) {
+  return request<any>('/supplements/log', { method: 'POST', body: JSON.stringify({ userSupplementId: id }) });
+}
+
+// ── Gear ──
+export function getMyGear() { return request<any[]>('/gear'); }
+export function addGearItem(data: any) {
+  return request<any>('/gear', { method: 'POST', body: JSON.stringify(data) });
+}
+
+// ── Records ──
+export function getPersonalRecords() { return request<any[]>('/records'); }
+
+// ── Drops ──
+export function getDrops() { return request<any[]>('/drops'); }
+export function purchaseDrop(id: string) {
+  return request<any>(`/drops/${id}/purchase`, { method: 'POST' });
+}
+
+// ── Experiences ──
+export function getExperiences() { return request<any[]>('/experiences'); }
+export function bookExperience(id: string) {
+  return request<any>(`/experiences/${id}/book`, { method: 'POST' });
+}
