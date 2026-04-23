@@ -16,7 +16,7 @@ export class VipService {
   async getStatus(userId: string) {
     const membership = await (
       this.prisma as any
-    ).vipMembership.findUnique({
+    ).vIPMembership.findUnique({
       where: { userId },
     });
     return membership ?? { isVip: false };
@@ -25,7 +25,7 @@ export class VipService {
   async accept(userId: string) {
     const existing = await (
       this.prisma as any
-    ).vipMembership.findUnique({
+    ).vIPMembership.findUnique({
       where: { userId },
     });
     if (existing) throw new ConflictException('Already VIP');
@@ -35,11 +35,11 @@ export class VipService {
       throw new ForbiddenException('Not eligible for VIP');
     }
 
-    return (this.prisma as any).vipMembership.create({
+    return (this.prisma as any).vIPMembership.create({
       data: {
         userId,
         tier: 'GOLD',
-        acceptedAt: new Date(),
+        invitedAt: new Date(),
       },
     });
   }
@@ -51,7 +51,7 @@ export class VipService {
   async getLounge(userId: string) {
     const membership = await (
       this.prisma as any
-    ).vipMembership.findUnique({
+    ).vIPMembership.findUnique({
       where: { userId },
     });
     if (!membership) {

@@ -208,7 +208,7 @@ export class UsersService {
   async getTitles(userId: string) {
     return (this.prisma as any).userTitle.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { earnedAt: 'desc' },
     });
   }
 

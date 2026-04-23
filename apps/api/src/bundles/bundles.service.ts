@@ -25,8 +25,7 @@ export class BundlesService {
     return (this.prisma as any).bundle.findMany({
       where: { isPublic: true },
       include: {
-        items: true,
-        user: {
+        creator: {
           select: { id: true, name: true, avatarUrl: true },
         },
       },
@@ -39,8 +38,7 @@ export class BundlesService {
     const bundle = await (this.prisma as any).bundle.findUnique({
       where: { id },
       include: {
-        items: true,
-        user: {
+        creator: {
           select: { id: true, name: true, avatarUrl: true },
         },
       },
@@ -52,20 +50,17 @@ export class BundlesService {
   async create(userId: string, dto: CreateBundleDto) {
     return (this.prisma as any).bundle.create({
       data: {
-        userId,
+        creatorId: userId,
         name: dto.name,
         description: dto.description ?? null,
         priceXP: dto.priceXP ?? 0,
         giftable: dto.giftable ?? false,
         isPublic: true,
-        items: {
-          create: dto.items.map((item) => ({
-            itemType: item.itemType,
-            itemId: item.itemId,
-          })),
-        },
+        items: dto.items.map((item) => ({
+          itemType: item.itemType,
+          itemId: item.itemId,
+        })),
       },
-      include: { items: true },
     });
   }
 
@@ -73,7 +68,6 @@ export class BundlesService {
     return (this.prisma as any).$transaction(async (tx: any) => {
       const bundle = await tx.bundle.findUnique({
         where: { id: bundleId },
-        include: { items: true },
       });
       if (!bundle) throw new NotFoundException('Bundle not found');
 

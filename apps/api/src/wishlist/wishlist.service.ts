@@ -11,41 +11,41 @@ export class WishlistService {
   constructor(private prisma: PrismaService) {}
 
   async list(userId: string) {
-    return (this.prisma as any).wishlistItem.findMany({
+    return (this.prisma as any).wishlist.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { addedAt: 'desc' },
     });
   }
 
   async add(userId: string, itemType: string, itemId: string) {
     const existing = await (
       this.prisma as any
-    ).wishlistItem.findFirst({
+    ).wishlist.findFirst({
       where: { userId, itemType, itemId },
     });
     if (existing) throw new ConflictException('Already in wishlist');
 
-    return (this.prisma as any).wishlistItem.create({
+    return (this.prisma as any).wishlist.create({
       data: { userId, itemType, itemId },
     });
   }
 
   async remove(userId: string, id: string) {
-    const item = await (this.prisma as any).wishlistItem.findUnique({
+    const item = await (this.prisma as any).wishlist.findUnique({
       where: { id },
     });
     if (!item) throw new NotFoundException('Wishlist item not found');
     if (item.userId !== userId) {
       throw new ForbiddenException('Not your wishlist item');
     }
-    await (this.prisma as any).wishlistItem.delete({
+    await (this.prisma as any).wishlist.delete({
       where: { id },
     });
     return { deleted: true };
   }
 
   async count(itemType: string, itemId: string) {
-    const total = await (this.prisma as any).wishlistItem.count({
+    const total = await (this.prisma as any).wishlist.count({
       where: { itemType, itemId },
     });
     return { itemType, itemId, count: total };
