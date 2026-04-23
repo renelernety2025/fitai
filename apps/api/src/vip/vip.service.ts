@@ -98,11 +98,11 @@ export class VipService {
     const hasStreak100 = progress.currentStreak >= 100;
     if (!hasStreak100) reasons.push('Streak < 100');
 
-    const sessions = await (this.prisma as any).gymSession.findMany({
+    const sessions = await this.prisma.gymSession.findMany({
       where: { userId },
       select: { averageFormScore: true },
       take: 50,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { startedAt: 'desc' },
     });
     const avgForm =
       sessions.length > 0
