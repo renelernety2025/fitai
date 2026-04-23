@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSquadDto } from './dto/create-squad.dto';
@@ -37,11 +38,14 @@ export class SquadsService {
 
   async getMine(userId: string) {
     const membership = await this.prisma.squadMembership.findFirst({
-      where: { userId },
+      where: { userId, role: { in: ['LEADER', 'MEMBER'] } },
       include: {
         squad: {
           include: {
-            members: { include: { user: { select: USER_SELECT } } },
+            members: {
+              where: { role: { in: ['LEADER', 'MEMBER'] } },
+              include: { user: { select: USER_SELECT } },
+            },
           },
         },
       },
@@ -82,8 +86,24 @@ export class SquadsService {
     }
 
     return this.prisma.squadMembership.create({
-      data: { squadId, userId: targetUserId, role: 'MEMBER' },
+      data: { squadId, userId: targetUserId, role: 'INVITED' },
       include: { user: { select: USER_SELECT } },
+    });
+  }
+
+  async acceptInvite(userId: string, squadId: string) {
+    const membership = await this.prisma.squadMembership.findFirst({
+      where: { squadId, userId },
+    });
+    if (!membership) {
+      throw new NotFoundException('No invite found');
+    }
+    if (membership.role !== 'INVITED') {
+      throw new BadRequestException('Already a member');
+    }
+    return this.prisma.squadMembership.update({
+      where: { id: membership.id },
+      data: { role: 'MEMBER' },
     });
   }
 

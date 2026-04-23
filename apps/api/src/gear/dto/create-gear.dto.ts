@@ -1,13 +1,15 @@
-import { IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateGearDto {
   @IsString()
   category!: string;
 
   @IsString()
+  @MaxLength(100)
   brand!: string;
 
   @IsString()
+  @MaxLength(100)
   model!: string;
 
   @IsOptional()

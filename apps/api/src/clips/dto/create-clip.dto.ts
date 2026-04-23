@@ -10,6 +10,7 @@ import {
 
 export class CreateClipDto {
   @IsString()
+  @MaxLength(500)
   s3Key!: string;
 
   @IsInt()

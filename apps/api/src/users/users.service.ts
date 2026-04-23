@@ -69,6 +69,59 @@ export class UsersService {
 
   async deleteAccount(userId: string) {
     await this.prisma.$transaction([
+      // New cross-industry models (Phase 1-5)
+      (this.prisma as any).sectorTime.deleteMany({
+        where: { exerciseSet: { gymSession: { userId } } },
+      }),
+      (this.prisma as any).coachingMemory.deleteMany({ where: { userId } }),
+      (this.prisma as any).maintenanceAlert.deleteMany({ where: { userId } }),
+      (this.prisma as any).maintenanceSchedule.deleteMany({ where: { userId } }),
+      // Duels
+      this.prisma.duel.deleteMany({
+        where: { OR: [{ challengerId: userId }, { challengedId: userId }] },
+      }),
+      // Squads
+      (this.prisma as any).squadMembership.deleteMany({ where: { userId } }),
+      // Person streaks
+      (this.prisma as any).personStreak.deleteMany({
+        where: { OR: [{ userAId: userId }, { userBId: userId }] },
+      }),
+      // Supplements
+      (this.prisma as any).supplementLog.deleteMany({
+        where: { userSupplement: { userId } },
+      }),
+      (this.prisma as any).userSupplement.deleteMany({ where: { userId } }),
+      // Gear
+      (this.prisma as any).gearReview.deleteMany({ where: { userId } }),
+      (this.prisma as any).gearItem.deleteMany({ where: { userId } }),
+      // Clips
+      (this.prisma as any).clipComment.deleteMany({ where: { userId } }),
+      (this.prisma as any).clipLike.deleteMany({ where: { userId } }),
+      (this.prisma as any).duetComparison.deleteMany({ where: { userId } }),
+      (this.prisma as any).clip.deleteMany({ where: { userId } }),
+      // Playlists
+      (this.prisma as any).playlistLink.deleteMany({ where: { userId } }),
+      // Experiences
+      (this.prisma as any).booking.deleteMany({ where: { userId } }),
+      (this.prisma as any).trainerReview.deleteMany({ where: { userId } }),
+      (this.prisma as any).experience.deleteMany({
+        where: { trainer: { userId } },
+      }),
+      (this.prisma as any).trainerProfile.deleteMany({ where: { userId } }),
+      // Routines
+      (this.prisma as any).routineItem.deleteMany({
+        where: { routine: { userId } },
+      }),
+      (this.prisma as any).routine.deleteMany({ where: { userId } }),
+      // Bundles, Wishlist, Drops, VIP, Titles, Brand
+      (this.prisma as any).bundle.deleteMany({ where: { creatorId: userId } }),
+      (this.prisma as any).wishlist.deleteMany({ where: { userId } }),
+      (this.prisma as any).dropPurchase.deleteMany({ where: { userId } }),
+      (this.prisma as any).planTrial.deleteMany({ where: { userId } }),
+      (this.prisma as any).vIPMembership.deleteMany({ where: { userId } }),
+      (this.prisma as any).userTitle.deleteMany({ where: { userId } }),
+      (this.prisma as any).userBrand.deleteMany({ where: { userId } }),
+      // Original models
       this.prisma.journalPhoto.deleteMany({
         where: { journalEntry: { userId } },
       }),

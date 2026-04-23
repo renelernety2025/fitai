@@ -36,6 +36,20 @@ export class DuelsService {
       throw new BadRequestException('Invalid duration');
     }
 
+    // Validate challenger has enough XP
+    const progress = await this.prisma.userProgress.findUnique({
+      where: { userId },
+    });
+    if (!progress || progress.totalXP < dto.xpBet) {
+      throw new BadRequestException('Not enough XP');
+    }
+
+    // Escrow: deduct XP from challenger
+    await this.prisma.userProgress.update({
+      where: { userId },
+      data: { totalXP: { decrement: dto.xpBet } },
+    });
+
     return this.prisma.duel.create({
       data: {
         challengerId: userId,
@@ -61,6 +75,20 @@ export class DuelsService {
     if (duel.status !== 'PENDING') {
       throw new BadRequestException('Duel is not pending');
     }
+
+    // Validate challenged user has enough XP
+    const progress = await this.prisma.userProgress.findUnique({
+      where: { userId },
+    });
+    if (!progress || progress.totalXP < duel.xpBet) {
+      throw new BadRequestException('Not enough XP');
+    }
+
+    // Escrow: deduct XP from challenged user
+    await this.prisma.userProgress.update({
+      where: { userId },
+      data: { totalXP: { decrement: duel.xpBet } },
+    });
 
     const ms = DURATION_MS[duel.duration] || 86_400_000;
     const now = new Date();
@@ -95,6 +123,10 @@ export class DuelsService {
   }
 
   async submitScore(userId: string, duelId: string, score: number) {
+    if (score > 10000) {
+      throw new BadRequestException('Score too high');
+    }
+
     const duel = await this.findDuelOrThrow(duelId);
     if (duel.status !== 'ACTIVE') {
       throw new BadRequestException('Duel is not active');
@@ -113,7 +145,26 @@ export class DuelsService {
     const isExpired = duel.endsAt && duel.endsAt < new Date();
     if (isExpired) {
       data.status = 'COMPLETED';
-      data.winnerId = this.computeWinner(duel, isChallenger, score);
+      const winnerId = this.computeWinner(duel, isChallenger, score);
+      data.winnerId = winnerId;
+
+      // Transfer escrowed XP to winner (2x bet), or refund on tie
+      if (winnerId) {
+        await this.prisma.userProgress.update({
+          where: { userId: winnerId },
+          data: { totalXP: { increment: duel.xpBet * 2 } },
+        });
+      } else {
+        // Tie: refund both
+        await this.prisma.userProgress.update({
+          where: { userId: duel.challengerId },
+          data: { totalXP: { increment: duel.xpBet } },
+        });
+        await this.prisma.userProgress.update({
+          where: { userId: duel.challengedId },
+          data: { totalXP: { increment: duel.xpBet } },
+        });
+      }
     }
 
     return this.prisma.duel.update({

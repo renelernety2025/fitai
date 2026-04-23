@@ -6,6 +6,7 @@ import {
   Body,
   Request,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BundlesService } from './bundles.service';
@@ -27,7 +28,11 @@ export class BundlesController {
   }
 
   @Post()
-  create(@Request() req: any, @Body() dto: CreateBundleDto) {
+  async create(@Request() req: any, @Body() dto: CreateBundleDto) {
+    const user = await this.service.getUser(req.user.id);
+    if (!user.isAdmin) {
+      throw new ForbiddenException('Only admins can create bundles');
+    }
     return this.service.create(req.user.id, dto);
   }
 

@@ -47,6 +47,11 @@ export class SquadsController {
     return this.squadsService.invite(req.user.id, id, dto.userId);
   }
 
+  @Post(':id/accept')
+  acceptInvite(@Request() req: any, @Param('id') id: string) {
+    return this.squadsService.acceptInvite(req.user.id, id);
+  }
+
   @Delete(':id/leave')
   leave(@Request() req: any, @Param('id') id: string) {
     return this.squadsService.leave(req.user.id, id);

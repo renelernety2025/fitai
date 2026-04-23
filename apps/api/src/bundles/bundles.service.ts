@@ -14,6 +14,13 @@ export class BundlesService {
 
   constructor(private prisma: PrismaService) {}
 
+  async getUser(userId: string) {
+    return this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
+  }
+
   async list() {
     return (this.prisma as any).bundle.findMany({
       where: { isPublic: true },
@@ -63,41 +70,36 @@ export class BundlesService {
   }
 
   async purchase(userId: string, bundleId: string) {
-    const bundle = await (this.prisma as any).bundle.findUnique({
-      where: { id: bundleId },
-      include: { items: true },
-    });
-    if (!bundle) throw new NotFoundException('Bundle not found');
-
-    const existing = await (
-      this.prisma as any
-    ).bundlePurchase.findFirst({
-      where: { bundleId, userId },
-    });
-    if (existing) throw new ConflictException('Already purchased');
-
-    if (bundle.priceXP > 0) {
-      const progress = await this.prisma.userProgress.findUnique({
-        where: { userId },
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      const bundle = await tx.bundle.findUnique({
+        where: { id: bundleId },
+        include: { items: true },
       });
-      if (!progress || progress.totalXP < bundle.priceXP) {
-        throw new BadRequestException('Not enough XP');
-      }
+      if (!bundle) throw new NotFoundException('Bundle not found');
 
-      const [purchase] = await this.prisma.$transaction([
-        (this.prisma as any).bundlePurchase.create({
-          data: { bundleId, userId },
-        }),
-        this.prisma.userProgress.update({
+      // Duplicate check inside transaction
+      const existing = await tx.bundlePurchase.findFirst({
+        where: { bundleId, userId },
+      });
+      if (existing) throw new ConflictException('Already purchased');
+
+      if (bundle.priceXP > 0) {
+        const progress = await tx.userProgress.findUnique({
+          where: { userId },
+        });
+        if (!progress || progress.totalXP < bundle.priceXP) {
+          throw new BadRequestException('Not enough XP');
+        }
+
+        await tx.userProgress.update({
           where: { userId },
           data: { totalXP: { decrement: bundle.priceXP } },
-        }),
-      ]);
-      return purchase;
-    }
+        });
+      }
 
-    return (this.prisma as any).bundlePurchase.create({
-      data: { bundleId, userId },
+      return tx.bundlePurchase.create({
+        data: { bundleId, userId },
+      });
     });
   }
 }

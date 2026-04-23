@@ -116,20 +116,38 @@ export class ExperiencesService {
   }
 
   async book(userId: string, experienceId: string) {
-    const exp = await (this.prisma as any).experience.findUnique({
-      where: { id: experienceId },
-      include: { _count: { select: { bookings: true } } },
-    });
-    if (!exp) throw new NotFoundException('Experience not found');
-    if (exp._count.bookings >= exp.capacity) {
-      throw new ConflictException('Experience is full');
-    }
-    const existing = await (this.prisma as any).experienceBooking.findFirst({
-      where: { userId, experienceId },
-    });
-    if (existing) throw new ConflictException('Already booked');
-    return (this.prisma as any).experienceBooking.create({
-      data: { userId, experienceId },
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      const exp = await tx.experience.findUnique({
+        where: { id: experienceId },
+      });
+      if (!exp) throw new NotFoundException('Experience not found');
+      if (!exp.isActive) {
+        throw new BadRequestException('Experience not active');
+      }
+      if (exp.currentBookings >= exp.capacity) {
+        throw new BadRequestException('Fully booked');
+      }
+
+      const existing = await tx.experienceBooking.findFirst({
+        where: { userId, experienceId, status: { not: 'CANCELLED' } },
+      });
+      if (existing) throw new ConflictException('Already booked');
+
+      // Atomic increment with capacity guard
+      const updated = await tx.experience.updateMany({
+        where: {
+          id: experienceId,
+          currentBookings: { lt: exp.capacity },
+        },
+        data: { currentBookings: { increment: 1 } },
+      });
+      if (updated.count === 0) {
+        throw new BadRequestException('Fully booked');
+      }
+
+      return tx.experienceBooking.create({
+        data: { userId, experienceId, status: 'CONFIRMED' },
+      });
     });
   }
 

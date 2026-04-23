@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsString, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class ChallengeDuelDto {
   @IsString()
@@ -8,6 +8,7 @@ export class ChallengeDuelDto {
   type!: string;
 
   @IsString()
+  @MaxLength(200)
   metric!: string;
 
   @IsString()

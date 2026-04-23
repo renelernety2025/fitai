@@ -46,54 +46,61 @@ export class DropsService {
   }
 
   async purchase(userId: string, dropId: string) {
-    const drop = await (this.prisma as any).drop.findUnique({
-      where: { id: dropId },
-    });
-    if (!drop) throw new NotFoundException('Drop not found');
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      // Read inside transaction
+      const drop = await tx.drop.findUnique({ where: { id: dropId } });
+      if (!drop) throw new NotFoundException('Drop not found');
 
-    const now = new Date();
-    if (new Date(drop.releaseDate) > now) {
-      throw new BadRequestException('Drop not yet released');
-    }
-    if (new Date(drop.endDate) <= now) {
-      throw new BadRequestException('Drop has ended');
-    }
-    if (drop.remainingEditions <= 0) {
-      throw new ConflictException('Sold out');
-    }
+      const now = new Date();
+      if (now < new Date(drop.releaseDate)) {
+        throw new BadRequestException('Drop not released yet');
+      }
+      if (now > new Date(drop.endDate)) {
+        throw new BadRequestException('Drop has ended');
+      }
+      if (drop.remainingEditions <= 0) {
+        throw new BadRequestException('Sold out');
+      }
 
-    const existing = await (
-      this.prisma as any
-    ).dropPurchase.findFirst({
-      where: { dropId, userId },
-    });
-    if (existing) throw new ConflictException('Already purchased');
+      // Check duplicate
+      const existing = await tx.dropPurchase.findUnique({
+        where: { dropId_userId: { dropId, userId } },
+      });
+      if (existing) throw new ConflictException('Already purchased');
 
-    const progress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-    });
-    if (!progress || progress.totalXP < drop.priceXP) {
-      throw new BadRequestException('Not enough XP');
-    }
+      // Check XP
+      const progress = await tx.userProgress.findUnique({
+        where: { userId },
+      });
+      if (!progress || progress.totalXP < drop.priceXP) {
+        throw new BadRequestException('Not enough XP');
+      }
 
-    const editionNumber =
-      drop.totalEditions - drop.remainingEditions + 1;
-
-    const [purchase] = await this.prisma.$transaction([
-      (this.prisma as any).dropPurchase.create({
-        data: { dropId, userId, editionNumber },
-      }),
-      (this.prisma as any).drop.update({
-        where: { id: dropId },
+      // Atomic decrement with condition
+      const updated = await tx.drop.updateMany({
+        where: { id: dropId, remainingEditions: { gt: 0 } },
         data: { remainingEditions: { decrement: 1 } },
-      }),
-      this.prisma.userProgress.update({
+      });
+      if (updated.count === 0) throw new BadRequestException('Sold out');
+
+      // Get updated drop for edition number
+      const updatedDrop = await tx.drop.findUnique({
+        where: { id: dropId },
+      });
+      const editionNumber =
+        drop.totalEditions - updatedDrop.remainingEditions;
+
+      // Deduct XP
+      await tx.userProgress.update({
         where: { userId },
         data: { totalXP: { decrement: drop.priceXP } },
-      }),
-    ]);
+      });
 
-    return purchase;
+      // Create purchase
+      return tx.dropPurchase.create({
+        data: { dropId, userId, editionNumber },
+      });
+    });
   }
 
   async myPurchases(userId: string) {

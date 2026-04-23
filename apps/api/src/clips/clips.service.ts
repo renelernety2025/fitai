@@ -3,6 +3,7 @@ import {
   Logger,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   S3Client,
@@ -29,13 +30,23 @@ export class ClipsService {
     } as any);
   }
 
+  private static readonly ALLOWED_TYPES = [
+    'video/mp4',
+    'video/quicktime',
+    'video/webm',
+  ];
+
   async getUploadUrl(
     userId: string,
     fileName: string,
     contentType: string,
   ) {
+    if (!ClipsService.ALLOWED_TYPES.includes(contentType)) {
+      throw new BadRequestException('Invalid content type');
+    }
     const id = randomUUID();
     const ext = fileName.split('.').pop() || 'mp4';
+    // Key always uses userId prefix (ownership)
     const s3Key = `clips/${userId}/${id}.${ext}`;
     const command = new PutObjectCommand({
       Bucket: this.bucket,
@@ -43,6 +54,7 @@ export class ClipsService {
       ContentType: contentType,
       Metadata: { userId },
     });
+    // NOTE: S3 bucket policy should enforce max 100MB file size
     const uploadUrl = await getSignedUrl(
       this.client as any,
       command as any,
@@ -52,6 +64,10 @@ export class ClipsService {
   }
 
   async create(userId: string, dto: CreateClipDto) {
+    const expectedPrefix = `clips/${userId}/`;
+    if (!dto.s3Key.startsWith(expectedPrefix)) {
+      throw new ForbiddenException('Invalid S3 key');
+    }
     return (this.prisma as any).clip.create({
       data: {
         userId,

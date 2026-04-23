@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SaveMemoryDto {
   @IsOptional()
@@ -6,6 +6,7 @@ export class SaveMemoryDto {
   exerciseId?: string;
 
   @IsString()
+  @MaxLength(5000)
   insight!: string;
 
   @IsString()

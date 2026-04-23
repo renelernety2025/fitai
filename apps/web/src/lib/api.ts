@@ -1914,13 +1914,13 @@ export function bookExperience(id: string): Promise<any> {
   return request(`/experiences/${id}/book`, { method: 'POST' });
 }
 export function cancelBooking(id: string): Promise<any> {
-  return request(`/bookings/${id}/cancel`, { method: 'POST' });
+  return request(`/experiences/bookings/${id}/cancel`, { method: 'POST' });
 }
 export function checkinBooking(id: string): Promise<any> {
-  return request(`/bookings/${id}/checkin`, { method: 'POST' });
+  return request(`/experiences/bookings/${id}/checkin`, { method: 'POST' });
 }
 export function reviewBooking(id: string, data: { rating: number; reviewText?: string }): Promise<any> {
-  return request(`/bookings/${id}/review`, { method: 'POST', body: JSON.stringify(data) });
+  return request(`/experiences/bookings/${id}/review`, { method: 'POST', body: JSON.stringify(data) });
 }
 export function getMyBookings(): Promise<any[]> {
   return request('/experiences/my-bookings');
