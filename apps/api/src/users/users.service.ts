@@ -113,6 +113,9 @@ export class UsersService {
         where: { routine: { userId } },
       }),
       (this.prisma as any).routine.deleteMany({ where: { userId } }),
+      // Bundle purchases, Daily quest completions
+      (this.prisma as any).bundlePurchase.deleteMany({ where: { userId } }),
+      (this.prisma as any).dailyQuestCompletion.deleteMany({ where: { userId } }),
       // Bundles, Wishlist, Drops, VIP, Titles, Brand
       (this.prisma as any).bundle.deleteMany({ where: { creatorId: userId } }),
       (this.prisma as any).wishlist.deleteMany({ where: { userId } }),

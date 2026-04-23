@@ -128,7 +128,7 @@ export class ExperiencesService {
         throw new BadRequestException('Fully booked');
       }
 
-      const existing = await tx.experienceBooking.findFirst({
+      const existing = await tx.booking.findFirst({
         where: { userId, experienceId, status: { not: 'CANCELLED' } },
       });
       if (existing) throw new ConflictException('Already booked');
@@ -145,7 +145,7 @@ export class ExperiencesService {
         throw new BadRequestException('Fully booked');
       }
 
-      return tx.experienceBooking.create({
+      return tx.booking.create({
         data: { userId, experienceId, status: 'CONFIRMED' },
       });
     });
@@ -153,7 +153,7 @@ export class ExperiencesService {
 
   async cancelBooking(userId: string, bookingId: string) {
     const booking = await this.getOwnBooking(userId, bookingId);
-    return (this.prisma as any).experienceBooking.update({
+    return (this.prisma as any).booking.update({
       where: { id: booking.id },
       data: { status: 'CANCELLED' },
     });
@@ -161,7 +161,7 @@ export class ExperiencesService {
 
   async checkin(userId: string, bookingId: string) {
     const booking = await this.getOwnBooking(userId, bookingId);
-    return (this.prisma as any).experienceBooking.update({
+    return (this.prisma as any).booking.update({
       where: { id: booking.id },
       data: { status: 'CHECKED_IN', checkedInAt: new Date() },
     });
@@ -177,14 +177,14 @@ export class ExperiencesService {
     if (booking.status !== 'CHECKED_IN') {
       throw new BadRequestException('Must check in before reviewing');
     }
-    return (this.prisma as any).experienceBooking.update({
+    return (this.prisma as any).booking.update({
       where: { id: booking.id },
       data: { rating, reviewText: reviewText ?? null },
     });
   }
 
   async myBookings(userId: string) {
-    return (this.prisma as any).experienceBooking.findMany({
+    return (this.prisma as any).booking.findMany({
       where: { userId },
       include: {
         experience: {
@@ -197,7 +197,7 @@ export class ExperiencesService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { bookedAt: 'desc' },
     });
   }
 
@@ -216,7 +216,7 @@ export class ExperiencesService {
   }
 
   private async getOwnBooking(userId: string, bookingId: string) {
-    const booking = await (this.prisma as any).experienceBooking.findUnique({
+    const booking = await (this.prisma as any).booking.findUnique({
       where: { id: bookingId },
     });
     if (!booking) throw new NotFoundException('Booking not found');

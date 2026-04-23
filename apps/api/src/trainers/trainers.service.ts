@@ -63,7 +63,7 @@ export class TrainersService {
   }
 
   async getReviews(trainerId: string) {
-    return (this.prisma as any).experienceBooking.findMany({
+    return (this.prisma as any).booking.findMany({
       where: {
         experience: { trainerId },
         rating: { not: null },

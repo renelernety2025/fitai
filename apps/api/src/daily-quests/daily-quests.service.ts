@@ -26,24 +26,28 @@ const QUEST_TEMPLATES: QuestTemplate[] = [
   { id: 'breathing_exercise', titleCs: 'Dechove cviceni 1 min', xpReward: 15, checkType: 'manual' },
 ];
 
-/** In-memory store: key = `userId:YYYY-MM-DD`, value = Set of completed quest IDs */
-const completions = new Map<string, Set<string>>();
-
 @Injectable()
 export class DailyQuestsService {
   constructor(private prisma: PrismaService) {}
 
-  getTodayQuests(userId: string) {
+  async getTodayQuests(userId: string) {
     const dateStr = this.getTodayDateStr();
     const selected = this.selectQuestsForUser(userId, dateStr);
-    const key = `${userId}:${dateStr}`;
-    const done = completions.get(key) || new Set();
+    const todayDate = new Date(dateStr);
+
+    const completions = await (
+      this.prisma as any
+    ).dailyQuestCompletion.findMany({
+      where: { userId, date: todayDate },
+      select: { questId: true },
+    });
+    const doneIds = new Set(completions.map((c: any) => c.questId));
 
     return selected.map((q) => ({
       id: q.id,
       titleCs: q.titleCs,
       xpReward: q.xpReward,
-      completed: done.has(q.id),
+      completed: doneIds.has(q.id),
     }));
   }
 
@@ -55,18 +59,27 @@ export class DailyQuestsService {
       throw new NotFoundException('Quest not found for today');
     }
 
-    const key = `${userId}:${dateStr}`;
-    let done = completions.get(key);
-    if (!done) {
-      done = new Set();
-      completions.set(key, done);
-    }
+    const todayDate = new Date(dateStr);
 
-    if (done.has(questId)) {
+    const existing = await (
+      this.prisma as any
+    ).dailyQuestCompletion.findUnique({
+      where: {
+        userId_questId_date: { userId, questId, date: todayDate },
+      },
+    });
+    if (existing) {
       return { alreadyCompleted: true, xpAwarded: 0 };
     }
 
-    done.add(questId);
+    await (this.prisma as any).dailyQuestCompletion.create({
+      data: {
+        userId,
+        questId,
+        date: todayDate,
+        xpAwarded: quest.xpReward,
+      },
+    });
 
     // Award XP
     await this.prisma.userProgress.upsert({
@@ -80,13 +93,12 @@ export class DailyQuestsService {
 
   private getTodayDateStr(): string {
     const now = new Date();
-    const prague = new Intl.DateTimeFormat('en-CA', {
+    return new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Europe/Prague',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     }).format(now);
-    return prague;
   }
 
   private selectQuestsForUser(

@@ -26,44 +26,44 @@ export class DuelsService {
       throw new BadRequestException('Cannot challenge yourself');
     }
 
-    const target = await this.prisma.user.findUnique({
-      where: { id: dto.challengedId },
-    });
-    if (!target) throw new NotFoundException('User not found');
-
     const endsAtMs = DURATION_MS[dto.duration];
     if (!endsAtMs) {
       throw new BadRequestException('Invalid duration');
     }
 
-    // Validate challenger has enough XP
-    const progress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-    });
-    if (!progress || progress.totalXP < dto.xpBet) {
-      throw new BadRequestException('Not enough XP');
-    }
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      const target = await tx.user.findUnique({
+        where: { id: dto.challengedId },
+      });
+      if (!target) throw new NotFoundException('User not found');
 
-    // Escrow: deduct XP from challenger
-    await this.prisma.userProgress.update({
-      where: { userId },
-      data: { totalXP: { decrement: dto.xpBet } },
-    });
+      const progress = await tx.userProgress.findUnique({
+        where: { userId },
+      });
+      if (!progress || progress.totalXP < dto.xpBet) {
+        throw new BadRequestException('Not enough XP');
+      }
 
-    return this.prisma.duel.create({
-      data: {
-        challengerId: userId,
-        challengedId: dto.challengedId,
-        type: dto.type as any,
-        metric: dto.metric,
-        duration: dto.duration as any,
-        xpBet: dto.xpBet,
-        status: 'PENDING',
-      },
-      include: {
-        challenger: { select: USER_SELECT },
-        challenged: { select: USER_SELECT },
-      },
+      await tx.userProgress.update({
+        where: { userId },
+        data: { totalXP: { decrement: dto.xpBet } },
+      });
+
+      return tx.duel.create({
+        data: {
+          challengerId: userId,
+          challengedId: dto.challengedId,
+          type: dto.type as any,
+          metric: dto.metric,
+          duration: dto.duration as any,
+          xpBet: dto.xpBet,
+          status: 'PENDING',
+        },
+        include: {
+          challenger: { select: USER_SELECT },
+          challenged: { select: USER_SELECT },
+        },
+      });
     });
   }
 
@@ -76,34 +76,34 @@ export class DuelsService {
       throw new BadRequestException('Duel is not pending');
     }
 
-    // Validate challenged user has enough XP
-    const progress = await this.prisma.userProgress.findUnique({
-      where: { userId },
-    });
-    if (!progress || progress.totalXP < duel.xpBet) {
-      throw new BadRequestException('Not enough XP');
-    }
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      const progress = await tx.userProgress.findUnique({
+        where: { userId },
+      });
+      if (!progress || progress.totalXP < duel.xpBet) {
+        throw new BadRequestException('Not enough XP');
+      }
 
-    // Escrow: deduct XP from challenged user
-    await this.prisma.userProgress.update({
-      where: { userId },
-      data: { totalXP: { decrement: duel.xpBet } },
-    });
+      await tx.userProgress.update({
+        where: { userId },
+        data: { totalXP: { decrement: duel.xpBet } },
+      });
 
-    const ms = DURATION_MS[duel.duration] || 86_400_000;
-    const now = new Date();
+      const ms = DURATION_MS[duel.duration] || 86_400_000;
+      const now = new Date();
 
-    return this.prisma.duel.update({
-      where: { id: duelId },
-      data: {
-        status: 'ACTIVE',
-        startedAt: now,
-        endsAt: new Date(now.getTime() + ms),
-      },
-      include: {
-        challenger: { select: USER_SELECT },
-        challenged: { select: USER_SELECT },
-      },
+      return tx.duel.update({
+        where: { id: duelId },
+        data: {
+          status: 'ACTIVE',
+          startedAt: now,
+          endsAt: new Date(now.getTime() + ms),
+        },
+        include: {
+          challenger: { select: USER_SELECT },
+          challenged: { select: USER_SELECT },
+        },
+      });
     });
   }
 
@@ -116,10 +116,20 @@ export class DuelsService {
       throw new BadRequestException('Duel is not pending');
     }
 
-    return this.prisma.duel.update({
+    await this.prisma.duel.update({
       where: { id: duelId },
       data: { status: 'DECLINED' },
     });
+
+    // Refund challenger's escrowed XP
+    if (duel.xpBet > 0) {
+      await this.prisma.userProgress.update({
+        where: { userId: duel.challengerId },
+        data: { totalXP: { increment: duel.xpBet } },
+      });
+    }
+
+    return { message: 'Duel declined', refundedXP: duel.xpBet };
   }
 
   async submitScore(userId: string, duelId: string, score: number) {
@@ -138,42 +148,42 @@ export class DuelsService {
       throw new ForbiddenException('Not a participant');
     }
 
-    const data: Record<string, any> = isChallenger
-      ? { challengerScore: { increment: score } }
-      : { challengedScore: { increment: score } };
+    return (this.prisma as any).$transaction(async (tx: any) => {
+      const data: Record<string, any> = isChallenger
+        ? { challengerScore: { increment: score } }
+        : { challengedScore: { increment: score } };
 
-    const isExpired = duel.endsAt && duel.endsAt < new Date();
-    if (isExpired) {
-      data.status = 'COMPLETED';
-      const winnerId = this.computeWinner(duel, isChallenger, score);
-      data.winnerId = winnerId;
+      const isExpired = duel.endsAt && duel.endsAt < new Date();
+      if (isExpired) {
+        data.status = 'COMPLETED';
+        const winnerId = this.computeWinner(duel, isChallenger, score);
+        data.winnerId = winnerId;
 
-      // Transfer escrowed XP to winner (2x bet), or refund on tie
-      if (winnerId) {
-        await this.prisma.userProgress.update({
-          where: { userId: winnerId },
-          data: { totalXP: { increment: duel.xpBet * 2 } },
-        });
-      } else {
-        // Tie: refund both
-        await this.prisma.userProgress.update({
-          where: { userId: duel.challengerId },
-          data: { totalXP: { increment: duel.xpBet } },
-        });
-        await this.prisma.userProgress.update({
-          where: { userId: duel.challengedId },
-          data: { totalXP: { increment: duel.xpBet } },
-        });
+        if (winnerId) {
+          await tx.userProgress.update({
+            where: { userId: winnerId },
+            data: { totalXP: { increment: duel.xpBet * 2 } },
+          });
+        } else {
+          await tx.userProgress.update({
+            where: { userId: duel.challengerId },
+            data: { totalXP: { increment: duel.xpBet } },
+          });
+          await tx.userProgress.update({
+            where: { userId: duel.challengedId },
+            data: { totalXP: { increment: duel.xpBet } },
+          });
+        }
       }
-    }
 
-    return this.prisma.duel.update({
-      where: { id: duelId },
-      data,
-      include: {
-        challenger: { select: USER_SELECT },
-        challenged: { select: USER_SELECT },
-      },
+      return tx.duel.update({
+        where: { id: duelId },
+        data,
+        include: {
+          challenger: { select: USER_SELECT },
+          challenged: { select: USER_SELECT },
+        },
+      });
     });
   }
 

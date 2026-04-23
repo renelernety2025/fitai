@@ -77,88 +77,90 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  sessions             WorkoutSession[]
-  progress             UserProgress?
-  workoutPlans         WorkoutPlan[]
-  gymSessions          GymSession[]
-  exerciseHistory      ExerciseHistory[]
-  coachingSessions     CoachingSession[]
-  safetyEvents         SafetyEvent[]
-  fitnessProfile       FitnessProfile?
-  aiPlans              AIGeneratedPlan[]
-  pushSubscriptions    PushSubscription[]
-  notificationPrefs    NotificationPreference?
-  following            Follow[]                @relation("follower")
-  followers            Follow[]                @relation("followed")
-  feedItems            ActivityFeedItem[]
-  challengeEntries     ChallengeParticipant[]
-  wearableData         WearableData[]
-  contentImports       ContentImport[]
-  marketplaceItems     MarketplaceItem[]
-  foodLogs             FoodLog[]
-  dailyCheckIns        DailyCheckIn[]
-  achievementUnlocks   AchievementUnlock[]
-  bodyPhotos           BodyPhoto[]
-  mealPlans            MealPlan[]
-  journalEntries       JournalEntry[]
-  recipes              Recipe[]
-  createdChallenges    Challenge[]             @relation("ChallengeCreator")
-  leagueMemberships    LeagueMembership[]
-  skillUnlocks         SkillUnlock[]
-  scheduledWorkouts    ScheduledWorkout[]
-  seasonProgress       SeasonProgress[]
-  missionCompletions   MissionCompletion[]
-  bloodworkEntries     BloodworkEntry[]
-  rehabPlans           RehabPlan[]
-  streakFreezes        StreakFreeze[]
-  marketplaceListings  MarketplaceListing[]    @relation("ListingAuthor")
-  marketplacePurchases MarketplacePurchase[]
-  bossAttempts         BossAttempt[]
-  gymReviews           GymReview[]
-  stories              Story[]
-  reactions            Reaction[]
-  comments             Comment[]
-  buddyProfile         BuddyProfile?
-  sentSwipes           BuddySwipe[]            @relation("Swiper")
-  sentMessages         DirectMessage[]         @relation("MessageSender")
-  conversations1       Conversation[]          @relation("Participant1")
-  conversations2       Conversation[]          @relation("Participant2")
-  propsGiven           Props[]                 @relation("PropsGiver")
-  propsReceiv          Props[]                 @relation("PropsReceiver")
-  flashParticipations  FlashParticipant[]
-  passwordResets       PasswordResetToken[]
+  sessions              WorkoutSession[]
+  progress              UserProgress?
+  workoutPlans          WorkoutPlan[]
+  gymSessions           GymSession[]
+  exerciseHistory       ExerciseHistory[]
+  coachingSessions      CoachingSession[]
+  safetyEvents          SafetyEvent[]
+  fitnessProfile        FitnessProfile?
+  aiPlans               AIGeneratedPlan[]
+  pushSubscriptions     PushSubscription[]
+  notificationPrefs     NotificationPreference?
+  following             Follow[]                @relation("follower")
+  followers             Follow[]                @relation("followed")
+  feedItems             ActivityFeedItem[]
+  challengeEntries      ChallengeParticipant[]
+  wearableData          WearableData[]
+  contentImports        ContentImport[]
+  marketplaceItems      MarketplaceItem[]
+  foodLogs              FoodLog[]
+  dailyCheckIns         DailyCheckIn[]
+  achievementUnlocks    AchievementUnlock[]
+  bodyPhotos            BodyPhoto[]
+  mealPlans             MealPlan[]
+  journalEntries        JournalEntry[]
+  recipes               Recipe[]
+  createdChallenges     Challenge[]             @relation("ChallengeCreator")
+  leagueMemberships     LeagueMembership[]
+  skillUnlocks          SkillUnlock[]
+  scheduledWorkouts     ScheduledWorkout[]
+  seasonProgress        SeasonProgress[]
+  missionCompletions    MissionCompletion[]
+  bloodworkEntries      BloodworkEntry[]
+  rehabPlans            RehabPlan[]
+  streakFreezes         StreakFreeze[]
+  marketplaceListings   MarketplaceListing[]    @relation("ListingAuthor")
+  marketplacePurchases  MarketplacePurchase[]
+  bossAttempts          BossAttempt[]
+  gymReviews            GymReview[]
+  stories               Story[]
+  reactions             Reaction[]
+  comments              Comment[]
+  buddyProfile          BuddyProfile?
+  sentSwipes            BuddySwipe[]            @relation("Swiper")
+  sentMessages          DirectMessage[]         @relation("MessageSender")
+  conversations1        Conversation[]          @relation("Participant1")
+  conversations2        Conversation[]          @relation("Participant2")
+  propsGiven            Props[]                 @relation("PropsGiver")
+  propsReceiv           Props[]                 @relation("PropsReceiver")
+  flashParticipations   FlashParticipant[]
+  passwordResets        PasswordResetToken[]
   // Phase 1: Performance Core
-  maintenanceSchedules MaintenanceSchedule[]
-  maintenanceAlerts    MaintenanceAlert[]
-  coachingMemories     CoachingMemory[]
+  maintenanceSchedules  MaintenanceSchedule[]
+  maintenanceAlerts     MaintenanceAlert[]
+  coachingMemories      CoachingMemory[]
   // Phase 2: Social Expansion
-  duelsAsChallenger    Duel[]                  @relation("DuelChallenger")
-  duelsAsChallenged    Duel[]                  @relation("DuelChallenged")
-  squadMemberships     SquadMembership[]
-  personStreaksA       PersonStreak[]          @relation("PersonStreakA")
-  personStreaksB       PersonStreak[]          @relation("PersonStreakB")
-  userSupplements      UserSupplement[]
-  gearItems            GearItem[]
-  gearReviews          GearReview[]
+  duelsAsChallenger     Duel[]                  @relation("DuelChallenger")
+  duelsAsChallenged     Duel[]                  @relation("DuelChallenged")
+  squadMemberships      SquadMembership[]
+  personStreaksA        PersonStreak[]          @relation("PersonStreakA")
+  personStreaksB        PersonStreak[]          @relation("PersonStreakB")
+  userSupplements       UserSupplement[]
+  gearItems             GearItem[]
+  gearReviews           GearReview[]
   // Phase 3: Content & UGC
-  clips                Clip[]
-  clipLikes            ClipLike[]
-  clipComments         ClipComment[]
-  duetComparisons      DuetComparison[]
-  playlistLinks        PlaylistLink[]
+  clips                 Clip[]
+  clipLikes             ClipLike[]
+  clipComments          ClipComment[]
+  duetComparisons       DuetComparison[]
+  playlistLinks         PlaylistLink[]
   // Phase 4: Marketplace
-  trainerProfile       TrainerProfile?
-  trainerReviews       TrainerReview[]
-  bookings             Booking[]
-  routines             Routine[]
-  bundles              Bundle[]
-  wishlistItems        Wishlist[]
-  planTrials           PlanTrial[]
+  trainerProfile        TrainerProfile?
+  trainerReviews        TrainerReview[]
+  bookings              Booking[]
+  routines              Routine[]
+  bundles               Bundle[]
+  bundlePurchases       BundlePurchase[]
+  dailyQuestCompletions DailyQuestCompletion[]
+  wishlistItems         Wishlist[]
+  planTrials            PlanTrial[]
   // Phase 5: Exclusivity
-  dropPurchases        DropPurchase[]
-  vipMembership        VIPMembership?
-  userTitles           UserTitle[]
-  userBrand            UserBrand?
+  dropPurchases         DropPurchase[]
+  vipMembership         VIPMembership?
+  userTitles            UserTitle[]
+  userBrand             UserBrand?
 }
 
 model UserProgress {
@@ -1743,6 +1745,7 @@ enum BookingStatus {
   BOOKING_PENDING
   CONFIRMED
   CANCELLED
+  CHECKED_IN
   BOOKING_COMPLETED
   NO_SHOW
 }
@@ -1901,9 +1904,37 @@ model Bundle {
   giftable    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  creator User @relation(fields: [creatorId], references: [id])
+  creator   User             @relation(fields: [creatorId], references: [id])
+  purchases BundlePurchase[]
 
   @@index([creatorId])
+}
+
+model BundlePurchase {
+  id          String   @id @default(uuid())
+  bundleId    String
+  userId      String
+  purchasedAt DateTime @default(now())
+
+  bundle Bundle @relation(fields: [bundleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([bundleId, userId])
+  @@index([userId])
+}
+
+model DailyQuestCompletion {
+  id        String   @id @default(uuid())
+  userId    String
+  questId   String
+  date      DateTime @db.Date
+  xpAwarded Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, questId, date])
+  @@index([userId, date])
 }
 
 model Wishlist {
