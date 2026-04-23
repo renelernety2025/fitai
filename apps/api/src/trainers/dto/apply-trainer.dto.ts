@@ -1,4 +1,4 @@
-import { IsString, IsArray, MaxLength } from 'class-validator';
+import { IsString, IsArray, ArrayMaxSize, MaxLength } from 'class-validator';
 
 export class ApplyTrainerDto {
   @IsString()
@@ -6,10 +6,12 @@ export class ApplyTrainerDto {
   bio!: string;
 
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
   certifications!: string[];
 
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
   specializations!: string[];
 }

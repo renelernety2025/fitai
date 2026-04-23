@@ -1,7 +1,8 @@
-import { IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateGearDto {
   @IsString()
+  @IsIn(['SHOES', 'BELT', 'GLOVES', 'WRAPS', 'CLOTHING', 'EQUIPMENT', 'OTHER_GEAR'])
   category!: string;
 
   @IsString()

@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SaveMemoryDto {
   @IsOptional()
@@ -10,6 +10,8 @@ export class SaveMemoryDto {
   insight!: string;
 
   @IsString()
+  @MaxLength(50)
+  @IsIn(['FORM', 'TECHNIQUE', 'RECOVERY', 'NUTRITION', 'MINDSET'])
   category!: string;
 
   @IsOptional()

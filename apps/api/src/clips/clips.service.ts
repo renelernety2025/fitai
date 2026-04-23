@@ -46,6 +46,10 @@ export class ClipsService {
     }
     const id = randomUUID();
     const ext = fileName.split('.').pop() || 'mp4';
+    const allowedExt = ['mp4', 'mov', 'webm'];
+    if (!allowedExt.includes(ext.toLowerCase())) {
+      throw new BadRequestException('Invalid file extension');
+    }
     // Key always uses userId prefix (ownership)
     const s3Key = `clips/${userId}/${id}.${ext}`;
     const command = new PutObjectCommand({
@@ -89,31 +93,36 @@ export class ClipsService {
     const countEducational = Math.ceil(limit * 0.2);
     const countDiscovery = Math.ceil(limit * 0.1) || 1;
 
+    const followingSkip = Math.floor(skip * 0.4);
+    const trendingSkip = Math.floor(skip * 0.3);
+    const educationalSkip = Math.floor(skip * 0.2);
+    const discoverySkip = Math.floor(skip * 0.1);
+
     const [following, trending, educational, discovery] =
       await Promise.all([
         this.findClips(
           { userId: { in: followIds } },
           { createdAt: 'desc' },
           countFollowing,
-          skip,
+          followingSkip,
         ),
         this.findClips(
           {},
           { likeCount: 'desc' },
           countTrending,
-          skip,
+          trendingSkip,
         ),
         this.findClips(
           { tags: { has: 'tutorial' } },
           { createdAt: 'desc' },
           countEducational,
-          skip,
+          educationalSkip,
         ),
         this.findClips(
           {},
           { createdAt: 'desc' },
           countDiscovery,
-          skip,
+          discoverySkip,
         ),
       ]);
 
@@ -146,27 +155,29 @@ export class ClipsService {
   }
 
   async toggleLike(userId: string, clipId: string) {
-    const existing = await (this.prisma as any).clipLike.findUnique({
-      where: { clipId_userId: { clipId, userId } },
-    });
-    if (existing) {
-      await (this.prisma as any).clipLike.delete({
-        where: { id: existing.id },
+    return this.prisma.$transaction(async (tx: any) => {
+      const existing = await tx.clipLike.findUnique({
+        where: { clipId_userId: { clipId, userId } },
       });
-      await (this.prisma as any).clip.update({
+      if (existing) {
+        await tx.clipLike.delete({
+          where: { id: existing.id },
+        });
+        await tx.clip.update({
+          where: { id: clipId },
+          data: { likeCount: { decrement: 1 } },
+        });
+        return { liked: false };
+      }
+      await tx.clipLike.create({
+        data: { clipId, userId },
+      });
+      await tx.clip.update({
         where: { id: clipId },
-        data: { likeCount: { decrement: 1 } },
+        data: { likeCount: { increment: 1 } },
       });
-      return { liked: false };
-    }
-    await (this.prisma as any).clipLike.create({
-      data: { clipId, userId },
+      return { liked: true };
     });
-    await (this.prisma as any).clip.update({
-      where: { id: clipId },
-      data: { likeCount: { increment: 1 } },
-    });
-    return { liked: true };
   }
 
   async addComment(

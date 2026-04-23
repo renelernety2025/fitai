@@ -32,6 +32,7 @@ export default function DuelsPage() {
   const [active, setActive] = useState<Duel[]>([]);
   const [history, setHistory] = useState<Duel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
     challengedId: '',
@@ -52,7 +53,7 @@ export default function DuelsPage() {
         setActive(a as Duel[]);
         setHistory(h as Duel[]);
       })
-      .catch(() => {})
+      .catch(() => setError('Nepodarilo se nacist duely. Zkus to znovu.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -62,7 +63,7 @@ export default function DuelsPage() {
     submitDuelScore(id, Number(val))
       .then(() => getActiveDuels())
       .then((a) => setActive(a as Duel[]))
-      .catch(() => {});
+      .catch(() => setError('Nepodarilo se ulozit skore. Zkus to znovu.'));
   }
 
   function handleChallenge() {
@@ -72,7 +73,7 @@ export default function DuelsPage() {
         setActive(a as Duel[]);
         setShowModal(false);
       })
-      .catch(() => {});
+      .catch(() => setError('Nepodarilo se vytvorit vyzvu. Zkus to znovu.'));
   }
 
   function timeLeft(endsAt: string): string {
@@ -99,6 +100,10 @@ export default function DuelsPage() {
           Vyzvi kohokoliv na 1v1 souboj. Vsad XP a dokaZ, kdo je lepsi.
         </p>
       </section>
+
+      {error && (
+        <p className="mb-4 text-sm text-[#FF375F]">{error}</p>
+      )}
 
       <div className="mb-6 flex gap-2">
         {(['active', 'history'] as const).map((t) => (

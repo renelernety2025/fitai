@@ -130,21 +130,43 @@ export class SquadsService {
   }
 
   async getLeaderboard() {
-    const squads = await this.prisma.squad.findMany({
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const squads = await (this.prisma as any).squad.findMany({
       include: {
-        members: { include: { user: { select: USER_SELECT } } },
-        _count: { select: { members: true } },
+        members: {
+          where: { role: { not: 'INVITED' } },
+          include: {
+            user: {
+              select: {
+                id: true, name: true, avatarUrl: true,
+                sessions: {
+                  where: { startedAt: { gte: weekStart } },
+                  select: { durationSeconds: true },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
-    const results = await Promise.all(
-      squads.map(async (s) => ({
+    return squads
+      .map((s: any) => ({
         ...s,
-        weeklyXP: await this.computeWeeklyXP(s.members),
-      })),
-    );
-
-    return results.sort((a, b) => b.weeklyXP - a.weeklyXP).slice(0, 20);
+        weeklyXP: s.members.reduce((total: number, m: any) => {
+          const memberXP = m.user.sessions.reduce(
+            (xp: number, sess: any) =>
+              xp + Math.floor(sess.durationSeconds / 60) * 10,
+            0,
+          );
+          return total + memberXP;
+        }, 0),
+      }))
+      .sort((a: any, b: any) => b.weeklyXP - a.weeklyXP)
+      .slice(0, 20);
   }
 
   private async computeWeeklyXP(

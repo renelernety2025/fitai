@@ -63,7 +63,7 @@ function AddItemForm({ slot, routineId, onAdd, onClose }: AddFormProps) {
       });
       onAdd(item);
     } catch {
-      /* noop */
+      alert('Nepodarilo se pridat polozku. Zkus to znovu.');
     } finally {
       setSaving(false);
     }
@@ -117,7 +117,7 @@ export default function RoutineBuilderPage() {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [active, setActive] = useState<Routine | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [addingSlot, setAddingSlot] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -133,7 +133,7 @@ export default function RoutineBuilderPage() {
         setRoutines(data);
         if (data.length > 0) setActive(data[0]);
       })
-      .catch(() => setError(true))
+      .catch(() => setError('Nepodarilo se nacist rutiny.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -146,7 +146,7 @@ export default function RoutineBuilderPage() {
       setActive(r);
       setNewName('');
     } catch {
-      /* noop */
+      setError('Nepodarilo se vytvorit rutinu. Zkus to znovu.');
     } finally {
       setCreating(false);
     }
@@ -178,7 +178,7 @@ export default function RoutineBuilderPage() {
         prev.map((r) => (r.id === updated.id ? updated : r)),
       );
     } catch {
-      /* noop */
+      setError('Nepodarilo se odebrat polozku. Zkus to znovu.');
     }
   }
 
@@ -198,7 +198,7 @@ export default function RoutineBuilderPage() {
 
       {error && (
         <p className="mb-8 text-sm text-[#FF375F]">
-          Nepodarilo se nacist rutiny.
+          {error}
         </p>
       )}
 

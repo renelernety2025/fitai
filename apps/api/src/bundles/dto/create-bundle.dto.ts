@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   IsArray,
+  ArrayMaxSize,
   IsInt,
   IsBoolean,
   Min,
@@ -12,9 +13,11 @@ import { Type } from 'class-transformer';
 
 export class BundleItemDto {
   @IsString()
+  @MaxLength(50)
   itemType!: string;
 
   @IsString()
+  @MaxLength(100)
   itemId!: string;
 }
 
@@ -29,6 +32,7 @@ export class CreateBundleDto {
   description?: string;
 
   @IsArray()
+  @ArrayMaxSize(20)
   @ValidateNested({ each: true })
   @Type(() => BundleItemDto)
   items!: BundleItemDto[];

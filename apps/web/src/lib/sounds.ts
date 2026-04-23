@@ -34,143 +34,129 @@ class SoundManager {
     const ctx = this.getCtx();
     if (!ctx) return;
     try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
       switch (name) {
-        case 'tap':
-          osc.frequency.value = 800;
-          gain.gain.value = 0.05;
-          osc.start();
-          osc.stop(ctx.currentTime + 0.05);
-          break;
-
-        case 'success':
-          osc.frequency.value = 523;
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.3,
-          );
-          osc.start();
-          osc.stop(ctx.currentTime + 0.3);
-          setTimeout(() => {
-            const o2 = ctx.createOscillator();
-            const g2 = ctx.createGain();
-            o2.connect(g2);
-            g2.connect(ctx.destination);
-            o2.frequency.value = 659;
-            g2.gain.setValueAtTime(0.1, ctx.currentTime);
-            g2.gain.exponentialRampToValueAtTime(
-              0.001,
-              ctx.currentTime + 0.3,
-            );
-            o2.start();
-            o2.stop(ctx.currentTime + 0.3);
-          }, 150);
-          break;
-
-        case 'error':
-          osc.frequency.value = 200;
-          osc.type = 'sawtooth';
-          gain.gain.setValueAtTime(0.08, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.2,
-          );
-          osc.start();
-          osc.stop(ctx.currentTime + 0.2);
-          break;
-
-        case 'like':
-          osc.frequency.value = 1200;
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.06, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.1,
-          );
-          osc.start();
-          osc.stop(ctx.currentTime + 0.1);
-          break;
-
-        case 'xp':
-          osc.frequency.setValueAtTime(400, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(
-            1200,
-            ctx.currentTime + 0.15,
-          );
-          gain.gain.setValueAtTime(0.08, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.2,
-          );
-          osc.start();
-          osc.stop(ctx.currentTime + 0.2);
-          break;
-
-        case 'achievement':
-          [523, 659, 784].forEach((freq, i) => {
-            const o = ctx.createOscillator();
-            const g = ctx.createGain();
-            o.connect(g);
-            g.connect(ctx.destination);
-            o.frequency.value = freq;
-            g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.12);
-            g.gain.exponentialRampToValueAtTime(
-              0.001,
-              ctx.currentTime + i * 0.12 + 0.4,
-            );
-            o.start(ctx.currentTime + i * 0.12);
-            o.stop(ctx.currentTime + i * 0.12 + 0.4);
-          });
-          osc.stop(ctx.currentTime + 0.01);
-          break;
-
-        case 'complete':
-          osc.frequency.setValueAtTime(440, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(
-            880,
-            ctx.currentTime + 0.1,
-          );
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            ctx.currentTime + 0.3,
-          );
-          osc.start();
-          osc.stop(ctx.currentTime + 0.3);
-          break;
-
-        case 'streak':
-          [440, 554, 659, 880].forEach((freq, i) => {
-            const o = ctx.createOscillator();
-            const g = ctx.createGain();
-            o.connect(g);
-            g.connect(ctx.destination);
-            o.frequency.value = freq;
-            g.gain.setValueAtTime(0.07, ctx.currentTime + i * 0.1);
-            g.gain.exponentialRampToValueAtTime(
-              0.001,
-              ctx.currentTime + i * 0.1 + 0.3,
-            );
-            o.start(ctx.currentTime + i * 0.1);
-            o.stop(ctx.currentTime + i * 0.1 + 0.3);
-          });
-          osc.stop(ctx.currentTime + 0.01);
-          break;
-
-        default:
-          osc.frequency.value = 600;
-          gain.gain.value = 0.05;
-          osc.start();
-          osc.stop(ctx.currentTime + 0.08);
+        case 'tap': this.playTap(ctx); break;
+        case 'success': this.playSuccess(ctx); break;
+        case 'error': this.playError(ctx); break;
+        case 'like': this.playLike(ctx); break;
+        case 'xp': this.playXp(ctx); break;
+        case 'achievement': this.playAchievement(ctx); break;
+        case 'complete': this.playComplete(ctx); break;
+        case 'streak': this.playStreak(ctx); break;
+        default: this.playDefault(ctx);
       }
     } catch {
       /* silent fail */
     }
+  }
+
+  private createOscGain(ctx: AudioContext) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    return { osc, gain };
+  }
+
+  private playTap(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.value = 800;
+    gain.gain.value = 0.05;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  }
+
+  private playSuccess(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.value = 523;
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+    setTimeout(() => {
+      const { osc: o2, gain: g2 } = this.createOscGain(ctx);
+      o2.frequency.value = 659;
+      g2.gain.setValueAtTime(0.1, ctx.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      o2.start();
+      o2.stop(ctx.currentTime + 0.3);
+    }, 150);
+  }
+
+  private playError(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.value = 200;
+    osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
+  }
+
+  private playLike(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.value = 1200;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  }
+
+  private playXp(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
+  }
+
+  private playAchievement(ctx: AudioContext): void {
+    [523, 659, 784].forEach((freq, i) => {
+      const { osc, gain } = this.createOscGain(ctx);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + i * 0.12 + 0.4,
+      );
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+    });
+  }
+
+  private playComplete(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  }
+
+  private playStreak(ctx: AudioContext): void {
+    [440, 554, 659, 880].forEach((freq, i) => {
+      const { osc, gain } = this.createOscGain(ctx);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.07, ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + i * 0.1 + 0.3,
+      );
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.3);
+    });
+  }
+
+  private playDefault(ctx: AudioContext): void {
+    const { osc, gain } = this.createOscGain(ctx);
+    osc.frequency.value = 600;
+    gain.gain.value = 0.05;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
   }
 }
 

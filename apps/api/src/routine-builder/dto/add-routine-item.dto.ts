@@ -1,7 +1,9 @@
-import { IsString, IsOptional, IsInt, Min, MaxLength } from 'class-validator';
+import { IsIn, IsString, IsOptional, IsInt, Min, MaxLength } from 'class-validator';
 
 export class AddRoutineItemDto {
   @IsString()
+  @MaxLength(50)
+  @IsIn(['SUPPLEMENT_ITEM', 'WORKOUT_ITEM', 'MEAL_ITEM', 'RECOVERY_ITEM', 'CUSTOM_ITEM'])
   type!: string;
 
   @IsOptional()

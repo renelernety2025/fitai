@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsInt,
   IsArray,
+  ArrayMaxSize,
   IsDateString,
   Min,
   Max,
@@ -56,9 +57,11 @@ export class CreateExperienceDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   difficulty?: string;
 
   @IsString()
+  @MaxLength(50)
   category!: string;
 
   @IsOptional()
@@ -68,6 +71,7 @@ export class CreateExperienceDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(10)
   @IsString({ each: true })
   photos?: string[];
 }

@@ -11,6 +11,7 @@ export class CreateDropDto {
   description?: string;
 
   @IsString()
+  @MaxLength(50)
   category!: string;
 
   @IsInt()
@@ -20,6 +21,7 @@ export class CreateDropDto {
 
   @IsInt()
   @Min(0)
+  @Max(100000)
   priceXP!: number;
 
   @IsDateString()
@@ -30,5 +32,6 @@ export class CreateDropDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   imageUrl?: string;
 }

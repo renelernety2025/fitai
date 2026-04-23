@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   IsArray,
+  ArrayMaxSize,
   IsInt,
   Min,
   Max,
@@ -24,6 +25,7 @@ export class CreateClipDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(10)
   @IsString({ each: true })
   tags?: string[];
 

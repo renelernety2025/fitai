@@ -8,6 +8,7 @@ export class UpdateBrandDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(5000)
   avatarConfig?: string;
 
   @IsOptional()
