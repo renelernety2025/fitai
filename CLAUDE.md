@@ -29,7 +29,7 @@ fitai/
 └── docs/                Deployment docs, guides
 ```
 
-**Root docs:** CLAUDE.md (this) · ARCHITECTURE.md · ROADMAP.md · CHANGELOG.md · CONTRACTS.md · SCALING.md
+**Root docs:** CLAUDE.md (this) · ARCHITECTURE.md · ROADMAP.md · CHANGELOG.md · CONTRACTS.md · SCALING.md · [@MODULES.md](./MODULES.md)
 
 ## Příkazy
 - **Deploy:** `git push origin main` — GitHub Actions automaticky buildí + deployuje
@@ -42,10 +42,12 @@ fitai/
 - **Manual migrate:** `aws ecs run-task --task-definition fitai-migrate:2 ...` (viz [GITHUB_ACTIONS_SETUP](./docs/GITHUB_ACTIONS_SETUP.md))
 
 ## Před začátkem práce
-1. **Přečti [@ROADMAP.md](./ROADMAP.md)** — pokračuj od aktuální fáze/priority
-2. **Přečti [@ARCHITECTURE.md](./ARCHITECTURE.md)** — orientace ve struktuře + odkazy na kód
-3. **Při změně existujícího kódu:** `grep -r "NameOfFunction" apps/` → vypiš dopad → čekej na schválení
-4. **Při nové feature:** vypiš SEZNAM souborů které budeš tvořit/měnit → čekej na schválení
+1. **Přečti [@MODULES.md](./MODULES.md)** — najdi správný modul, jeho endpointy, web stránku a mobile screen
+2. **Přečti [@ROADMAP.md](./ROADMAP.md)** — pokračuj od aktuální fáze/priority
+3. **Přečti [@ARCHITECTURE.md](./ARCHITECTURE.md)** — orientace ve struktuře + odkazy na kód
+4. **Při změně existujícího kódu:** `grep -r "NameOfFunction" apps/` → vypiš dopad → čekej na schválení
+5. **Při nové feature:** vypiš SEZNAM souborů které budeš tvořit/měnit → čekej na schválení
+6. **Po dokončení:** ověř `wc -l` na každém změněném souboru — max 300 řádků, jinak splitni
 
 ## Kvalita kódu
 - Max **30 řádků na funkci**, max **300 na soubor**, max **3 úrovně zanoření**
