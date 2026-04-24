@@ -16,34 +16,8 @@
 
 ## Hotovo
 
-Phases 1-10 · Sections A-L · Infrastructure · Web 19 pages · Mobile 18 screens · Backend 29 modulů
-
-> Detail: @ROADMAP-archive/2026-04-completed-phases.md
-
-**Navíc od 2026-04-11:**
-- Voice Coaching v2 — Phase D personalized coaching (age/injuries/goal/skillTier), AskCoachDto + prompt injection fix, user-ID throttler
-- Phase E-1 backend — Claude SSE streaming (`POST /coaching/ask-stream`), deployed + curl verified
-- Phase E-2 backend — ElevenLabs PCM streaming pipeline, sentence-boundary flushing, deployed
-- Backend PCM opt-in — `audioFormat` DTO field, backwards compat (default MP3)
-- Doc infrastructure — archive rhythm, ADR table (15 entries), verify-docs-integrity.sh, /resume-session skill
-
-**Navíc od 2026-04-21:**
-- Security audit fixes — CORS whitelist, motivationCache, auth guard, prompt injection fix, dead props
-- AI Daily Motivation — personalized Claude message on dashboard
-- Exercise favorites (heart + localStorage filter)
-- Workout keyboard shortcuts (Space/N/Escape)
-- Landing page features grid + stats section
-- Header profile/notification icons
-- V2Tooltip onboarding component
-- **Tier 1:** AI Chat Coach (/ai-chat, SSE streaming, conversation memory), Activity Heatmap (7x12, recovery colors), "Co dnes?" smart widget (rules-based, 5 scenarios)
-
-**Navíc od 2026-04-20:**
-- 3D exercise viewer — Three.js/R3F animated humanoid (Michelle model), phase controls, speed, camera presets, angle overlay, muscle highlighting
-- Coach personality modes — Drill Sergeant / Chill / Motivational, per-session selection
-- Post-workout confetti — canvas particle celebration on XP overlay
-- Streak fear push — escalating urgency notifications (2-6 / 7-13 / 14-29 / 30+ days)
-- Micro-workout mode — `/micro-workout` page, 3 random exercises, 5-min challenge, reroll
-- Quality audit — 5 critical fixes (perf, error handling, stale state, validation, Docker)
+> Detail: @ROADMAP-archive/2026-04-completed-phases.md (Phases 1-10, Sections A-L, Infrastructure)
+> Recent: see @CHANGELOG.md for 2026-04-20+ entries
 
 ---
 
@@ -166,11 +140,11 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ## Stats (2026-04-22)
 
-- **51 NestJS modules** (canonical list: `apps/api/src/app.module.ts`)
-- **66 DB models** (+ enums: CoachPersonality, JournalMood, LeagueTier, WorkoutPlanType, etc.)
-- **42+ web pages** (v2 design, dark/light mode, CSS animations)
-- **29 mobile screens** (v2 design, +AI Chat, +Journal, +Calendar, +Leagues)
-- **250+ API endpoints**
+- **76 NestJS modules** (canonical list: `apps/api/src/app.module.ts`)
+- **99 DB models** (+ enums: CoachPersonality, JournalMood, LeagueTier, WorkoutPlanType, etc.)
+- **86 web pages** (v2 design, dark/light mode, CSS animations)
+- **47 mobile screens** (v2 design, +AI Chat, +Journal, +Calendar, +Leagues)
+- **340+ API endpoints**
 - **17 achievements**
 - **60 exercises** with 3D animated viewer
 - **3 coach personality modes** (Drill/Chill/Motivational)

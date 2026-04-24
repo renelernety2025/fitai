@@ -1,6 +1,6 @@
 # FitAI — Architecture
 
-> Aktualizováno: 2026-04-19
+> Aktualizováno: 2026-04-22
 
 > **Scale readiness:** Plán jak připravit platformu na 1M+ DAU je v [`SCALING.md`](./SCALING.md) — 4 vrstvy podle ROI (free quick wins → observability → load test → paid upgrades).
 
@@ -19,8 +19,8 @@ ALB
           ├── /api/* + /health → API (compat)
           └── default          → 301 → https://fitai.bfevents.cz/...
 
-ECS API (51 NestJS modules)
-    ├── PostgreSQL RDS (66 tables, private subnet)
+ECS API (76 NestJS modules)
+    ├── PostgreSQL RDS (99 tables, private subnet)
     ├── Redis ElastiCache (private subnet)
     ├── S3 + CloudFront (videos, choreography, assets)
     ├── Secrets Manager (DB, JWT, Anthropic, OpenAI, ElevenLabs)
@@ -80,7 +80,7 @@ CodeBuild (base: public.ecr.aws/docker/library/node:20-alpine — no DockerHub r
 - SNS topic for alerts (email subscription)
 - Dashboard: `fitai-production`
 
-## Database Schema (30+ models)
+## Database Schema (99 models)
 
 ### Core
 ```
@@ -185,7 +185,7 @@ EducationLesson (slug, titleCs, category, bodyCs, durationMin, isPublished)
 GlossaryTerm (termCs, definitionCs, category)
 ```
 
-## Backend Modules (51)
+## Backend Modules (76)
 
 Všechny endpointy jsou pod prefixem `/api/*` (kromě `/health`). Pro aktuální seznam všech modulů + endpointů čti přímo kód — markdown kopie zastarává:
 
@@ -214,7 +214,7 @@ grep -rn "@Get\|@Post\|@Put\|@Delete\|@Patch" apps/api/src/**/*.controller.ts
 | **Social & Gamification** | `social`, `achievements` | Follow, feed, challenges, 17 badges |
 | **Infrastructure** | `notifications`, `wearables`, `content`, `onboarding`, `health` | Web push (VAPID), HR sync, URL import, 1RM wizard, ALB health |
 
-**Canonical list** viz `apps/api/src/app.module.ts` (imports array) — 29 modulů + Prisma internal.
+**Canonical list** viz `apps/api/src/app.module.ts` (imports array) — 76 modulů.
 
 ## Frontend Architecture
 
@@ -415,7 +415,7 @@ For each frame:
 
 ## Mobile Architecture (React Native + Expo SDK 54)
 
-### Screens (18 total v2 design)
+### Screens (47 total v2 design)
 ```
 Auth stack:
   LoginScreen, RegisterScreen, OnboardingScreen

@@ -1,0 +1,154 @@
+<h2>Performance Telemetry & Real Gym Life</h2>
+<p class="subtitle">Luxury car HUD, maintenance schedule, supplement tracker, playlist sharing, coaching memory</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Performance HUD — Track Mode</div>
+    <div class="mockup-body" style="padding: 0; font-family: system-ui; overflow: hidden;">
+      <div style="background: #0a0a0a; color: white; padding: 20px; min-height: 460px;">
+        <!-- Mode selector -->
+        <div style="display: flex; gap: 4px; margin-bottom: 16px; background: #1a1a2e; border-radius: 8px; padding: 4px;">
+          <div style="flex: 1; padding: 8px; text-align: center; font-size: 12px; border-radius: 6px; color: #a0aec0; cursor: pointer;">Cruise</div>
+          <div style="flex: 1; padding: 8px; text-align: center; font-size: 12px; border-radius: 6px; color: #a0aec0; cursor: pointer;">Sport</div>
+          <div style="flex: 1; padding: 8px; text-align: center; font-size: 12px; border-radius: 6px; background: #f56565; color: white; font-weight: bold;">Track</div>
+        </div>
+
+        <!-- Main gauges -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div style="background: #1a1a2e; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #f56565;">
+            <div style="font-size: 10px; letter-spacing: 2px; color: #a0aec0;">HEART RATE</div>
+            <div style="font-size: 42px; font-weight: 900; color: #f56565; font-variant-numeric: tabular-nums;">156</div>
+            <div style="font-size: 11px; color: #a0aec0;">bpm &middot; Zone 4</div>
+            <div style="background: #2d3748; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden;">
+              <div style="background: linear-gradient(90deg, #84fab0, #fbd38d, #f56565); height: 6px; width: 78%;"></div>
+            </div>
+          </div>
+          <div style="background: #1a1a2e; border-radius: 12px; padding: 16px; text-align: center; border: 1px solid #84fab0;">
+            <div style="font-size: 10px; letter-spacing: 2px; color: #a0aec0;">FORM SCORE</div>
+            <div style="font-size: 42px; font-weight: 900; color: #84fab0; font-variant-numeric: tabular-nums;">91<span style="font-size: 20px;">%</span></div>
+            <div style="font-size: 11px; color: #a0aec0;">Excellent</div>
+            <div style="background: #2d3748; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden;">
+              <div style="background: #84fab0; height: 6px; width: 91%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary metrics -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
+          <div style="background: #1a1a2e; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: #a0aec0; letter-spacing: 1px;">POWER</div>
+            <div style="font-size: 22px; font-weight: 800; color: #fbd38d;">340<span style="font-size: 12px;">W</span></div>
+          </div>
+          <div style="background: #1a1a2e; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: #a0aec0; letter-spacing: 1px;">REP CADENCE</div>
+            <div style="font-size: 22px; font-weight: 800;">3.2<span style="font-size: 12px;">s</span></div>
+          </div>
+          <div style="background: #1a1a2e; border-radius: 8px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: #a0aec0; letter-spacing: 1px;">VOLUME</div>
+            <div style="font-size: 22px; font-weight: 800; color: #667eea;">4.2<span style="font-size: 12px;">t</span></div>
+          </div>
+        </div>
+
+        <!-- Lap times / PR board -->
+        <div style="background: #1a1a2e; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 10px; letter-spacing: 2px; color: #a0aec0; margin-bottom: 8px;">SECTOR TIMES — Bench Press</div>
+          <div style="display: flex; gap: 8px; font-size: 12px;">
+            <div style="flex: 1; background: #2d3748; border-radius: 6px; padding: 8px; text-align: center;">
+              <div style="color: #a0aec0; font-size: 10px;">ECCENTRIC</div>
+              <div style="font-weight: 800; font-size: 16px; color: #84fab0;">2.1s</div>
+              <div style="color: #84fab0; font-size: 10px;">-0.3s &#9650;</div>
+            </div>
+            <div style="flex: 1; background: #2d3748; border-radius: 6px; padding: 8px; text-align: center;">
+              <div style="color: #a0aec0; font-size: 10px;">HOLD</div>
+              <div style="font-weight: 800; font-size: 16px;">0.8s</div>
+              <div style="color: #a0aec0; font-size: 10px;">+0.1s</div>
+            </div>
+            <div style="flex: 1; background: #2d3748; border-radius: 6px; padding: 8px; text-align: center;">
+              <div style="color: #a0aec0; font-size: 10px;">CONCENTRIC</div>
+              <div style="font-weight: 800; font-size: 16px; color: #f56565;">1.8s</div>
+              <div style="color: #f56565; font-size: 10px;">+0.4s &#9660;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="mockup" style="margin-bottom: 16px;">
+      <div class="mockup-header">Body Maintenance Schedule</div>
+      <div class="mockup-body" style="padding: 16px; font-family: system-ui;">
+        <div style="background: #1a1a2e; border-radius: 12px; padding: 16px; color: white;">
+          <div style="font-size: 11px; letter-spacing: 2px; color: #a0aec0; margin-bottom: 12px;">SERVICE STATUS</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2d3748; border-radius: 8px; border-left: 3px solid #f56565;">
+              <div style="font-size: 18px;">&#9888;&#65039;</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 600;">Shoulders — Recovery Overdue</div>
+                <div style="font-size: 11px; color: #f56565;">14 sessions since last deload</div>
+              </div>
+              <div style="font-size: 11px; color: #a0aec0;">Schedule</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2d3748; border-radius: 8px; border-left: 3px solid #fbd38d;">
+              <div style="font-size: 18px;">&#128736;</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 600;">Bloodwork Check</div>
+                <div style="font-size: 11px; color: #fbd38d;">Last: 47 days ago (recommended: 90d)</div>
+              </div>
+              <div style="font-size: 11px; color: #a0aec0;">Book</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #2d3748; border-radius: 8px; border-left: 3px solid #84fab0;">
+              <div style="font-size: 18px;">&#9989;</div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 600;">Legs — Fresh</div>
+                <div style="font-size: 11px; color: #84fab0;">Deload completed 3 days ago</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; padding: 12px; background: #2d3748; border-radius: 8px;">
+            <div style="font-size: 11px; color: #a0aec0;">TOTAL MILEAGE</div>
+            <div style="font-size: 22px; font-weight: 800;">247,500 <span style="font-size: 12px; color: #a0aec0;">kg total volume</span></div>
+            <div style="font-size: 11px; color: #84fab0;">Next scheduled service: Deload Week in 8 days</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header">Supplement Stack & Coaching Memory</div>
+      <div class="mockup-body" style="padding: 16px; font-family: system-ui;">
+        <div style="background: #1a1a2e; border-radius: 12px; padding: 16px; color: white;">
+          <div style="font-size: 11px; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px;">MY STACK</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #2d3748; border-radius: 6px;">
+              <div style="font-size: 16px;">&#128138;</div>
+              <div style="flex: 1; font-size: 13px;">Creatine Monohydrate</div>
+              <div style="font-size: 11px; color: #84fab0;">5g &middot; Morning</div>
+              <div style="font-size: 11px; color: #84fab0;">&#10003;</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #2d3748; border-radius: 6px;">
+              <div style="font-size: 16px;">&#127868;</div>
+              <div style="flex: 1; font-size: 13px;">Whey Protein</div>
+              <div style="font-size: 11px; color: #fbd38d;">30g &middot; Post-WO</div>
+              <div style="font-size: 11px; color: #a0aec0;">pending</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: #2d3748; border-radius: 6px;">
+              <div style="font-size: 16px;">&#9749;</div>
+              <div style="flex: 1; font-size: 13px;">Caffeine</div>
+              <div style="font-size: 11px; color: #fbd38d;">200mg &middot; Pre-WO</div>
+              <div style="font-size: 11px; color: #84fab0;">&#10003;</div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid #2d3748; padding-top: 12px;">
+            <div style="font-size: 11px; letter-spacing: 2px; color: #a0aec0; margin-bottom: 8px;">COACHING MEMORY</div>
+            <div style="background: #2d3748; border-radius: 8px; padding: 10px; font-size: 12px; line-height: 1.6;">
+              <div style="color: #84fab0; font-size: 10px;">3 dny zpet</div>
+              "Tvoje lokty pri bench miri o 15&deg; ven. Soustred se na drzeni bliz k telu."
+              <div style="color: #a0aec0; font-size: 10px; margin-top: 4px;">Dnes: lokty o 8&deg; lepsi &#8594; <span style="color: #84fab0;">+47% improvement</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
