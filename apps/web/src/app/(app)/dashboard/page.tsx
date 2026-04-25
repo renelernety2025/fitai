@@ -17,6 +17,7 @@ import OnboardingTour from '@/components/onboarding/OnboardingTour';
 import { FadeIn, StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
 import { StreakFire } from '@/components/dashboard/StreakFire';
 import { StreakBreak } from '@/components/dashboard/StreakBreak';
+import BodySystemStatus from '@/components/dashboard/BodySystemStatus';
 import DailyQuests from '@/components/dashboard/DailyQuests';
 import DailyRewardCalendar from '@/components/dashboard/DailyRewardCalendar';
 import SocialProof from '@/components/dashboard/SocialProof';
@@ -159,6 +160,23 @@ export default function DashboardV2Page() {
 
         {/* ── STREAK BREAK ── */}
         {stats && <StreakBreak streak={stats.currentStreak || 0} />}
+
+        {/* ── BODY SYSTEM STATUS ── */}
+        {stats && (
+          <section className="mb-8">
+            <BodySystemStatus
+              recoveryScore={(insights as any)?.recoveryScore ?? 75}
+              streak={stats.currentStreak || 0}
+              avgFormScore={(stats as any).avgFormScore ?? 0}
+              todayCheckedIn={!!insights}
+              lastWorkoutDaysAgo={
+                (stats as any).lastWorkoutDate
+                  ? Math.floor((Date.now() - new Date((stats as any).lastWorkoutDate).getTime()) / 86400000)
+                  : 99
+              }
+            />
+          </section>
+        )}
 
         {/* ── WELCOME for new users ── */}
         {isNewUser && (
