@@ -1,318 +1,379 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
-const GREEN = '#00FF88';
-const CYAN = '#00E5FF';
-const RED = '#FF3B5C';
-const ORANGE = '#FF9F0A';
-const LIME = '#A8FF00';
+const NAVY = '#0B1A2E';
+const NAVY_LIGHT = '#132744';
+const ORANGE = '#FF7A2F';
+const SKY = '#4FC3F7';
+const LIME = '#C6FF00';
+const CREAM = '#FFF8F0';
+const CORAL = '#FF6B6B';
 
-function Glow({ color, top, left, size = 200 }: {
-  color: string; top: string; left: string; size?: number;
-}) {
-  return (
-    <div style={{
-      position: 'absolute', top, left, width: size, height: size,
-      borderRadius: '50%', background: color, filter: 'blur(80px)',
-      opacity: 0.06, pointerEvents: 'none',
-    }} />
-  );
-}
-
-function StatusBadge({ label, color }: { label: string; color: string }) {
+function Pill({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <span style={{
-      fontSize: 10, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-      color, background: `${color}12`, border: `1px solid ${color}25`,
-      letterSpacing: '0.05em',
-    }}>
-      {label}
-    </span>
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '8px 18px', borderRadius: 30,
+      fontSize: 13, fontWeight: 600,
+      ...style,
+    }}>{children}</span>
   );
 }
 
-function BigMetric({ value, unit, label, color, glow }: {
-  value: string; unit: string; label: string; color: string; glow?: boolean;
+function FeatureCard({ title, desc, bg, emoji, style }: {
+  title: string; desc: string; bg: string; emoji: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: 20, padding: '24px 20px', position: 'relative', overflow: 'hidden',
-    }}>
-      {glow && <div style={{
-        position: 'absolute', top: -30, right: -30, width: 100, height: 100,
-        borderRadius: '50%', background: color, filter: 'blur(50px)', opacity: 0.1,
-      }} />}
-      <span style={{
-        fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
-        letterSpacing: '0.15em', fontWeight: 600,
-      }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 8 }}>
-        <span style={{
-          fontSize: 42, fontWeight: 900, color, letterSpacing: '-0.03em',
-          textShadow: `0 0 30px ${color}40`,
-        }}>{value}</span>
-        <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>{unit}</span>
-      </div>
-    </div>
-  );
-}
-
-function GlassCard({ children, style }: {
-  children: React.ReactNode; style?: React.CSSProperties;
-}) {
-  return (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24,
-      padding: '28px 24px', position: 'relative', overflow: 'hidden',
-      transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), border-color 0.3s',
+      background: bg, borderRadius: 24, padding: '28px 24px',
+      position: 'relative', overflow: 'hidden', cursor: 'pointer',
+      transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
       ...style,
     }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-    }}>
-      {children}
+    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.01)'; }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)'; }}
+    >
+      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(0,0,0,0.4)' }}>
+        {title}
+      </span>
+      <div style={{ fontSize: 36, margin: '16px 0 8px' }}>{emoji}</div>
+      <p style={{ fontSize: 13, color: 'rgba(0,0,0,0.5)', lineHeight: 1.5 }}>{desc}</p>
     </div>
   );
 }
 
-function PulseWave({ color }: { color: string }) {
+function StatBubble({ value, label }: { value: string; label: string }) {
   return (
-    <svg viewBox="0 0 200 40" style={{ width: '100%', height: 40, opacity: 0.4 }}>
-      <path
-        d="M0 20 Q25 5 50 20 T100 20 T150 20 T200 20"
-        fill="none" stroke={color} strokeWidth="1.5"
-        strokeDasharray="4 4"
-      />
-      <path
-        d="M0 20 Q25 35 50 20 T100 20 T150 20 T200 20"
-        fill="none" stroke={color} strokeWidth="1" opacity="0.3"
-      />
-    </svg>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 4, padding: '14px 20px',
+    }}>
+      <span style={{
+        fontSize: 32, fontWeight: 800, color: 'white',
+        letterSpacing: '-0.03em',
+      }}>{value}</span>
+      <span style={{
+        fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+        letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)',
+      }}>{label}</span>
+    </div>
   );
 }
 
 export default function DesignTestPage() {
-  const [pulse, setPulse] = useState(false);
+  const [count, setCount] = useState(0);
+
   useEffect(() => {
-    const iv = setInterval(() => setPulse(p => !p), 2500);
-    return () => clearInterval(iv);
+    let frame: number;
+    const target = 2847;
+    const dur = 1500;
+    const start = Date.now();
+    const tick = () => {
+      const t = Math.min((Date.now() - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setCount(Math.floor(ease * target));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#050508', color: 'white',
-      fontFamily: "'Inter', -apple-system, sans-serif",
-      padding: '24px 16px 80px', maxWidth: 900, margin: '0 auto',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Background glows */}
-      <Glow color={GREEN} top="-100px" left="60%" size={300} />
-      <Glow color={RED} top="400px" left="-10%" size={250} />
-      <Glow color={CYAN} top="900px" left="70%" size={200} />
+    <div style={{ background: CREAM, minHeight: '100vh' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+        .hero-heading { font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.03em; color: white; text-transform: uppercase; }
+        .cta-btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; border-radius: 30px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .cta-btn:hover { transform: scale(1.04); }
+        .cta-btn:active { transform: scale(0.97); }
+        .nav-link { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-link:hover { color: white; }
+        .bento { display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 14px; }
+        @media (max-width: 768px) { .bento { grid-template-columns: 1fr; } .hero-heading { font-size: 2.2rem; } }
+        .float-anim { animation: floaty 3s ease-in-out infinite; }
+        @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .side-card { background: ${NAVY_LIGHT}; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+        .avatar-stack { display: flex; }
+        .avatar-stack > div { width: 32px; height: 32px; border-radius: 50%; border: 2px solid ${NAVY}; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .avatar-stack > div:first-child { margin-left: 0; }
+      `}</style>
 
-      {/* Header */}
-      <header style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '8px 0 32px', position: 'relative', zIndex: 1,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 10,
-            background: `linear-gradient(135deg, ${LIME}30, ${GREEN}10)`,
-            border: `1px solid ${LIME}30`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 900, color: LIME,
-          }}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em' }}>FitAI</span>
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <StatusBadge label="System Online" color={GREEN} />
-        </div>
-      </header>
+      {/* ── HERO SECTION ── */}
+      <div style={{ background: NAVY, borderRadius: '0 0 32px 32px', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Hero: System Status */}
-      <GlassCard style={{ marginBottom: 12, position: 'relative' }}>
+        {/* Decorative circles */}
         <div style={{
-          position: 'absolute', top: -40, left: '50%', transform: 'translateX(-50%)',
-          width: 180, height: 180, borderRadius: '50%',
-          background: GREEN, filter: 'blur(80px)',
-          opacity: pulse ? 0.08 : 0.04, transition: 'opacity 2.5s ease',
-          pointerEvents: 'none',
+          position: 'absolute', top: -100, right: -80, width: 300, height: 300,
+          borderRadius: '50%', border: '1px solid rgba(255,255,255,0.04)',
         }} />
-        <span style={{
-          fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-          letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)',
-        }}>Body System</span>
-        <h1 style={{
-          fontSize: 'clamp(2rem, 6vw, 3rem)', fontWeight: 800,
-          letterSpacing: '-0.04em', lineHeight: 1.05, marginTop: 8,
-        }}>
-          System Status:{' '}
-          <span style={{ color: GREEN, textShadow: `0 0 40px ${GREEN}50` }}>
-            Optimal
-          </span>
-        </h1>
         <div style={{
-          display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 20,
+          position: 'absolute', bottom: -50, left: '30%', width: 200, height: 200,
+          borderRadius: '50%', border: '1px solid rgba(255,255,255,0.03)',
+        }} />
+
+        {/* Nav */}
+        <nav style={{
+          maxWidth: 1200, margin: '0 auto', padding: '20px 32px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          position: 'relative', zIndex: 2,
         }}>
-          <span style={{
-            fontSize: 80, fontWeight: 900, color: GREEN,
-            textShadow: `0 0 60px ${GREEN}30`,
-            letterSpacing: '-0.05em', lineHeight: 1,
-          }}>87</span>
-          <span style={{ fontSize: 18, color: 'rgba(255,255,255,0.35)' }}>
-            / 100 recovery score
-          </span>
-        </div>
-        <PulseWave color={GREEN} />
-        <p style={{
-          fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, marginTop: 8,
-        }}>
-          Tvoje telo je pripravene na vyssi intenzitu. Doporucujeme push den.
-        </p>
-      </GlassCard>
-
-      {/* Metrics Grid */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 10, marginBottom: 12,
-      }}>
-        <BigMetric value="72" unit="BPM" label="Heart Rate" color={RED} glow />
-        <BigMetric value="98" unit="%" label="O2 Saturace" color={CYAN} glow />
-        <BigMetric value="54" unit="ms" label="HRV" color={GREEN} glow />
-      </div>
-
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12,
-      }}>
-        <BigMetric value="47" unit="dni" label="Streak" color={ORANGE} />
-        <BigMetric value="91" unit="%" label="Avg Form" color={LIME} />
-      </div>
-
-      {/* Cardio Pulse Card */}
-      <GlassCard style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{
-              fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-              letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)',
-            }}>Live Biometrics</span>
-            <h2 style={{
-              fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em',
-              marginTop: 4, color: CYAN,
-              textShadow: `0 0 20px ${CYAN}30`,
-            }}>Cardiovascular Pulse</h2>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <StatusBadge label="HRV 54ms" color={GREEN} />
-            <StatusBadge label="O2 98%" color={CYAN} />
-          </div>
-        </div>
-        <div style={{ margin: '16px 0' }}>
-          <PulseWave color={CYAN} />
-        </div>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
-          Tvuj srdecni tep je stabilni. Nebyla zaznamenana zadna anomalie
-          behem spanku ani treninkove aktivity.
-        </p>
-        <button style={{
-          marginTop: 16, padding: '10px 20px', borderRadius: 12,
-          background: `${CYAN}10`, border: `1px solid ${CYAN}25`,
-          color: CYAN, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-        }}>
-          Stahnout report
-        </button>
-      </GlassCard>
-
-      {/* Today's Plan */}
-      <GlassCard style={{ marginBottom: 12 }}>
-        <span style={{
-          fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-          letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)',
-        }}>Dnesni plan</span>
-        <h2 style={{
-          fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em',
-          marginTop: 8,
-        }}>Push Day — Chest & Shoulders</h2>
-        <div style={{
-          display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap',
-        }}>
-          {['Bench Press', 'OHP', 'Incline DB', 'Lateral Raises', 'Tricep Dips'].map(ex => (
-            <span key={ex} style={{
-              padding: '6px 14px', borderRadius: 20, fontSize: 12,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.6)',
-            }}>{ex}</span>
-          ))}
-        </div>
-        <Link href="/gym">
-          <button style={{
-            marginTop: 20, padding: '14px 28px', borderRadius: 14,
-            background: `linear-gradient(135deg, ${LIME}, ${GREEN})`,
-            border: 'none', color: '#050508', fontSize: 14,
-            fontWeight: 700, cursor: 'pointer', width: '100%',
-            boxShadow: `0 0 30px ${GREEN}20`,
-          }}>
-            Zacit trenink
-          </button>
-        </Link>
-      </GlassCard>
-
-      {/* Maintenance alerts */}
-      <GlassCard style={{ marginBottom: 12 }}>
-        <span style={{
-          fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
-          letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)',
-        }}>Body Maintenance</span>
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[
-            { part: 'Ramena', status: 'Overdue', days: 14, color: RED },
-            { part: 'Nohy', status: 'Fresh', days: 2, color: GREEN },
-            { part: 'Zada', status: 'Due', days: 10, color: ORANGE },
-          ].map(m => (
-            <div key={m.part} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '12px 14px', borderRadius: 14,
-              background: 'rgba(255,255,255,0.02)',
-              borderLeft: `3px solid ${m.color}`,
-            }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: m.color, boxShadow: `0 0 8px ${m.color}60`,
-              }} />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{m.part}</span>
-                <span style={{
-                  fontSize: 11, color: 'rgba(255,255,255,0.35)', marginLeft: 8,
-                }}>{m.days}d since deload</span>
-              </div>
-              <StatusBadge label={m.status} color={m.color} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+            <span style={{ fontSize: 22, fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>FitAI.</span>
+            <div style={{ display: 'flex', gap: 24 }}>
+              <Link href="/dashboard" className="nav-link">Dashboard</Link>
+              <Link href="/exercises" className="nav-link">Cviky</Link>
+              <Link href="/ai-chat" className="nav-link">AI Coach</Link>
+              <Link href="/community" className="nav-link">Komunita</Link>
             </div>
+          </div>
+          <Link href="/register">
+            <button className="cta-btn" style={{ background: 'white', color: NAVY }}>
+              Zkusit zdarma
+            </button>
+          </Link>
+        </nav>
+
+        {/* Hero content */}
+        <div style={{
+          maxWidth: 1200, margin: '0 auto', padding: '48px 32px 60px',
+          display: 'grid', gridTemplateColumns: '240px 1fr', gap: 32,
+          position: 'relative', zIndex: 2,
+        }}>
+
+          {/* Left sidebar cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="side-card">
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                  🏋️
+                </div>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: SKY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+                  🧠
+                </div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>AI trenér pro tvůj cíl</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Personalizované plány</span>
+            </div>
+            <div className="side-card">
+              <div style={{ fontSize: 28 }}>👟</div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>Sleduj svůj gear</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Vybavení, suplementy, rutiny</span>
+            </div>
+          </div>
+
+          {/* Center hero */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Pill style={{ background: `${ORANGE}20`, color: ORANGE, alignSelf: 'flex-start', marginBottom: 20 }}>
+              ⚡ Posuň svůj trénink
+            </Pill>
+            <h1 className="hero-heading">
+              Tvůj AI
+              <br />
+              osobní
+              <br />
+              <span style={{ color: ORANGE }}>trenér</span>{' '}
+              <span style={{
+                display: 'inline-flex', width: 56, height: 56,
+                borderRadius: 16, background: ORANGE,
+                alignItems: 'center', justifyContent: 'center',
+                fontSize: 28, verticalAlign: 'middle', transform: 'rotate(-5deg)',
+              }}>💪</span>
+            </h1>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 32, marginTop: 32,
+            }}>
+              <Link href="/register">
+                <button className="cta-btn" style={{
+                  background: ORANGE, color: 'white', fontSize: 15, padding: '16px 32px',
+                  boxShadow: `0 8px 24px ${ORANGE}40`,
+                }}>
+                  Začít trénovat →
+                </button>
+              </Link>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', maxWidth: 240, lineHeight: 1.5 }}>
+                Od ranních tréninků po večerní stretching — AI ti pomáhá s formou, výživou i regenerací.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div style={{
+          maxWidth: 1200, margin: '0 auto', padding: '0 32px 40px',
+          display: 'flex', justifyContent: 'center', gap: 48,
+          position: 'relative', zIndex: 2,
+        }}>
+          <StatBubble value={`${count}+`} label="Uživatelů" />
+          <StatBubble value="60+" label="Cviků" />
+          <StatBubble value="340+" label="API endpointů" />
+          <StatBubble value="99" label="DB modelů" />
+        </div>
+      </div>
+
+      {/* ── BENTO SECTION ── */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 32px 48px' }}>
+
+        {/* Section header */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          marginBottom: 20,
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 800,
+              color: NAVY, letterSpacing: '-0.03em', lineHeight: 1.1,
+            }}>
+              Aktivní život s&nbsp;
+              <span style={{ color: ORANGE }}>hlavní</span>
+              <br />postavou. Tebou.
+            </h2>
+            <div className="avatar-stack" style={{ marginTop: 12 }}>
+              <div style={{ background: CORAL }}>🧔</div>
+              <div style={{ background: SKY }}>👩</div>
+              <div style={{ background: LIME, color: '#333' }}>💪</div>
+              <div style={{ background: ORANGE }}>🏃</div>
+            </div>
+          </div>
+          <Link href="/exercises">
+            <button className="cta-btn" style={{
+              background: NAVY, color: 'white', fontSize: 13,
+            }}>
+              Prozkoumat cviky ↗
+            </button>
+          </Link>
+        </div>
+
+        {/* Bento grid */}
+        <div className="bento">
+          {/* Card 1: Green - exercises */}
+          <FeatureCard
+            title="Knihovna cviků"
+            emoji="🎯"
+            desc="60+ cviků s 3D animací, fázemi a coaching hints."
+            bg="linear-gradient(135deg, #E8F5E9, #C8E6C9)"
+          />
+
+          {/* Card 2: Orange - AI coach */}
+          <FeatureCard
+            title="AI Coach"
+            emoji="🤖"
+            desc="Claude AI ti dává zpětnou vazbu česky v reálném čase."
+            bg={`linear-gradient(135deg, #FFF3E0, #FFE0B2)`}
+            style={{ color: '#333' }}
+          />
+
+          {/* Card 3: Blue - progress */}
+          <FeatureCard
+            title="Tvůj pokrok"
+            emoji="📊"
+            desc="XP, streaky, ligy, skill tree. Gamifikace co motivuje."
+            bg={`linear-gradient(135deg, #E3F2FD, #BBDEFB)`}
+          />
+        </div>
+
+        {/* Second row */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr',
+          gap: 14, marginTop: 14,
+        }}>
+          {/* Big card */}
+          <div style={{
+            background: NAVY, borderRadius: 24, padding: '32px 28px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            position: 'relative', overflow: 'hidden', minHeight: 200,
+          }}>
+            <div style={{
+              position: 'absolute', top: -30, right: -30, width: 120, height: 120,
+              borderRadius: '50%', background: ORANGE, opacity: 0.1,
+            }} />
+            <div>
+              <span style={{
+                fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.08em', color: ORANGE,
+              }}>Nové</span>
+              <h3 style={{
+                fontSize: 22, fontWeight: 800, color: 'white',
+                letterSpacing: '-0.02em', marginTop: 8, lineHeight: 1.2,
+              }}>
+                1v1 Duely, Squads,<br />Limited Drops
+              </h3>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <Pill style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>⚔️ Duely</Pill>
+              <Pill style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>👥 Squads</Pill>
+              <Pill style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>💎 Drops</Pill>
+            </div>
+          </div>
+
+          {/* Stats card */}
+          <div style={{
+            background: 'white', borderRadius: 24, padding: '32px 28px',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            border: '1px solid rgba(0,0,0,0.06)',
+          }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.08em', color: 'rgba(0,0,0,0.35)',
+            }}>Aktivní komunita</span>
+            <div style={{
+              fontSize: 56, fontWeight: 800, color: NAVY,
+              letterSpacing: '-0.04em', lineHeight: 1, marginTop: 8,
+            }}>
+              {count}+
+            </div>
+            <p style={{
+              fontSize: 13, color: 'rgba(0,0,0,0.4)', marginTop: 8, lineHeight: 1.5,
+            }}>
+              Lidí trénuje s AI. Připoj se k nim.
+            </p>
+            <Link href="/register">
+              <button className="cta-btn" style={{
+                background: ORANGE, color: 'white', marginTop: 16,
+                boxShadow: `0 4px 16px ${ORANGE}30`,
+              }}>
+                Začít zdarma →
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Feature pills */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 24,
+          justifyContent: 'center',
+        }}>
+          {[
+            { label: 'Pose Detection', icon: '🎯' },
+            { label: 'Meal Plans', icon: '🍽️' },
+            { label: 'Voice Coach', icon: '🎙️' },
+            { label: 'Body Photos', icon: '📸' },
+            { label: 'Supplements', icon: '💊' },
+            { label: 'Gear Tracker', icon: '👟' },
+            { label: 'Form Check', icon: '📹' },
+            { label: 'Playlists', icon: '🎵' },
+          ].map(f => (
+            <Pill key={f.label} style={{
+              background: 'white', border: '1px solid rgba(0,0,0,0.08)',
+              color: NAVY, fontSize: 12,
+            }}>
+              {f.icon} {f.label}
+            </Pill>
           ))}
         </div>
-      </GlassCard>
-
-      {/* Footer CTA */}
-      <div style={{
-        textAlign: 'center', padding: '40px 20px',
-        position: 'relative', zIndex: 1,
-      }}>
-        <p style={{
-          fontSize: 11, color: 'rgba(255,255,255,0.25)',
-          letterSpacing: '0.1em', textTransform: 'uppercase',
-        }}>
-          FitAI — Your Body&apos;s Operating System
-        </p>
       </div>
+
+      {/* Footer */}
+      <footer style={{
+        textAlign: 'center', padding: '24px', fontSize: 12,
+        color: 'rgba(0,0,0,0.3)',
+      }}>
+        FitAI 2026 · Powered by Claude AI
+      </footer>
     </div>
   );
 }
