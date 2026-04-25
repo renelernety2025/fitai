@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/lib/auth-context';
 
 /**
  * Body Report — Weekly health intelligence
@@ -116,7 +115,7 @@ function MuscleHeat({ groups }: {
 }
 
 export default function BodyReportPage() {
-  const { user } = useAuth();
+  const user = { name: 'Demo User' };
   const mouse = useMouse();
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
