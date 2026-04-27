@@ -1,247 +1,166 @@
 'use client';
 
-/**
- * Trainer Detail — full profile with stats, specializations, reviews.
- */
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { GlassCard } from '@/components/v2/GlassCard';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
+import { Card, Chip, Tag, Button, SectionHeader, Avatar } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getTrainerDetail } from '@/lib/api';
 
-type TrainerDetail = {
-  id: string; name: string; avatarUrl?: string; bio?: string;
-  supertrainer: boolean; isSupertrainer?: boolean;
-  responseRate: number; totalSessions: number;
-  specializations: string[]; certifications: string[];
-  rating: number; reviewCount: number;
-  reviews: any[]; experiences: any[];
-  user?: { name: string; avatarUrl?: string }; _count?: { reviews: number }; avgRating?: number;
+const IMG = {
+  hero: 'https://images.unsplash.com/photo-1502904550040-7534597429ae?w=2400&q=85&auto=format&fit=crop',
+  track: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=900&q=80&auto=format&fit=crop',
+  run: 'https://images.unsplash.com/photo-1486218119243-13883505764c?w=900&q=80&auto=format&fit=crop',
 };
 
-function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
-  return (
-    <span className="inline-flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          style={{
-            fontSize: size,
-            color: i <= Math.round(rating) ? '#FFD600' : '#333',
-          }}
-        >
-          &#9733;
-        </span>
-      ))}
-    </span>
-  );
-}
+const MOCK_PROGRAMS = [
+  { title: 'The Half-Marathon Build', wks: 12, students: 1240, price: '89', cover: IMG.track },
+  { title: 'Couch to 5K, Gentle', wks: 8, students: 3420, price: '39', cover: IMG.run },
+  { title: 'Marathon Block', wks: 16, students: 580, price: '129', cover: IMG.track },
+];
 
-function StatBox({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center rounded-xl bg-white/5 px-4 py-3">
-      <span className="text-lg font-bold tracking-tight text-white">
-        {value}
-      </span>
-      <span className="mt-0.5 text-[10px] uppercase tracking-wider text-white/40">
-        {label}
-      </span>
-    </div>
-  );
-}
+const STATS: [string, string][] = [
+  ['Students', '12,420'],
+  ['Programs', '8'],
+  ['Avg. rating', '4.92'],
+  ['Years coaching', '14'],
+];
+
+const SPECIALTIES = [
+  'Marathon', 'Half-marathon', '5K/10K',
+  'Run injury prevention', 'Strength for runners', 'Triathlon',
+];
 
 export default function TrainerDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const [trainer, setTrainer] = useState<TrainerDetail | null>(null);
+  const [trainer, setTrainer] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    document.title = 'FitAI — Trainer';
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Trainer'; }, []);
 
   useEffect(() => {
     if (!id) return;
     getTrainerDetail(id)
-      .then((raw) => {
-        const data = raw as any as TrainerDetail;
+      .then((data) => {
         setTrainer(data);
-        document.title = `FitAI — ${data.name}`;
+        const d = data as { name?: string };
+        if (d?.name) document.title = `FitAI — ${d.name}`;
       })
-      .catch(() => setError(true))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return (
-      <V2Layout>
-        <div className="pt-12 space-y-4">
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-      </V2Layout>
-    );
-  }
-
-  if (error || !trainer) {
-    return (
-      <V2Layout>
-        <div className="pt-12">
-          <p className="text-sm text-[#FF375F]">
-            Nepodarilo se nacist profil trenera.
-          </p>
-        </div>
-      </V2Layout>
-    );
-  }
+  const t = trainer as { name?: string; avatarUrl?: string; bio?: string } | null;
+  const name = t?.name || 'Alex Rivera';
 
   return (
-    <V2Layout>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh' }}>
       {/* Hero */}
-      <section className="pt-12 pb-8">
-        <div className="flex items-start gap-5">
-          <div
-            className="flex-shrink-0 flex items-center justify-center rounded-full bg-white/10 text-2xl font-bold"
-            style={{ width: 80, height: 80 }}
-          >
-            {trainer.avatarUrl ? (
-              <img
-                src={trainer.avatarUrl}
-                alt={trainer.name}
-                className="w-full h-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-white/60">
-                {trainer.name.charAt(0)}
-              </span>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight text-white">
-                {trainer.name}
-              </h1>
-              {trainer.isSupertrainer && (
-                <span className="rounded-full bg-[#BF5AF2]/20 px-3 py-1 text-[11px] font-semibold text-[#BF5AF2] border border-[#BF5AF2]/30">
-                  SUPERTRAINER
-                </span>
-              )}
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <Stars rating={trainer.rating} size={16} />
-              <span className="text-sm text-white/40">
-                {trainer.rating.toFixed(1)} ({trainer.reviewCount} reviews)
-              </span>
+      <div style={{
+        height: 480, position: 'relative',
+        backgroundImage: `url(${t?.avatarUrl || IMG.hero})`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, rgba(11,9,7,0.2) 0%, rgba(11,9,7,0.4) 60%, var(--bg-0) 100%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: 64, left: 48, right: 48,
+          display: 'flex', alignItems: 'flex-end', gap: 32,
+        }}>
+          <Avatar
+            src={t?.avatarUrl || IMG.hero}
+            size={120}
+            ring="var(--bg-0)"
+          />
+          <div style={{ flex: 1 }}>
+            <span style={{ marginBottom: 16, display: 'inline-block' }}>
+              <Tag>Faculty &middot; Running</Tag>
+            </span>
+            <h1 className="v3-display-1" style={{ margin: 0, fontSize: 72, lineHeight: 1 }}>
+              {name}
+            </h1>
+            <div className="v3-body" style={{ marginTop: 12, color: 'var(--text-2)' }}>
+              {t?.bio || 'Marathon coach, former Olympic team physiotherapist'}
             </div>
           </div>
+          <Button variant="accent" size="lg">Follow</Button>
         </div>
-      </section>
-
-      {/* Bio */}
-      {trainer.bio && (
-        <GlassCard className="p-6 mb-6">
-          <p className="text-sm leading-relaxed text-white/60">
-            {trainer.bio}
-          </p>
-        </GlassCard>
-      )}
-
-      {/* Stats row */}
-      <div className="mb-6 grid grid-cols-4 gap-3">
-        <StatBox
-          label="Rating"
-          value={trainer.rating.toFixed(1)}
-        />
-        <StatBox label="Reviews" value={String(trainer.reviewCount)} />
-        <StatBox
-          label="Response"
-          value={`${trainer.responseRate}%`}
-        />
-        <StatBox
-          label="Sessions"
-          value={String(trainer.totalSessions)}
-        />
       </div>
 
-      {/* Specializations */}
-      <section className="mb-6">
-        <V2SectionLabel>Specializations</V2SectionLabel>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {trainer.specializations.map((s) => (
-            <span
-              key={s}
-              className="rounded-full border border-[#00E5FF]/20 bg-[#00E5FF]/8 px-3 py-1 text-xs text-[#00E5FF]"
-            >
-              {s}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* Certifications */}
-      {trainer.certifications.length > 0 && (
-        <section className="mb-6">
-          <V2SectionLabel>Certifications</V2SectionLabel>
-          <div className="mt-3 space-y-2">
-            {trainer.certifications.map((c) => (
-              <div
-                key={c}
-                className="flex items-center gap-2 text-sm text-white/55"
-              >
-                <span className="text-[#A8FF00]">&#10003;</span>
-                {c}
-              </div>
+      {/* Content */}
+      <div style={{ padding: '64px 48px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: 64 }}>
+        <div>
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+            {STATS.map(([label, value]) => (
+              <Card key={label} padding={20}>
+                <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{label}</div>
+                <div className="v3-numeric" style={{ fontSize: 32, color: 'var(--text-1)' }}>{value}</div>
+              </Card>
             ))}
           </div>
-        </section>
-      )}
 
-      {/* Action buttons */}
-      <div className="mb-10 flex gap-3">
-        <button className="flex-1 rounded-xl bg-[#FF375F] py-3 text-sm font-semibold text-white transition-all hover:bg-[#FF375F]/80">
-          Book 1:1 Session
-        </button>
-        <button className="flex-1 rounded-xl border border-white/15 bg-white/5 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10">
-          Send Message
-        </button>
-      </div>
-
-      {/* Reviews */}
-      <section className="mb-12">
-        <V2SectionLabel>Reviews</V2SectionLabel>
-        {trainer.reviews.length === 0 ? (
-          <div className="mt-4 py-12 text-center text-white/30">
-            <p className="text-sm">Zatim zadne recenze.</p>
-          </div>
-        ) : (
-          <StaggerContainer>
-            <div className="mt-4 space-y-3">
-              {trainer.reviews.map((r) => (
-                <StaggerItem key={r.id}>
-                  <GlassCard className="p-4" hover={false}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-white">
-                        {r.userName}
-                      </span>
-                      <Stars rating={r.rating} size={12} />
-                    </div>
-                    <p className="mt-2 text-sm text-white/50">
-                      {r.comment}
-                    </p>
-                    <span className="mt-2 block text-[10px] text-white/25">
-                      {new Date(r.createdAt).toLocaleDateString('cs-CZ')}
-                    </span>
-                  </GlassCard>
-                </StaggerItem>
-              ))}
+          {/* Philosophy */}
+          <SectionHeader eyebrow="ABOUT" title="Coaching philosophy" />
+          <Card padding={32} style={{ marginBottom: 48 }}>
+            <p className="v3-body" style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: 'var(--text-2)' }}>
+              I believe distance running is a practice in patience. The best programs
+              do less than you think and let your body adapt. After fourteen years of
+              coaching everyone from first-timers to Olympic-team marathoners, I have
+              come back to the same truths: easy days should be easy, hard days should
+              be honest, and recovery is where the work pays off.
+            </p>
+            <div className="v3-eyebrow-serif" style={{ marginTop: 24 }}>
+              — {name}, Boulder, March 2026
             </div>
-          </StaggerContainer>
-        )}
-      </section>
-    </V2Layout>
+          </Card>
+
+          {/* Programs */}
+          <SectionHeader eyebrow="PROGRAMS" title={`What ${name.split(' ')[0]} teaches`} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {MOCK_PROGRAMS.map((p) => (
+              <Card key={p.title} padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
+                <div style={{
+                  height: 160,
+                  backgroundImage: `url(${p.cover})`,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                }} />
+                <div style={{ padding: 20 }}>
+                  <div className="v3-title" style={{ marginBottom: 4, fontSize: 15 }}>{p.title}</div>
+                  <div className="v3-caption" style={{ marginBottom: 12 }}>
+                    {p.wks} weeks &middot; {p.students.toLocaleString()} students
+                  </div>
+                  <span className="v3-numeric" style={{ color: 'var(--accent)', fontSize: 18 }}>
+                    ${p.price}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div>
+          <Card padding={28} style={{ marginBottom: 16 }}>
+            <div className="v3-title" style={{ marginBottom: 16 }}>Get coaching</div>
+            <Button variant="accent" full size="lg" style={{ marginBottom: 8 }}>
+              Browse programs
+            </Button>
+            <Button variant="ghost" full>Book 1:1 session</Button>
+            <div className="v3-caption" style={{ marginTop: 16 }}>
+              1:1 sessions $120 &middot; 60 min &middot; video call
+            </div>
+          </Card>
+          <Card padding={24}>
+            <div className="v3-title" style={{ marginBottom: 12 }}>Specialties</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {SPECIALTIES.map((s) => <Chip key={s}>{s}</Chip>)}
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }

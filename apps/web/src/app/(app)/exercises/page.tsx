@@ -2,60 +2,47 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Chip, Tag, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getExercises, getRecommendations, type ExerciseData } from '@/lib/api';
 import { isFavorite, toggleFavorite, getFavoriteIds } from '@/lib/favorites';
 
-const MUSCLES = [
-  { v: 'ALL', l: 'Vše' },
-  { v: 'CHEST', l: 'Prsa' },
-  { v: 'BACK', l: 'Záda' },
-  { v: 'SHOULDERS', l: 'Ramena' },
-  { v: 'BICEPS', l: 'Biceps' },
-  { v: 'TRICEPS', l: 'Triceps' },
-  { v: 'QUADRICEPS', l: 'Stehna' },
-  { v: 'HAMSTRINGS', l: 'Zadní stehna' },
-  { v: 'GLUTES', l: 'Hýždě' },
-  { v: 'CORE', l: 'Core' },
-];
+const FILTERS = ['All', 'Strength', 'Hypertrophy', 'Cardio', 'Mobility', 'Yoga'];
 
-const diffLabel: Record<string, string> = {
-  BEGINNER: 'Začátečník',
-  INTERMEDIATE: 'Pokročilý',
-  ADVANCED: 'Expert',
-};
-
-const diffAccent: Record<string, string> = {
-  BEGINNER: '#A8FF00',
-  INTERMEDIATE: '#00E5FF',
+const DIFF_COLOR: Record<string, string> = {
+  BEGINNER: 'var(--sage)',
+  INTERMEDIATE: 'var(--accent)',
   ADVANCED: '#FF375F',
 };
 
-const DIFFICULTIES = [
-  { v: 'ALL', l: 'Vše', color: '#FFF' },
-  { v: 'BEGINNER', l: 'Začátečník', color: '#A8FF00' },
-  { v: 'INTERMEDIATE', l: 'Pokročilý', color: '#00E5FF' },
-  { v: 'ADVANCED', l: 'Expert', color: '#FF375F' },
+const DIFF_LABEL: Record<string, string> = {
+  BEGINNER: 'Beginner',
+  INTERMEDIATE: 'Intermediate',
+  ADVANCED: 'Advanced',
+};
+
+const PLACEHOLDER_IMGS = [
+  'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=75&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=75&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=600&q=75&auto=format&fit=crop',
 ];
 
-export default function ExercisesV2Page() {
+export default function ExercisesPage() {
   const [allExercises, setAllExercises] = useState<ExerciseData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('ALL');
-  const [diffFilter, setDiffFilter] = useState('ALL');
+  const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const [showFavs, setShowFavs] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
-  const [recs, setRecs] = useState<any[]>([]);
+  const [showFavs, setShowFavs] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Cviky'; }, []);
+  useEffect(() => { document.title = 'FitAI — Exercise Library'; }, []);
 
   useEffect(() => {
-    getExercises().then(setAllExercises).catch(console.error).finally(() => setLoading(false));
+    getExercises()
+      .then(setAllExercises)
+      .catch(console.error)
+      .finally(() => setLoading(false));
     setFavIds(new Set(getFavoriteIds()));
-    getRecommendations()
-      .then((r) => setRecs(r?.exercises || r?.recommendations || []))
-      .catch(() => {});
   }, []);
 
   function handleToggleFav(id: string, e: React.MouseEvent) {
@@ -69,159 +56,142 @@ export default function ExercisesV2Page() {
     const q = search.toLowerCase().trim();
     return allExercises.filter((ex) => {
       if (showFavs && !favIds.has(ex.id)) return false;
-      if (filter !== 'ALL' && !ex.muscleGroups.includes(filter)) return false;
-      if (diffFilter !== 'ALL' && ex.difficulty !== diffFilter) return false;
-      if (q && !ex.nameCs.toLowerCase().includes(q) && !ex.name.toLowerCase().includes(q)
-        && !ex.muscleGroups.some((g) => g.toLowerCase().includes(q))) return false;
+      if (filter !== 'All') {
+        const f = filter.toUpperCase();
+        const match = ex.muscleGroups.some((g) => g.toUpperCase().includes(f));
+        if (!match) return false;
+      }
+      if (q && !ex.nameCs.toLowerCase().includes(q)
+        && !ex.name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [allExercises, filter, diffFilter, search, showFavs, favIds]);
+  }, [allExercises, filter, search, showFavs, favIds]);
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Knihovna</V2SectionLabel>
-        <V2Display size="xl">Cviky.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Detailní instrukce, fáze pohybu, dýchání, tempo. Forma má přednost před váhou.
+    <div style={{ background: 'var(--bg-0)', color: 'var(--text-1)', minHeight: '100vh' }}>
+      {/* Hero */}
+      <div style={{
+        position: 'relative', padding: '80px 48px 56px', overflow: 'hidden',
+        background: 'linear-gradient(180deg, rgba(232,93,44,0.08) 0%, var(--bg-0) 100%)',
+        borderBottom: '1px solid var(--stroke-1)',
+      }}>
+        <div className="v3-eyebrow" style={{ color: 'var(--accent-hot)', marginBottom: 16 }}>
+          THE FACULTY &middot; {allExercises.length || '60'}+ EXERCISES
+        </div>
+        <h1 className="v3-display-1" style={{ marginBottom: 16 }}>
+          World-class.{' '}
+          <span style={{ color: 'var(--text-3)', fontWeight: 300 }}>On demand.</span>
+        </h1>
+        <p className="v3-body" style={{ maxWidth: 520, color: 'var(--text-2)' }}>
+          Detailed instructions, movement phases, breathing cues, tempo.
+          Form over weight, always.
         </p>
-      </section>
+      </div>
 
-      {/* Recommendations section */}
-      {recs.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#BF5AF2]">
-            Doporuceni pro tebe
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
-            {recs.slice(0, 5).map((rec: any) => (
-              <Link key={rec.id || rec.exerciseId} href={`/exercises/${rec.id || rec.exerciseId}`}
-                className="rounded-xl border border-[#BF5AF2]/15 bg-[#BF5AF2]/5 p-4 transition hover:border-[#BF5AF2]/30"
-              >
-                <div className="text-sm font-semibold text-white">{rec.nameCs || rec.name}</div>
-                <div className="mt-1 text-[10px] text-white/40">
-                  {rec.muscleGroups?.slice(0, 2).join(' · ') || ''}
-                </div>
-                {rec.matchPercent && (
-                  <div className="mt-2 text-[10px] font-semibold text-[#BF5AF2]">
-                    {rec.matchPercent}% uzivatelu jako ty
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="mb-6 flex gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Hledej cvik..."
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-white/25"
-        />
-        <button
+      {/* Filters */}
+      <div style={{
+        padding: '20px 48px', display: 'flex', alignItems: 'center',
+        gap: 8, flexWrap: 'wrap', borderBottom: '1px solid var(--stroke-1)',
+      }}>
+        {FILTERS.map((c) => (
+          <Chip key={c} active={filter === c} onClick={() => setFilter(c)}>{c}</Chip>
+        ))}
+        <div style={{ flex: 1 }} />
+        <Chip
+          active={showFavs}
           onClick={() => setShowFavs((p) => !p)}
-          className={`rounded-xl border px-4 py-3 text-sm transition ${
-            showFavs
-              ? 'border-[#FF375F] bg-[#FF375F]/10 text-[#FF375F]'
-              : 'border-white/10 text-white/40 hover:text-white'
-          }`}
+          icon={<FitIcon name="heart" size={14} />}
         >
-          {showFavs ? 'Oblibene' : 'Vse'}
-        </button>
+          Favorites
+        </Chip>
+        <div style={{
+          marginLeft: 8, padding: '0 16px', height: 40, display: 'flex',
+          alignItems: 'center', borderRadius: 'var(--r-pill)',
+          border: '1px solid var(--stroke-2)', background: 'transparent',
+        }}>
+          <FitIcon name="search" size={16} color="var(--text-3)" />
+          <input
+            type="text" value={search} placeholder="Search..."
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              background: 'transparent', border: 'none', outline: 'none',
+              color: 'var(--text-1)', fontSize: 13, marginLeft: 8, width: 140,
+            }}
+          />
+        </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {MUSCLES.map((m) => (
-          <button
-            key={m.v}
-            onClick={() => setFilter(m.v)}
-            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
-              filter === m.v
-                ? 'border-white bg-white text-black'
-                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
-            }`}
-          >
-            {m.l}
-          </button>
-        ))}
-      </div>
-      <div className="mb-16 flex flex-wrap gap-2">
-        {DIFFICULTIES.map((d) => (
-          <button
-            key={d.v}
-            onClick={() => setDiffFilter(d.v)}
-            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
-              diffFilter === d.v
-                ? 'text-black'
-                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
-            }`}
-            style={diffFilter === d.v ? { borderColor: d.color, backgroundColor: d.color } : undefined}
-          >
-            {d.l}
-          </button>
-        ))}
+      {/* Count */}
+      <div style={{ padding: '16px 48px 0' }}>
+        <span className="v3-caption">
+          {loading ? 'Loading...' : `${exercises.length} exercises`}
+        </span>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-32">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-        </div>
-      )}
-
-      {!loading && (
-        <div className="mb-6 text-[11px] font-semibold tabular-nums text-white/30">
-          {exercises.length} {exercises.length === 1 ? 'cvik' : exercises.length < 5 ? 'cviky' : 'cviku'}
-        </div>
-      )}
-
-      {exercises.length === 0 && allExercises.length > 0 && (
-        <div className="py-16 text-center">
-          <p className="text-lg text-white/30">Zadny cvik neodpovida filtrum</p>
-          <button
-            onClick={() => { setFilter('ALL'); setDiffFilter('ALL'); setSearch(''); }}
-            className="mt-4 text-sm text-[#A8FF00]/60 transition hover:text-[#A8FF00]"
-          >
-            Zrusit filtry
-          </button>
-        </div>
-      )}
-
-      <section className="space-y-1">
-        {exercises.map((ex) => (
-          <Link
-            key={ex.id}
-            href={`/exercises/${ex.id}`}
-            className="group flex items-baseline justify-between border-b border-white/8 py-8 transition hover:border-white/30"
-          >
-            <div className="flex-1 pr-6">
-              <div
-                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
-                style={{ color: diffAccent[ex.difficulty] || '#FFF' }}
-              >
-                {diffLabel[ex.difficulty]} · {ex.muscleGroups.slice(0, 3).join(', ')}
+      {/* Grid */}
+      <div style={{
+        padding: '24px 48px 64px',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16,
+      }}>
+        {exercises.map((ex, i) => (
+          <Link key={ex.id} href={`/exercises/${ex.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Card padding={0} hover style={{ overflow: 'hidden', minHeight: 280, cursor: 'pointer' }}>
+              <div style={{ position: 'relative', height: 180, overflow: 'hidden' }}>
+                <img
+                  src={PLACEHOLDER_IMGS[i % PLACEHOLDER_IMGS.length]}
+                  alt={ex.nameCs}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.75) 100%)',
+                }} />
+                <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6 }}>
+                  <Tag color={DIFF_COLOR[ex.difficulty]}>
+                    {DIFF_LABEL[ex.difficulty] ?? ex.difficulty}
+                  </Tag>
+                </div>
+                <button
+                  onClick={(e) => handleToggleFav(ex.id, e)}
+                  style={{
+                    position: 'absolute', top: 12, right: 12, background: 'none',
+                    border: 'none', cursor: 'pointer', padding: 0,
+                  }}
+                >
+                  <FitIcon
+                    name="heart"
+                    size={20}
+                    color={favIds.has(ex.id) ? 'var(--accent)' : 'rgba(255,255,255,0.4)'}
+                  />
+                </button>
               </div>
-              <V2Display size="md">{ex.nameCs}</V2Display>
-              <p className="mt-2 max-w-xl text-sm text-white/50 line-clamp-1">
-                {ex.descriptionCs}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={(e) => handleToggleFav(ex.id, e)}
-                className={`text-lg transition ${favIds.has(ex.id) ? 'text-[#FF375F]' : 'text-white/15 hover:text-white/40'}`}
-              >
-                {favIds.has(ex.id) ? '\u2665' : '\u2661'}
-              </button>
-              <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
-                →
+              <div style={{ padding: 16 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
+                  {ex.nameCs}
+                </div>
+                <div className="v3-caption">
+                  {ex.muscleGroups.slice(0, 3).join(' / ')}
+                </div>
               </div>
-            </div>
+            </Card>
           </Link>
         ))}
-      </section>
-    </V2Layout>
+      </div>
+
+      {!loading && exercises.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--text-3)' }}>
+          <p>No exercises match your filters.</p>
+          <button
+            onClick={() => { setFilter('All'); setSearch(''); setShowFavs(false); }}
+            style={{
+              marginTop: 16, background: 'none', border: 'none',
+              color: 'var(--accent)', cursor: 'pointer', fontSize: 14,
+            }}
+          >
+            Reset filters
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
