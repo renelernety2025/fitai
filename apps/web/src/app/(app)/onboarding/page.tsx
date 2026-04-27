@@ -1,214 +1,118 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { V2Input, V2Button } from '@/components/v2/V2AuthLayout';
+import { Logo, Button } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import { completeOnboarding, saveOnboardingMeasurements } from '@/lib/api';
 import {
-  getOnboardingStatus,
-  getOnboardingTestExercises,
-  saveOnboardingMeasurements,
-  submitFitnessTest,
-  completeOnboarding,
-  getSuggestedWeights,
-  type SuggestedWeight,
-} from '@/lib/api';
+  StepWelcome, StepGoal, StepExperience, StepSchedule, StepReady,
+  type OnboardingData,
+} from './steps';
 
-type Step = 'measurements' | 'test' | 'review';
+const STEP_LABELS = ['Welcome', 'Your goal', 'Experience', 'Schedule', 'All set'];
+const TOTAL = STEP_LABELS.length;
 
-export default function OnboardingV2Page() {
+export default function OnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>('measurements');
-  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [data, setData] = useState<OnboardingData>({
+    name: '', age: '', goal: null, experience: null,
+    activityLevel: 3, days: Array(7).fill(false),
+    preferredTime: null, duration: null,
+  });
 
-  const [age, setAge] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-
-  const [testExercises, setTestExercises] = useState<any[]>([]);
-  const [testResults, setTestResults] = useState<Record<string, { weight: string; reps: string }>>({});
-
-  const [suggested, setSuggested] = useState<SuggestedWeight[]>([]);
-
-  useEffect(() => {
-    Promise.allSettled([getOnboardingStatus(), getOnboardingTestExercises()])
-      .then(([statusRes, exsRes]) => {
-        if (exsRes.status === 'fulfilled') setTestExercises(exsRes.value);
-        if (statusRes.status === 'fulfilled') {
-          const status = statusRes.value;
-          if (status.completed) router.push('/dashboard');
-          else if (status.step === 'measurements' || status.step === 'profile') setStep('measurements');
-          else if (status.step === 'fitness_test') setStep('test');
-          else if (status.step === 'finalize') {
-            setStep('review');
-            getSuggestedWeights().then(setSuggested).catch(console.error);
-          }
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  async function handleMeasurementsNext() {
-    const a = parseInt(age);
-    const w = parseFloat(weight);
-    const h = parseFloat(height);
-    if (!a || !w || !h) return;
-    await saveOnboardingMeasurements({ age: a, weightKg: w, heightCm: h });
-    setStep('test');
+  function update(partial: Partial<OnboardingData>) {
+    setData(prev => ({ ...prev, ...partial }));
   }
 
-  async function handleTestNext() {
-    const results = Object.entries(testResults)
-      .filter(([, v]) => parseFloat(v.weight) > 0 && parseInt(v.reps) > 0)
-      .map(([exerciseId, v]) => ({
-        exerciseId,
-        weight: parseFloat(v.weight),
-        reps: parseInt(v.reps),
-      }));
-    if (results.length === 0) return;
-    await submitFitnessTest(results);
-    const sw = await getSuggestedWeights();
-    setSuggested(sw);
-    setStep('review');
+  function canContinue(): boolean {
+    if (step === 1) return data.name.trim().length > 0 && data.age.trim().length > 0;
+    if (step === 2) return data.goal !== null;
+    if (step === 3) return data.experience !== null;
+    if (step === 4) return data.days.some(Boolean) && data.preferredTime !== null && data.duration !== null;
+    return true;
   }
 
   async function handleFinish() {
-    await completeOnboarding();
-    router.push('/dashboard');
+    setSaving(true);
+    try {
+      const age = parseInt(data.age) || 25;
+      await saveOnboardingMeasurements({ age, weightKg: 75, heightCm: 175 });
+      await completeOnboarding();
+      router.push('/dashboard');
+    } catch {
+      setSaving(false);
+    }
   }
 
-  if (loading) {
-    return (
-      <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </V2Layout>
-    );
+  function handleNext() {
+    if (step < TOTAL) setStep(step + 1);
+    else handleFinish();
   }
-
-  const stepIdx = ['measurements', 'test', 'review'].indexOf(step);
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Krok {stepIdx + 1} ze 3</V2SectionLabel>
-        <V2Display size="xl">
-          {step === 'measurements' && 'O tobě.'}
-          {step === 'test' && 'Tvůj výkon.'}
-          {step === 'review' && 'Tvůj plán.'}
-        </V2Display>
-      </section>
-
-      {/* Progress bar */}
-      <div className="mb-16 flex gap-2">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className={`h-[2px] flex-1 rounded-full transition ${
-              i <= stepIdx ? 'bg-white' : 'bg-white/10'
-            }`}
-          />
-        ))}
-      </div>
-
-      {step === 'measurements' && (
-        <div className="space-y-12">
-          <p className="max-w-xl text-base text-white/55">
-            Tyto údaje pomohou personalizovat tvůj plán a spočítat denní příjem kalorií.
-          </p>
-          <div className="space-y-10">
-            <V2Input label="Věk" type="number" value={age} onChange={setAge} placeholder="25" />
-            <V2Input label="Váha (kg)" type="number" value={weight} onChange={setWeight} placeholder="75" />
-            <V2Input label="Výška (cm)" type="number" value={height} onChange={setHeight} placeholder="180" />
-          </div>
-          <V2Button onClick={handleMeasurementsNext} disabled={!age || !weight || !height}>
-            Pokračovat →
-          </V2Button>
-        </div>
-      )}
-
-      {step === 'test' && (
-        <div className="space-y-12">
-          <p className="max-w-xl text-base text-white/55">
-            U každého cviku zadej váhu a počet opakování s perfektní formou. Z toho spočítáme tvoje 1RM. Cviky které neznáš můžeš přeskočit.
-          </p>
-          <div className="space-y-10">
-            {testExercises.map((ex) => (
-              <div key={ex.id} className="border-b border-white/10 pb-8">
-                <div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-                  Cvik
+    <div style={{ background: 'var(--bg-0)', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      {/* ── Top bar ── */}
+      <header style={{
+        padding: '20px 40px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', borderBottom: '1px solid var(--stroke-1)',
+      }}>
+        <Logo size={20} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {STEP_LABELS.map((_, i) => {
+            const n = i + 1;
+            const done = n < step;
+            const current = n === step;
+            return (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: done ? 'var(--sage)' : current ? 'var(--accent)' : 'var(--bg-3)',
+                  color: done || current ? '#fff' : 'var(--text-4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                }}>
+                  {done ? <FitIcon name="check" size={14} color="#fff" /> : n}
                 </div>
-                <V2Display size="sm">{ex.nameCs}</V2Display>
-                <div className="mt-6 grid grid-cols-2 gap-6">
-                  <V2Input
-                    label="Váha (kg)"
-                    type="number"
-                    value={testResults[ex.id]?.weight || ''}
-                    onChange={(v) =>
-                      setTestResults({
-                        ...testResults,
-                        [ex.id]: { ...(testResults[ex.id] || { reps: '' }), weight: v },
-                      })
-                    }
-                  />
-                  <V2Input
-                    label="Opakování"
-                    type="number"
-                    value={testResults[ex.id]?.reps || ''}
-                    onChange={(v) =>
-                      setTestResults({
-                        ...testResults,
-                        [ex.id]: { ...(testResults[ex.id] || { weight: '' }), reps: v },
-                      })
-                    }
-                  />
-                </div>
+                {i < TOTAL - 1 && <div style={{ width: 28, height: 1, background: 'var(--stroke-2)' }} />}
               </div>
-            ))}
-          </div>
-          <V2Button onClick={handleTestNext}>Spočítat 1RM →</V2Button>
+            );
+          })}
         </div>
-      )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Step {step} of {TOTAL}</span>
+          <button onClick={() => router.push('/dashboard')}
+            style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+            Skip
+          </button>
+        </div>
+      </header>
 
-      {step === 'review' && (
-        <div className="space-y-12">
-          <p className="max-w-xl text-base text-white/55">
-            Spočítáno na základě tvého 1RM. První týden začneme jemně na 60 % — tělo si zvykne.
-          </p>
-          <div className="space-y-1">
-            {suggested.map((s) => (
-              <div key={s.exerciseId} className="border-b border-white/10 py-8">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-                  1RM {s.oneRMKg}kg
-                </div>
-                <V2Display size="md">{s.exerciseName}</V2Display>
-                <div className="mt-4 flex gap-8 text-sm">
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#FF9F0A]">
-                      První týden
-                    </div>
-                    <div className="mt-1 text-2xl font-bold text-white tabular-nums">
-                      {s.firstWeekWeight}
-                      <span className="text-base text-white/40">kg × {s.recommendedReps}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#A8FF00]">
-                      Cílová váha
-                    </div>
-                    <div className="mt-1 text-2xl font-bold text-white tabular-nums">
-                      {s.recommendedWorkingWeight}
-                      <span className="text-base text-white/40">kg × {s.recommendedReps}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <V2Button onClick={handleFinish}>Začít cvičit →</V2Button>
-        </div>
-      )}
-    </V2Layout>
+      {/* ── Content ── */}
+      <main style={{ flex: 1, maxWidth: 920, width: '100%', margin: '0 auto', padding: '64px 24px 40px' }}>
+        {step === 1 && <StepWelcome data={data} onChange={update} />}
+        {step === 2 && <StepGoal data={data} onChange={update} />}
+        {step === 3 && <StepExperience data={data} onChange={update} />}
+        {step === 4 && <StepSchedule data={data} onChange={update} />}
+        {step === 5 && <StepReady data={data} />}
+      </main>
+
+      {/* ── Footer nav ── */}
+      <footer style={{
+        padding: '20px 40px', display: 'flex', justifyContent: 'center', gap: 12,
+        borderTop: '1px solid var(--stroke-1)',
+      }}>
+        {step > 1 && (
+          <Button variant="ghost" size="lg" onClick={() => setStep(step - 1)}>
+            &larr; Back
+          </Button>
+        )}
+        <Button variant="accent" size="lg" disabled={!canContinue() || saving} onClick={handleNext}>
+          {step === TOTAL ? (saving ? 'Saving...' : 'Start training \u2192') : 'Continue \u2192'}
+        </Button>
+      </footer>
+    </div>
   );
 }
