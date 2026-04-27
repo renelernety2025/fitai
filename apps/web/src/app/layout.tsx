@@ -1,8 +1,33 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Inter_Tight, JetBrains_Mono, Fraunces } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
 import { ThemeProvider } from '@/lib/theme-context';
 import { ServiceWorkerRegistrar } from '@/components/layout/ServiceWorkerRegistrar';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--ff-inter',
+});
+
+const interTight = Inter_Tight({
+  subsets: ['latin'],
+  variable: '--ff-inter-tight',
+  weight: ['400', '500', '600', '700'],
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--ff-jetbrains',
+  weight: ['400', '500', '600'],
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--ff-fraunces',
+  weight: ['300', '400', '600', '700'],
+  style: ['normal', 'italic'],
+});
 
 export const metadata: Metadata = {
   title: 'FitAI — AI Personal Trainer',
@@ -37,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="cs">
+    <html lang="cs" className={`${inter.variable} ${interTight.variable} ${jetbrains.variable} ${fraunces.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
