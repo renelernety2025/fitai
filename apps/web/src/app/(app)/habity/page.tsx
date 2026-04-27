@@ -1,336 +1,171 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display, V2Ring } from '@/components/v2/V2Layout';
+import { Card, Button, Tag, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import {
   getHabitsToday,
   updateHabitsToday,
   getHabitsStats,
-  getHabitsHistory,
-  getRecoveryTips,
   type DailyCheckIn,
   type HabitsStats,
-  type RecoveryTip,
 } from '@/lib/api';
-import { ActivityHeatmap } from '@/components/habits/ActivityHeatmap';
 
-const tipColors: Record<string, string> = {
-  sleep: '#0A84FF',
-  nutrition: '#FF9500',
-  recovery: '#A8FF00',
-  stress: '#BF5AF2',
-  training: '#FF375F',
-};
+const FIELDS: { key: keyof DailyCheckIn; label: string; icon: string; unit?: string }[] = [
+  { key: 'sleepHours', label: 'Sleep 7+ hours', icon: 'lungs', unit: 'h' },
+  { key: 'energy', label: 'Energy level', icon: 'bolt' },
+  { key: 'hydrationL', label: 'Drink 2L water', icon: 'drop', unit: 'L' },
+  { key: 'steps', label: 'Steps 8000+', icon: 'shoe' },
+  { key: 'mood', label: 'Mood check', icon: 'heart' },
+  { key: 'soreness', label: 'Low soreness', icon: 'muscle' },
+  { key: 'stress', label: 'Low stress', icon: 'brain' },
+];
 
-function Scale1to5({
-  label,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: number | null;
-  onChange: (v: number) => void;
-  hint?: string;
-}) {
-  return (
-    <div className="mb-10">
-      <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-        {label}
-      </div>
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            onClick={() => onChange(n)}
-            className={`h-14 flex-1 rounded-2xl border text-2xl font-bold transition ${
-              value === n
-                ? 'border-white bg-white text-black'
-                : 'border-white/15 text-white/60 hover:border-white/40'
-            }`}
-          >
-            {n}
-          </button>
-        ))}
-      </div>
-      {hint && <div className="mt-2 text-xs text-white/40">{hint}</div>}
-    </div>
-  );
-}
-
-function NumberInput({
-  label,
-  value,
-  onChange,
-  unit,
-  step = 0.5,
-  placeholder,
-}: {
-  label: string;
-  value: number | null;
-  onChange: (v: number | null) => void;
-  unit?: string;
-  step?: number;
-  placeholder?: string;
-}) {
-  return (
-    <div className="mb-10">
-      <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-        {label}
-        {unit && <span className="ml-1 text-white/30">({unit})</span>}
-      </div>
-      <input
-        type="number"
-        inputMode="decimal"
-        step={step}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
-        placeholder={placeholder}
-        className="w-full border-b border-white/15 bg-transparent py-3 text-3xl font-bold text-white tabular-nums focus:border-white focus:outline-none"
-      />
-    </div>
-  );
-}
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function HabityPage() {
   const [today, setToday] = useState<DailyCheckIn | null>(null);
   const [stats, setStats] = useState<HabitsStats | null>(null);
-  const [history, setHistory] = useState<DailyCheckIn[]>([]);
-  const [tips, setTips] = useState<RecoveryTip[]>([]);
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  useEffect(() => { document.title = 'FitAI — Habity'; }, []);
-
-  const reload = () => {
+  useEffect(() => { document.title = 'FitAI — Habits'; }, []);
+  useEffect(() => {
     getHabitsToday().then(setToday).catch(console.error);
     getHabitsStats().then(setStats).catch(console.error);
-    getHabitsHistory(84).then(setHistory).catch(console.error);
-    getRecoveryTips().then((r) => setTips(r.tips)).catch(console.error);
-  };
-  useEffect(reload, []);
+  }, []);
 
-  const update = async (patch: Partial<DailyCheckIn>) => {
+  async function toggle(key: keyof DailyCheckIn) {
     if (!today) return;
-    setToday({ ...today, ...patch });
+    const current = (today as unknown as Record<string, unknown>)[key as string];
+    const next = typeof current === 'number' ? (current >= 3 ? 0 : 5) : 5;
     setSaving(true);
     try {
-      const updated = await updateHabitsToday(patch);
+      const updated = await updateHabitsToday({ [key]: next } as Partial<DailyCheckIn>);
       setToday(updated);
-      setSavedAt(new Date());
-      const newStats = await getHabitsStats();
-      setStats(newStats);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (!today) {
-    return (
-      <V2Layout>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-        </div>
-      </V2Layout>
-    );
+      setStats(await getHabitsStats());
+    } catch { /* noop */ }
+    setSaving(false);
   }
 
+  const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const done = today ? FIELDS.filter(f => {
+    const v = (today as unknown as Record<string, unknown>)[f.key as string];
+    return typeof v === 'number' && v >= 3;
+  }).length : 0;
+
   return (
-    <V2Layout>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Dnes</V2SectionLabel>
-        <V2Display size="xl">Jak ti je?</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Krátký denní check-in. Pomáhá AI nastavit intenzitu a odhalit přetrénování dřív než tě dohoní.
-        </p>
-      </section>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <HabitHeader date={todayDate} />
+      <SummaryStrip done={done} total={FIELDS.length} stats={stats} />
+      <HabitsList today={today} onToggle={toggle} />
+      <EveningCTA />
+    </div>
+  );
+}
 
-      {/* Recovery score ring */}
-      {stats && stats.recoveryScore != null && (
-        <section className="mb-24 flex flex-col items-center">
-          <V2Ring
-            value={stats.recoveryScore}
-            total={100}
-            size={220}
-            color="#A8FF00"
-            label="Recovery score"
-            unit="bodů"
-          />
-          <div className="mt-6 grid grid-cols-3 gap-12 text-center">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Spánek 7d
-              </div>
-              <div className="mt-1 text-2xl font-bold text-white tabular-nums">
-                {stats.avgSleep ?? '—'}
-                <span className="text-sm text-white/30"> h</span>
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Energie 7d
-              </div>
-              <div className="mt-1 text-2xl font-bold text-white tabular-nums">
-                {stats.avgEnergy ?? '—'}
-                <span className="text-sm text-white/30">/5</span>
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Streak
-              </div>
-              <div className="mt-1 text-2xl font-bold text-white tabular-nums">
-                {stats.streakDays}
-                <span className="text-sm text-white/30"> dní</span>
-              </div>
-            </div>
+function HabitHeader({ date }: { date: string }) {
+  return (
+    <div style={{ marginBottom: 56, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      <div>
+        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Habits · {date}</div>
+        <h1 className="display-2" style={{ margin: 0, maxWidth: 720 }}>
+          The small things,<br />
+          <em style={{ color: 'var(--clay)', fontWeight: 300 }}>done daily.</em>
+        </h1>
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <Button variant="ghost" icon={<FitIcon name="plus" size={14} />}>Add habit</Button>
+        <Button variant="primary" icon={<FitIcon name="check" size={14} />}>Check in</Button>
+      </div>
+    </div>
+  );
+}
+
+function SummaryStrip({ done, total, stats }: { done: number; total: number; stats: HabitsStats | null }) {
+  const items = [
+    { eyebrow: 'Today', value: `${done}`, sub: `/ ${total}`, caption: `${total - done} remaining` },
+    { eyebrow: 'Streak', value: `${stats?.streakDays ?? 0}`, sub: 'days', caption: 'consecutive check-ins' },
+    { eyebrow: 'Recovery', value: `${stats?.recoveryScore ?? '--'}`, sub: '', caption: 'score out of 100' },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, 1fr)`, gap: 16, marginBottom: 48 }}>
+      {items.map(i => (
+        <Card key={i.eyebrow} padding={24}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>{i.eyebrow}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span className="numeric-display" style={{ fontSize: 56 }}>{i.value}</span>
+            {i.sub && <span style={{ fontSize: 18, color: 'var(--text-3)' }}>{i.sub}</span>}
           </div>
-        </section>
-      )}
+          <div className="caption" style={{ marginTop: 8 }}>{i.caption}</div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
-      {/* Activity heatmap */}
-      {history.length > 0 && stats && (
-        <section className="mb-24">
-          <V2SectionLabel>Aktivita</V2SectionLabel>
-          <ActivityHeatmap
-            history={history}
-            streakDays={stats.streakDays}
-            totalCheckIns={stats.totalCheckIns}
-          />
-        </section>
-      )}
+function HabitsList({ today, onToggle }: { today: DailyCheckIn | null; onToggle: (key: keyof DailyCheckIn) => void }) {
+  if (!today) return <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-3)' }}>Loading...</div>;
 
-      {/* AI recovery tips */}
-      {tips.length > 0 && (
-        <section className="mb-24">
-          <V2SectionLabel>AI doporučení</V2SectionLabel>
-          <div className="space-y-1">
-            {tips.map((t, i) => (
-              <div key={i} className="border-b border-white/8 py-6">
-                <div
-                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
-                  style={{ color: tipColors[t.category] || '#FFF' }}
-                >
-                  {t.category} · {t.priority}
-                </div>
-                <V2Display size="md">{t.title}</V2Display>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">{t.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {FIELDS.map(f => {
+        const val = (today as unknown as Record<string, unknown>)[f.key as string];
+        const isDone = typeof val === 'number' && val >= 3;
+        return (
+          <HabitRow key={f.key} field={f} done={isDone} value={val} onToggle={() => onToggle(f.key)} />
+        );
+      })}
+    </div>
+  );
+}
 
-      {/* Today's check-in form */}
-      <section className="mb-24">
-        <div className="mb-8 flex items-baseline justify-between">
-          <V2Display size="md">Dnešní check-in</V2Display>
-          {savedAt && (
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#A8FF00]">
-              ✓ Uloženo
-            </span>
-          )}
+function HabitRow({ field, done, value, onToggle }: {
+  field: typeof FIELDS[number]; done: boolean; value: unknown; onToggle: () => void;
+}) {
+  return (
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--stroke-1)',
+      borderRadius: 'var(--r-md, 12px)', padding: '20px 24px',
+      display: 'grid', gridTemplateColumns: '40px 1fr 80px 40px', gap: 24, alignItems: 'center',
+    }}>
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bg-3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <FitIcon name={field.icon} size={20} />
+      </div>
+      <div>
+        <div className="title" style={{ marginBottom: 2 }}>{field.label}</div>
+        <div className="caption" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <FitIcon name="flame" size={12} color="var(--accent)" />
+          {typeof value === 'number' ? `${value}${field.unit ?? ''}` : 'not set'}
         </div>
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <Tag color={done ? 'var(--sage, #A8B89A)' : undefined}>{done ? 'done' : 'pending'}</Tag>
+      </div>
+      <button onClick={onToggle} style={{
+        width: 32, height: 32, borderRadius: '50%',
+        background: done ? 'var(--sage, #A8B89A)' : 'transparent',
+        border: done ? 'none' : '1.5px solid var(--stroke-2)',
+        color: done ? '#000' : 'var(--text-3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+      }}>
+        {done && <FitIcon name="check" size={16} color="#000" />}
+      </button>
+    </div>
+  );
+}
 
-        <NumberInput
-          label="Spánek"
-          unit="hodin"
-          value={today.sleepHours}
-          onChange={(v) => update({ sleepHours: v })}
-          step={0.5}
-          placeholder="8"
-        />
-        <Scale1to5
-          label="Kvalita spánku"
-          value={today.sleepQuality}
-          onChange={(v) => update({ sleepQuality: v })}
-          hint="1 = hrozný · 5 = vynikající"
-        />
-        <Scale1to5
-          label="Energie"
-          value={today.energy}
-          onChange={(v) => update({ energy: v })}
-          hint="Jak se cítíš fyzicky"
-        />
-        <Scale1to5
-          label="Bolest svalů"
-          value={today.soreness}
-          onChange={(v) => update({ soreness: v })}
-          hint="1 = žádná · 5 = silná"
-        />
-        <Scale1to5
-          label="Stres"
-          value={today.stress}
-          onChange={(v) => update({ stress: v })}
-          hint="1 = klid · 5 = vysoký"
-        />
-        <Scale1to5
-          label="Nálada"
-          value={today.mood}
-          onChange={(v) => update({ mood: v })}
-        />
-        <NumberInput
-          label="Voda"
-          unit="litrů"
-          value={today.hydrationL}
-          onChange={(v) => update({ hydrationL: v })}
-          step={0.25}
-          placeholder="2.5"
-        />
-        <NumberInput
-          label="Kroky"
-          value={today.steps}
-          onChange={(v) => update({ steps: v })}
-          step={500}
-          placeholder="8000"
-        />
-      </section>
-
-      {/* History */}
-      {history.length > 0 && (
-        <section className="mb-24">
-          <V2SectionLabel>Posledních 14 dní</V2SectionLabel>
-          <div className="space-y-1">
-            {history.map((h) => {
-              const d = new Date(h.date as any);
-              return (
-                <div
-                  key={h.id || (h.date as any)}
-                  className="flex items-center justify-between border-b border-white/8 py-4"
-                >
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                      {d.toLocaleDateString('cs-CZ', { weekday: 'short' })}
-                    </div>
-                    <div className="text-base text-white tabular-nums">
-                      {d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric' })}
-                    </div>
-                  </div>
-                  <div className="flex gap-6 text-sm text-white/60 tabular-nums">
-                    {h.sleepHours != null && (
-                      <span>
-                        💤 {h.sleepHours}<span className="text-white/30">h</span>
-                      </span>
-                    )}
-                    {h.energy != null && (
-                      <span>
-                        ⚡ {h.energy}<span className="text-white/30">/5</span>
-                      </span>
-                    )}
-                    {h.soreness != null && (
-                      <span>
-                        🩹 {h.soreness}<span className="text-white/30">/5</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-    </V2Layout>
+function EveningCTA() {
+  return (
+    <Card padding={32} style={{ marginTop: 48, background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(232,93,44,0.08) 100%)', border: '1px solid var(--stroke-2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div className="eyebrow-serif" style={{ marginBottom: 8 }}>Evening ritual</div>
+          <div className="display-3" style={{ marginBottom: 4 }}>How did today feel?</div>
+          <div className="body">2-minute check-in: mood, energy, sleep readiness</div>
+        </div>
+        <Button variant="accent" iconRight={<FitIcon name="arrow" size={14} />} size="lg">Begin ritual</Button>
+      </div>
+    </Card>
   );
 }

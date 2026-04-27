@@ -1,13 +1,7 @@
 'use client';
-
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
-import { MonthChapter } from '@/components/journal/MonthChapter';
-import { DayCard } from '@/components/journal/DayCard';
-import { MilestoneBadge } from '@/components/journal/MilestoneBadge';
+import { Card, Button, Chip, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import {
   getJournalMonth,
   getJournalMilestones,
@@ -21,11 +15,12 @@ import {
   type Milestone,
 } from '@/lib/api';
 
+const MOODS = ['terrible', 'bad', 'neutral', 'good', 'great'] as const;
+const MOOD_COLORS = ['#ef4444', '#f97316', 'var(--text-3)', 'var(--sage)', 'var(--accent)'];
+
 function getCurrentMonth(): string {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function shiftMonth(month: string, delta: number): string {
@@ -34,259 +29,192 @@ function shiftMonth(month: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-const MONTH_NAMES_CS = [
-  'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
-  'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec',
-];
-
-function formatMonthLabel(month: string): string {
-  const [year, m] = month.split('-');
-  return `${MONTH_NAMES_CS[parseInt(m, 10) - 1]} ${year}`;
-}
-
 export default function JournalPage() {
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth);
   const [days, setDays] = useState<JournalDay[]>([]);
-  const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [todayMood, setTodayMood] = useState(3);
+  const [todayEnergy, setTodayEnergy] = useState(7);
+  const [todayText, setTodayText] = useState('');
 
-  useEffect(() => { document.title = 'FitAI — Deník'; }, []);
+  useEffect(() => { document.title = 'FitAI — Journal'; }, []);
 
   const loadMonth = useCallback(async (month: string) => {
     setLoading(true);
     setError(null);
-    setSummary(null);
     try {
       const [journalRes, milestonesRes] = await Promise.all([
-        getJournalMonth(month),
-        getJournalMilestones(),
+        getJournalMonth(month), getJournalMilestones(),
       ]);
       setDays(journalRes.days);
       setMilestones(milestonesRes.milestones);
-    } catch {
-      setError('Nepodarilo se nacist zaznamy');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError('Failed to load entries'); }
+    finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    loadMonth(currentMonth);
-  }, [currentMonth, loadMonth]);
+  useEffect(() => { loadMonth(currentMonth); }, [currentMonth, loadMonth]);
 
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'ArrowLeft') goToPreviousMonth();
-      if (e.key === 'ArrowRight') goToNextMonth();
-    }
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, []);
-
-  async function handleLoadSummary() {
+  async function handleSaveToday() {
+    const today = new Date().toISOString().slice(0, 10);
     try {
-      const res = await getJournalMonthlySummary(currentMonth);
-      setSummary(res);
-    } catch {
-      setError('Nepodarilo se nacist mesicni shrnuti');
-    }
+      await upsertJournalEntry(today, { mood: MOODS[todayMood], energy: todayEnergy, notes: todayText });
+      await loadMonth(currentMonth);
+    } catch { setError('Failed to save entry'); }
   }
 
   async function handleUpdate(date: string, data: Record<string, unknown>) {
-    // Handle special photo delete action
-    if (data.deletePhoto) {
-      await deleteJournalPhoto(data.deletePhoto as string);
-      await loadMonth(currentMonth);
-      return;
-    }
-    // Empty update = refresh (e.g., after photo upload)
-    if (Object.keys(data).length === 0) {
-      await loadMonth(currentMonth);
-      return;
-    }
-    // Optimistic update
-    try {
-      await upsertJournalEntry(date, data);
-      await loadMonth(currentMonth);
-    } catch {
-      setError('Nepodarilo se ulozit zaznam');
-    }
+    if (data.deletePhoto) { await deleteJournalPhoto(data.deletePhoto as string); await loadMonth(currentMonth); return; }
+    if (Object.keys(data).length === 0) { await loadMonth(currentMonth); return; }
+    try { await upsertJournalEntry(date, data); await loadMonth(currentMonth); }
+    catch { setError('Failed to save entry'); }
   }
 
-  async function handleRequestInsight(date: string) {
-    try {
-      await generateJournalInsight(date);
-      await loadMonth(currentMonth);
-    } catch {
-      setError('Nepodarilo se vygenerovat AI insight');
-    }
+  async function handleInsight(date: string) {
+    try { await generateJournalInsight(date); await loadMonth(currentMonth); }
+    catch { setError('Failed to generate AI insight'); }
   }
 
-  function goToPreviousMonth() {
-    setCurrentMonth((m) => shiftMonth(m, -1));
-  }
-
-  function goToNextMonth() {
-    setCurrentMonth((m) => shiftMonth(m, 1));
-  }
-
-  // Stats from current month data
-  const entriesCount = days.filter((d) => d.entry).length;
-  const workoutsCount = days.filter((d) => d.gymSession).length;
-  const prCount = days.filter(
-    (d) => d.gymSession && d.gymSession.averageFormScore > 80,
-  ).length;
-
-  // Sort days reverse chronological
-  const sortedDays = [...days].sort(
-    (a, b) => b.date.localeCompare(a.date),
-  );
-
-  // Build milestone date set for rendering between days
-  const milestoneDateSet = new Map<string, string>();
-  for (const ms of milestones) {
-    if (ms.achievedAt) {
-      const dateKey = ms.achievedAt.slice(0, 10);
-      milestoneDateSet.set(dateKey, ms.label);
-    }
-  }
+  const sorted = [...days].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <V2Layout>
-      {/* Hero */}
-      <div className="mb-10 pt-4">
-        <h1
-          className="mb-2 text-4xl font-bold tracking-tight text-white"
-          style={{ letterSpacing: '-0.04em' }}
-        >
-          Můj deník
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '40px 56px' }}>
+      <JournalHeader month={currentMonth} onPrev={() => setCurrentMonth((m) => shiftMonth(m, -1))} onNext={() => setCurrentMonth((m) => shiftMonth(m, 1))} onExport={() => downloadExport(`export/journal?month=${currentMonth}`, `fitai-journal-${currentMonth}.csv`).catch(console.error)} />
+
+      <TodayEntry mood={todayMood} energy={todayEnergy} text={todayText} onMood={setTodayMood} onEnergy={setTodayEnergy} onText={setTodayText} onSave={handleSaveToday} />
+
+      <MoodHeatmap days={days} />
+
+      {error && <div style={{ marginBottom: 16, padding: '12px 20px', borderRadius: 12, border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.05)', color: '#ef4444', fontSize: 13 }}>{error}</div>}
+
+      <PastEntries days={sorted} loading={loading} onUpdate={handleUpdate} onInsight={handleInsight} />
+    </div>
+  );
+}
+
+function JournalHeader({ month, onPrev, onNext, onExport }: { month: string; onPrev: () => void; onNext: () => void; onExport: () => void }) {
+  const [y, m] = month.split('-');
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return (
+    <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Journal · {names[parseInt(m) - 1]} {y}</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
+          Reflect.<br /><span className="v3-clay" style={{ fontWeight: 300 }}>Grow.</span>
         </h1>
-        <div className="flex gap-6 text-sm text-white/40">
-          <span>{entriesCount} záznamů</span>
-          <span>{workoutsCount} tréninků</span>
-          <span style={{ color: '#FFD600' }}>{prCount} PR</span>
-        </div>
       </div>
-
-      {/* Month navigation */}
-      <div className="mb-8 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={goToPreviousMonth}
-          aria-label="Predchozi mesic"
-          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-white/60 transition hover:text-white"
-        >
-          &larr;
-        </button>
-        <span className="text-sm font-medium text-white/70">
-          {formatMonthLabel(currentMonth)}
-        </span>
-        <button
-          type="button"
-          onClick={goToNextMonth}
-          aria-label="Dalsi mesic"
-          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-white/60 transition hover:text-white"
-        >
-          &rarr;
-        </button>
-        <button onClick={() => loadMonth(currentMonth)} className="text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 4v6h6M23 20v-6h-6"/>
-            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => downloadExport(`export/journal?month=${currentMonth}`, `fitai-journal-${currentMonth}.csv`).catch(console.error)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40 transition hover:border-white/25 hover:text-white"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          CSV
-        </button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Button variant="ghost" size="sm" onClick={onPrev}><FitIcon name="arrow" size={14} style={{ transform: 'rotate(180deg)' }} /></Button>
+        <Button variant="ghost" size="sm" onClick={onNext}><FitIcon name="arrow" size={14} /></Button>
+        <Button variant="ghost" size="sm" onClick={onExport}>CSV</Button>
       </div>
+    </div>
+  );
+}
 
-      {/* Cross-links */}
-      <div className="mb-6 flex gap-3">
-        <Link href="/wrapped" className="rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/40 transition hover:text-white hover:border-white/25">
-          Wrapped shrnutí
-        </Link>
-        <Link href="/gym" className="rounded-full border border-white/10 px-4 py-1.5 text-xs text-white/40 transition hover:text-white hover:border-white/25">
-          Začít trénink
-        </Link>
-      </div>
-
-      {/* Month chapter */}
-      <MonthChapter
-        month={currentMonth}
-        summary={summary}
-        onLoadSummary={handleLoadSummary}
-      />
-
-      {/* Error */}
-      {error && (
-        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
-          {error}
-        </div>
-      )}
-
-      {/* Days */}
-      {loading ? (
-        <div className="space-y-4 py-8">
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={3} />
-          <SkeletonCard lines={2} />
-        </div>
-      ) : sortedDays.length === 0 ? (
-        <div className="py-20 text-center text-white/20">
-          Žádné záznamy pro tento měsíc
-        </div>
-      ) : (
-        <div key={currentMonth} className="animate-fadeIn">
-          <div>
-            <V2SectionLabel>Záznamy</V2SectionLabel>
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-white/5" />
-              <StaggerContainer>
-                {sortedDays.map((day) => {
-                  const milestoneLabel = milestoneDateSet.get(day.date);
-                  return (
-                    <StaggerItem key={day.date}>
-                      <div className="relative pl-12">
-                        {/* Timeline dot */}
-                        <div className="absolute left-[15px] top-8 h-2 w-2 rounded-full bg-white/20" />
-                        {milestoneLabel && <MilestoneBadge label={milestoneLabel} />}
-                        <DayCard
-                          day={day}
-                          onUpdate={handleUpdate}
-                          onRequestInsight={handleRequestInsight}
-                        />
-                      </div>
-                    </StaggerItem>
-                  );
-                })}
-              </StaggerContainer>
-            </div>
+function TodayEntry({ mood, energy, text, onMood, onEnergy, onText, onSave }: { mood: number; energy: number; text: string; onMood: (n: number) => void; onEnergy: (n: number) => void; onText: (s: string) => void; onSave: () => void }) {
+  return (
+    <Card padding={32} style={{ marginBottom: 32, background: 'linear-gradient(135deg, var(--bg-card), rgba(232,93,44,0.04))' }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 16 }}>How are you today?</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 24 }}>
+        <div>
+          <div className="v3-caption" style={{ marginBottom: 12 }}>Mood</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[0,1,2,3,4].map((i) => (
+              <button key={i} onClick={() => onMood(i)} style={{
+                width: 44, height: 44, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: i === mood ? MOOD_COLORS[i] : 'var(--bg-3)', transition: 'transform .15s',
+                transform: i === mood ? 'scale(1.15)' : 'scale(1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: i === mood ? '#fff' : 'var(--text-3)' }}>{i + 1}</span>
+              </button>
+            ))}
           </div>
         </div>
-      )}
-
-      {/* Load older */}
-      <div className="mt-8 text-center">
-        <button
-          type="button"
-          onClick={goToPreviousMonth}
-          className="text-sm text-white/30 transition hover:text-white/60"
-        >
-          Načíst starší &darr;
-        </button>
+        <div>
+          <div className="v3-caption" style={{ marginBottom: 12 }}>Energy</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input type="range" min={1} max={10} value={energy} onChange={(e) => onEnergy(+e.target.value)} style={{ flex: 1, accentColor: 'var(--accent)' }} />
+            <span className="v3-numeric" style={{ fontSize: 18, color: 'var(--text-1)' }}>{energy}/10</span>
+          </div>
+        </div>
+        <div>
+          <div className="v3-caption" style={{ marginBottom: 12 }}>Sleep</div>
+          <div className="v3-numeric" style={{ fontSize: 32, color: 'var(--accent)' }}>--</div>
+        </div>
       </div>
-    </V2Layout>
+      <textarea
+        value={text} onChange={(e) => onText(e.target.value)}
+        placeholder="What's on your mind?"
+        style={{ width: '100%', minHeight: 100, padding: 16, background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 12, color: 'var(--text-1)', fontSize: 14, fontFamily: 'var(--font-text)', resize: 'vertical' }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+        <Button variant="accent" onClick={onSave}>Save entry</Button>
+      </div>
+    </Card>
+  );
+}
+
+function MoodHeatmap({ days }: { days: JournalDay[] }) {
+  const recent = [...days].sort((a, b) => a.date.localeCompare(b.date)).slice(-14);
+  if (recent.length === 0) return null;
+
+  return (
+    <Card padding={24} style={{ marginBottom: 24 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 16 }}>Mood · last 14 days</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: 6 }}>
+        {recent.map((d, i) => {
+          const moodIdx = d.entry?.mood ? MOODS.indexOf(d.entry.mood as typeof MOODS[number]) : -1;
+          return (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <div style={{
+                aspectRatio: '1', borderRadius: 8,
+                background: moodIdx >= 0 ? MOOD_COLORS[moodIdx] : 'var(--bg-3)',
+                opacity: moodIdx >= 0 ? (0.4 + moodIdx * 0.15) : 0.2,
+              }} />
+              <div className="v3-caption" style={{ marginTop: 4, fontSize: 9 }}>{new Date(d.date).getDate()}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function PastEntries({ days, loading, onUpdate, onInsight }: { days: JournalDay[]; loading: boolean; onUpdate: (d: string, data: Record<string, unknown>) => void; onInsight: (d: string) => void }) {
+  if (loading) return <div className="v3-caption" style={{ textAlign: 'center', padding: 40 }}>Loading...</div>;
+
+  const withEntries = days.filter((d) => d.entry);
+  if (withEntries.length === 0) return <div className="v3-caption" style={{ textAlign: 'center', padding: 40 }}>No entries this month.</div>;
+
+  return (
+    <div>
+      <SectionHeader eyebrow="Recent" title="Past entries" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {withEntries.slice(0, 10).map((d) => (
+          <Card key={d.date} padding={24}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: MOOD_COLORS[MOODS.indexOf(d.entry!.mood as typeof MOODS[number]) || 2], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{(MOODS.indexOf(d.entry!.mood as typeof MOODS[number]) || 2) + 1}</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="v3-caption" style={{ marginBottom: 6 }}>
+                  {new Date(d.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </div>
+                <div style={{ fontSize: 14, color: 'var(--text-1)', lineHeight: 1.5 }}>
+                  {d.entry?.notes || 'No notes.'}
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => onInsight(d.date)}>
+                <FitIcon name="bolt" size={12} />
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

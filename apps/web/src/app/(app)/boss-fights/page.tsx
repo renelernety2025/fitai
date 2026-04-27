@@ -1,36 +1,35 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { getBossFights, startBoss, completeBoss } from '@/lib/api';
+import { Card, Button, Tag, SectionHeader, Ring } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import { getBossFights, startBoss, completeBoss, getSkillTree } from '@/lib/api';
 
-const BOSS_EMOJI: Record<string, string> = {
-  minotaur: '\uD83D\uDC02',
-  hydra: '\uD83D\uDC09',
-  atlas: '\uD83C\uDFCB\uFE0F',
-  sparta: '\u2694\uFE0F',
-  olymp: '\uD83C\uDFD4\uFE0F',
-};
+const SKILLS = [
+  { x: 50, y: 12, label: 'Foundation', lvl: 'I' },
+  { x: 25, y: 32, label: 'Strength', lvl: 'II' },
+  { x: 75, y: 32, label: 'Endurance', lvl: 'II' },
+  { x: 12, y: 56, label: 'Power', lvl: 'III' },
+  { x: 38, y: 56, label: 'Mobility', lvl: 'II' },
+  { x: 62, y: 56, label: 'Speed', lvl: 'III' },
+  { x: 88, y: 56, label: 'Recovery', lvl: 'II' },
+  { x: 25, y: 78, label: 'Olympic', lvl: 'IV' },
+  { x: 50, y: 78, label: 'Mental', lvl: 'IV' },
+  { x: 75, y: 78, label: 'Marathon', lvl: 'IV' },
+  { x: 50, y: 95, label: 'Mastery', lvl: 'V' },
+];
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
+const EDGES = [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,7],[4,7],[4,8],[5,8],[5,9],[6,9],[7,10],[8,10],[9,10]];
 
 export default function BossFightsPage() {
   const [data, setData] = useState<any>(null);
   const [activeBoss, setActiveBoss] = useState<any>(null);
   const [timer, setTimer] = useState(0);
   const [running, setRunning] = useState(false);
-  const [instructions, setInstructions] = useState<string | null>(null);
   const [scoreInput, setScoreInput] = useState('');
-  const [completing, setCompleting] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => { document.title = 'FitAI — Aréna'; }, []);
-
+  useEffect(() => { document.title = 'FitAI — Boss Fights'; }, []);
   useEffect(() => {
     getBossFights().then(setData).catch(() => {});
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
@@ -40,130 +39,158 @@ export default function BossFightsPage() {
     try {
       const result = await startBoss(boss.code);
       setActiveBoss(boss);
-      setInstructions(result.instructions || boss.description);
       setTimer(0);
       setRunning(true);
       setScoreInput('');
       if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(() => setTimer((t) => t + 1), 1000);
+      intervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
     } catch { /* noop */ }
   }, []);
 
   const handleComplete = useCallback(async () => {
     if (!activeBoss) return;
-    setCompleting(true);
     if (intervalRef.current) clearInterval(intervalRef.current);
     setRunning(false);
     try {
-      await completeBoss(activeBoss.code, {
-        timeSeconds: timer,
-        score: scoreInput ? parseInt(scoreInput) : undefined,
-      });
-      // Refresh boss list to show defeated status
+      await completeBoss(activeBoss.code, { timeSeconds: timer, score: scoreInput ? parseInt(scoreInput) : undefined });
       getBossFights().then(setData).catch(() => {});
-    } catch { /* noop */ } finally {
-      setCompleting(false);
-      setActiveBoss(null);
-      setInstructions(null);
-    }
+    } catch { /* noop */ }
+    setActiveBoss(null);
   }, [activeBoss, timer, scoreInput]);
 
-  const bosses = data?.bosses || [];
-  const defeated = data?.defeated || [];
-  const defeatedCodes = new Set(defeated.map((d: any) => d.code));
+  const bosses = data?.bosses ?? [];
+  const defeated = data?.defeated ?? [];
+  const defeatedSet = new Set<string>(defeated.map((d: any) => d.code as string));
+  const userXP = data?.userXP ?? 0;
+  const userLevel = data?.userLevel ?? 1;
+  const nextLevelXP = data?.nextLevelXP ?? 1000;
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8 text-center">
-        <V2SectionLabel>Epicky souboj</V2SectionLabel>
-        <V2Display size="xl">Arena.</V2Display>
-        <p className="mt-4 text-base text-white/55">
-          Poraz bossy. Ziskej XP. Dokazes to.
-        </p>
-      </section>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <BossHeader />
 
-      {/* Active boss fight */}
-      {activeBoss && (
-        <section className="mb-12 rounded-2xl border border-[#FFD600]/30 bg-[#FFD600]/5 p-8 text-center">
-          <div className="mb-2 text-4xl">{BOSS_EMOJI[activeBoss.code] || '\uD83D\uDC79'}</div>
-          <h3 className="mb-1 text-xl font-bold text-white">{activeBoss.nameCs || activeBoss.name}</h3>
-          {instructions && <p className="mb-6 text-sm text-white/55">{instructions}</p>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32 }}>
+        <SkillTreeCard defeatedSet={defeatedSet} />
+        <div>
+          <QuestsSection bosses={bosses} defeatedSet={defeatedSet} activeBoss={activeBoss}
+            onStart={handleStart} running={running} timer={timer} scoreInput={scoreInput}
+            setScoreInput={setScoreInput} onComplete={handleComplete} />
+          <XPBar xp={userXP} level={userLevel} nextXP={nextLevelXP} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-          <div
-            className="mb-6 text-5xl font-bold tabular-nums text-[#FFD600]"
-            style={{
-              letterSpacing: '-0.03em',
-              animation: running ? 'timerPulse 1.5s ease-in-out infinite' : undefined,
-            }}
-          >
-            {formatTime(timer)}
-          </div>
+function BossHeader() {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Boss Fights · Skill Tree</div>
+      <h1 className="display-2" style={{ margin: 0 }}>
+        The long<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>game.</em>
+      </h1>
+    </div>
+  );
+}
 
-          {running ? (
-            <div className="flex flex-col items-center gap-4">
-              <input type="number" placeholder="Skore (nepovinne)" value={scoreInput}
-                onChange={(e) => setScoreInput(e.target.value)}
-                className="w-48 rounded-xl border border-white/10 bg-black px-4 py-3 text-center text-sm text-white placeholder:text-white/30 outline-none"
-              />
-              <button onClick={handleComplete} disabled={completing}
-                className="rounded-full bg-[#FF375F] px-10 py-4 text-sm font-bold text-white transition hover:bg-[#FF375F]/80 disabled:opacity-50"
-              >
-                {completing ? 'Ukladam...' : 'Porazit!'}
-              </button>
-            </div>
-          ) : null}
-        </section>
-      )}
-
-      {/* Boss grid */}
-      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {bosses.map((boss: any) => {
-          const isDefeated = defeatedCodes.has(boss.code);
-          const best = defeated.find((d: any) => d.code === boss.code);
+function SkillTreeCard({ defeatedSet }: { defeatedSet: Set<string> }) {
+  const earnedCount = Math.min(SKILLS.length, defeatedSet.size + 3);
+  return (
+    <Card padding={32}>
+      <div className="eyebrow" style={{ marginBottom: 8 }}>Skill tree · {earnedCount} of {SKILLS.length} unlocked</div>
+      <div className="title" style={{ marginBottom: 24 }}>Where you have grown</div>
+      <div style={{ position: 'relative', aspectRatio: '4/5', borderRadius: 12 }}>
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 100 110" preserveAspectRatio="none">
+          {EDGES.map(([a, b], i) => {
+            const sa = SKILLS[a], sb = SKILLS[b];
+            const both = a < earnedCount && b < earnedCount;
+            return (
+              <line key={i} x1={sa.x} y1={sa.y} x2={sb.x} y2={sb.y}
+                stroke={both ? 'var(--accent)' : 'var(--stroke-2)'} strokeWidth="0.3"
+                strokeDasharray={both ? '0' : '1 1'} />
+            );
+          })}
+        </svg>
+        {SKILLS.map((s, i) => {
+          const earned = i < earnedCount;
           return (
-            <StaggerItem key={boss.code}>
-            <div
-              className={`rounded-2xl border p-6 transition ${
-                isDefeated
-                  ? 'border-[#FFD600]/40 bg-[#FFD600]/5'
-                  : 'border-white/8 hover:border-white/20 hover:bg-white/[0.02]'
-              }`}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-3xl">{BOSS_EMOJI[boss.code] || '\uD83D\uDC79'}</span>
-                {isDefeated && (
-                  <span className="flex items-center gap-1 text-[10px] font-semibold text-[#FFD600]">
-                    Porazeno &#10003;
-                  </span>
-                )}
-              </div>
-              <h3 className="text-lg font-bold text-white">{boss.nameCs || boss.name}</h3>
-              <p className="mt-1 text-xs text-white/50">{boss.description}</p>
-              <div className="mt-3 flex items-center gap-4 text-[11px] text-white/40">
-                <span>Cil: {boss.targetTimeSeconds ? formatTime(boss.targetTimeSeconds) : 'N/A'}</span>
-                <span className="text-[#FFD600] font-semibold">+{boss.xpReward || 0} XP</span>
-              </div>
-              {best && (
-                <div className="mt-2 text-[11px] text-[#A8FF00]">
-                  Nejlepsi cas: {formatTime(best.bestTimeSeconds || 0)}
-                </div>
-              )}
-              <button onClick={() => handleStart(boss)} disabled={!!activeBoss}
-                className="mt-4 w-full rounded-full border border-white/15 py-2.5 text-xs font-semibold text-white transition hover:bg-white/5 disabled:opacity-30"
-              >
-                Zahajit boj
-              </button>
+            <div key={i} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: earned ? 'linear-gradient(135deg, var(--accent), var(--clay))' : 'var(--bg-3)',
+                border: earned ? '2px solid var(--accent)' : '1px dashed var(--stroke-2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: earned ? '0 0 20px rgba(232,93,44,0.4)' : 'none',
+                fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-mono)',
+                color: earned ? '#fff' : 'var(--text-3)', margin: '0 auto 6px',
+              }}>{s.lvl}</div>
+              <div style={{ fontSize: 10, color: earned ? 'var(--text-1)' : 'var(--text-3)', whiteSpace: 'nowrap' }}>{s.label}</div>
             </div>
-            </StaggerItem>
           );
         })}
-      </StaggerContainer>
-
-      {bosses.length === 0 && !activeBoss && (
-        <div className="flex items-center justify-center py-32">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#FFD600]" />
-        </div>
-      )}
-    </V2Layout>
+      </div>
+    </Card>
   );
+}
+
+function QuestsSection({ bosses, defeatedSet, activeBoss, onStart, running, timer, scoreInput, setScoreInput, onComplete }: any) {
+  return (
+    <>
+      <SectionHeader eyebrow="Active quests" title="Boss fights" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {bosses.map((b: any) => {
+          const isDefeated = defeatedSet.has(b.code);
+          const isActive = activeBoss?.code === b.code;
+          return (
+            <Card key={b.code} padding={20} hover style={{ opacity: isDefeated ? 0.5 : 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <Ring value={isActive ? Math.min(100, (timer / (b.targetTimeSeconds || 300)) * 100) : (isDefeated ? 100 : 0)}
+                  size={56} stroke={4} color={isDefeated ? 'var(--sage, #A8B89A)' : 'var(--accent)'}
+                  label={isActive ? formatTime(timer) : undefined} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ marginBottom: 6 }}><Tag color="var(--accent)">+{b.xpReward || 0} XP</Tag></div>
+                  <div className="title" style={{ marginBottom: 2 }}>{b.nameCs || b.name}</div>
+                  <div className="caption">{b.description}</div>
+                </div>
+                {!isActive && !isDefeated && (
+                  <Button variant="ghost" size="sm" onClick={() => onStart(b)} disabled={!!activeBoss}>Start</Button>
+                )}
+                {isActive && running && (
+                  <Button variant="accent" size="sm" onClick={onComplete}>Finish</Button>
+                )}
+                {isDefeated && <FitIcon name="check" size={20} color="var(--sage, #A8B89A)" />}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function XPBar({ xp, level, nextXP }: { xp: number; level: number; nextXP: number }) {
+  const pct = Math.min(100, (xp / nextXP) * 100);
+  return (
+    <Card padding={24} style={{ marginTop: 16, background: 'linear-gradient(135deg, var(--bg-card), rgba(232,93,44,0.08))' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+        <div>
+          <div className="eyebrow">Level</div>
+          <div className="numeric-display" style={{ fontSize: 48, lineHeight: 1, color: 'var(--accent)' }}>{level}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div className="caption">{xp.toLocaleString()} / {nextXP.toLocaleString()} XP</div>
+          <div className="caption" style={{ marginTop: 4, color: 'var(--accent)' }}>{(nextXP - xp).toLocaleString()} to next</div>
+        </div>
+      </div>
+      <div style={{ height: 6, background: 'var(--bg-3)', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent)' }} />
+      </div>
+    </Card>
+  );
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }

@@ -3,285 +3,213 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Button, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { useAuth } from '@/lib/auth-context';
-import { FadeIn } from '@/components/v2/motion';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
-function getToken() {
-  return typeof window !== 'undefined'
-    ? localStorage.getItem('fitai_token')
-    : null;
-}
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('fitai_token') : null; }
 
 async function apiPut(path: string, body: Record<string, string>) {
-  const res = await fetch(`${API_BASE}/api${path}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Request failed');
-  }
+  const res = await fetch(`${API_BASE}/api${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Request failed'); }
   return res.json();
 }
 
 async function apiDelete(path: string) {
-  const res = await fetch(`${API_BASE}/api${path}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || 'Request failed');
-  }
+  const res = await fetch(`${API_BASE}/api${path}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
+  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Request failed'); }
   return res.json();
 }
+
+const SECTIONS = [
+  { id: 'account', label: 'Account', icon: 'users' },
+  { id: 'notif', label: 'Notifications', icon: 'pulse' },
+  { id: 'integ', label: 'Integrations', icon: 'bolt' },
+  { id: 'priv', label: 'Privacy & data', icon: 'lock' },
+  { id: 'app', label: 'Preferences', icon: 'settings' },
+] as const;
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    document.title = 'FitAI — Nastaveni';
-  }, []);
+  const [active, setActive] = useState<string>('account');
+  useEffect(() => { document.title = 'FitAI — Settings'; }, []);
 
   return (
-    <V2Layout>
-      <Link
-        href="/profile"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white"
-      >
-        &larr; Profil
-      </Link>
-
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Ucet</V2SectionLabel>
-        <V2Display size="xl">Nastaveni</V2Display>
-      </section>
-
-      <FadeIn delay={0.1}>
-        <NameSection currentName={user?.name || ''} />
-      </FadeIn>
-
-      <FadeIn delay={0.2}>
-        <PasswordSection />
-      </FadeIn>
-
-      <FadeIn delay={0.3}>
-        <section className="mb-24">
-          <V2SectionLabel>Uzitecne</V2SectionLabel>
-          <Link
-            href="/export"
-            className="inline-flex rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
-          >
-            Export dat
-          </Link>
-        </section>
-      </FadeIn>
-
-      <FadeIn delay={0.4}>
-        <DeleteSection
-          onDeleted={() => {
-            logout();
-            router.push('/login');
-          }}
-        />
-      </FadeIn>
-    </V2Layout>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', display: 'grid', gridTemplateColumns: '280px 1fr' }}>
+      <Sidebar active={active} onSelect={setActive} />
+      <div style={{ padding: '40px 56px', maxWidth: 880 }}>
+        {active === 'account' && <AccountSection name={user?.name || ''} onDeleted={() => { logout(); router.push('/login'); }} />}
+        {active === 'notif' && <NotifSection />}
+        {active === 'integ' && <IntegSection />}
+        {active === 'priv' && <SectionShell eyebrow="Privacy" title="Your data," accent="your rules."><Card padding={24}><div className="v3-body" style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>Your data is stored securely on AWS EU-West-1. Only you can see personal records, body photos, and journal entries.</div></Card></SectionShell>}
+        {active === 'app' && <SectionShell eyebrow="Preferences" title="Make it" accent="yours."><Card padding={24}><div className="v3-caption" style={{ textAlign: 'center', padding: 32 }}>Preference options coming soon.</div></Card></SectionShell>}
+      </div>
+    </div>
   );
 }
 
-function NameSection({ currentName }: { currentName: string }) {
-  const [name, setName] = useState(currentName);
-  const [msg, setMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setMsg('');
-    setLoading(true);
-    try {
-      await apiPut('/users/me/name', { name });
-      setMsg('Jmeno zmeneno');
-    } catch (err: unknown) {
-      setMsg(err instanceof Error ? err.message : 'Error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <section className="mb-24">
-      <V2SectionLabel>Zmena jmena</V2SectionLabel>
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          minLength={1}
-          className="w-full bg-transparent py-3 text-lg text-white transition focus:outline-none"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}
-        />
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-30"
-          >
-            {loading ? 'Ukladam...' : 'Ulozit'}
-          </button>
-          {msg && (
-            <span className="text-sm text-[#A8FF00]">{msg}</span>
-          )}
-        </div>
-      </form>
-    </section>
-  );
+function SectionShell({ eyebrow, title, accent, children }: { eyebrow: string; title: string; accent: string; children: React.ReactNode }) {
+  return (<><div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>{eyebrow}</div><h1 className="v3-display-2" style={{ margin: '0 0 32px' }}>{title}<br /><span className="v3-clay" style={{ fontWeight: 300 }}>{accent}</span></h1>{children}</>);
 }
 
-function PasswordSection() {
-  const [current, setCurrent] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [msg, setMsg] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setMsg('');
-    setError('');
-    if (newPw !== confirm) {
-      setError('Hesla se neshoduji');
-      return;
-    }
-    setLoading(true);
-    try {
-      await apiPut('/users/me/password', {
-        currentPassword: current,
-        newPassword: newPw,
-      });
-      setMsg('Heslo zmeneno');
-      setCurrent('');
-      setNewPw('');
-      setConfirm('');
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
+function Sidebar({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
   return (
-    <section className="mb-24">
-      <V2SectionLabel>Zmena hesla</V2SectionLabel>
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-        <input
-          type="password"
-          placeholder="Soucasne heslo"
-          value={current}
-          onChange={(e) => setCurrent(e.target.value)}
-          required
-          className="w-full bg-transparent py-3 text-lg text-white transition focus:outline-none"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}
-        />
-        <input
-          type="password"
-          placeholder="Nove heslo (min. 6 znaku)"
-          value={newPw}
-          onChange={(e) => setNewPw(e.target.value)}
-          required
-          minLength={6}
-          className="w-full bg-transparent py-3 text-lg text-white transition focus:outline-none"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}
-        />
-        <input
-          type="password"
-          placeholder="Potvrzeni noveho hesla"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          required
-          minLength={6}
-          className="w-full bg-transparent py-3 text-lg text-white transition focus:outline-none"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}
-        />
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-30"
-          >
-            {loading ? 'Menim...' : 'Zmenit heslo'}
-          </button>
-          {msg && <span className="text-sm text-[#A8FF00]">{msg}</span>}
-          {error && <span className="text-sm text-[#FF375F]">{error}</span>}
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function DeleteSection({ onDeleted }: { onDeleted: () => void }) {
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  async function handleDelete() {
-    setLoading(true);
-    setError('');
-    try {
-      await apiDelete('/users/me');
-      onDeleted();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <section className="mb-24">
-      <V2SectionLabel>Nebezpecna zona</V2SectionLabel>
-      {!showConfirm ? (
-        <button
-          onClick={() => setShowConfirm(true)}
-          className="rounded-full border border-[#FF375F]/40 px-6 py-3 text-sm font-semibold text-[#FF375F] transition hover:border-[#FF375F] hover:bg-[#FF375F]/10"
-        >
-          Smazat ucet
+    <div style={{ borderRight: '1px solid var(--stroke-1)', padding: '40px 0', background: 'var(--bg-1)' }}>
+      <div style={{ padding: '0 32px', marginBottom: 32 }}>
+        <Link href="/profile" className="v3-caption" style={{ marginBottom: 12, display: 'block', color: 'var(--text-3)' }}>
+          <FitIcon name="arrow" size={12} style={{ transform: 'rotate(180deg)', marginRight: 6 }} />Back
+        </Link>
+        <div className="v3-eyebrow-serif">Settings</div>
+        <div className="v3-display-3" style={{ marginTop: 4 }}>Your account</div>
+      </div>
+      {SECTIONS.map((s) => (
+        <button key={s.id} onClick={() => onSelect(s.id)} style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: '12px 32px', width: '100%',
+          background: active === s.id ? 'var(--bg-3)' : 'transparent',
+          borderLeft: active === s.id ? '2px solid var(--accent)' : '2px solid transparent',
+          color: active === s.id ? 'var(--text-1)' : 'var(--text-2)',
+          cursor: 'pointer', fontSize: 14, border: 'none', textAlign: 'left',
+        }}>
+          <FitIcon name={s.icon} size={16} /><span>{s.label}</span>
         </button>
-      ) : (
-        <div className="max-w-md rounded-xl border border-[#FF375F]/30 bg-[#FF375F]/5 p-6">
-          <p className="mb-4 text-sm text-white/70">
-            Opravdu chcete smazat ucet? Tato akce je nevratna. Vsechna data
-            budou trvale odstranen.
-          </p>
-          <div className="flex gap-3">
-            <button
-              onClick={handleDelete}
-              disabled={loading}
-              className="rounded-full bg-[#FF375F] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#FF375F]/80 disabled:opacity-30"
-            >
-              {loading ? 'Mazani...' : 'Ano, smazat'}
-            </button>
-            <button
-              onClick={() => setShowConfirm(false)}
-              className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
-            >
-              Zrusit
-            </button>
+      ))}
+    </div>
+  );
+}
+
+function AccountSection({ name: initName, onDeleted }: { name: string; onDeleted: () => void }) {
+  const [nm, setNm] = useState(initName);
+  const [nmMsg, setNmMsg] = useState('');
+  const [nmLoad, setNmLoad] = useState(false);
+  const [cur, setCur] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [conf, setConf] = useState('');
+  const [pwMsg, setPwMsg] = useState('');
+  const [pwErr, setPwErr] = useState('');
+  const [pwLoad, setPwLoad] = useState(false);
+  const [delConfirm, setDelConfirm] = useState(false);
+  const [delLoad, setDelLoad] = useState(false);
+  const [delErr, setDelErr] = useState('');
+  const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 14, marginBottom: 10 };
+
+  async function saveName(e: FormEvent) {
+    e.preventDefault(); setNmMsg(''); setNmLoad(true);
+    try { await apiPut('/users/me/name', { name: nm }); setNmMsg('Saved'); } catch (err: unknown) { setNmMsg(err instanceof Error ? err.message : 'Error'); } finally { setNmLoad(false); }
+  }
+  async function changePw(e: FormEvent) {
+    e.preventDefault(); setPwMsg(''); setPwErr('');
+    if (newPw !== conf) { setPwErr('Passwords do not match'); return; }
+    setPwLoad(true);
+    try { await apiPut('/users/me/password', { currentPassword: cur, newPassword: newPw }); setPwMsg('Changed'); setCur(''); setNewPw(''); setConf(''); } catch (err: unknown) { setPwErr(err instanceof Error ? err.message : 'Error'); } finally { setPwLoad(false); }
+  }
+  async function doDelete() {
+    setDelLoad(true); setDelErr('');
+    try { await apiDelete('/users/me'); onDeleted(); } catch (err: unknown) { setDelErr(err instanceof Error ? err.message : 'Error'); } finally { setDelLoad(false); }
+  }
+
+  return (
+    <>
+      <SectionShell eyebrow="Account" title="Your details," accent="your way.">
+        <Card padding={24} style={{ marginBottom: 20 }}>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change name</div>
+          <form onSubmit={saveName} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <input value={nm} onChange={(e) => setNm(e.target.value)} required minLength={1} style={{ ...inp, marginBottom: 0, flex: 1 }} />
+            <Button variant="accent" type="submit" disabled={nmLoad}>{nmLoad ? 'Saving...' : 'Save'}</Button>
+            {nmMsg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{nmMsg}</span>}
+          </form>
+        </Card>
+        <Card padding={24} style={{ marginBottom: 20 }}>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change password</div>
+          <form onSubmit={changePw}>
+            <input type="password" placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} required style={inp} />
+            <input type="password" placeholder="New password (min 6)" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} style={inp} />
+            <input type="password" placeholder="Confirm new" value={conf} onChange={(e) => setConf(e.target.value)} required minLength={6} style={inp} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Button variant="accent" type="submit" disabled={pwLoad}>{pwLoad ? 'Changing...' : 'Change'}</Button>
+              {pwMsg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{pwMsg}</span>}
+              {pwErr && <span className="v3-caption" style={{ color: '#ef4444' }}>{pwErr}</span>}
+            </div>
+          </form>
+        </Card>
+        <div style={{ marginTop: 24 }}><Link href="/export"><Button variant="ghost">Export data</Button></Link></div>
+      </SectionShell>
+      <div style={{ marginTop: 48 }}>
+        <SectionHeader eyebrow="Danger zone" title="Delete account" />
+        {!delConfirm ? (
+          <Button variant="ghost" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => setDelConfirm(true)}>Delete account</Button>
+        ) : (
+          <Card padding={24} style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.03)' }}>
+            <div className="v3-body" style={{ color: 'var(--text-2)', marginBottom: 16 }}>This action is permanent and cannot be undone.</div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Button variant="accent" style={{ background: '#ef4444' }} onClick={doDelete} disabled={delLoad}>{delLoad ? 'Deleting...' : 'Yes, delete'}</Button>
+              <Button variant="ghost" onClick={() => setDelConfirm(false)}>Cancel</Button>
+            </div>
+            {delErr && <div className="v3-caption" style={{ color: '#ef4444', marginTop: 8 }}>{delErr}</div>}
+          </Card>
+        )}
+      </div>
+    </>
+  );
+}
+
+function NotifSection() {
+  const items = [
+    { label: 'Morning brief', desc: "Today's session. 6:30 AM", on: true },
+    { label: 'Evening check-in', desc: 'Mood close-out. 9:00 PM', on: true },
+    { label: 'Workout reminder', desc: '15 min before scheduled.', on: true },
+    { label: 'AI Coach insights', desc: 'When coach has something to say.', on: true },
+    { label: 'Community activity', desc: 'Squad updates.', on: false },
+  ];
+  return (
+    <SectionShell eyebrow="Notifications" title="What we tell you," accent="and when.">
+      <Card padding={28}>
+        {items.map((it, i) => (
+          <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '16px 0', borderBottom: i < items.length - 1 ? '1px solid var(--stroke-1)' : 'none' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, color: 'var(--text-1)', marginBottom: 2 }}>{it.label}</div>
+              <div className="v3-caption">{it.desc}</div>
+            </div>
+            <Toggle on={it.on} />
           </div>
-          {error && (
-            <p className="mt-3 text-sm text-[#FF375F]">{error}</p>
-          )}
-        </div>
-      )}
-    </section>
+        ))}
+      </Card>
+    </SectionShell>
+  );
+}
+
+function IntegSection() {
+  const list = [
+    { name: 'Apple Health', sync: 'Steps, HR, Sleep, Workouts' },
+    { name: 'Garmin', sync: 'GPS, HR, VO2max, Sleep' },
+    { name: 'Strava', sync: 'Auto-post completed workouts' },
+    { name: 'Oura', sync: 'Sleep stages, Readiness' },
+  ];
+  return (
+    <SectionShell eyebrow="Integrations" title="Connected" accent="services.">
+      <Card padding={0}>
+        {list.map((it, i) => (
+          <div key={it.name} style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '20px 24px', borderBottom: i < list.length - 1 ? '1px solid var(--stroke-1)' : 'none' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--bg-3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FitIcon name="bolt" size={20} color="var(--text-3)" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-1)' }}>{it.name}</div>
+              <div className="v3-caption" style={{ marginTop: 2 }}>{it.sync}</div>
+            </div>
+            <Button variant="ghost" size="sm">Connect</Button>
+          </div>
+        ))}
+      </Card>
+    </SectionShell>
+  );
+}
+
+function Toggle({ on }: { on: boolean }) {
+  return (
+    <div style={{ width: 44, height: 24, borderRadius: 12, background: on ? 'var(--accent)' : 'var(--bg-3)', position: 'relative', cursor: 'pointer' }}>
+      <div style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+    </div>
   );
 }

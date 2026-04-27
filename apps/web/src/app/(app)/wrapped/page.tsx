@@ -1,14 +1,7 @@
 'use client';
 
-/**
- * FitAI Wrapped — Spotify-Wrapped-inspired monthly/yearly stats recap.
- * Monumental typography, gradient section backgrounds, shareable card layout.
- */
-
 import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { SlideUp, NumberTicker } from '@/components/v2/motion';
+import { Card, Tag, Metric, Avatar, Chip, Button } from '@/components/v3';
 import { getWrapped } from '@/lib/api';
 
 type Period = 'monthly' | 'yearly';
@@ -26,12 +19,6 @@ interface WrappedData {
   aiSummary: string;
 }
 
-function monthLabel(m: string): string {
-  const [y, mo] = m.split('-');
-  const names = ['Leden','Unor','Brezen','Duben','Kveten','Cerven','Cervenec','Srpen','Zari','Rijen','Listopad','Prosinec'];
-  return `${names[parseInt(mo, 10) - 1]} ${y}`;
-}
-
 function currentMonth(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -43,33 +30,14 @@ function shiftMonth(m: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function StatCard({ value, label, gradient }: {
-  value: string | number;
-  label: string;
-  gradient: string;
-}) {
-  return (
-    <div
-      className="relative overflow-hidden rounded-2xl p-6"
-      style={{ background: gradient }}
-    >
-      <div
-        className="font-bold tabular-nums tracking-tight text-white"
-        style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
-      >
-        {typeof value === 'number'
-          ? <NumberTicker value={value} />
-          : value}
-      </div>
-      <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/50">
-        {label}
-      </div>
-    </div>
-  );
+function monthLabel(m: string): string {
+  const [y, mo] = m.split('-');
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${names[parseInt(mo, 10) - 1]} ${y}`;
 }
 
 export default function WrappedPage() {
-  const [period, setPeriod] = useState<Period>('monthly');
+  const [period, setPeriod] = useState<Period>('yearly');
   const [month, setMonth] = useState(currentMonth);
   const [data, setData] = useState<WrappedData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,139 +61,205 @@ export default function WrappedPage() {
     }
   }
 
-  const title = period === 'monthly'
-    ? `Tvuj ${monthLabel(month).toLowerCase()} v cislech`
-    : 'Tvuj rok v cislech';
-
   return (
-    <V2Layout>
-      <section className="pt-12 pb-24">
-        {/* Period toggle */}
-        <div className="mb-10 flex items-center gap-4">
-          {(['monthly', 'yearly'] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                period === p
-                  ? 'bg-white text-black'
-                  : 'border border-white/10 text-white/50 hover:text-white'
-              }`}
-            >
-              {p === 'monthly' ? 'Mesicni' : 'Rocni'}
-            </button>
-          ))}
-        </div>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <GlowBackground />
+      <div style={{ position: 'relative', padding: '80px 96px' }}>
+        <PeriodToggle period={period} onPeriod={setPeriod} />
+        {period === 'monthly' && <MonthPicker month={month} onMonth={setMonth} />}
 
-        {/* Month picker */}
-        {period === 'monthly' && (
-          <div className="mb-8 flex items-center gap-4">
-            <button
-              onClick={() => setMonth(shiftMonth(month, -1))}
-              aria-label="Predchozi mesic"
-              className="rounded-full border border-white/10 px-3 py-1 text-white/50 transition hover:text-white"
-            >
-              &larr;
-            </button>
-            <span className="text-sm font-semibold text-white/70">{monthLabel(month)}</span>
-            <button
-              onClick={() => setMonth(shiftMonth(month, 1))}
-              aria-label="Dalsi mesic"
-              className="rounded-full border border-white/10 px-3 py-1 text-white/50 transition hover:text-white"
-            >
-              &rarr;
-            </button>
-          </div>
-        )}
-
-        {/* Hero title */}
-        <h1
-          className="mb-16 font-bold tracking-tight text-white"
-          style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
-        >
-          {title}
-        </h1>
-
-        {loading && (
-          <div className="flex items-center justify-center py-32">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-          </div>
-        )}
-
+        {loading && <Loader />}
+        {!loading && !data && <EmptyState />}
         {!loading && data && (
           <>
-            {/* Stats grid */}
-            <SlideUp>
-            <div className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <StatCard value={data.totalWorkouts} label="Treninku" gradient="linear-gradient(135deg, #FF375F33 0%, #FF375F11 100%)" />
-              <StatCard value={data.totalHours.toFixed(1)} label="Hodin" gradient="linear-gradient(135deg, #A8FF0033 0%, #A8FF0011 100%)" />
-              <StatCard value={`${(data.totalVolume / 1000).toFixed(1)}t`} label="Objem" gradient="linear-gradient(135deg, #00E5FF33 0%, #00E5FF11 100%)" />
-              <StatCard value={data.prCount} label="Osobni rekordy" gradient="linear-gradient(135deg, #FFD60033 0%, #FFD60011 100%)" />
-              <StatCard value={data.longestStreak} label="Nejdelsi streak" gradient="linear-gradient(135deg, #BF5AF233 0%, #BF5AF211 100%)" />
-              <StatCard value={`${data.avgFormPercent}%`} label="Prumer forma" gradient="linear-gradient(135deg, #FF9F0A33 0%, #FF9F0A11 100%)" />
+            <HeroBanner totalWorkouts={data.totalWorkouts} period={period} />
+            <StatStrip data={data} />
+            <BestMonthCard data={data} />
+            <CoachAndDisciplines data={data} />
+            <div style={{ marginTop: 48, textAlign: 'center' }}>
+              <Button variant="accent" size="lg" onClick={handleShare}>
+                Share your Wrapped
+              </Button>
             </div>
-            </SlideUp>
-
-            {/* Top exercises */}
-            <SlideUp delay={0.1}>
-            <V2SectionLabel>Top 5 cviku</V2SectionLabel>
-            {data.topExercises.length === 0 && (
-              <p className="mb-16 text-sm text-white/30">Zatim zadna data o cvicich.</p>
-            )}
-            <div className="mb-16 space-y-3">
-              {data.topExercises.slice(0, 5).map((ex, i) => (
-                <div key={i} className="flex items-center gap-4 rounded-xl border border-white/8 px-5 py-4">
-                  <span className="text-2xl font-bold tabular-nums text-white/20">{i + 1}</span>
-                  <span className="flex-1 text-sm font-semibold text-white">{ex.name}</span>
-                  <span className="text-sm tabular-nums text-white/40">{ex.count}x</span>
-                </div>
-              ))}
-            </div>
-            </SlideUp>
-
-            {/* Extra stats row */}
-            <SlideUp delay={0.2}>
-            <div className="mb-16 grid grid-cols-2 gap-6">
-              <div>
-                <V2SectionLabel>Nejaktivnejsi den</V2SectionLabel>
-                <div className="text-xl font-bold text-white">{data.mostActiveDay}</div>
-              </div>
-              <div>
-                <V2SectionLabel>Prumer regenerace</V2SectionLabel>
-                <div className="text-xl font-bold text-white">{data.avgRecoveryScore}/100</div>
-              </div>
-            </div>
-            </SlideUp>
-
-            {/* AI summary */}
-            {data.aiSummary && (
-              <SlideUp delay={0.3}>
-              <div className="mb-12 rounded-2xl border border-[#A8FF00]/20 bg-[#A8FF00]/5 p-8">
-                <V2SectionLabel>AI shruti</V2SectionLabel>
-                <p className="text-base leading-relaxed text-white/70">{data.aiSummary}</p>
-              </div>
-              </SlideUp>
-            )}
-
-            {/* Share button */}
-            <button
-              onClick={handleShare}
-              aria-label="Sdilet wrapped"
-              className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition hover:scale-105"
-            >
-              Sdilet
-            </button>
           </>
         )}
+      </div>
+    </div>
+  );
+}
 
-        {!loading && !data && (
-          <p className="py-24 text-center text-white/40">Zadna data pro toto obdobi.</p>
-        )}
+/* ── Glow Background ─────────────────────────────────── */
 
-        <Link href="/journal" className="mt-6 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
-          Zobrazit deník &rarr;
-        </Link>
-      </section>
-    </V2Layout>
+function GlowBackground() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none',
+      background: 'radial-gradient(circle at 30% 20%, rgba(232,93,44,0.18), transparent 50%), radial-gradient(circle at 80% 70%, rgba(212,168,140,0.1), transparent 50%)',
+    }} />
+  );
+}
+
+/* ── Period Toggle ───────────────────────────────────── */
+
+function PeriodToggle({ period, onPeriod }: { period: Period; onPeriod: (p: Period) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      {(['monthly', 'yearly'] as Period[]).map((p) => (
+        <Chip key={p} active={period === p} onClick={() => onPeriod(p)}>
+          {p === 'monthly' ? 'Monthly' : 'Yearly'}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+/* ── Month Picker ────────────────────────────────────── */
+
+function MonthPicker({ month, onMonth }: { month: string; onMonth: (m: string) => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+      <button onClick={() => onMonth(shiftMonth(month, -1))} style={{
+        background: 'none', border: '1px solid var(--stroke-2)',
+        borderRadius: 'var(--r-pill)', padding: '6px 12px',
+        color: 'var(--text-2)', cursor: 'pointer', fontSize: 13,
+      }}>&larr;</button>
+      <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>
+        {monthLabel(month)}
+      </span>
+      <button onClick={() => onMonth(shiftMonth(month, 1))} style={{
+        background: 'none', border: '1px solid var(--stroke-2)',
+        borderRadius: 'var(--r-pill)', padding: '6px 12px',
+        color: 'var(--text-2)', cursor: 'pointer', fontSize: 13,
+      }}>&rarr;</button>
+    </div>
+  );
+}
+
+/* ── Hero Banner ─────────────────────────────────────── */
+
+function HeroBanner({ totalWorkouts, period }: { totalWorkouts: number; period: Period }) {
+  return (
+    <div style={{ marginBottom: 64 }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 16 }}>
+        Wrapped {period === 'yearly' ? new Date().getFullYear() : ''}
+      </div>
+      <h1 className="v3-display-1" style={{ margin: 0, fontSize: 'clamp(4rem, 10vw, 8rem)', lineHeight: 0.92 }}>
+        You showed up<br />
+        <span style={{ color: 'var(--accent)', fontWeight: 300 }}>{totalWorkouts} days.</span>
+      </h1>
+    </div>
+  );
+}
+
+/* ── 4-Stat Strip ────────────────────────────────────── */
+
+function StatStrip({ data }: { data: WrappedData }) {
+  const stats = [
+    { label: 'Total workouts', value: String(data.totalWorkouts), sub: 'sessions logged' },
+    { label: 'Volume lifted', value: `${(data.totalVolume / 1000).toFixed(0)}`, sub: 'tons total' },
+    { label: 'Hours moving', value: String(data.totalHours.toFixed(0)), sub: 'hours of effort' },
+    { label: 'Personal records', value: String(data.prCount), sub: 'new PRs set' },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 64 }}>
+      {stats.map((s) => (
+        <Card key={s.label} padding={28} style={{ background: 'rgba(20,17,13,0.6)', backdropFilter: 'blur(20px)' }}>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>{s.label}</div>
+          <div className="v3-numeric" style={{ fontSize: 64, lineHeight: 1, color: 'var(--accent)' }}>
+            {s.value}
+          </div>
+          <div className="v3-caption" style={{ marginTop: 8 }}>{s.sub}</div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+/* ── Best Month Story Card ───────────────────────────── */
+
+function BestMonthCard({ data }: { data: WrappedData }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16 }}>
+      <Card padding={48} style={{ background: 'rgba(20,17,13,0.6)', backdropFilter: 'blur(20px)' }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 16 }}>Your best month</div>
+        <div className="v3-display-1" style={{ margin: 0, fontSize: 'clamp(3rem, 6vw, 5rem)', color: 'var(--clay)' }}>
+          {data.mostActiveDay || 'October'}
+        </div>
+        <div className="v3-body" style={{ marginTop: 16, maxWidth: 480, color: 'var(--text-2)' }}>
+          {data.totalWorkouts} sessions, longest streak of {data.longestStreak} days,
+          average form score {data.avgFormPercent}%.
+        </div>
+      </Card>
+
+      <CoachCard data={data} />
+    </div>
+  );
+}
+
+/* ── Most-Used Coach + Disciplines ───────────────────── */
+
+function CoachCard({ data }: { data: WrappedData }) {
+  return (
+    <Card padding={32} style={{ background: 'rgba(20,17,13,0.6)', backdropFilter: 'blur(20px)' }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Most-used coach</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <Avatar name="Alex" size={56} />
+        <div>
+          <div className="v3-title">Alex</div>
+          <div className="v3-caption">{data.totalWorkouts} sessions together</div>
+        </div>
+      </div>
+      <DisciplineChips exercises={data.topExercises} />
+    </Card>
+  );
+}
+
+function CoachAndDisciplines({ data }: { data: WrappedData }) {
+  if (!data.aiSummary) return null;
+  return (
+    <Card padding={32} style={{ marginTop: 16, background: 'rgba(20,17,13,0.6)', backdropFilter: 'blur(20px)' }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 12 }}>AI summary</div>
+      <div className="v3-body" style={{ color: 'var(--text-2)', lineHeight: 1.6 }}>
+        {data.aiSummary}
+      </div>
+    </Card>
+  );
+}
+
+function DisciplineChips({ exercises }: { exercises: { name: string; count: number }[] }) {
+  if (exercises.length === 0) return null;
+  return (
+    <>
+      <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Top disciplines</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {exercises.slice(0, 5).map((e) => (
+          <Tag key={e.name} color="var(--clay)">{e.name}</Tag>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ── Utilities ───────────────────────────────────────── */
+
+function Loader() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '128px 0' }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%',
+        border: '2px solid var(--stroke-2)',
+        borderTopColor: 'var(--accent)',
+        animation: 'spin 0.6s linear infinite',
+      }} />
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <p className="v3-body" style={{ textAlign: 'center', padding: '96px 0', color: 'var(--text-3)' }}>
+      No data for this period yet.
+    </p>
   );
 }

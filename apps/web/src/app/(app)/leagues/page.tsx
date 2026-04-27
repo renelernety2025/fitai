@@ -1,111 +1,27 @@
 'use client';
 
-/**
- * Leagues — weekly XP competition with tier badges and leaderboard.
- * Tiers: Bronze, Silver, Gold, Diamond, Legend.
- */
-
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
-import { StaggerContainer, StaggerItem, NumberTicker } from '@/components/v2/motion';
-import { getLeagueCurrent, joinLeague } from '@/lib/api';
+import { Card, Button, Tag, Avatar, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { useAuth } from '@/lib/auth-context';
-import { SkeletonCard } from '@/components/v2/Skeleton';
+import { getLeagueCurrent, joinLeague } from '@/lib/api';
 
 const TIER_COLORS: Record<string, string> = {
-  bronze: '#CD7F32',
-  silver: '#C0C0C0',
-  gold: '#FFD700',
-  diamond: '#00E5FF',
-  legend: '#BF5AF2',
+  bronze: '#A06B45', silver: '#B8B8B8', gold: '#E5B45A',
+  platinum: '#9FB5C4', diamond: '#7BBED8', master: '#C8A2D8', legend: 'var(--accent)',
 };
 
+const TIERS = [
+  { name: 'Bronze', xp: '0' }, { name: 'Silver', xp: '500' }, { name: 'Gold', xp: '2,000' },
+  { name: 'Platinum', xp: '6,000' }, { name: 'Diamond', xp: '15,000' },
+  { name: 'Master', xp: '40,000' }, { name: 'Legend', xp: 'inf' },
+];
+
 interface LeagueData {
-  tier: string;
-  rank: number;
-  weeklyXP: number;
-  nextTierXP: number;
-  joined: boolean;
-  endsAt: string;
+  tier: string; rank: number; weeklyXP: number; nextTierXP: number;
+  joined: boolean; endsAt: string;
   leaderboard: { userId: string; name: string; weeklyXP: number; rank: number }[];
-  promotionLine: number;
-  relegationLine: number;
-}
-
-function tierIcon(tier: string, size = 64): React.ReactNode {
-  const c = TIER_COLORS[tier.toLowerCase()] || '#C0C0C0';
-  return (
-    <div
-      className="flex items-center justify-center rounded-full"
-      style={{
-        width: size,
-        height: size,
-        background: `radial-gradient(circle, ${c}44 0%, ${c}11 70%)`,
-        border: `2px solid ${c}`,
-        boxShadow: `0 0 24px ${c}44`,
-      }}
-    >
-      <span className="text-lg font-bold uppercase" style={{ color: c }}>
-        {tier.charAt(0)}
-      </span>
-    </div>
-  );
-}
-
-function formatCountdown(endsAt: string): string {
-  const diff = new Date(endsAt).getTime() - Date.now();
-  if (diff <= 0) return 'Skonceno';
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  const secs = Math.floor((diff % 60000) / 1000);
-  return `${days}d ${hours}h ${mins}m ${secs}s`;
-}
-
-function LiveCountdown({ endsAt }: { endsAt: string }) {
-  const [text, setText] = useState(() => formatCountdown(endsAt));
-  useEffect(() => {
-    const id = setInterval(() => setText(formatCountdown(endsAt)), 1000);
-    return () => clearInterval(id);
-  }, [endsAt]);
-  return <span className="font-semibold text-white/70">{text}</span>;
-}
-
-function getHoursRemaining(endsAt: string): number {
-  return Math.max(0, (new Date(endsAt).getTime() - Date.now()) / 3_600_000);
-}
-
-function LeagueUrgencyBanner({ endsAt }: { endsAt: string }) {
-  const [hours, setHours] = useState(() => getHoursRemaining(endsAt));
-
-  useEffect(() => {
-    const id = setInterval(() => setHours(getHoursRemaining(endsAt)), 60_000);
-    return () => clearInterval(id);
-  }, [endsAt]);
-
-  if (hours > 24) return null;
-
-  const isUrgent = hours <= 2;
-
-  return (
-    <div
-      className={`mb-8 rounded-xl border px-6 py-4 text-center text-sm font-semibold ${
-        isUrgent
-          ? 'border-[#FF375F]/40 bg-[#FF375F]/10 text-[#FF375F]'
-          : 'border-[#FF9F0A]/30 bg-[#FF9F0A]/5 text-[#FF9F0A]'
-      }`}
-      style={{
-        animation: isUrgent
-          ? 'pulse 1.5s ease-in-out infinite'
-          : 'pulse 3s ease-in-out infinite',
-      }}
-    >
-      {isUrgent
-        ? `Posledni sance! Zbyva ${Math.max(1, Math.round(hours * 60))} minut do konce ligy!`
-        : `Zbyva ${Math.round(hours)} hodin do konce ligy!`}
-    </div>
-  );
+  promotionLine: number; relegationLine: number;
 }
 
 export default function LeaguesPage() {
@@ -113,176 +29,141 @@ export default function LeaguesPage() {
   const [data, setData] = useState<LeagueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { document.title = 'FitAI — Ligy'; }, []);
-
+  useEffect(() => { document.title = 'FitAI — Leagues'; }, []);
   useEffect(() => {
-    getLeagueCurrent()
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
+    getLeagueCurrent().then(setData).catch(() => setData(null)).finally(() => setLoading(false));
   }, []);
 
   async function handleJoin() {
     setJoining(true);
-    setError(null);
-    try {
-      const d = await joinLeague();
-      setData(d);
-    } catch {
-      setError('Nepodarilo se pripojit k lige');
-    }
+    try { setData(await joinLeague()); } catch { /* noop */ }
     setJoining(false);
   }
 
+  const tierKey = data?.tier?.toLowerCase() ?? 'bronze';
+  const tierColor = TIER_COLORS[tierKey] ?? '#B8B8B8';
+
   return (
-    <V2Layout>
-      <section className="pt-12 pb-24">
-        <V2SectionLabel>Ligy</V2SectionLabel>
-        <h1
-          className="mb-16 font-bold tracking-tight text-white"
-          style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
-        >
-          Tydeni soutez
-        </h1>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <LeagueHeader tier={data?.tier ?? 'Leagues'} />
 
-        {error && (
-          <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
-            {error}
-          </div>
-        )}
+      {loading && <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-3)' }}>Loading...</div>}
 
-        {loading && (
-          <div className="py-8">
-            <SkeletonCard lines={8} />
-          </div>
-        )}
+      {!loading && data && (
+        <>
+          <TierLadder currentTier={tierKey} />
+          <LeagueBoard data={data} userId={user?.id} tierColor={tierColor} />
+        </>
+      )}
 
-        {!loading && data && (
-          <>
-            {/* Hero: tier + rank + XP */}
-            <div className="mb-12 flex flex-col items-center gap-6 text-center">
-              <div className="flex items-center gap-3">
-                {tierIcon(data.tier, 80)}
-                <button onClick={() => getLeagueCurrent().then(setData).catch(() => {})} className="text-white/20 hover:text-white/50 transition" aria-label="Obnovit">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 4v6h6M23 20v-6h-6"/>
-                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
-                  </svg>
-                </button>
+      {!loading && !data && (
+        <div style={{ textAlign: 'center', padding: 64 }}>
+          <p style={{ color: 'var(--text-3)', marginBottom: 16 }}>No active league.</p>
+          <Button variant="accent" onClick={handleJoin} disabled={joining}>
+            {joining ? 'Joining...' : 'Join league'}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeagueHeader({ tier }: { tier: string }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Leagues</div>
+      <h1 className="display-2" style={{ margin: 0 }}>
+        Climb the<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>ranks.</em>
+      </h1>
+    </div>
+  );
+}
+
+function TierLadder({ currentTier }: { currentTier: string }) {
+  const currentIdx = TIERS.findIndex(t => t.name.toLowerCase() === currentTier);
+  return (
+    <Card padding={32} style={{ marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        {TIERS.map((t, i) => {
+          const c = TIER_COLORS[t.name.toLowerCase()] ?? '#B8B8B8';
+          const isCurrent = i === currentIdx;
+          const isPast = i < currentIdx;
+          return (
+            <div key={t.name} style={{ flex: 1, textAlign: 'center', opacity: isPast ? 0.4 : 1 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: 14, margin: '0 auto 12px',
+                background: isCurrent ? `linear-gradient(135deg, ${c}, ${c}88)` : `${c}22`,
+                border: isCurrent ? `2px solid ${c}` : `1px solid ${c}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: isCurrent ? `0 0 24px ${c}66` : 'none',
+              }}>
+                <FitIcon name="trophy" size={24} color={c} />
               </div>
-              <div className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: TIER_COLORS[data.tier.toLowerCase()] }}>
-                {data.tier}
-              </div>
-              <div
-                className="font-bold tabular-nums tracking-tight text-white"
-                style={{ fontSize: 'clamp(3rem, 7vw, 5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
-              >
-                #{data.rank}
-              </div>
-              <div className="text-sm text-white/50"><NumberTicker value={data.weeklyXP} /> XP tento tyden</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: isCurrent ? 'var(--text-1)' : 'var(--text-3)' }}>{t.name}</div>
+              <div className="caption" style={{ fontFamily: 'var(--font-mono)' }}>{t.xp} XP</div>
+              {isCurrent && <div style={{ marginTop: 8 }}><Tag color="var(--accent)">You are here</Tag></div>}
             </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
-            {/* XP progress bar */}
-            {data.nextTierXP > 0 && (
-              <div className="mx-auto mb-12 max-w-md">
-                <div className="mb-2 flex justify-between text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                  <span>Dalsi tier</span>
-                  <span>{data.weeklyXP} / {data.nextTierXP} XP</span>
+function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: string; tierColor: string }) {
+  const lb = data.leaderboard.slice(0, 20);
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32 }}>
+      <div>
+        <SectionHeader eyebrow={`${data.tier} league`} title="This season" />
+        <Card padding={0}>
+          {lb.map((p, i) => {
+            const isMe = p.userId === userId;
+            return (
+              <div key={p.userId} style={{
+                display: 'grid', gridTemplateColumns: '60px 40px 1fr 100px',
+                gap: 16, padding: '16px 24px', alignItems: 'center',
+                background: isMe ? 'rgba(232,93,44,0.06)' : 'transparent',
+                borderBottom: i < lb.length - 1 ? '1px solid var(--stroke-1)' : 'none',
+              }}>
+                <div className="numeric-display" style={{
+                  fontSize: 22,
+                  color: p.rank <= 3 ? 'var(--accent)' : p.rank <= 10 ? 'var(--sage, #A8B89A)' : 'var(--text-3)',
+                }}>
+                  {String(p.rank).padStart(2, '0')}
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${Math.min(100, (data.weeklyXP / data.nextTierXP) * 100)}%`,
-                      background: TIER_COLORS[data.tier.toLowerCase()] || '#A8FF00',
-                    }}
-                  />
+                <Avatar size={36} name={p.name} />
+                <div style={{ fontSize: 14, color: 'var(--text-1)' }}>
+                  {p.name}
+                  {isMe && <span style={{ color: 'var(--accent)', fontSize: 10, marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>You</span>}
                 </div>
+                <div className="numeric-display" style={{ fontSize: 16 }}>{p.weeklyXP.toLocaleString()}</div>
               </div>
-            )}
-
-            {/* CTA */}
-            <div className="mb-12 text-center">
-              <Link href="/gym" className="mt-4 inline-block rounded-full px-5 py-2 text-sm font-semibold text-black" style={{ backgroundColor: '#A8FF00' }}>
-                Získej XP tréninkem
-              </Link>
-            </div>
-
-            {/* Urgency banner */}
-            <LeagueUrgencyBanner endsAt={data.endsAt} />
-
-            {/* Timer */}
-            <div className="mb-12 text-center text-sm text-white/40">
-              Tyden konci za <LiveCountdown endsAt={data.endsAt} />
-            </div>
-
-            {/* Join button */}
-            {!data.joined && (
-              <div className="mb-12 text-center">
-                <button
-                  onClick={handleJoin}
-                  disabled={joining}
-                  className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition hover:scale-105 disabled:opacity-50"
-                >
-                  {joining ? 'Pripojuji...' : 'Pripojit se'}
-                </button>
-              </div>
-            )}
-
-            {/* Leaderboard */}
-            <V2SectionLabel>Zebricek</V2SectionLabel>
-            {data.leaderboard.length === 0 && (
-              <p className="py-12 text-center text-sm text-white/30">
-                Zatim zadni soutezici. Bud prvni!
-              </p>
-            )}
-            <StaggerContainer className="space-y-2">
-              {data.leaderboard.map((entry) => {
-                const isMe = entry.userId === user?.id;
-                const promoted = entry.rank <= data.promotionLine;
-                const relegated = entry.rank > data.leaderboard.length - data.relegationLine;
-                return (
-                  <StaggerItem key={entry.userId}>
-                  <div
-                    className={`flex items-center gap-4 rounded-xl border px-5 py-4 transition ${
-                      isMe
-                        ? 'border-[#A8FF00]/30 bg-[#A8FF00]/5'
-                        : 'border-white/8 hover:border-white/15'
-                    }`}
-                  >
-                    <span className="w-8 text-center text-lg font-bold tabular-nums text-white/30">
-                      {entry.rank}
-                    </span>
-                    {promoted && <span className="text-xs text-green-400">&#9650;</span>}
-                    {relegated && <span className="text-xs text-red-400">&#9660;</span>}
-                    <span className={`flex-1 text-sm font-semibold ${isMe ? 'text-[#A8FF00]' : 'text-white'}`}>
-                      {entry.name}
-                      {isMe && ' (ty)'}
-                    </span>
-                    <span className="text-sm tabular-nums text-white/50">{entry.weeklyXP.toLocaleString('cs-CZ')} XP</span>
-                  </div>
-                  </StaggerItem>
-                );
-              })}
-            </StaggerContainer>
-          </>
-        )}
-
-        {!loading && !data && (
-          <div className="py-24 text-center">
-            <p className="mb-6 text-white/40">Ligy nejsou aktivni.</p>
-            <button
-              onClick={handleJoin}
-              disabled={joining}
-              className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition hover:scale-105 disabled:opacity-50"
-            >
-              {joining ? 'Pripojuji...' : 'Pripojit se k lige'}
-            </button>
+            );
+          })}
+          <div style={{ padding: '12px 24px', borderTop: '2px dashed var(--stroke-2)', textAlign: 'center', color: 'var(--text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Promotion zone · Top {data.promotionLine}
           </div>
-        )}
-      </section>
-    </V2Layout>
+        </Card>
+      </div>
+      <PromotionSidebar data={data} />
+    </div>
+  );
+}
+
+function PromotionSidebar({ data }: { data: LeagueData }) {
+  const daysLeft = Math.max(0, Math.ceil((new Date(data.endsAt).getTime() - Date.now()) / 86400000));
+  return (
+    <div>
+      <SectionHeader eyebrow="Promotion bar" title="What you need" />
+      <Card padding={28} style={{ marginBottom: 16 }}>
+        <div className="caption" style={{ marginBottom: 8 }}>Days remaining</div>
+        <div className="numeric-display" style={{ fontSize: 56, color: 'var(--accent)' }}>{daysLeft}</div>
+        <div style={{ height: 1, background: 'var(--stroke-1)', margin: '20px 0' }} />
+        <div className="caption" style={{ marginBottom: 8 }}>Your weekly XP</div>
+        <div className="numeric-display" style={{ fontSize: 32 }}>{data.weeklyXP.toLocaleString()}</div>
+      </Card>
+    </div>
   );
 }

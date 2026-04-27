@@ -1,12 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  V2Layout,
-  V2SectionLabel,
-  V2Display,
-  V2Ring,
-} from '@/components/v2/V2Layout';
+import { Card, Ring, SectionHeader, Button, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import {
   getNutritionToday,
   getQuickFoods,
@@ -21,22 +17,13 @@ import {
 import FoodCamera from '@/components/nutrition/FoodCamera';
 import FoodLogItem from '@/components/nutrition/FoodLogItem';
 
-const nutritionTipColors: Record<string, string> = {
-  protein: '#FF375F',
-  hydration: '#0A84FF',
-  timing: '#FF9500',
-  macros: '#A8FF00',
-  quality: '#BF5AF2',
-};
-
 const MEALS = [
-  { value: 'breakfast', label: 'Snídaně' },
-  { value: 'lunch', label: 'Oběd' },
-  { value: 'dinner', label: 'Večeře' },
-  { value: 'snack', label: 'Svačina' },
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
 ];
 
-/** Guess current meal type based on time of day. */
 function guessCurrentMeal(): string {
   const h = new Date().getHours();
   if (h < 10) return 'breakfast';
@@ -45,7 +32,7 @@ function guessCurrentMeal(): string {
   return 'dinner';
 }
 
-export default function NutritionV2Page() {
+export default function NutritionPage() {
   const [data, setData] = useState<NutritionToday | null>(null);
   const [foods, setFoods] = useState<QuickFood[]>([]);
   const [tips, setTips] = useState<NutritionTip[]>([]);
@@ -53,8 +40,9 @@ export default function NutritionV2Page() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMeal, setCameraMeal] = useState('breakfast');
   const [meal, setMeal] = useState('breakfast');
+  const [hydration, setHydration] = useState(6);
 
-  useEffect(() => { document.title = 'FitAI — Výživa'; }, []);
+  useEffect(() => { document.title = 'FitAI — Nutrition'; }, []);
 
   const reload = () => {
     getNutritionToday().then(setData).catch(console.error);
@@ -65,199 +53,140 @@ export default function NutritionV2Page() {
 
   if (!data) {
     return (
-      <V2Layout>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-        </div>
-      </V2Layout>
+      <div style={{ background: 'var(--bg-0)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="v3-eyebrow" style={{ opacity: 0.4 }}>Loading...</div>
+      </div>
     );
   }
 
-  const grouped = MEALS.map((m) => ({ ...m, items: data.log.filter((i) => i.mealType === m.value) }));
-
-  const handleAdd = async (food: QuickFood) => {
-    await addFoodLog({ ...food, mealType: meal });
-    setShowAdd(false);
-    reload();
-  };
+  const grouped = MEALS.map((m) => ({
+    ...m,
+    items: data.log.filter((i) => i.mealType === m.value),
+  }));
+  const kcalPct = data.goals.dailyKcal > 0
+    ? Math.round((data.totals.kcal / data.goals.dailyKcal) * 100)
+    : 0;
+  const remaining = Math.max(0, data.goals.dailyKcal - data.totals.kcal);
 
   return (
-    <V2Layout>
-      {/* Hero */}
-      <section className="pt-12 pb-24 text-center">
-        <V2SectionLabel>Dnes</V2SectionLabel>
-        <h1
-          className="font-bold tracking-tight text-white"
-          style={{ fontSize: 'clamp(3rem, 7vw, 5.5rem)', letterSpacing: '-0.05em', lineHeight: 1 }}
-        >
-          {data.totals.kcal.toLocaleString('cs-CZ')}
-          <span className="text-white/30">
-            {' '}/ {data.goals.dailyKcal.toLocaleString('cs-CZ')}
-          </span>
-        </h1>
-        <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-          Kalorie
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '40px 56px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <div className="v3-eyebrow" style={{ color: 'var(--accent)', marginBottom: 12 }}>Nutrition · today</div>
+          <h1 className="v3-display-2" style={{ margin: 0 }}>
+            Eat for <span className="v3-clay" style={{ fontWeight: 300 }}>energy.</span>
+          </h1>
         </div>
-      </section>
+        <Button variant="accent" onClick={() => { setCameraMeal(guessCurrentMeal()); setShowCamera(true); }}>
+          <FitIcon name="plus" size={14} color="#fff" />
+          <span>Log a meal</span>
+        </Button>
+      </div>
 
-      {/* Macro rings */}
-      <section className="mb-32 grid grid-cols-1 gap-12 sm:grid-cols-3">
-        <V2Ring value={data.totals.proteinG} total={data.goals.dailyProteinG} color="#FF375F" label="Protein" unit="g" />
-        <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} color="#A8FF00" label="Sacharidy" unit="g" />
-        <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} color="#00E5FF" label="Tuky" unit="g" />
-      </section>
+      <NutritionHero data={data} kcalPct={kcalPct} remaining={remaining} />
 
-      {/* Photo recognition button */}
-      <section className="mb-24 flex justify-center">
-        <button
-          onClick={() => { setCameraMeal(guessCurrentMeal()); setShowCamera(true); }}
-          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-5 transition hover:border-white/20 hover:bg-white/[0.06]"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A8FF00" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
-          <div className="text-left">
-            <div className="text-sm font-bold text-white">Vyfotit jidlo</div>
-            <div className="text-[11px] text-white/40">AI rozpozna makra z fotky</div>
-          </div>
-        </button>
-      </section>
+      <HydrationCard count={hydration} onAdd={() => setHydration((h) => h + 1)} />
 
-      {/* Quick add chips */}
-      {foods.length > 0 && (
-        <section className="mb-24">
-          <V2SectionLabel>Rychle pridat</V2SectionLabel>
-          <div className="flex flex-wrap gap-2">
-            {foods.slice(0, 8).map((f) => (
-              <button
-                key={f.name}
-                onClick={() => addFoodLog({ ...f, mealType: guessCurrentMeal() }).then(reload)}
-                className="rounded-full border border-white/10 px-4 py-2 text-[11px] text-white/60 transition hover:border-white/25 hover:bg-white/5 hover:text-white"
-              >
-                {f.name} <span className="tabular-nums text-white/30">{f.kcal}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* AI nutrition tips */}
-      {tips.length > 0 && (
-        <section className="mb-24">
-          <V2SectionLabel>AI doporučení</V2SectionLabel>
-          <div className="space-y-1">
-            {tips.map((t, i) => (
-              <div key={i} className="border-b border-white/8 py-6">
-                <div
-                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
-                  style={{ color: nutritionTipColors[t.category] || '#FFF' }}
-                >
-                  {t.category} · {t.priority}
-                </div>
-                <V2Display size="md">{t.title}</V2Display>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/60">{t.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Meals */}
-      <section className="space-y-16">
-        {grouped.map((m) => (
-          <div key={m.value}>
-            <div className="mb-4 flex items-center justify-between">
-              <V2Display size="md">{m.label}</V2Display>
-              <button
-                onClick={() => {
-                  setMeal(m.value);
-                  setShowAdd(true);
-                }}
-                className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60 transition hover:text-white"
-              >
-                + Přidat
-              </button>
-            </div>
-            {m.items.length === 0 ? (
-              <div className="text-sm text-white/30">Zadne jidlo</div>
-            ) : (
-              <ul>
-                {m.items.map((item) => (
-                  <FoodLogItem key={item.id} item={item} onDeleted={reload} />
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </section>
-
-      {/* Export */}
-      <section className="mt-24 mb-16 flex justify-center">
-        <button
-          onClick={() => {
-            const now = new Date();
-            const y = now.getFullYear();
-            const m = String(now.getMonth() + 1).padStart(2, '0');
-            const d = String(now.getDate()).padStart(2, '0');
-            downloadExport(
-              `export/nutrition?from=${y}-${m}-01&to=${y}-${m}-${d}`,
-              `fitai-nutrition-${y}-${m}.csv`,
-            ).catch(console.error);
-          }}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 transition hover:border-white/25 hover:text-white"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Exportovat mesic CSV
-        </button>
-      </section>
-
-      {/* Food camera modal */}
-      {showCamera && (
-        <FoodCamera
-          mealType={cameraMeal}
-          onClose={() => setShowCamera(false)}
-          onLogged={reload}
-        />
-      )}
+      <MealsList grouped={grouped} onAdd={(v) => { setMeal(v); setShowAdd(true); }} onReload={reload} />
 
       {/* Quick add modal */}
-      {showAdd && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xl sm:items-center"
-          onClick={() => setShowAdd(false)}
-        >
-          <div
-            className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-t-3xl border border-white/10 bg-black p-8 sm:rounded-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <V2SectionLabel>{MEALS.find((x) => x.value === meal)?.label}</V2SectionLabel>
-            <V2Display size="md">Přidat jídlo</V2Display>
-            <ul className="mt-6 space-y-1">
-              {foods.map((f) => (
-                <li key={f.name}>
-                  <button
-                    onClick={() => handleAdd(f)}
-                    className="flex w-full items-center justify-between border-b border-white/8 py-4 text-left transition hover:bg-white/5"
-                  >
-                    <div>
-                      <div className="text-base text-white">{f.name}</div>
-                      <div className="text-xs text-white/40">
-                        P {f.proteinG}g · S {f.carbsG}g · T {f.fatG}g
-                      </div>
-                    </div>
-                    <div className="font-bold text-white tabular-nums">{f.kcal}</div>
-                  </button>
-                </li>
+      <QuickAddModal show={showAdd} meal={meal} foods={foods} onClose={() => setShowAdd(false)} onAdd={async (f) => { await addFoodLog({ ...f, mealType: meal }); setShowAdd(false); reload(); }} />
+
+      {showCamera && <FoodCamera mealType={cameraMeal} onClose={() => setShowCamera(false)} onLogged={reload} />}
+    </div>
+  );
+}
+
+function NutritionHero({ data, kcalPct, remaining }: { data: NutritionToday; kcalPct: number; remaining: number }) {
+  const macros = [
+    { name: 'Protein', value: data.totals.proteinG, target: data.goals.dailyProteinG, color: 'var(--accent)' },
+    { name: 'Carbs', value: data.totals.carbsG, target: data.goals.dailyCarbsG, color: 'var(--sage)' },
+    { name: 'Fat', value: data.totals.fatG, target: data.goals.dailyFatG, color: '#D4A88C' },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18, marginBottom: 24 }}>
+      <Card padding={28}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 32, alignItems: 'center' }}>
+          <Ring value={kcalPct} size={140} stroke={10} label={String(data.totals.kcal)} sub={`of ${data.goals.dailyKcal} kcal`} />
+          <div>
+            <div className="v3-title" style={{ marginBottom: 16 }}>{remaining} kcal to go.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              {macros.map((m) => (
+                <div key={m.name}>
+                  <div className="v3-eyebrow" style={{ marginBottom: 4 }}>{m.name}</div>
+                  <div className="v3-numeric" style={{ fontSize: 18, color: 'var(--text-1)' }}>
+                    {m.value}<span style={{ fontSize: 11, color: 'var(--text-3)' }}>/{m.target}g</span>
+                  </div>
+                  <div style={{ marginTop: 6, height: 4, background: 'var(--bg-3)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.min(100, (m.value / m.target) * 100)}%`, background: m.color, borderRadius: 2 }} />
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
-      )}
-    </V2Layout>
+      </Card>
+      <div />
+    </div>
+  );
+}
+
+function HydrationCard({ count, onAdd }: { count: number; onAdd: () => void }) {
+  return (
+    <Card padding={20} style={{ marginBottom: 24, maxWidth: 360 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Hydration</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+        <span className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)' }}>{(count * 0.25).toFixed(1)}</span>
+        <span className="v3-caption">of 2.5 L</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4, marginBottom: 14 }}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} style={{ aspectRatio: '1', borderRadius: 4, background: i < count ? 'var(--sage)' : 'var(--bg-3)', opacity: i < count ? 1 : 0.4 }} />
+        ))}
+      </div>
+      <Button variant="ghost" full onClick={onAdd}>+ 250ml glass</Button>
+    </Card>
+  );
+}
+
+function MealsList({ grouped, onAdd, onReload }: { grouped: { value: string; label: string; items: any[] }[]; onAdd: (v: string) => void; onReload: () => void }) {
+  const current = guessCurrentMeal();
+  return (
+    <Card padding={28}>
+      <SectionHeader eyebrow="Today" title="Meals" action={{ label: '+ Add', onClick: () => onAdd(current) }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {grouped.flatMap((g) => g.items).length === 0 && (
+          <div className="v3-caption" style={{ padding: 20, textAlign: 'center' }}>No meals logged yet today.</div>
+        )}
+        {grouped.flatMap((g) => g.items).map((item) => (
+          <FoodLogItem key={item.id} item={item} onDeleted={onReload} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function QuickAddModal({ show, meal, foods, onClose, onAdd }: { show: boolean; meal: string; foods: QuickFood[]; onClose: () => void; onAdd: (f: QuickFood) => void }) {
+  if (!show) return null;
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={(e) => e.stopPropagation()}>
+      <Card padding={32} style={{ maxWidth: 480, width: '100%', maxHeight: '80vh', overflow: 'auto' }}>
+        <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{MEALS.find((x) => x.value === meal)?.label}</div>
+        <div className="v3-display-3" style={{ marginBottom: 20 }}>Add a meal</div>
+        {foods.map((f) => (
+          <div key={f.name} onClick={() => onAdd(f)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--stroke-1)', cursor: 'pointer' }}>
+            <div>
+              <div style={{ fontSize: 14, color: 'var(--text-1)' }}>{f.name}</div>
+              <div className="v3-caption">P {f.proteinG}g · C {f.carbsG}g · F {f.fatG}g</div>
+            </div>
+            <span className="v3-numeric" style={{ fontSize: 16, color: 'var(--text-1)' }}>{f.kcal}</span>
+          </div>
+        ))}
+      </Card>
+      </div>
+    </div>
   );
 }

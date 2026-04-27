@@ -1,188 +1,176 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import Link from 'next/link';
+import { Card, Button, Tag, Avatar } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { useAuth } from '@/lib/auth-context';
-import { getFitnessProfile, getMyStats, type FitnessProfileData, type StatsData } from '@/lib/api';
-import { resetOnboardingTour } from '@/components/onboarding/OnboardingTour';
-import { FadeIn, NumberTicker } from '@/components/v2/motion';
-
-const GOAL_LABELS: Record<string, string> = {
-  STRENGTH: 'Sila', HYPERTROPHY: 'Hypertrofie', ENDURANCE: 'Vytrvalost',
-  WEIGHT_LOSS: 'Hubnuti', GENERAL_FITNESS: 'Obecna kondice', MOBILITY: 'Mobilita',
-};
+import {
+  getFitnessProfile,
+  getMyStats,
+  type FitnessProfileData,
+  type StatsData,
+} from '@/lib/api';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<FitnessProfileData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [tourRestarted, setTourRestarted] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Profil'; }, []);
+  useEffect(() => { document.title = 'FitAI — Profile'; }, []);
 
   useEffect(() => {
     getFitnessProfile().then(setProfile).catch(console.error);
     getMyStats().then(setStats).catch(console.error);
   }, []);
 
+  const name = user?.name || 'Athlete';
+
   return (
-    <V2Layout>
-      <div className="gradient-mesh" />
-      <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
-        &larr; Dashboard
-      </Link>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Tvuj ucet</V2SectionLabel>
-        <div className="flex items-center gap-6">
-          {/* Gradient ring avatar */}
-          <div className="relative flex-shrink-0" style={{ width: 72, height: 72 }}>
-            <div
-              className="absolute inset-0 rounded-full"
-              style={{ background: 'conic-gradient(#A8FF00, #00E5FF, #BF5AF2, #A8FF00)' }}
-            />
-            <div
-              className="absolute inset-[3px] flex items-center justify-center rounded-full text-xl font-bold text-white"
-              style={{ backgroundColor: 'var(--bg-primary, #000)' }}
-            >
-              {(user?.name || 'A')[0].toUpperCase()}
-            </div>
-          </div>
-          <div>
-            <V2Display size="xl">{user?.name || 'Athlete'}</V2Display>
-            <p className="mt-2 text-base text-white/40">{user?.email}</p>
-          </div>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh' }}>
+      <HeroBanner />
+      <div style={{ padding: '0 56px', marginTop: -88, position: 'relative' }}>
+        <ProfileIdentity name={name} email={user?.email} stats={stats} />
+        <StatsStrip stats={stats} />
+        <AchievementsRow />
+        <ProfileInfo profile={profile} />
+      </div>
+    </div>
+  );
+}
+
+function HeroBanner() {
+  return (
+    <div style={{
+      position: 'relative', height: 280, overflow: 'hidden',
+      background: 'linear-gradient(135deg, var(--bg-1), var(--bg-3))',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(circle at 30% 40%, rgba(232,93,44,0.15), transparent 60%)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(180deg, transparent 40%, var(--bg-0) 100%)',
+      }} />
+    </div>
+  );
+}
+
+function ProfileIdentity({ name, email, stats }: { name: string; email?: string; stats: StatsData | null }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, marginBottom: 32 }}>
+      {/* Avatar with accent ring */}
+      <div style={{ position: 'relative', width: 144, height: 144, flexShrink: 0 }}>
+        <div style={{
+          position: 'absolute', inset: -4, borderRadius: '50%',
+          background: 'conic-gradient(var(--accent), var(--clay), var(--accent))',
+        }} />
+        <Avatar name={name} size={144} ring="var(--bg-0)" />
+      </div>
+      <div style={{ flex: 1, paddingBottom: 12 }}>
+        <div className="v3-eyebrow" style={{ color: 'var(--accent)', marginBottom: 8 }}>
+          Level {stats?.levelNumber ?? 1} · {stats?.totalXP ?? 0} XP
         </div>
-      </section>
-
-      {/* Stats summary */}
-      {stats && (
-        <FadeIn delay={0.1}>
-        <section className="mb-24 grid grid-cols-2 gap-y-12 sm:grid-cols-4">
-          <ProfileStat value={stats.totalSessions} label="Treninku" />
-          <ProfileStat value={stats.currentStreak} label="Streak" />
-          <ProfileStat value={stats.totalXP} label="XP" />
-          <ProfileStat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hodin" />
-        </section>
-        </FadeIn>
-      )}
-
-      {/* Fitness profile */}
-      {profile && (
-        <FadeIn delay={0.2}>
-        <section className="mb-24">
-          <V2SectionLabel>Fitness profil</V2SectionLabel>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <InfoCard label="Cil" value={GOAL_LABELS[profile.goal] || profile.goal} />
-            <InfoCard label="Zkusenost" value={`${profile.experienceMonths} mesicu`} />
-            <InfoCard label="Treninky/tyden" value={`${profile.daysPerWeek}x`} />
-            <InfoCard label="Delka treninku" value={`${profile.sessionMinutes} min`} />
-            {profile.age && <InfoCard label="Vek" value={`${profile.age} let`} />}
-            {profile.weightKg && <InfoCard label="Vaha" value={`${profile.weightKg} kg`} />}
-            {profile.heightCm && <InfoCard label="Vyska" value={`${profile.heightCm} cm`} />}
-            {profile.equipment.length > 0 && (
-              <InfoCard label="Vybaveni" value={profile.equipment.join(', ')} />
-            )}
-            {profile.injuries.length > 0 && (
-              <InfoCard label="Zraneni/omezeni" value={profile.injuries.join(', ')} accent="#FF375F" />
-            )}
-            {profile.dailyKcal && (
-              <InfoCard label="Denni kalorie" value={`${profile.dailyKcal} kcal`} />
-            )}
-          </div>
-        </section>
-        </FadeIn>
-      )}
-
-      {/* Level info */}
-      {stats && (
-        <FadeIn delay={0.3}>
-        <section className="mb-24">
-          <V2SectionLabel>Level</V2SectionLabel>
-          <V2Display size="lg">{stats.levelName || 'Zacatecnik'}</V2Display>
-          <div className="mt-4 h-2 w-full max-w-md rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-[#A8FF00] transition-all"
-              style={{ width: `${Math.min(100, (stats.totalXP % 500) / 5)}%` }}
-            />
-          </div>
-          <p className="mt-2 text-[11px] text-white/30">
-            {stats.totalXP} XP celkem
-          </p>
-        </section>
-        </FadeIn>
-      )}
-
-      {/* Settings link */}
-      <FadeIn delay={0.25}>
-      <section className="mb-24">
-        <V2SectionLabel>Ucet</V2SectionLabel>
-        <Link
-          href="/settings"
-          className="inline-flex rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
-        >
-          Nastaveni
+        <h1 className="v3-display-2" style={{ margin: 0 }}>{name}</h1>
+        {email && <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 6 }}>{email}</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <Button variant="ghost">
+          <FitIcon name="users" size={14} /><span>Share profile</span>
+        </Button>
+        <Link href="/settings">
+          <Button variant="ghost">
+            <FitIcon name="settings" size={14} /><span>Settings</span>
+          </Button>
         </Link>
-      </section>
-      </FadeIn>
-
-      {/* Restart onboarding tour */}
-      <section className="mb-24">
-        <V2SectionLabel>Pruvodce</V2SectionLabel>
-        {tourRestarted ? (
-          <p className="text-sm text-[#A8FF00]">Pruvodce restartovan. Prejdi na dashboard.</p>
-        ) : (
-          <button
-            onClick={() => {
-              resetOnboardingTour();
-              setTourRestarted(true);
-            }}
-            className="rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:text-white"
-          >
-            Spustit pruvodce znovu
-          </button>
-        )}
-      </section>
-    </V2Layout>
-  );
-}
-
-function ProfileStat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <div
-        className="font-bold tracking-tight tabular-nums"
-        style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--text-primary)' }}
-      >
-        <NumberTicker value={value} />
-      </div>
-      <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: 'var(--text-muted)' }}>
-        {label}
       </div>
     </div>
   );
 }
 
-function InfoCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: string;
-}) {
+function StatsStrip({ stats }: { stats: StatsData | null }) {
+  if (!stats) return null;
+
+  const items = [
+    { label: 'Streak', value: String(stats.currentStreak), unit: 'days' },
+    { label: 'Sessions', value: String(stats.totalSessions), unit: 'all-time' },
+    { label: 'XP', value: stats.totalXP.toLocaleString() },
+    { label: 'Hours', value: String(Math.floor((stats.totalMinutes || 0) / 60)) },
+    { label: 'Level', value: stats.levelName || 'Beginner' },
+  ];
+
   return (
-    <div className="rounded-xl border border-white/8 p-4">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-        {label}
-      </div>
-      <div
-        className="mt-1 text-base font-semibold"
-        style={{ color: accent ?? 'white' }}
-      >
-        {value}
-      </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 32 }}>
+      {items.map((s) => (
+        <Card key={s.label} padding={18}>
+          <div className="v3-eyebrow" style={{ marginBottom: 6 }}>{s.label}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)' }}>{s.value}</span>
+            {s.unit && <span className="v3-caption">{s.unit}</span>}
+          </div>
+        </Card>
+      ))}
     </div>
+  );
+}
+
+function AchievementsRow() {
+  const placeholders = [
+    { icon: 'flame', label: '30-day streak' },
+    { icon: 'muscle', label: 'Bodyweight squat' },
+    { icon: 'run', label: 'First 5K' },
+    { icon: 'star', label: 'Goal crushed' },
+    { icon: 'bolt', label: 'Speed demon' },
+    { icon: 'trophy', label: 'Early bird' },
+  ];
+
+  return (
+    <Card padding={24} style={{ marginBottom: 32 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 14 }}>Recent achievements</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+        {placeholders.map((a) => (
+          <div key={a.label} style={{
+            padding: 16, background: 'var(--bg-2)', borderRadius: 12,
+            border: '1px solid var(--stroke-1)', textAlign: 'center',
+          }}>
+            <FitIcon name={a.icon} size={28} color="var(--accent)" style={{ marginBottom: 8 }} />
+            <div className="v3-caption">{a.label}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ProfileInfo({ profile }: { profile: FitnessProfileData | null }) {
+  if (!profile) return null;
+
+  const GOAL_LABELS: Record<string, string> = {
+    STRENGTH: 'Strength', HYPERTROPHY: 'Hypertrophy', ENDURANCE: 'Endurance',
+    WEIGHT_LOSS: 'Weight Loss', GENERAL_FITNESS: 'General Fitness', MOBILITY: 'Mobility',
+  };
+
+  const fields = [
+    { label: 'Goal', value: GOAL_LABELS[profile.goal] || profile.goal },
+    { label: 'Experience', value: `${profile.experienceMonths} months` },
+    { label: 'Training/week', value: `${profile.daysPerWeek}x` },
+    profile.age ? { label: 'Age', value: `${profile.age}` } : null,
+    profile.weightKg ? { label: 'Weight', value: `${profile.weightKg} kg` } : null,
+    profile.heightCm ? { label: 'Height', value: `${profile.heightCm} cm` } : null,
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  return (
+    <Card padding={28} style={{ marginBottom: 32 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 16 }}>Fitness profile</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {fields.map((f) => (
+          <div key={f.label} style={{ padding: 14, background: 'var(--bg-2)', borderRadius: 10 }}>
+            <div className="v3-caption" style={{ marginBottom: 4 }}>{f.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)' }}>{f.value}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

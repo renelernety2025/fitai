@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout } from '@/components/v2/V2Layout';
+import { Card, Button, Tag, SectionHeader, Metric } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import {
   getCurrentMealPlan,
   generateMealPlan,
@@ -9,42 +10,28 @@ import {
   type MealPlanMeal,
 } from '@/lib/api';
 
-const MEAL_LABEL: Record<string, string> = {
-  breakfast: 'Snídaně',
-  snack: 'Svačina',
-  lunch: 'Oběd',
-  dinner: 'Večeře',
-};
+const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const MEAL_LABEL: Record<string, string> = { breakfast: 'Breakfast', snack: 'Snack', lunch: 'Lunch', dinner: 'Dinner' };
 
-const MEAL_COLOR: Record<string, string> = {
-  breakfast: '#FFD60A',
-  snack: '#A8FF00',
-  lunch: '#FF9F0A',
-  dinner: '#7C3AED',
-};
-
-export default function JidelnicekPage() {
+export default function MealPlanPage() {
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
   const [showShopping, setShowShopping] = useState(false);
-  const [showPrefs, setShowPrefs] = useState(false);
   const [prefs, setPrefs] = useState({ preferences: '', allergies: '', cuisine: '' });
+  const [showPrefs, setShowPrefs] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Jídelníček'; }, []);
+  useEffect(() => { document.title = 'FitAI — Meal Plan'; }, []);
 
   useEffect(() => {
-    getCurrentMealPlan()
-      .then(setPlan)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    getCurrentMealPlan().then(setPlan).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   async function regenerate() {
     setGenerating(true);
     try {
-      const opts: any = {};
+      const opts: Record<string, unknown> = {};
       if (prefs.preferences) opts.preferences = prefs.preferences;
       if (prefs.allergies) opts.allergies = prefs.allergies.split(',').map((a) => a.trim()).filter(Boolean);
       if (prefs.cuisine) opts.cuisine = prefs.cuisine;
@@ -52,8 +39,9 @@ export default function JidelnicekPage() {
       setPlan(fresh);
       setShowPrefs(false);
       setActiveDay(0);
-    } catch (e: any) {
-      alert(`Generování selhalo: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      alert(`Generation failed: ${msg}`);
     } finally {
       setGenerating(false);
     }
@@ -61,271 +49,168 @@ export default function JidelnicekPage() {
 
   if (loading) {
     return (
-      <V2Layout>
-        <div className="flex h-96 items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </V2Layout>
+      <div style={{ background: 'var(--bg-0)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="v3-eyebrow" style={{ opacity: 0.4 }}>Loading...</div>
+      </div>
     );
   }
 
   return (
-    <V2Layout>
-      <>
-        {/* Header */}
-        <section className="mb-12 pt-12">
-          <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-            Section L · AI Coach
-          </div>
-          <h1
-            className="mb-6 font-bold tracking-tight text-white"
-            style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
-          >
-            Tvůj jídelníček.
-          </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-white/55">
-            Personalizovaný 7denní plán generovaný Claude Haiku z tvých makro cílů, alergií a preferencí. Včetně nákupního seznamu agregovaného přes celý týden.
-          </p>
-        </section>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '40px 56px' }}>
+      <MealPlanHeader generating={generating} onRegenerate={regenerate} onGrocery={() => setShowShopping((s) => !s)} />
 
-        {!plan && (
-          <section className="mb-32 rounded-3xl border border-dashed border-white/15 bg-white/[0.02] p-12 text-center">
-            <h2
-              className="mb-4 font-bold tracking-tight text-white"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', letterSpacing: '-0.03em' }}
-            >
-              Žádný plán pro tento týden
-            </h2>
-            <p className="mx-auto mb-8 max-w-md text-base text-white/55">
-              Klikni na tlačítko a Claude vygeneruje plný 7denní jídelníček podle tvého profilu.
-            </p>
-            <button
-              onClick={regenerate}
-              disabled={generating}
-              className="rounded-full bg-white px-8 py-4 text-sm font-semibold tracking-tight text-black transition hover:scale-[1.03] disabled:opacity-50"
-            >
-              {generating ? 'Generuju (~10-20s)…' : '✦ Vygenerovat plán'}
-            </button>
-          </section>
-        )}
+      {!plan && <EmptyState generating={generating} onGenerate={regenerate} />}
 
-        {plan && (
-          <>
-            {/* Plan summary */}
-            <section className="mb-16 grid grid-cols-2 gap-6 border-y border-white/10 py-12 sm:grid-cols-4">
-              <Stat value={plan.payload.avgKcalPerDay} label="Kcal/den" suffix="" />
-              <Stat value={plan.payload.avgProteinG} label="Protein/den" suffix="g" />
-              <Stat value={plan.payload.totalKcal} label="Týdně" suffix="kcal" />
-              <Stat value={plan.payload.days.reduce((s, d) => s + d.meals.length, 0)} label="Jídel" suffix="" />
-            </section>
-
-            {/* Action bar */}
-            <section className="mb-12 flex flex-wrap items-center justify-between gap-4">
-              <div className="text-sm text-white/55">
-                {plan.source === 'claude' ? '✦ Generated by Claude Haiku' : '✦ Rules-based fallback'}
-                {' · '}
-                {new Date(plan.generatedAt).toLocaleDateString('cs-CZ')}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowShopping((s) => !s)}
-                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white/80 transition hover:bg-white/10"
-                >
-                  {showShopping ? 'Skrýt nákupní seznam' : '🛒 Nákupní seznam'}
-                </button>
-                <button
-                  onClick={() => setShowPrefs((s) => !s)}
-                  className="rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white/80 transition hover:bg-white/10"
-                >
-                  ⚙ Preference
-                </button>
-                <button
-                  onClick={regenerate}
-                  disabled={generating}
-                  className="rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:scale-[1.03] disabled:opacity-50"
-                >
-                  {generating ? 'Generuju…' : '✦ Regenerate'}
-                </button>
-              </div>
-            </section>
-
-            {/* Preferences panel */}
-            {showPrefs && (
-              <section className="mb-12 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                      Preference
-                    </label>
-                    <input
-                      type="text"
-                      value={prefs.preferences}
-                      onChange={(e) => setPrefs({ ...prefs, preferences: e.target.value })}
-                      placeholder="např. minimalistická příprava"
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-white/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                      Alergie (čárkou)
-                    </label>
-                    <input
-                      type="text"
-                      value={prefs.allergies}
-                      onChange={(e) => setPrefs({ ...prefs, allergies: e.target.value })}
-                      placeholder="lepek, laktóza"
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-white/30"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                      Kuchyně
-                    </label>
-                    <input
-                      type="text"
-                      value={prefs.cuisine}
-                      onChange={(e) => setPrefs({ ...prefs, cuisine: e.target.value })}
-                      placeholder="česká + asijská"
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-white/30"
-                    />
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Shopping list */}
-            {showShopping && (
-              <section className="mb-16">
-                <div className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-                  🛒 Nákupní seznam · týden
-                </div>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {plan.payload.shoppingList.map((cat) => (
-                    <div key={cat.category} className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-                      <div className="mb-3 text-sm font-semibold text-white">{cat.category}</div>
-                      <ul className="space-y-1.5">
-                        {cat.items.map((item, i) => (
-                          <li key={i} className="flex items-baseline justify-between gap-3 text-sm">
-                            <span className="text-white/75">{item.name}</span>
-                            <span className="tabular-nums text-white/45">
-                              {item.qty} {item.unit}
-                            </span>
-                          </li>
-                        ))}
-                        {cat.items.length === 0 && (
-                          <li className="text-xs text-white/30">Žádné položky</li>
-                        )}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Day picker */}
-            <section className="mb-8 flex gap-2 overflow-x-auto pb-2">
-              {plan.payload.days.map((day, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveDay(i)}
-                  className={`flex min-w-[5rem] flex-col items-center rounded-2xl border px-4 py-3 transition ${
-                    i === activeDay
-                      ? 'border-white bg-white text-black'
-                      : 'border-white/10 bg-white/[0.02] text-white/65 hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em]">
-                    {day.dayName.slice(0, 3)}
-                  </span>
-                  <span className="mt-1 text-xl font-bold tabular-nums">
-                    {new Date(day.date).getDate()}
-                  </span>
-                  <span
-                    className={`mt-1 text-[9px] tabular-nums ${
-                      i === activeDay ? 'text-black/55' : 'text-white/40'
-                    }`}
-                  >
-                    {day.totals.kcal} kcal
-                  </span>
-                </button>
-              ))}
-            </section>
-
-            {/* Active day meals */}
-            {plan.payload.days[activeDay] && (
-              <section className="mb-32">
-                <div className="mb-5 flex items-baseline justify-between">
-                  <h2
-                    className="font-bold tracking-tight text-white"
-                    style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', letterSpacing: '-0.03em' }}
-                  >
-                    {plan.payload.days[activeDay].dayName}
-                  </h2>
-                  <div className="text-xs tabular-nums text-white/55">
-                    P {plan.payload.days[activeDay].totals.proteinG}g · S{' '}
-                    {plan.payload.days[activeDay].totals.carbsG}g · T{' '}
-                    {plan.payload.days[activeDay].totals.fatG}g
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                  {plan.payload.days[activeDay].meals.map((meal, i) => (
-                    <MealCard key={i} meal={meal} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-      </>
-    </V2Layout>
+      {plan && (
+        <>
+          <TargetsStrip plan={plan} />
+          {showPrefs && <PrefsPanel prefs={prefs} setPrefs={setPrefs} />}
+          {showShopping && plan.payload.shoppingList && <ShoppingList list={plan.payload.shoppingList} />}
+          <WeeklyGrid plan={plan} activeDay={activeDay} onDayClick={setActiveDay} />
+          {plan.payload.days[activeDay] && <DayDetail day={plan.payload.days[activeDay]} />}
+        </>
+      )}
+    </div>
   );
 }
 
-function Stat({ value, label, suffix }: { value: number; label: string; suffix: string }) {
+function MealPlanHeader({ generating, onRegenerate, onGrocery }: { generating: boolean; onRegenerate: () => void; onGrocery: () => void }) {
   return (
-    <div>
-      <div
-        className="font-bold tabular-nums text-white"
-        style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
-      >
-        {value.toLocaleString('cs-CZ')}
-        {suffix && <span className="text-base text-white/30"> {suffix}</span>}
+    <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      <div>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Meal plan</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
+          Your week,<br /><span className="v3-clay" style={{ fontWeight: 300 }}>planned.</span>
+        </h1>
       </div>
-      <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-        {label}
+      <div style={{ display: 'flex', gap: 12 }}>
+        <Button variant="ghost" onClick={onRegenerate} disabled={generating}>
+          <FitIcon name="bolt" size={14} /><span>{generating ? 'Generating...' : 'Regenerate'}</span>
+        </Button>
+        <Button variant="accent" onClick={onGrocery}>
+          <FitIcon name="apple" size={14} color="#fff" /><span>Grocery list</span>
+        </Button>
       </div>
     </div>
   );
 }
 
-function MealCard({ meal }: { meal: MealPlanMeal }) {
-  const color = MEAL_COLOR[meal.type] || '#FFFFFF';
+function EmptyState({ generating, onGenerate }: { generating: boolean; onGenerate: () => void }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-      <div className="mb-3 flex items-center justify-between">
-        <span
-          className="rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
-          style={{ borderColor: color + '66', color, background: color + '22' }}
-        >
-          {MEAL_LABEL[meal.type] || meal.type}
-        </span>
-        <span className="text-[10px] text-white/40">{meal.prepMinutes} min</span>
+    <Card padding={48} style={{ textAlign: 'center', marginBottom: 32, border: '1px dashed var(--stroke-2)' }}>
+      <div className="v3-display-3" style={{ marginBottom: 12 }}>No plan for this week</div>
+      <div className="v3-caption" style={{ marginBottom: 24 }}>Generate a personalized 7-day meal plan with AI.</div>
+      <Button variant="accent" onClick={onGenerate} disabled={generating}>{generating ? 'Generating (~10-20s)...' : 'Generate plan'}</Button>
+    </Card>
+  );
+}
+
+function TargetsStrip({ plan }: { plan: MealPlan }) {
+  const targets = [
+    { label: 'Daily kcal', value: String(plan.payload.avgKcalPerDay) },
+    { label: 'Protein', value: `${plan.payload.avgProteinG}g` },
+    { label: 'Carbs', value: `${plan.payload.days[0]?.totals?.carbsG ?? 0}g` },
+    { label: 'Fat', value: `${plan.payload.days[0]?.totals?.fatG ?? 0}g` },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
+      {targets.map((t) => (
+        <Card key={t.label} padding={20}>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{t.label}</div>
+          <div className="v3-numeric" style={{ fontSize: 32, color: 'var(--text-1)' }}>{t.value}</div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function PrefsPanel({ prefs, setPrefs }: { prefs: { preferences: string; allergies: string; cuisine: string }; setPrefs: (p: typeof prefs) => void }) {
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 13 };
+  return (
+    <Card padding={24} style={{ marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Preferences</div>
+          <input value={prefs.preferences} onChange={(e) => setPrefs({ ...prefs, preferences: e.target.value })} placeholder="e.g. minimal prep" style={inputStyle} />
+        </div>
+        <div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Allergies</div>
+          <input value={prefs.allergies} onChange={(e) => setPrefs({ ...prefs, allergies: e.target.value })} placeholder="gluten, lactose" style={inputStyle} />
+        </div>
+        <div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Cuisine</div>
+          <input value={prefs.cuisine} onChange={(e) => setPrefs({ ...prefs, cuisine: e.target.value })} placeholder="Czech + Asian" style={inputStyle} />
+        </div>
       </div>
-      <div className="mb-3 text-lg font-semibold text-white">{meal.name}</div>
-      <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums text-white/55">
-        <span className="font-semibold text-[#A8FF00]">{meal.kcal} kcal</span>
-        <span>P {meal.proteinG}g</span>
-        <span>S {meal.carbsG}g</span>
-        <span>T {meal.fatG}g</span>
+    </Card>
+  );
+}
+
+function ShoppingList({ list }: { list: { category: string; items: { name: string; qty: number; unit: string }[] }[] }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32 }}>
+      {list.map((cat) => (
+        <Card key={cat.category} padding={20}>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>{cat.category}</div>
+          {cat.items.map((item, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13 }}>
+              <span style={{ color: 'var(--text-2)' }}>{item.name}</span>
+              <span className="v3-numeric" style={{ fontSize: 12, color: 'var(--text-3)' }}>{item.qty} {item.unit}</span>
+            </div>
+          ))}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function WeeklyGrid({ plan, activeDay, onDayClick }: { plan: MealPlan; activeDay: number; onDayClick: (i: number) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto' }}>
+      {plan.payload.days.map((day, i) => (
+        <button key={i} onClick={() => onDayClick(i)} style={{
+          flex: '0 0 auto', minWidth: 80, padding: '12px 16px', textAlign: 'center',
+          background: i === activeDay ? 'var(--accent)' : 'var(--bg-card)',
+          border: `1px solid ${i === activeDay ? 'var(--accent)' : 'var(--stroke-1)'}`,
+          borderRadius: 'var(--r-lg)', cursor: 'pointer', color: i === activeDay ? '#fff' : 'var(--text-1)',
+        }}>
+          <div className="v3-eyebrow" style={{ color: 'inherit', marginBottom: 4 }}>{day.dayName.slice(0, 3)}</div>
+          <div className="v3-numeric" style={{ fontSize: 12, opacity: 0.7 }}>{day.totals.kcal} kcal</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DayDetail({ day }: { day: MealPlan['payload']['days'][number] }) {
+  return (
+    <Card padding={28}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div className="v3-display-3">{day.dayName}</div>
+        <div className="v3-caption">P {day.totals.proteinG}g · C {day.totals.carbsG}g · F {day.totals.fatG}g</div>
       </div>
-      <ul className="space-y-1 text-xs text-white/55">
-        {meal.ingredients.map((ing, i) => (
-          <li key={i}>· {ing}</li>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
+        {day.meals.map((meal, i) => (
+          <MealCard key={i} meal={meal} />
         ))}
-      </ul>
-      {meal.notes && (
-        <div className="mt-3 border-t border-white/5 pt-3 text-[11px] italic text-white/40">
-          {meal.notes}
+      </div>
+    </Card>
+  );
+}
+
+function MealCard({ meal }: { meal: MealPlanMeal }) {
+  return (
+    <div style={{ padding: 18, background: 'var(--bg-2)', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Tag color="var(--accent)">{MEAL_LABEL[meal.type] || meal.type}</Tag>
+        <span className="v3-caption">{meal.prepMinutes} min</span>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)', marginBottom: 8 }}>{meal.name}</div>
+      <div className="v3-caption" style={{ marginBottom: 8 }}>{meal.kcal} kcal · P {meal.proteinG}g · C {meal.carbsG}g · F {meal.fatG}g</div>
+      {meal.ingredients.length > 0 && (
+        <div className="v3-caption" style={{ lineHeight: 1.6 }}>
+          {meal.ingredients.slice(0, 4).map((ing, i) => <span key={i}>· {ing}<br /></span>)}
+          {meal.ingredients.length > 4 && <span style={{ color: 'var(--text-3)' }}>+{meal.ingredients.length - 4} more</span>}
         </div>
       )}
     </div>

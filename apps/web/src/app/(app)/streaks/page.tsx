@@ -1,276 +1,169 @@
 'use client';
 
-/**
- * Streaks — Snapchat-style workout streaks with friends.
- */
+import { useEffect, useState, useMemo } from 'react';
+import { Card, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import { getHabitsStats, getHabitsHistory, type DailyCheckIn, type HabitsStats } from '@/lib/api';
+import { getStreakFreezeStatus, useStreakFreeze } from '@/lib/api';
 
-import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { GlassCard } from '@/components/v2/GlassCard';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-
-interface PersonStreak {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  streakCount: number;
-  lastBothActive: string;
-  partnerTrainedToday: boolean;
-  youTrainedToday: boolean;
-}
-
-const MILESTONES = [7, 30, 100, 365];
-
-function milestoneBadge(count: number): string | null {
-  if (count >= 365) return '\uD83D\uDC8E';
-  if (count >= 100) return '\uD83C\uDFC6';
-  if (count >= 30) return '\uD83E\uDD47';
-  if (count >= 7) return '\u2B50';
-  return null;
-}
-
-function nextMilestone(count: number): number | null {
-  for (const m of MILESTONES) {
-    if (count < m) return m;
-  }
-  return null;
-}
-
-// Mock data (backend will add person streaks later)
-const MOCK_STREAKS: PersonStreak[] = [
-  {
-    id: '1',
-    name: 'Jakub K.',
-    avatarUrl: null,
-    streakCount: 42,
-    lastBothActive: '2026-04-22',
-    partnerTrainedToday: true,
-    youTrainedToday: true,
-  },
-  {
-    id: '2',
-    name: 'Tereza M.',
-    avatarUrl: null,
-    streakCount: 108,
-    lastBothActive: '2026-04-22',
-    partnerTrainedToday: true,
-    youTrainedToday: true,
-  },
-  {
-    id: '3',
-    name: 'Martin P.',
-    avatarUrl: null,
-    streakCount: 7,
-    lastBothActive: '2026-04-21',
-    partnerTrainedToday: false,
-    youTrainedToday: true,
-  },
-  {
-    id: '4',
-    name: 'Anna V.',
-    avatarUrl: null,
-    streakCount: 365,
-    lastBothActive: '2026-04-22',
-    partnerTrainedToday: true,
-    youTrainedToday: true,
-  },
-  {
-    id: '5',
-    name: 'Pavel R.',
-    avatarUrl: null,
-    streakCount: 3,
-    lastBothActive: '2026-04-21',
-    partnerTrainedToday: false,
-    youTrainedToday: false,
-  },
+const MILESTONES = [
+  { day: 7, label: 'First week' },
+  { day: 30, label: 'A month strong' },
+  { day: 100, label: 'Triple digits' },
+  { day: 365, label: 'A whole year' },
 ];
 
-function StreakCard({ streak }: { streak: PersonStreak }) {
-  const atRisk =
-    !streak.partnerTrainedToday || !streak.youTrainedToday;
-  const badge = milestoneBadge(streak.streakCount);
-  const next = nextMilestone(streak.streakCount);
+export default function StreaksPage() {
+  const [stats, setStats] = useState<HabitsStats | null>(null);
+  const [history, setHistory] = useState<DailyCheckIn[]>([]);
+  const [freezes, setFreezes] = useState<{ available: number; max: number } | null>(null);
+
+  useEffect(() => { document.title = 'FitAI — Streaks'; }, []);
+  useEffect(() => {
+    getHabitsStats().then(setStats).catch(console.error);
+    getHabitsHistory(365).then(setHistory).catch(console.error);
+    getStreakFreezeStatus().then(setFreezes).catch(() => {});
+  }, []);
+
+  const streak = stats?.streakDays ?? 0;
+  const grid = useHeatmapGrid(history);
 
   return (
-    <GlassCard
-      className={`p-4 ${
-        atRisk ? 'border-[#FF9F0A]/30' : ''
-      }`}
-      hover={false}
-      glow={atRisk ? '#FF9F0A11' : undefined}
-    >
-      <div className="flex items-center gap-4">
-        {/* Avatar */}
-        <div
-          className="flex-shrink-0 flex items-center justify-center rounded-full bg-white/10 text-sm font-bold"
-          style={{ width: 44, height: 44 }}
-        >
-          {streak.avatarUrl ? (
-            <img
-              src={streak.avatarUrl}
-              alt={streak.name}
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            <span className="text-white/50">
-              {streak.name.charAt(0)}
-            </span>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-white truncate">
-              {streak.name}
-            </h3>
-            {badge && (
-              <span className="text-sm">{badge}</span>
-            )}
-          </div>
-          {atRisk && (
-            <p className="mt-0.5 text-[10px] font-semibold text-[#FF9F0A]">
-              Streak v ohrozeni!
-            </p>
-          )}
-          {!atRisk && next && (
-            <p className="mt-0.5 text-[10px] text-white/25">
-              Dalsi milestone: {next} dni
-            </p>
-          )}
-        </div>
-
-        {/* Streak count */}
-        <div className="flex-shrink-0 flex items-center gap-1.5">
-          <span className="text-2xl font-bold tracking-tight text-white">
-            {streak.streakCount}
-          </span>
-          <span className="text-lg text-[#FF375F]">
-            &#128293;
-          </span>
-        </div>
-      </div>
-
-      {/* Status dots */}
-      <div className="mt-3 flex items-center gap-4 text-[10px]">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{
-              background: streak.youTrainedToday
-                ? '#A8FF00'
-                : '#FF9F0A',
-            }}
-          />
-          <span className="text-white/35">
-            Ty:{' '}
-            {streak.youTrainedToday
-              ? 'Hotovo'
-              : 'Ceka'}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{
-              background: streak.partnerTrainedToday
-                ? '#A8FF00'
-                : '#FF9F0A',
-            }}
-          />
-          <span className="text-white/35">
-            Partner:{' '}
-            {streak.partnerTrainedToday
-              ? 'Hotovo'
-              : 'Ceka'}
-          </span>
-        </div>
-      </div>
-    </GlassCard>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <StreakHero streak={streak} />
+      <StatCards streak={streak} stats={stats} />
+      <HeatmapSection grid={grid} />
+      <MilestonesSection streak={streak} />
+      <FreezesSection freezes={freezes} />
+    </div>
   );
 }
 
-export default function StreaksPage() {
-  const [streaks, setStreaks] = useState<PersonStreak[]>([]);
+function useHeatmapGrid(history: DailyCheckIn[]): number[] {
+  return useMemo(() => {
+    const dateSet = new Set(history.map(h => String(h.date).slice(0, 10)));
+    return Array.from({ length: 364 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (363 - i));
+      const key = d.toISOString().slice(0, 10);
+      if (!dateSet.has(key)) return 0;
+      const entry = history.find(h => String(h.date).slice(0, 10) === key);
+      const e = entry?.energy ?? 3;
+      return Math.min(4, Math.max(1, e));
+    });
+  }, [history]);
+}
 
-  useEffect(() => {
-    document.title = 'FitAI — Streaks';
-  }, []);
-
-  useEffect(() => {
-    // Use mock data for now, backend will add endpoint
-    setStreaks(
-      [...MOCK_STREAKS].sort(
-        (a, b) => b.streakCount - a.streakCount,
-      ),
-    );
-  }, []);
-
-  const atRiskCount = streaks.filter(
-    (s) => !s.partnerTrainedToday || !s.youTrainedToday,
-  ).length;
-
+function StreakHero({ streak }: { streak: number }) {
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Workout Streaks</V2SectionLabel>
-        <V2Display size="xl">Streaks.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Spolecne treninky s prateli. Trenujte oba kazdy den.
-        </p>
-      </section>
-
-      {/* Summary */}
-      <div className="mb-8 flex gap-4">
-        <GlassCard className="px-5 py-3" hover={false}>
-          <span className="text-2xl font-bold text-white">
-            {streaks.length}
-          </span>
-          <span className="ml-2 text-[11px] text-white/40">
-            aktivnich streaku
-          </span>
-        </GlassCard>
-        {atRiskCount > 0 && (
-          <GlassCard
-            className="px-5 py-3 border-[#FF9F0A]/20"
-            hover={false}
-          >
-            <span className="text-2xl font-bold text-[#FF9F0A]">
-              {atRiskCount}
-            </span>
-            <span className="ml-2 text-[11px] text-white/40">
-              v ohrozeni
-            </span>
-          </GlassCard>
-        )}
+    <div style={{ marginBottom: 56 }}>
+      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Streaks</div>
+      <h1 className="display-2" style={{ margin: 0, maxWidth: 980 }}>
+        Show up.<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>Every day.</em>
+      </h1>
+      <div className="numeric-display" style={{ fontSize: 96, color: 'var(--accent)', marginTop: 24, lineHeight: 1 }}>
+        {streak}
       </div>
+      <div className="caption" style={{ marginTop: 8 }}>consecutive days</div>
+    </div>
+  );
+}
 
-      {/* Milestone legend */}
-      <div className="mb-8 flex flex-wrap gap-4 text-[11px] text-white/35">
-        <span>\u2B50 7 dni</span>
-        <span>\uD83E\uDD47 30 dni</span>
-        <span>\uD83C\uDFC6 100 dni</span>
-        <span>\uD83D\uDC8E 365 dni</span>
-      </div>
+function StatCards({ streak, stats }: { streak: number; stats: HabitsStats | null }) {
+  const items = [
+    ['Current', String(streak), 'days'],
+    ['Longest ever', String(streak), 'days'],
+    ['Total check-ins', String(stats?.totalCheckIns ?? 0), 'this year'],
+    ['Avg sleep 7d', stats?.avgSleep ? `${stats.avgSleep}` : '--', 'hours'],
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 56 }}>
+      {items.map(([label, value, sub]) => (
+        <Card key={label} padding={24}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>{label}</div>
+          <div className="numeric-display" style={{ fontSize: 56, lineHeight: 1 }}>{value}</div>
+          <div className="caption" style={{ marginTop: 8 }}>{sub}</div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
-      {/* Streak list */}
-      {streaks.length === 0 ? (
-        <div className="py-20 text-center">
-          <p className="text-sm text-white/30">
-            Zatim zadne streaky. Pozvi pritelkyne.
-          </p>
+function HeatmapSection({ grid }: { grid: number[] }) {
+  const colors = ['var(--bg-3)', 'var(--d-1, #2a2a2a)', 'var(--d-2, #4a4a2a)', 'var(--d-3, #6a6a2a)', 'var(--d-4, #8a8a2a)'];
+  return (
+    <>
+      <SectionHeader eyebrow="Your year" title="Every day, in one glance" />
+      <Card padding={32} style={{ marginBottom: 56 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(52, 1fr)', gap: 3 }}>
+          {grid.map((v, i) => (
+            <div key={i} style={{ aspectRatio: '1', borderRadius: 2, background: colors[v] }} />
+          ))}
         </div>
-      ) : (
-        <StaggerContainer>
-          <div className="space-y-3 mb-12">
-            {streaks.map((s) => (
-              <StaggerItem key={s.id}>
-                <StreakCard streak={s} />
-              </StaggerItem>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24, fontSize: 11, color: 'var(--text-3)' }}>
+          <span className="caption">Less</span>
+          {[0, 1, 2, 3, 4].map(v => (
+            <div key={v} style={{ width: 14, height: 14, borderRadius: 2, background: colors[v] }} />
+          ))}
+          <span className="caption">More</span>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function MilestonesSection({ streak }: { streak: number }) {
+  return (
+    <>
+      <SectionHeader eyebrow="Milestones" title="The road already walked" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 56 }}>
+        {MILESTONES.map(m => {
+          const earned = streak >= m.day;
+          return (
+            <Card key={m.day} padding={28} style={{
+              opacity: earned ? 1 : 0.55,
+              background: earned ? 'linear-gradient(180deg, var(--bg-card), rgba(232,93,44,0.04))' : 'var(--bg-card)',
+            }}>
+              <div className="numeric-display" style={{ fontSize: 56, color: earned ? 'var(--accent)' : 'var(--text-3)', lineHeight: 1 }}>{m.day}</div>
+              <div className="title" style={{ marginTop: 12 }}>{m.label}</div>
+              <div className="caption" style={{ marginTop: 6 }}>
+                {earned ? 'earned' : `${m.day - streak} days away`}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function FreezesSection({ freezes }: { freezes: { available: number; max: number } | null }) {
+  const avail = freezes?.available ?? 0;
+  const max = freezes?.max ?? 4;
+  return (
+    <Card padding={32}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+        <div style={{ flex: 1 }}>
+          <div className="eyebrow-serif" style={{ marginBottom: 8 }}>Safety net</div>
+          <div className="display-3" style={{ marginBottom: 8 }}>Streak freezes</div>
+          <div className="body" style={{ maxWidth: 560 }}>
+            Life happens. Use a freeze to skip a day without losing your streak.
           </div>
-        </StaggerContainer>
-      )}
-    </V2Layout>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {Array.from({ length: max }, (_, i) => (
+            <div key={i} style={{
+              width: 56, height: 64, borderRadius: 12,
+              background: i < avail ? 'rgba(168,184,154,0.15)' : 'var(--bg-3)',
+              border: i < avail ? '1px solid var(--sage, #A8B89A)' : '1px dashed var(--stroke-2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: i < avail ? 1 : 0.4,
+            }}>
+              <FitIcon name="shield" size={20} color={i < avail ? 'var(--sage, #A8B89A)' : 'var(--text-3)'} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
   );
 }

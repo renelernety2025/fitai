@@ -1,118 +1,163 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Tag, SectionHeader, Button } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getDiscoverWeekly } from '@/lib/api';
+
+function daysUntilMonday(): number {
+  const now = new Date();
+  const day = now.getDay();
+  return day === 0 ? 1 : day === 1 ? 7 : 8 - day;
+}
 
 export default function DiscoverWeeklyPage() {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Objev týdne'; }, []);
-
-  useEffect(() => {
-    getDiscoverWeekly().then(setData).catch(() => setErr(true));
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Discover Weekly'; }, []);
+  useEffect(() => { getDiscoverWeekly().then(setData).catch(() => setErr(true)); }, []);
 
   const exercises = data?.exercises || [];
+  const topPicks = exercises.slice(0, 2);
+  const morePicks = exercises.slice(2, 8);
+  const refreshDays = daysUntilMonday();
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Tvuj tydenni mix</V2SectionLabel>
-        <V2Display size="xl">Discover Weekly.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          AI vybral trenink presne pro tebe. Novy kazde pondeli.
-        </p>
-      </section>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <HeroHeader refreshDays={refreshDays} />
 
       {err && (
-        <p className="mb-8 text-sm text-[#FF375F]">
-          Nepodarilo se nacist. Zkus to pozdeji.
+        <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 32 }}>
+          Could not load recommendations. Try again later.
         </p>
       )}
+
+      {!data && !err && <Loader />}
 
       {data && (
         <>
-          {/* Workout title & description */}
-          <section className="mb-12 rounded-2xl border border-[#A8FF00]/15 bg-[#A8FF00]/5 p-8">
-            <h2 className="mb-2 text-2xl font-bold tracking-tight text-white">
-              {data.title || 'Trenink tydne'}
-            </h2>
-            {data.description && (
-              <p className="text-sm leading-relaxed text-white/60">{data.description}</p>
-            )}
-            <div className="mt-4 flex items-center gap-4 text-[11px] text-white/40">
-              {data.estimatedMinutes && (
-                <span>{data.estimatedMinutes} min</span>
-              )}
-              {data.difficulty && (
-                <span className="rounded-full bg-white/8 px-3 py-1">{data.difficulty}</span>
-              )}
-            </div>
-          </section>
-
-          {/* Exercise list */}
-          {exercises.length === 0 && (
-            <div className="mb-12 py-12 text-center text-white/30">
-              <p className="text-sm">Zatim zadne cviky v tomto tydennim mixu.</p>
-            </div>
-          )}
-          <section className="mb-12 space-y-1">
-            {exercises.map((ex: any, i: number) => (
-              <div key={ex.id || i}
-                className="flex items-start gap-5 border-b border-white/8 py-6 last:border-0"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#A8FF00]/20 text-sm font-bold text-[#A8FF00]">
-                  {i + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-base font-semibold text-white">
-                      {ex.nameCs || ex.name}
-                    </span>
-                    {ex.muscleGroups && (
-                      <span className="text-[10px] text-white/30">
-                        {(Array.isArray(ex.muscleGroups) ? ex.muscleGroups : []).join(' · ')}
-                      </span>
-                    )}
-                  </div>
-                  {ex.sets && (
-                    <div className="mt-1 text-xs text-white/50">
-                      {ex.sets}x{ex.reps} {ex.weightKg ? `@ ${ex.weightKg}kg` : ''}
-                      {ex.restSeconds ? ` · ${ex.restSeconds}s pauza` : ''}
-                    </div>
-                  )}
-                  {ex.rationale && (
-                    <div className="mt-2 rounded-lg bg-white/3 px-3 py-2 text-[11px] italic text-[#A8FF00]/70">
-                      Proc: {ex.rationale}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </section>
-
-          {/* CTA */}
-          <div className="mb-16 flex flex-col items-center gap-4">
-            <Link href="/gym/start"
-              className="inline-flex items-center gap-3 rounded-full bg-[#A8FF00] px-10 py-4 text-base font-bold text-black transition hover:scale-105"
-            >
-              Zacit trenink →
-            </Link>
-            <p className="text-[11px] text-white/30">
-              Novy trenink kazde pondeli
-            </p>
-          </div>
+          <TopPicks items={topPicks} description={data.description} />
+          <MoreThisWeek items={morePicks} />
+          <RefreshIndicator days={refreshDays} />
         </>
       )}
+    </div>
+  );
+}
 
-      {!data && !err && (
-        <div className="flex items-center justify-center py-32">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-        </div>
-      )}
-    </V2Layout>
+/* ── Hero Header ─────────────────────────────────────── */
+
+function HeroHeader({ refreshDays }: { refreshDays: number }) {
+  return (
+    <div style={{ marginBottom: 48 }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>
+        Discover — Updated every Monday
+      </div>
+      <h1 className="v3-display-2" style={{ margin: 0, maxWidth: 800 }}>
+        Picked for{' '}
+        <em style={{ color: 'var(--clay)', fontWeight: 300 }}>you.</em>
+      </h1>
+      <p className="v3-body" style={{ maxWidth: 580, marginTop: 16, color: 'var(--text-2)' }}>
+        Sessions tuned to your goals, recovery, and what you have already done this week.
+      </p>
+    </div>
+  );
+}
+
+/* ── Top Picks ───────────────────────────────────────── */
+
+function TopPicks({ items, description }: { items: any[]; description?: string }) {
+  if (items.length === 0) return null;
+
+  return (
+    <>
+      <SectionHeader eyebrow="Top picks" title="Why these, why now" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 64 }}>
+        {items.map((ex: any, i: number) => (
+          <Card key={ex.id || i} padding={28} hover>
+            <div style={{ marginBottom: 12 }}><Tag color="var(--accent)">For you</Tag></div>
+            <div className="v3-display-3" style={{ marginBottom: 8 }}>
+              {ex.nameCs || ex.name}
+            </div>
+            {ex.muscleGroups && (
+              <div className="v3-caption" style={{ marginBottom: 12 }}>
+                {(Array.isArray(ex.muscleGroups) ? ex.muscleGroups : []).join(' / ')}
+              </div>
+            )}
+            {ex.sets && (
+              <div className="v3-body" style={{ color: 'var(--text-2)', marginBottom: 12 }}>
+                {ex.sets}x{ex.reps} {ex.weightKg ? `@ ${ex.weightKg}kg` : ''}
+                {ex.restSeconds ? ` — ${ex.restSeconds}s rest` : ''}
+              </div>
+            )}
+            {ex.rationale && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12 }}>
+                <FitIcon name="bolt" size={14} color="var(--accent-hot)" />
+                <span className="v3-caption" style={{ flex: 1, color: 'var(--clay)' }}>
+                  {ex.rationale}
+                </span>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ── More This Week ──────────────────────────────────── */
+
+function MoreThisWeek({ items }: { items: any[] }) {
+  if (items.length === 0) return null;
+
+  return (
+    <>
+      <SectionHeader eyebrow="Also for you" title="More this week" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 48 }}>
+        {items.map((ex: any, i: number) => (
+          <Card key={ex.id || i} padding={20} hover>
+            {ex.category && (
+              <div style={{ marginBottom: 10 }}><Tag>{ex.category}</Tag></div>
+            )}
+            <div className="v3-title" style={{ marginBottom: 4 }}>
+              {ex.nameCs || ex.name}
+            </div>
+            <div className="v3-caption">
+              {ex.muscleGroups && Array.isArray(ex.muscleGroups)
+                ? ex.muscleGroups.join(' / ')
+                : ''}
+              {ex.sets ? ` — ${ex.sets}x${ex.reps}` : ''}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ── Refresh Indicator ───────────────────────────────── */
+
+function RefreshIndicator({ days }: { days: number }) {
+  return (
+    <div style={{ textAlign: 'center', paddingBottom: 64 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 8 }}>
+        Next refresh in {days} {days === 1 ? 'day' : 'days'}
+      </div>
+      <div className="v3-caption">New recommendations every Monday</div>
+    </div>
+  );
+}
+
+function Loader() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '128px 0' }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%',
+        border: '2px solid var(--stroke-2)',
+        borderTopColor: 'var(--accent)',
+        animation: 'spin 0.6s linear infinite',
+      }} />
+    </div>
   );
 }

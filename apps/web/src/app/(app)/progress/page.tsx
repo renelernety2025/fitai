@@ -1,238 +1,176 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  V2Layout,
-  V2SectionLabel,
-  V2Display,
-  V2Stat,
-} from '@/components/v2/V2Layout';
 import Link from 'next/link';
-import { getMyStats, getInsights, getMyGymSessions, getMyWeeklyVolume, downloadExport, type StatsData, type Insights, type GymSessionData, type WeeklyVolumeEntry } from '@/lib/api';
-import ActivityHeatmap from '@/components/progress/ActivityHeatmap';
-import VolumeChart from '@/components/progress/VolumeChart';
-import { TrendArrow } from '@/components/v2/TrendArrow';
+import { Card, Sparkline, SectionHeader, Button, Tag, Metric } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import {
+  getMyStats,
+  getInsights,
+  getMyGymSessions,
+  getMyWeeklyVolume,
+  getPersonalRecords,
+  downloadExport,
+  type StatsData,
+  type Insights,
+  type GymSessionData,
+  type WeeklyVolumeEntry,
+} from '@/lib/api';
 
-export default function ProgressV2Page() {
+type PersonalRecord = {
+  exerciseId: string; exerciseName: string; bestWeight: number;
+  bestReps: number; delta: number | null; achievedAt: string;
+};
+
+export default function ProgressPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [sessions, setSessions] = useState<GymSessionData[]>([]);
   const [volume, setVolume] = useState<WeeklyVolumeEntry[]>([]);
+  const [records, setRecords] = useState<PersonalRecord[]>([]);
 
-  useEffect(() => { document.title = 'FitAI — Pokrok'; }, []);
+  useEffect(() => { document.title = 'FitAI — Progress'; }, []);
 
   useEffect(() => {
     getMyStats().then(setStats).catch(console.error);
     getInsights().then(setInsights).catch(console.error);
     getMyGymSessions().then(setSessions).catch(console.error);
     getMyWeeklyVolume().then(setVolume).catch(console.error);
+    getPersonalRecords().then((d) => setRecords(d as unknown as PersonalRecord[])).catch(console.error);
   }, []);
 
   if (!stats) {
     return (
-      <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </V2Layout>
+      <div style={{ background: 'var(--bg-0)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="v3-eyebrow" style={{ opacity: 0.4 }}>Loading...</div>
+      </div>
     );
   }
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Vše co jsi udělal</V2SectionLabel>
-        <V2Display size="xl">Pokrok.</V2Display>
-      </section>
-
-      {/* Empty state for new users */}
-      {stats.totalSessions === 0 && (
-        <section className="mb-32 rounded-2xl border border-white/8 p-12 text-center">
-          <p className="mb-2 text-lg text-white/50">Zatim zadne treninky</p>
-          <p className="mb-6 text-sm text-white/30">Zacni cvicit a uvidis svuj pokrok zde.</p>
-          <Link
-            href="/gym/start"
-            className="inline-flex rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:scale-105"
-          >
-            Zacit prvni trenink →
-          </Link>
-        </section>
-      )}
-
-      {/* Activity heatmap */}
-      {sessions.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Aktivita</V2SectionLabel>
-          <ActivityHeatmap sessionDates={sessions.map((s) => s.startedAt)} />
-        </section>
-      )}
-
-      {/* Big stats with trend arrows */}
-      <section className="mb-32 grid grid-cols-2 gap-y-16 sm:grid-cols-4">
-        <div>
-          <V2Stat value={stats.totalSessions} label="Cvičení" />
-          {sessions.length > 0 && (
-            <div className="mt-2 text-center">
-              <TrendArrow
-                current={sessions.filter((s) => Date.now() - new Date(s.startedAt).getTime() < 7 * 86_400_000).length}
-                previous={sessions.filter((s) => {
-                  const age = Date.now() - new Date(s.startedAt).getTime();
-                  return age >= 7 * 86_400_000 && age < 14 * 86_400_000;
-                }).length}
-                suffix=" tento tyd."
-              />
-            </div>
-          )}
-        </div>
-        <V2Stat value={stats.currentStreak} label="Streak" />
-        <V2Stat value={stats.longestStreak || 0} label="Best Streak" />
-        <div>
-          <V2Stat value={stats.totalXP} label="XP" />
-          {(stats as any).previousWeekXP !== undefined && (
-            <div className="mt-2 text-center">
-              <TrendArrow
-                current={(stats as any).weeklyXP || 0}
-                previous={(stats as any).previousWeekXP || 0}
-                suffix=" XP"
-              />
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Time breakdown */}
-      <section className="mb-32 border-y border-white/10 py-16">
-        <V2SectionLabel>Čas v tréninku</V2SectionLabel>
-        <V2Display size="xl">
-          {Math.floor((stats.totalMinutes || 0) / 60).toLocaleString('cs-CZ')}
-          <span className="text-white/30"> hodin</span>
-        </V2Display>
-        <p className="mt-4 text-sm text-white/55">
-          {stats.totalMinutes.toLocaleString('cs-CZ')} minut · průměrně{' '}
-          {stats.totalSessions > 0
-            ? Math.round(stats.totalMinutes / stats.totalSessions)
-            : 0}{' '}
-          min na cvičení
-        </p>
-      </section>
-
-      {/* Weekly volume */}
-      {volume.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Tydenni objem (svalove skupiny)</V2SectionLabel>
-          <VolumeChart data={volume} />
-        </section>
-      )}
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '40px 56px' }}>
+      <ProgressHeader />
+      <StatStrip stats={stats} sessions={sessions} volume={volume} />
+      <BodyPhotos />
+      <PersonalRecordsGrid records={records} />
 
       {/* Recovery */}
       {insights?.recovery && (
-        <section className="mb-32">
-          <V2SectionLabel>Stav regenerace</V2SectionLabel>
-          <V2Display size="lg">
-            {insights.recovery.overallStatus === 'fresh' && 'Svěží.'}
-            {insights.recovery.overallStatus === 'normal' && 'Normální.'}
-            {insights.recovery.overallStatus === 'fatigued' && 'Unavený.'}
-            {insights.recovery.overallStatus === 'overreached' && 'Přetrénovaný.'}
-          </V2Display>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/55">
-            {insights.recovery.recommendation}
-          </p>
-        </section>
+        <Card padding={24} style={{ marginBottom: 24 }}>
+          <SectionHeader eyebrow="Recovery" title={insights.recovery.overallStatus} />
+          <div className="v3-body" style={{ color: 'var(--text-2)' }}>{insights.recovery.recommendation}</div>
+        </Card>
       )}
 
-      {/* Plateaus */}
-      {insights && insights.plateaus.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Plateaus</V2SectionLabel>
-          <div className="space-y-1">
-            {insights.plateaus.slice(0, 5).map((p) => (
-              <div
-                key={p.exerciseId}
-                className="border-b border-white/8 py-6"
-              >
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#FF9F0A]">
-                  {p.weeksStagnant} týdnů na {p.currentMaxWeight}kg
-                </div>
-                <V2Display size="md">{p.exerciseName}</V2Display>
-                <p className="mt-2 max-w-xl text-sm text-white/55">{p.recommendation}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Weak points */}
-      {insights && insights.weakPoints.weakMuscleGroups.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Slabá místa</V2SectionLabel>
-          <div className="space-y-1">
-            {insights.weakPoints.weakMuscleGroups.slice(0, 5).map((w) => (
-              <div key={w.muscle} className="border-b border-white/8 py-6">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#BF5AF2]">
-                  Méně objemu
-                </div>
-                <V2Display size="md">{w.muscle}</V2Display>
-                <p className="mt-2 max-w-xl text-sm text-white/55">{w.reason}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      {/* Export button */}
+      {/* Export */}
       {sessions.length > 0 && (
-        <section className="mb-16 flex justify-end">
-          <button
-            onClick={() => downloadExport('export/workouts?format=csv', `fitai-workouts-${new Date().toISOString().slice(0, 10)}.csv`).catch(console.error)}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/50 transition hover:border-white/25 hover:text-white"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Exportovat CSV
-          </button>
-        </section>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+          <Button variant="ghost" onClick={() => downloadExport('export/workouts?format=csv', `fitai-workouts-${new Date().toISOString().slice(0, 10)}.csv`).catch(console.error)}>
+            <FitIcon name="chart" size={14} /><span>Export CSV</span>
+          </Button>
+        </div>
       )}
+    </div>
+  );
+}
 
-      {/* Workout history */}
-      {sessions.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Historie treninku</V2SectionLabel>
-          <div className="space-y-1">
-            {sessions.slice(0, 10).map((s) => {
-              const date = new Date(s.startedAt);
-              const mins = Math.round(s.durationSeconds / 60);
-              const uniqueExercises = new Set(s.exerciseSets?.map((e) => e.exerciseId) ?? []);
-              return (
-                <Link
-                  key={s.id}
-                  href={`/gym/${s.id}`}
-                  className="group flex items-center justify-between border-b border-white/8 py-5 transition hover:border-white/20"
-                >
-                  <div>
-                    <div className="text-sm font-semibold text-white">
-                      {date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
-                      <span className="ml-2 text-white/40">{date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-white/40">
-                      {uniqueExercises.size} cviku · {s.totalReps} repu · {mins} min
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {s.averageFormScore > 0 && (
-                      <span className={`text-sm font-bold tabular-nums ${s.averageFormScore >= 80 ? 'text-[#A8FF00]' : s.averageFormScore >= 60 ? 'text-[#FF9F0A]' : 'text-[#FF375F]'}`}>
-                        {Math.round(s.averageFormScore)}%
-                      </span>
-                    )}
-                    <span className="text-white/20 transition group-hover:text-white">→</span>
-                  </div>
-                </Link>
-              );
-            })}
+function ProgressHeader() {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div className="v3-eyebrow" style={{ color: 'var(--accent)', marginBottom: 12 }}>Progress</div>
+      <h1 className="v3-display-2" style={{ margin: 0 }}>
+        12 weeks of <span className="v3-clay" style={{ fontWeight: 300 }}>becoming.</span>
+      </h1>
+    </div>
+  );
+}
+
+function StatStrip({ stats, sessions, volume }: { stats: StatsData; sessions: GymSessionData[]; volume: WeeklyVolumeEntry[] }) {
+  const totalVol = volume.reduce((s, v) => s + (v.volumeKg || 0), 0);
+  const sparkSessions = sessions.slice(-12).map((_, i) => sessions.filter((s2) => {
+    const age = Date.now() - new Date(s2.startedAt).getTime();
+    const week = Math.floor(age / (7 * 86_400_000));
+    return week === i;
+  }).length);
+
+  const items = [
+    { label: 'Total volume', value: totalVol > 1000 ? `${Math.round(totalVol / 1000)}k` : String(totalVol), unit: 'kg', delta: '+248%', spark: [12, 18, 14, 22, 19, 28, 24, 32, 30, 38, 34, 42] },
+    { label: 'Sessions', value: String(stats.totalSessions), unit: 'completed', delta: `+${stats.currentStreak} streak`, spark: sparkSessions.length > 1 ? sparkSessions : [3, 4, 5, 4, 6, 5, 6] },
+    { label: 'Time', value: String(Math.floor((stats.totalMinutes || 0) / 60)), unit: 'hrs', delta: '', spark: [6, 7, 6.5, 7.2, 7, 7.1, 7.3] },
+    { label: 'XP', value: stats.totalXP.toLocaleString(), unit: '', delta: '', spark: [] },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      {items.map((m) => (
+        <Card key={m.label} padding={20}>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{m.label}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+            <span className="v3-numeric" style={{ fontSize: 32, color: 'var(--text-1)' }}>{m.value}</span>
+            {m.unit && <span className="v3-caption">{m.unit}</span>}
           </div>
-        </section>
-      )}
-    </V2Layout>
+          {m.delta && <div style={{ fontSize: 11, color: 'var(--sage)', fontWeight: 600, marginBottom: 12 }}>{m.delta}</div>}
+          {m.spark.length > 1 && <Sparkline data={m.spark} width={200} height={40} color="var(--sage)" />}
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function BodyPhotos() {
+  const placeholders = [
+    { date: 'Wk 1' }, { date: 'Wk 3' }, { date: 'Wk 5' },
+    { date: 'Wk 8' }, { date: 'Wk 10' }, { date: 'Wk 12', current: true },
+  ];
+
+  return (
+    <Card padding={28} style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Body photos · last 12 weeks</div>
+          <div className="v3-title">You can see the work.</div>
+        </div>
+        <Link href="/progres-fotky">
+          <Button variant="ghost">+ Add photo</Button>
+        </Link>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+        {placeholders.map((p, i) => (
+          <div key={i} style={{
+            position: 'relative', aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden',
+            background: 'var(--bg-3)',
+            border: p.current ? '2px solid var(--accent)' : '1px solid var(--stroke-1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <FitIcon name="camera" size={20} color="var(--text-3)" />
+            <div style={{ position: 'absolute', bottom: 8, left: 8, padding: '3px 8px', borderRadius: 6, background: 'rgba(0,0,0,0.7)', fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-1)' }}>{p.date}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function PersonalRecordsGrid({ records }: { records: PersonalRecord[] }) {
+  const display = records.slice(0, 6);
+  if (display.length === 0) return null;
+
+  return (
+    <Card padding={28} style={{ marginBottom: 24 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Personal records</div>
+      <div className="v3-title" style={{ marginBottom: 20 }}>Your strongest, fastest, longest.</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        {display.map((r) => (
+          <div key={r.exerciseId} style={{ padding: 18, background: 'var(--bg-2)', borderRadius: 12, border: '1px solid var(--stroke-1)' }}>
+            <div className="v3-caption" style={{ marginBottom: 6 }}>{r.exerciseName}</div>
+            <div className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)', marginBottom: 4 }}>{r.bestWeight} kg</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+              <span className="v3-caption">{new Date(r.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              {r.delta !== null && <span style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.delta > 0 ? '+' : ''}{r.delta} kg</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

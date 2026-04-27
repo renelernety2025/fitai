@@ -1,122 +1,125 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Chip, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getAchievements, checkAchievements, type Achievement } from '@/lib/api';
 
-const categoryColors: Record<string, string> = {
-  training: '#FF375F',
-  streak: '#FF9500',
-  milestone: '#A8FF00',
-  habits: '#00E5FF',
-  exploration: '#BF5AF2',
-  nutrition: '#FF9F0A',
-  social: '#0A84FF',
+const CATEGORY_LABELS: Record<string, string> = {
+  training: 'Training', streak: 'Streak', milestone: 'Milestones',
+  habits: 'Habits', exploration: 'Exploration', nutrition: 'Nutrition', social: 'Social',
 };
 
-const categoryLabels: Record<string, string> = {
-  training: 'Trénink',
-  streak: 'Série',
-  milestone: 'Milníky',
-  habits: 'Habity',
-  exploration: 'Objevy',
-  nutrition: 'Výživa',
-  social: 'Komunita',
+const RARITY_COLOR: Record<string, string> = {
+  Common: 'var(--text-2)', Uncommon: 'var(--sage, #A8B89A)',
+  Rare: 'var(--clay)', Epic: 'var(--accent)', Legendary: '#E5B45A',
 };
+
+function getRarity(xp: number): string {
+  if (xp >= 500) return 'Legendary';
+  if (xp >= 200) return 'Epic';
+  if (xp >= 100) return 'Rare';
+  if (xp >= 50) return 'Uncommon';
+  return 'Common';
+}
 
 export default function UspechyPage() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState('all');
 
-  useEffect(() => { document.title = 'FitAI — Úspěchy'; }, []);
-
+  useEffect(() => { document.title = 'FitAI — Achievements'; }, []);
   useEffect(() => {
-    // Trigger check first, then load
     checkAchievements()
       .then(() => getAchievements())
       .then(setAchievements)
       .catch(console.error);
   }, []);
 
-  const unlocked = achievements.filter((a) => a.unlocked);
-  const filtered =
-    filter === 'all' ? achievements : achievements.filter((a) => a.category === filter);
-  const categories = Array.from(new Set(achievements.map((a) => a.category)));
+  const unlocked = achievements.filter(a => a.unlocked);
+  const filtered = filter === 'all' ? achievements : achievements.filter(a => a.category === filter);
+  const categories = Array.from(new Set(achievements.map(a => a.category)));
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Sbírka</V2SectionLabel>
-        <V2Display size="xl">Úspěchy.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          {unlocked.length} z {achievements.length} odemknutých
-        </p>
-      </section>
+    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
+      <PageHeader earned={unlocked.length} total={achievements.length} />
+      <CategoryChips categories={categories} filter={filter} onFilter={setFilter} />
+      <BadgeGrid items={filtered} />
+    </div>
+  );
+}
 
-      {/* Category filter */}
-      <div className="mb-12 flex flex-wrap gap-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
-            filter === 'all'
-              ? 'border-white bg-white text-black'
-              : 'border-white/15 text-white/60 hover:border-white/40'
-          }`}
-        >
-          Vše
-        </button>
-        {categories.map((c) => (
-          <button
-            key={c}
-            onClick={() => setFilter(c)}
-            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
-              filter === c
-                ? 'border-white bg-white text-black'
-                : 'border-white/15 text-white/60 hover:border-white/40'
-            }`}
-          >
-            {categoryLabels[c] || c}
-          </button>
-        ))}
+function PageHeader({ earned, total }: { earned: number; total: number }) {
+  return (
+    <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      <div>
+        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Achievements</div>
+        <h1 className="display-2" style={{ margin: 0 }}>
+          Every milestone<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>counts.</em>
+        </h1>
       </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {filtered.map((a) => (
-          <div
-            key={a.id}
-            className={`relative overflow-hidden rounded-3xl border p-6 transition ${
-              a.unlocked
-                ? 'border-white/15 bg-white/[0.04]'
-                : 'border-white/8 bg-transparent opacity-40'
-            }`}
-          >
-            <div
-              className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-30 blur-3xl"
-              style={{ background: categoryColors[a.category] || '#FFF' }}
-            />
-            <div className="relative">
-              <div className="mb-3 text-5xl">{a.icon}</div>
-              <div
-                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em]"
-                style={{ color: categoryColors[a.category] || '#FFF' }}
-              >
-                {categoryLabels[a.category] || a.category}
-              </div>
-              <div className="text-base font-bold text-white tracking-tight">{a.titleCs}</div>
-              <div className="mt-1 text-xs text-white/50">{a.descriptionCs}</div>
-              <div className="mt-3 text-[10px] font-semibold tabular-nums text-white/40">
-                +{a.xpReward} XP
-              </div>
-              {a.unlocked && a.unlockedAt && (
-                <div className="mt-1 text-[10px] text-[#A8FF00]">
-                  ✓ {new Date(a.unlockedAt).toLocaleDateString('cs-CZ')}
-                </div>
-              )}
-            </div>
+      <div style={{ display: 'flex', gap: 32 }}>
+        <div>
+          <div className="eyebrow">Earned</div>
+          <div className="numeric-display" style={{ fontSize: 40 }}>
+            {earned}<span style={{ fontSize: 18, color: 'var(--text-3)' }}>/{total}</span>
           </div>
-        ))}
+        </div>
       </div>
-    </V2Layout>
+    </div>
+  );
+}
+
+function CategoryChips({ categories, filter, onFilter }: {
+  categories: string[]; filter: string; onFilter: (f: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
+      <Chip active={filter === 'all'} onClick={() => onFilter('all')}>All</Chip>
+      {categories.map(c => (
+        <Chip key={c} active={filter === c} onClick={() => onFilter(c)}>
+          {CATEGORY_LABELS[c] ?? c}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+
+function BadgeGrid({ items }: { items: Achievement[] }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      {items.map(a => <BadgeCard key={a.id} achievement={a} />)}
+    </div>
+  );
+}
+
+function BadgeCard({ achievement: a }: { achievement: Achievement }) {
+  const rarity = getRarity(a.xpReward);
+  const color = RARITY_COLOR[rarity] ?? 'var(--text-3)';
+
+  return (
+    <Card padding={24} style={{ opacity: a.unlocked ? 1 : 0.55, position: 'relative', overflow: 'hidden' }}>
+      {a.unlocked && (
+        <div style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 80,
+          background: `radial-gradient(circle at top right, ${color}22, transparent 60%)` }} />
+      )}
+      <div style={{ fontSize: 44, marginBottom: 16, filter: a.unlocked ? 'none' : 'grayscale(0.8)' }}>
+        {a.icon}
+      </div>
+      {!a.unlocked && (
+        <div style={{ position: 'absolute', top: 16, right: 16 }}>
+          <FitIcon name="lock" size={16} color="var(--text-3)" />
+        </div>
+      )}
+      <div className="title" style={{ marginBottom: 4 }}>{a.titleCs}</div>
+      <div className="caption" style={{ marginBottom: 12, minHeight: 32 }}>{a.descriptionCs}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+        <span style={{ color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{rarity}</span>
+        <span style={{ color: 'var(--text-3)' }}>
+          {a.unlocked && a.unlockedAt
+            ? new Date(a.unlockedAt).toLocaleDateString('cs-CZ')
+            : `+${a.xpReward} XP`}
+        </span>
+      </div>
+    </Card>
   );
 }
