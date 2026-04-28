@@ -157,7 +157,7 @@ function ChatColumn({ messages, loading, error, scrollRef, onSend, hasMessages }
   messages: Msg[];
   loading: boolean;
   error: string | null;
-  scrollRef: React.RefObject<HTMLDivElement | null>;
+  scrollRef: React.RefObject<HTMLDivElement>;
   onSend: (t: string) => void;
   hasMessages: boolean;
 }) {

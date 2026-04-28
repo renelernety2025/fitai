@@ -129,7 +129,7 @@ function PickStep({
   fileRef,
   onFile,
 }: {
-  fileRef: React.RefObject<HTMLInputElement | null>;
+  fileRef: React.RefObject<HTMLInputElement>;
   onFile: (f: File) => void;
 }) {
   return (

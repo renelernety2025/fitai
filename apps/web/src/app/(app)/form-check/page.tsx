@@ -122,7 +122,7 @@ export default function FormCheckPage() {
 /* ---------- Upload pane ---------- */
 
 function UploadPane({ fileRef, file, setFile, exercises, selected, setSelected, onAnalyze }: {
-  fileRef: React.RefObject<HTMLInputElement | null>;
+  fileRef: React.RefObject<HTMLInputElement>;
   file: File | null;
   setFile: (f: File | null) => void;
   exercises: ExerciseData[];
