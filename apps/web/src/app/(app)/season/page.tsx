@@ -43,7 +43,7 @@ function LevelTrack({
   level: number;
   maxLevel: number;
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const levels = Array.from({ length: maxLevel }, (_, i) => i + 1);
 
   useEffect(() => {

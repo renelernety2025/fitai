@@ -117,7 +117,7 @@ function MuscleHeat({ groups }: {
 export default function BodyReportPage() {
   const user = { name: 'Demo User' };
   const mouse = useMouse();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {

@@ -63,7 +63,7 @@ const MORE_NAV = [
 
 function MoreDropdown({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

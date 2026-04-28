@@ -119,7 +119,7 @@ function ChatPanel({
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   const loadMessages = useCallback(() => {
     getMessages(conversationId)

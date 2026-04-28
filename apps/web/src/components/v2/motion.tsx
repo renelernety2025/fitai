@@ -22,7 +22,7 @@ export function ScaleIn({ children, delay = 0, className = '' }: { children: Rea
 
 // SlideUp — uses IntersectionObserver for scroll-triggered
 export function SlideUp({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     if (!ref.current) return;

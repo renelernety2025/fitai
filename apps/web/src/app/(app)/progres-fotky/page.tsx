@@ -26,7 +26,7 @@ export default function ProgresFotkyPage() {
   const [busy, setBusy] = useState(false);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<[string?, string?]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
   useEffect(() => { document.title = 'FitAI — Progress Fotky'; }, []);
 

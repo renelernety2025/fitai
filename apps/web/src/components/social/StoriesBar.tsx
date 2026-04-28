@@ -17,7 +17,7 @@ interface StoriesBarProps {
 }
 
 export default function StoriesBar({ stories, onSelect }: StoriesBarProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
 
   if (stories.length === 0) return null;
 

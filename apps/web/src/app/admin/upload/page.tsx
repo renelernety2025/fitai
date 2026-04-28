@@ -34,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function AdminUploadPage() {
   const { user, isLoading } = useAuth();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
