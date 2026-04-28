@@ -34,7 +34,7 @@ export default function AiChatPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const scrollRef = useRef<HTMLDivElement>(null!);
 
   useEffect(() => { document.title = 'FitAI — AI Coach'; }, []);
 

@@ -10,7 +10,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
-  const sheetRef = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const sheetRef = useRef<HTMLDivElement>(null!);
   const dragStartY = useRef<number | null>(null);
   const dragCurrentY = useRef(0);
 

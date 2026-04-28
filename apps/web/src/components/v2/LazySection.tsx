@@ -11,7 +11,7 @@ export function LazySection({
   className?: string;
   fallback?: ReactNode;
 }) {
-  const ref = useRef<HTMLDivElement>(null) as React.RefObject<HTMLDivElement>;
+  const ref = useRef<HTMLDivElement>(null!);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
