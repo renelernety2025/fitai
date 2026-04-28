@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { V2Layout } from '@/components/v2/V2Layout';
 import {
   getProgressPhotos,
   getProgressPhotoStats,
@@ -91,7 +90,7 @@ export default function ProgresFotkyPage() {
   const compareB = photos.find((p) => p.id === compareIds[1]);
 
   return (
-    <V2Layout>
+    <>
       <>
         {/* Header */}
         <section className="mb-16 pt-12">
@@ -213,7 +212,7 @@ export default function ProgresFotkyPage() {
           )}
         </section>
       </>
-    </V2Layout>
+    </>
   );
 }
 

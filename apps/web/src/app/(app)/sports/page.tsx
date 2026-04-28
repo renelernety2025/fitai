@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 
 const SPORTS = [
   {
@@ -67,7 +67,7 @@ export default function SportsHubPage() {
   useEffect(() => { document.title = 'FitAI — Sporty'; }, []);
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-16">
         <V2SectionLabel>Trenuj cokoliv</V2SectionLabel>
         <V2Display size="xl">Sporty.</V2Display>
@@ -102,6 +102,6 @@ export default function SportsHubPage() {
           </Link>
         ))}
       </div>
-    </V2Layout>
+    </>
   );
 }

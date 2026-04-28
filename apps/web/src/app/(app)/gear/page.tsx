@@ -1,252 +1,117 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
+import { Card, Button, SectionHeader, Tag, Chip } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getMyGear, addGearItem, deleteGearItem } from '@/lib/api';
 
-type GearItem = {
-  id: string;
-  category: string;
-  brand: string;
-  model: string;
-  sessionCount: number;
-  maxSessions: number;
-  purchaseDate: string | null;
-  priceKc: number | null;
-};
+type GearItem = { id: string; category: string; brand: string; model: string; sessionCount: number; maxSessions: number; purchaseDate: string | null; priceKc: number | null };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  SHOES: '\uD83D\uDC5F',
-  BELT: '\uD83C\uDFCB\uFE0F',
-  GLOVES: '\uD83E\uDDE4',
-  WRAPS: '\uD83D\uDD17',
-  CLOTHING: '\uD83D\uDC55',
-  EQUIPMENT: '\u2699\uFE0F',
-};
+const CAT_ICON: Record<string, string> = { SHOES: 'shoe', BELT: 'shield', GLOVES: 'muscle', WRAPS: 'bolt', CLOTHING: 'star', EQUIPMENT: 'settings' };
+const CATEGORIES = ['SHOES', 'BELT', 'GLOVES', 'WRAPS', 'CLOTHING', 'EQUIPMENT'];
 
-const CATEGORIES = Object.keys(CATEGORY_ICONS);
-
-function wearPercent(item: GearItem): number {
-  if (!item.maxSessions || item.maxSessions <= 0) return 0;
-  return Math.min((item.sessionCount / item.maxSessions) * 100, 100);
-}
-
-function wearColor(pct: number): string {
-  if (pct >= 80) return '#FF375F';
-  if (pct >= 50) return '#FF9F0A';
-  return '#A8FF00';
-}
+function wearPct(item: GearItem): number { return item.maxSessions > 0 ? Math.min((item.sessionCount / item.maxSessions) * 100, 100) : 0; }
+function wearColor(pct: number): string { return pct >= 80 ? 'var(--danger, #ef4444)' : pct >= 50 ? '#FF9F0A' : 'var(--sage, #34d399)'; }
 
 export default function GearPage() {
   const [items, setItems] = useState<GearItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({
-    category: 'SHOES',
-    brand: '',
-    model: '',
-    maxSessions: 300,
-    purchaseDate: '',
-    priceKc: 0,
-  });
+  const [form, setForm] = useState({ category: 'SHOES', brand: '', model: '', maxSessions: 300 });
 
-  useEffect(() => {
-    document.title = 'FitAI — Gear';
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Gear'; }, []);
 
-  function load() {
-    setLoading(true);
-    getMyGear()
-      .then((g) => setItems(g as GearItem[]))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }
-
+  function load() { setLoading(true); getMyGear().then((g) => setItems(g as GearItem[])).catch(() => {}).finally(() => setLoading(false)); }
   useEffect(() => { load(); }, []);
 
   function handleAdd() {
     if (!form.brand.trim() || !form.model.trim()) return;
-    addGearItem({
-      category: form.category,
-      brand: form.brand,
-      model: form.model,
-      maxSessions: form.maxSessions,
-      purchaseDate: form.purchaseDate || undefined,
-      priceKc: form.priceKc || undefined,
-    })
-      .then(() => { setShowAdd(false); load(); })
-      .catch(() => {});
-  }
-
-  function handleDelete(id: string) {
-    deleteGearItem(id)
-      .then(() => load())
-      .catch(() => {});
+    addGearItem({ category: form.category, brand: form.brand, model: form.model, maxSessions: form.maxSessions })
+      .then(() => { setShowAdd(false); load(); }).catch(() => {});
   }
 
   return (
-    <V2Layout>
-      <Link
-        href="/dashboard"
-        className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
-      >
-        &larr; Dashboard
-      </Link>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Equipment</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Your<br /><em className="v3-clay" style={{ fontWeight: 300 }}>gear.</em>
+          </h1>
+          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 12 }}>Track wear on your equipment. Replace on time = fewer injuries.</p>
+        </section>
 
-      <section className="pt-8 pb-6">
-        <V2SectionLabel>MY EQUIPMENT</V2SectionLabel>
-        <V2Display size="xl">Gear</V2Display>
-        <p className="mt-3 max-w-xl text-sm text-white/50">
-          Sleduj opotrebeni sveho vybaveni. Vcas vymena = mene zraneni.
-        </p>
-      </section>
-
-      <button
-        onClick={() => setShowAdd(true)}
-        className="mb-6 rounded-xl bg-[#00E5FF] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-black transition hover:bg-[#00E5FF]/80"
-      >
-        + Add Gear
-      </button>
-
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => <SkeletonCard key={i} lines={3} />)}
+        <div style={{ marginBottom: 24 }}>
+          <Button variant="accent" size="sm" onClick={() => setShowAdd(true)} icon={<FitIcon name="plus" size={14} />}>Add Gear</Button>
         </div>
-      ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16 text-center">
-          <p className="text-3xl">
-            {CATEGORY_ICONS.SHOES}
-          </p>
-          <p className="mt-3 text-sm text-white/40">
-            Zatim zadne vybaveni. Pridej sve prvni boty nebo rukavice!
-          </p>
-        </div>
-      ) : (
-        <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
-            const pct = wearPercent(item);
-            const color = wearColor(pct);
-            return (
-              <StaggerItem key={item.id}>
-                <div className="group relative rounded-2xl border border-white/8 bg-white/[0.03] p-6 transition hover:border-white/15">
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="absolute right-3 top-3 text-white/20 opacity-0 transition group-hover:opacity-100 hover:text-[#FF375F]"
-                    title="Smazat"
-                  >
-                    &times;
+
+        {loading ? (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}>
+            <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span>
+          </div>
+        ) : items.length === 0 ? (
+          <Card padding={48} style={{ textAlign: 'center' as const }}>
+            <FitIcon name="shoe" size={32} color="var(--text-3)" />
+            <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No gear yet. Add your first shoes or gloves!</p>
+          </Card>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+            {items.map((item) => {
+              const pct = wearPct(item);
+              const color = wearColor(pct);
+              return (
+                <Card key={item.id} padding={20} style={{ position: 'relative' }}>
+                  <button onClick={() => deleteGearItem(item.id).then(load)} style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }} title="Delete">
+                    <FitIcon name="x" size={14} color="var(--text-3)" />
                   </button>
-                  <div className="mb-3 flex items-center gap-3">
-                    <span className="text-2xl">
-                      {CATEGORY_ICONS[item.category] || CATEGORY_ICONS.EQUIPMENT}
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <FitIcon name={CAT_ICON[item.category] || 'settings'} size={20} color="var(--accent)" />
                     <div>
-                      <p className="text-sm font-semibold text-white">
-                        {item.brand} {item.model}
-                      </p>
-                      <p className="text-[10px] uppercase tracking-wider text-white/40">
-                        {item.category}
-                      </p>
+                      <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{item.brand} {item.model}</div>
+                      <Tag>{item.category}</Tag>
                     </div>
                   </div>
-                  <div className="mb-1 flex items-center justify-between text-xs text-white/50">
-                    <span>{item.sessionCount} sessions</span>
-                    <span style={{ color }}>{Math.round(pct)}%</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                    <span style={{ color: 'var(--text-3)' }}>{item.sessionCount} sessions</span>
+                    <span className="v3-numeric" style={{ color, fontWeight: 600 }}>{Math.round(pct)}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-white/5">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${pct}%`,
-                        backgroundColor: color,
-                      }}
-                    />
+                  <div style={{ height: 4, background: 'var(--bg-3)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2 }} />
                   </div>
-                  <p className="mt-2 text-[10px] text-white/30">
-                    Max {item.maxSessions} sessions
-                  </p>
-                </div>
-              </StaggerItem>
-            );
-          })}
-        </StaggerContainer>
-      )}
-
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6">
-            <h3 className="mb-4 text-lg font-bold text-white">Add Gear</h3>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-              Category
-            </label>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setForm({ ...form, category: c })}
-                  className={`rounded-full px-3 py-1.5 text-xs transition ${
-                    form.category === c
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  {CATEGORY_ICONS[c]} {c}
-                </button>
-              ))}
-            </div>
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-                  Brand
-                </label>
-                <input
-                  value={form.brand}
-                  onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#00E5FF]"
-                  placeholder="Nike"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-                  Model
-                </label>
-                <input
-                  value={form.model}
-                  onChange={(e) => setForm({ ...form, model: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#00E5FF]"
-                  placeholder="Metcon 9"
-                />
-              </div>
-            </div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-              Max Sessions
-            </label>
-            <input
-              type="number"
-              value={form.maxSessions}
-              onChange={(e) => setForm({ ...form, maxSessions: Number(e.target.value) })}
-              className="mb-6 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#00E5FF]"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowAdd(false)}
-                className="flex-1 rounded-xl border border-white/10 py-2.5 text-xs font-semibold uppercase text-white/60 transition hover:text-white"
-              >
-                Zrusit
-              </button>
-              <button
-                onClick={handleAdd}
-                className="flex-1 rounded-xl bg-[#00E5FF] py-2.5 text-xs font-semibold uppercase text-black transition hover:bg-[#00E5FF]/80"
-              >
-                Pridat
-              </button>
-            </div>
+                  <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6 }}>Max {item.maxSessions} sessions</div>
+                </Card>
+              );
+            })}
           </div>
-        </div>
-      )}
-    </V2Layout>
+        )}
+
+        {showAdd && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(8px)', padding: 16 }}>
+            <Card padding={32} style={{ width: '100%', maxWidth: 420 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <span className="v3-display-3">Add Gear</span>
+                <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><FitIcon name="x" size={20} color="var(--text-3)" /></button>
+              </div>
+              <div className="v3-eyebrow" style={{ marginBottom: 8 }}>CATEGORY</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 16 }}>
+                {CATEGORIES.map((c) => (
+                  <Chip key={c} active={form.category === c} onClick={() => setForm({ ...form, category: c })} icon={<FitIcon name={CAT_ICON[c] || 'settings'} size={12} />}>{c}</Chip>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                <input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} placeholder="Brand" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+                <input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="Model" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              </div>
+              <div className="v3-eyebrow" style={{ marginBottom: 6 }}>MAX SESSIONS</div>
+              <input type="number" value={form.maxSessions} onChange={(e) => setForm({ ...form, maxSessions: Number(e.target.value) })} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Button variant="ghost" full onClick={() => setShowAdd(false)}>Cancel</Button>
+                <Button variant="accent" full onClick={handleAdd}>Add</Button>
+              </div>
+            </Card>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

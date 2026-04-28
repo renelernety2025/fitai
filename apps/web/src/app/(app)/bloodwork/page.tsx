@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Button, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getBloodwork, addBloodwork, deleteBloodwork, getBloodworkAnalysis } from '@/lib/api';
 
 const TEST_TYPES = [
@@ -16,56 +17,32 @@ const TEST_TYPES = [
 ];
 
 function DotChart({ entries, type }: { entries: any[]; type: typeof TEST_TYPES[number] }) {
-  const filtered = entries.filter((e) => e.testType === type.value).sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-  );
+  const filtered = entries.filter((e) => e.testType === type.value).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   if (filtered.length === 0) return null;
-
   const vals = filtered.map((e) => e.value);
   const allMin = Math.min(type.min * 0.8, ...vals);
   const allMax = Math.max(type.max * 1.2, ...vals);
   const range = allMax - allMin || 1;
-  const w = 280;
-  const h = 80;
-
-  const pts = filtered.map((e, i) => ({
-    x: filtered.length === 1 ? w / 2 : (i / (filtered.length - 1)) * w,
-    y: h - ((e.value - allMin) / range) * h,
-    val: e.value,
-    inRange: e.value >= type.min && e.value <= type.max,
-  }));
-
+  const w = 280, h = 80;
+  const pts = filtered.map((e, i) => ({ x: filtered.length === 1 ? w / 2 : (i / (filtered.length - 1)) * w, y: h - ((e.value - allMin) / range) * h, val: e.value, inRange: e.value >= type.min && e.value <= type.max }));
   const refY1 = h - ((type.min - allMin) / range) * h;
   const refY2 = h - ((type.max - allMin) / range) * h;
-
   return (
-    <div className="mb-8">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-white">{type.label}</span>
-        <span className="text-[10px] text-white/40">{type.unit}</span>
+    <Card padding={16} style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{type.label}</span>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{type.unit}</span>
       </div>
-      <svg width={w} height={h} className="w-full" viewBox={`0 0 ${w} ${h}`}>
-        <rect x={0} y={Math.min(refY1, refY2)} width={w}
-          height={Math.abs(refY1 - refY2)} fill="#A8FF00" fillOpacity={0.06} rx={4}
-        />
-        {pts.map((p, i) =>
-          i > 0 ? (
-            <line key={`l${i}`} x1={pts[i - 1].x} y1={pts[i - 1].y} x2={p.x} y2={p.y}
-              stroke={p.inRange ? '#A8FF00' : '#FF375F'} strokeWidth={1.5} strokeOpacity={0.5}
-            />
-          ) : null,
-        )}
-        {pts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={4}
-            fill={p.inRange ? '#A8FF00' : '#FF375F'}
-          />
-        ))}
+      <svg width={w} height={h} style={{ width: '100%' }} viewBox={`0 0 ${w} ${h}`}>
+        <rect x={0} y={Math.min(refY1, refY2)} width={w} height={Math.abs(refY1 - refY2)} fill="var(--sage, #34d399)" fillOpacity={0.06} rx={4} />
+        {pts.map((p, i) => i > 0 ? <line key={`l${i}`} x1={pts[i - 1].x} y1={pts[i - 1].y} x2={p.x} y2={p.y} stroke={p.inRange ? 'var(--sage, #34d399)' : 'var(--danger, #ef4444)'} strokeWidth={1.5} strokeOpacity={0.5} /> : null)}
+        {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={4} fill={p.inRange ? 'var(--sage, #34d399)' : 'var(--danger, #ef4444)'} />)}
       </svg>
-      <div className="mt-1 flex justify-between text-[9px] text-white/30">
-        <span>Ref: {type.min}-{type.max}</span>
-        <span>Posledni: {vals[vals.length - 1]}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Ref: {type.min}-{type.max}</span>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Last: {vals[vals.length - 1]}</span>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -78,25 +55,13 @@ export default function BloodworkPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [form, setForm] = useState({ testType: 'testosterone', value: '', date: '', lab: '' });
 
-  useEffect(() => { document.title = 'FitAI — Krevní testy'; }, []);
-
-  useEffect(() => {
-    getBloodwork()
-      .then(setEntries)
-      .catch(() => setError('Nepodarilo se nacist zaznamy'))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Bloodwork'; }, []);
+  useEffect(() => { getBloodwork().then(setEntries).catch(() => setError('Failed to load')).finally(() => setLoading(false)); }, []);
 
   async function handleAdd() {
     if (!form.value || !form.date) return;
-    const selected = TEST_TYPES.find((t) => t.value === form.testType);
-    const entry = await addBloodwork({
-      testType: form.testType,
-      value: parseFloat(form.value),
-      unit: selected?.unit || '',
-      date: form.date,
-      lab: form.lab || null,
-    });
+    const sel = TEST_TYPES.find((t) => t.value === form.testType);
+    const entry = await addBloodwork({ testType: form.testType, value: parseFloat(form.value), unit: sel?.unit || '', date: form.date, lab: form.lab || null });
     setEntries((prev) => [...prev, entry]);
     setForm({ testType: 'testosterone', value: '', date: '', lab: '' });
     setShowForm(false);
@@ -104,136 +69,86 @@ export default function BloodworkPage() {
 
   async function handleAnalysis() {
     setAnalyzing(true);
-    try {
-      const res = await getBloodworkAnalysis();
-      setAnalysis(res.summary || res.analysis || 'Zadna analyza.');
-    } catch {
-      setAnalysis('AI analyza neni dostupna.');
-    } finally {
-      setAnalyzing(false);
-    }
+    try { const res = await getBloodworkAnalysis(); setAnalysis(res.summary || res.analysis || 'No analysis.'); }
+    catch { setAnalysis('AI analysis unavailable.'); }
+    finally { setAnalyzing(false); }
   }
 
-  async function handleDelete(id: string) {
-    await deleteBloodwork(id);
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }
-
-  if (loading) {
-    return (
-      <V2Layout>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
-        </div>
-      </V2Layout>
-    );
-  }
+  if (loading) return <><div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-3)', animation: 'pulse 1.5s infinite' }} /></div></>;
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Zdravi</V2SectionLabel>
-        <V2Display size="xl">Krevni testy.</V2Display>
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Health</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>Know your<br /><em className="v3-clay" style={{ fontWeight: 300 }}>numbers.</em></h1>
+        </section>
 
-      {error && (
-        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
-          {error}
+        {error && <Card padding={16} style={{ marginBottom: 16 }}><p className="v3-body" style={{ color: 'var(--danger, #ef4444)' }}>{error}</p></Card>}
+
+        <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+          <Button variant="ghost" onClick={() => setShowForm((p) => !p)} icon={<FitIcon name="plus" size={14} />}>Add record</Button>
+          <Button variant="ghost" onClick={handleAnalysis} disabled={analyzing || entries.length === 0} icon={<FitIcon name="brain" size={14} />}>
+            {analyzing ? 'Analyzing...' : 'AI analysis'}
+          </Button>
         </div>
-      )}
 
-      <div className="mb-8 flex gap-3">
-        <button onClick={() => setShowForm((p) => !p)}
-          className="rounded-full border border-[#A8FF00]/30 px-6 py-2.5 text-sm font-semibold text-[#A8FF00] transition hover:bg-[#A8FF00]/10"
-        >
-          + Pridat zaznam
-        </button>
-        <button onClick={handleAnalysis} disabled={analyzing || entries.length === 0}
-          className="rounded-full border border-[#BF5AF2]/30 px-6 py-2.5 text-sm font-semibold text-[#BF5AF2] transition hover:bg-[#BF5AF2]/10 disabled:opacity-40"
-        >
-          {analyzing ? 'Analyzuji...' : 'AI analyza'}
-        </button>
+        {showForm && (
+          <Card padding={20} style={{ marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+              <select value={form.testType} onChange={(e) => setForm({ ...form, testType: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-0)', color: 'var(--text-1)', fontSize: 14 }}>
+                {TEST_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <input type="number" step="any" placeholder="Value" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-0)', color: 'var(--text-1)', fontSize: 14 }} />
+              <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-0)', color: 'var(--text-1)', fontSize: 14 }} />
+              <input type="text" placeholder="Lab" value={form.lab} onChange={(e) => setForm({ ...form, lab: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-0)', color: 'var(--text-1)', fontSize: 14 }} />
+            </div>
+            <div style={{ marginTop: 12 }}><Button variant="accent" onClick={handleAdd}>Save</Button></div>
+          </Card>
+        )}
+
+        {analysis && (
+          <Card padding={20} style={{ marginBottom: 24, borderColor: 'color-mix(in srgb, #BF5AF2 30%, transparent)' }}>
+            <Tag color="#BF5AF2">AI ANALYSIS</Tag>
+            <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 8 }}>{analysis}</p>
+          </Card>
+        )}
+
+        {entries.length === 0 && !error && (
+          <Card padding={48} style={{ textAlign: 'center' as const }}>
+            <FitIcon name="pulse" size={28} color="var(--text-3)" />
+            <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No bloodwork records yet.</p>
+          </Card>
+        )}
+
+        {entries.length > 0 && (
+          <section style={{ marginBottom: 32 }}>{TEST_TYPES.map((t) => <DotChart key={t.value} entries={entries} type={t} />)}</section>
+        )}
+
+        {entries.length > 0 && (
+          <section>
+            <SectionHeader title="All records" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {[...entries].reverse().map((e) => {
+                const t = TEST_TYPES.find((tt) => tt.value === e.testType);
+                const inRange = t ? e.value >= t.min && e.value <= t.max : true;
+                return (
+                  <Card key={e.id} padding="10px 16px">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{t?.label || e.testType}</span>
+                        <span className="v3-numeric" style={{ fontWeight: 700, color: inRange ? 'var(--sage, #34d399)' : 'var(--danger, #ef4444)' }}>{e.value} {e.unit}</span>
+                        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{e.date}</span>
+                      </div>
+                      <button onClick={() => deleteBloodwork(e.id).then(() => setEntries((prev) => prev.filter((x) => x.id !== e.id)))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 11 }}>Delete</button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
-
-      {showForm && (
-        <div className="mb-8 rounded-2xl border border-white/10 bg-white/3 p-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <select value={form.testType} onChange={(e) => setForm({ ...form, testType: e.target.value })}
-              className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none"
-            >
-              {TEST_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-            <input type="number" step="any" placeholder="Hodnota" value={form.value}
-              onChange={(e) => setForm({ ...form, value: e.target.value })}
-              className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
-            />
-            <input type="date" value={form.date}
-              onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none"
-            />
-            <input type="text" placeholder="Laborator" value={form.lab}
-              onChange={(e) => setForm({ ...form, lab: e.target.value })}
-              className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
-            />
-          </div>
-          <button onClick={handleAdd}
-            className="mt-4 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
-          >
-            Ulozit
-          </button>
-        </div>
-      )}
-
-      {analysis && (
-        <div className="mb-10 rounded-2xl border border-[#BF5AF2]/20 bg-[#BF5AF2]/5 p-6">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#BF5AF2]">AI analyza</div>
-          <p className="text-sm leading-relaxed text-white/70">{analysis}</p>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {entries.length === 0 && !error && (
-        <div className="py-16 text-center text-white/30">
-          <p className="text-lg">Zatim zadne krevni testy</p>
-          <p className="mt-2 text-sm">Pridej prvni zaznam tlacitkem vyse.</p>
-        </div>
-      )}
-
-      {/* Charts per test type */}
-      {entries.length > 0 && (
-        <section className="mb-16">
-          {TEST_TYPES.map((t) => (
-            <DotChart key={t.value} entries={entries} type={t} />
-          ))}
-        </section>
-      )}
-
-      {/* Raw entries list */}
-      {entries.length > 0 && (
-        <section className="mb-16">
-          <V2SectionLabel>Vsechny zaznamy</V2SectionLabel>
-          <div className="space-y-2">
-            {[...entries].reverse().map((e) => {
-              const t = TEST_TYPES.find((tt) => tt.value === e.testType);
-              const inRange = t ? e.value >= t.min && e.value <= t.max : true;
-              return (
-                <div key={e.id} className="flex items-center justify-between rounded-xl border border-white/8 px-5 py-3 transition hover:border-white/20">
-                  <div>
-                    <span className="text-sm font-semibold text-white">{t?.label || e.testType}</span>
-                    <span className={`ml-3 text-sm font-bold tabular-nums ${inRange ? 'text-[#A8FF00]' : 'text-[#FF375F]'}`}>
-                      {e.value} {e.unit}
-                    </span>
-                    <span className="ml-3 text-[11px] text-white/30">{e.date}</span>
-                  </div>
-                  <button onClick={() => handleDelete(e.id)} className="text-xs text-white/20 transition hover:text-[#FF375F]">
-                    Smazat
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-    </V2Layout>
+    </>
   );
 }

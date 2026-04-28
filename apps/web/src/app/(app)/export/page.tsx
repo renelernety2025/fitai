@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  V2Layout,
-  V2SectionLabel,
-  V2Display,
-} from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { downloadExport } from '@/lib/api';
 
 function getCurrentMonth(): string {
@@ -46,7 +42,7 @@ export default function ExportPage() {
   }
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-16">
         <V2SectionLabel>Tvoje data</V2SectionLabel>
         <V2Display size="xl">Export.</V2Display>
@@ -188,7 +184,7 @@ export default function ExportPage() {
           />
         </div>
       </div>
-    </V2Layout>
+    </>
   );
 }
 

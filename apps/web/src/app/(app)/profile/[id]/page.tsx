@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
 import PropsButton from '@/components/social/PropsButton';
 import {
   getPublicProfile,
@@ -85,23 +85,23 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <V2Layout>
+      <>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div style={{ color: 'var(--text-muted)' }}>Nacitam...</div>
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   if (error || !profile) {
     return (
-      <V2Layout>
+      <>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div style={{ color: '#FF375F' }}>
             {error || 'Profil nenalezen'}
           </div>
         </div>
-      </V2Layout>
+      </>
     );
   }
 
@@ -109,7 +109,7 @@ export default function PublicProfilePage() {
   const isOwn = user?.id === profile.id;
 
   return (
-    <V2Layout>
+    <>
       <Link href="/community" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
         &larr; Komunita
       </Link>
@@ -226,6 +226,6 @@ export default function PublicProfilePage() {
           </div>
         </section>
       )}
-    </V2Layout>
+    </>
   );
 }

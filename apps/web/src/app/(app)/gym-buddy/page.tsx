@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import BuddyProfileForm from '@/components/social/BuddyProfileForm';
 import BuddyCard from '@/components/social/BuddyCard';
 import {
@@ -87,7 +87,7 @@ export default function GymBuddyPage() {
 
   if (step === 'loading') {
     return (
-      <V2Layout>
+      <>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div
             className="text-sm"
@@ -96,12 +96,12 @@ export default function GymBuddyPage() {
             Nacitam...
           </div>
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-12">
         <V2SectionLabel>Gym Buddy</V2SectionLabel>
         <V2Display size="xl">Najdi trenaka.</V2Display>
@@ -251,6 +251,6 @@ export default function GymBuddyPage() {
           ))}
         </section>
       )}
-    </V2Layout>
+    </>
   );
 }

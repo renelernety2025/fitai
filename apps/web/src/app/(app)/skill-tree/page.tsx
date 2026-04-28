@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { V2SectionLabel } from '@/components/v2/V2Layout';
 import { FadeIn } from '@/components/v2/motion';
 import { getSkillTree, checkSkillTree } from '@/lib/api';
 
@@ -130,7 +130,7 @@ export default function SkillTreePage() {
     : [];
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-24">
         <div className="mb-6 flex items-center justify-between">
           <div>
@@ -262,6 +262,6 @@ export default function SkillTreePage() {
           <p className="py-24 text-center text-white/40">Skill tree neni dostupny.</p>
         )}
       </section>
-    </V2Layout>
+    </>
   );
 }

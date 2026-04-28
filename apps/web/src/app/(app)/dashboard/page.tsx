@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { V2Layout } from '@/components/v2/V2Layout';
 import { V2DailyBrief } from '@/components/v2/V2DailyBrief';
 import { Card, SectionHeader } from '@/components/v3';
 import TodayActionCard from '@/components/dashboard/TodayActionCard';
@@ -61,7 +60,7 @@ export default function DashboardV3Page() {
   const subtitle = `${dateStr}${recovery === 'fresh' ? ' \u00B7 Svezi' : recovery === 'fatigued' ? ' \u00B7 Unaveny' : ''}`;
 
   return (
-    <V2Layout>
+    <>
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 16px 64px' }}>
         {/* Greeting */}
         <GreetingHero
@@ -113,6 +112,6 @@ export default function DashboardV3Page() {
 
         <OnboardingTour />
       </div>
-    </V2Layout>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getGymReviews, addGymReview } from '@/lib/api';
 
 const EQUIPMENT_OPTIONS = [
@@ -79,7 +79,7 @@ export default function GymFinderPage() {
   }
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-8">
         <V2SectionLabel>Komunita</V2SectionLabel>
         <V2Display size="xl">Najdi posilovnu.</V2Display>
@@ -216,6 +216,6 @@ export default function GymFinderPage() {
           Zadne posilovny. Bud prvni kdo prida recenzi!
         </div>
       )}
-    </V2Layout>
+    </>
   );
 }

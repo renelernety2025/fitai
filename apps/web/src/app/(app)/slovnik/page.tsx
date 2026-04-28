@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getGlossary, type GlossaryTerm } from '@/lib/api';
 
 export default function GlossaryV2Page() {
@@ -16,7 +16,7 @@ export default function GlossaryV2Page() {
   }, [query]);
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-12">
         <V2SectionLabel>Knihovna</V2SectionLabel>
         <V2Display size="xl">Slovník.</V2Display>
@@ -51,6 +51,6 @@ export default function GlossaryV2Page() {
           <p className="py-12 text-center text-sm text-white/40">Žádné výsledky.</p>
         )}
       </div>
-    </V2Layout>
+    </>
   );
 }

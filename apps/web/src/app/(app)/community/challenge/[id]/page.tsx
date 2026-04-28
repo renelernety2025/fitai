@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import {
   getChallengeDetail,
@@ -52,11 +52,11 @@ export default function ChallengeDetailPage() {
 
   if (loading) {
     return (
-      <V2Layout>
+      <>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
@@ -93,7 +93,7 @@ export default function ChallengeDetailPage() {
   }
 
   return (
-    <V2Layout>
+    <>
       {/* Back link */}
       <button
         onClick={() => router.push('/community')}
@@ -335,6 +335,6 @@ export default function ChallengeDetailPage() {
           )}
         </div>
       </section>
-    </V2Layout>
+    </>
   );
 }

@@ -6,7 +6,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { GlassCard } from '@/components/v2/GlassCard';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
@@ -141,7 +141,7 @@ export default function TrainersPage() {
   }, [trainers, search, filter]);
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-8">
         <V2SectionLabel>Find Your Coach</V2SectionLabel>
         <V2Display size="xl">Trainers.</V2Display>
@@ -202,6 +202,6 @@ export default function TrainersPage() {
           </div>
         </StaggerContainer>
       )}
-    </V2Layout>
+    </>
   );
 }

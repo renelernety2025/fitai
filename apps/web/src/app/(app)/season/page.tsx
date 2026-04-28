@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { V2Layout, V2SectionLabel } from '@/components/v2/V2Layout';
+import { V2SectionLabel } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { Confetti } from '@/components/v2/Confetti';
 import { getCurrentSeason, joinSeason, checkSeasonMissions } from '@/lib/api';
@@ -174,7 +174,7 @@ export default function SeasonPage() {
   }
 
   return (
-    <V2Layout>
+    <>
       <Confetti trigger={confettiTrigger} />
       <section className="pt-12 pb-24">
         <V2SectionLabel>Sezona</V2SectionLabel>
@@ -290,6 +290,6 @@ export default function SeasonPage() {
           </div>
         )}
       </section>
-    </V2Layout>
+    </>
   );
 }

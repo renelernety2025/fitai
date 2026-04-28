@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import {
   getConversations,
@@ -231,7 +231,7 @@ function ChatPanel({
 
 export default function MessagesPageWrapper() {
   return (
-    <Suspense fallback={<V2Layout><div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-white/20 border-t-[#A8FF00] rounded-full animate-spin" /></div></V2Layout>}>
+    <Suspense fallback={<><div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-white/20 border-t-[#A8FF00] rounded-full animate-spin" /></div></>}>
       <MessagesPage />
     </Suspense>
   );
@@ -264,7 +264,7 @@ function MessagesPage() {
   }, [searchParams]);
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-6">
         <V2SectionLabel>Zpravy</V2SectionLabel>
         <V2Display size="lg">Chat.</V2Display>
@@ -320,6 +320,6 @@ function MessagesPage() {
           </div>
         </div>
       )}
-    </V2Layout>
+    </>
   );
 }

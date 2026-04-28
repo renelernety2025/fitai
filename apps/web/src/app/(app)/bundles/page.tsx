@@ -1,206 +1,92 @@
 'use client';
 
-/**
- * Bundles — curated packages purchasable with XP.
- */
-
 import { useEffect, useState, useMemo } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { GlassCard } from '@/components/v2/GlassCard';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
+import { Card, Button, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getBundles, purchaseBundle } from '@/lib/api';
 
 type Bundle = { id: string; name: string; description?: string; items: any[]; priceXP: number; giftable: boolean; creator?: { name: string }; purchased?: boolean; creatorName?: string };
 
-const TYPE_ICONS: Record<string, string> = {
-  workout_plan: '\uD83C\uDFCB',
-  meal_plan: '\uD83C\uDF5D',
-  supplement: '\uD83D\uDC8A',
-  challenge: '\u26A1',
-  recovery: '\uD83E\uDDD8',
-};
-
-function BundleCard({
-  bundle,
-  onPurchase,
-}: {
-  bundle: Bundle;
-  onPurchase: (id: string) => void;
-}) {
-  return (
-    <GlassCard className="p-6 h-full flex flex-col" hover={false}>
-      <div className="flex-1">
-        <h3 className="text-lg font-bold tracking-tight text-white">
-          {bundle.name}
-        </h3>
-        <p className="mt-2 text-sm text-white/50 line-clamp-2">
-          {bundle.description}
-        </p>
-
-        {/* Items preview */}
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {bundle.items.slice(0, 5).map((item, i) => (
-            <span
-              key={i}
-              className="rounded-full bg-white/8 px-2.5 py-0.5 text-[10px] text-white/50"
-            >
-              {TYPE_ICONS[item.type] || '\u2699'} {item.name}
-            </span>
-          ))}
-          {bundle.items.length > 5 && (
-            <span className="rounded-full bg-white/8 px-2.5 py-0.5 text-[10px] text-white/40">
-              +{bundle.items.length - 5}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-4 flex items-center gap-3 text-[11px] text-white/35">
-          <span>by {bundle.creatorName || bundle.creator?.name || 'Unknown'}</span>
-          {bundle.giftable && (
-            <span className="rounded-full bg-[#BF5AF2]/15 px-2 py-0.5 text-[#BF5AF2]">
-              Giftable
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Price + actions */}
-      <div className="mt-5 flex items-center gap-3">
-        <span className="text-lg font-bold text-[#FF9F0A]">
-          {bundle.priceXP} XP
-        </span>
-        <div className="flex-1" />
-        {bundle.purchased ? (
-          <span className="rounded-full bg-[#A8FF00]/15 px-3 py-1.5 text-xs font-medium text-[#A8FF00]">
-            Vlastnis
-          </span>
-        ) : (
-          <>
-            <button
-              onClick={() => onPurchase(bundle.id)}
-              className="rounded-lg bg-[#FF375F] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#FF375F]/80 transition-all"
-            >
-              Koupit
-            </button>
-            {bundle.giftable && (
-              <button className="rounded-lg border border-white/15 bg-white/5 px-4 py-1.5 text-xs text-white/60 hover:bg-white/10 transition-all">
-                Darovat
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </GlassCard>
-  );
-}
+const TYPE_ICON: Record<string, string> = { workout_plan: 'dumbbell', meal_plan: 'apple', supplement: 'pill', challenge: 'bolt', recovery: 'heart' };
 
 export default function BundlesPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    document.title = 'FitAI — Bundles';
-  }, []);
-
-  useEffect(() => {
-    getBundles()
-      .then(setBundles)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Bundles'; }, []);
+  useEffect(() => { getBundles().then(setBundles).catch(() => setError(true)).finally(() => setLoading(false)); }, []);
 
   async function handlePurchase(id: string) {
-    try {
-      await purchaseBundle(id);
-      setBundles((prev) =>
-        prev.map((b) =>
-          b.id === id ? { ...b, purchased: true } : b,
-        ),
-      );
-    } catch {
-      /* noop */
-    }
+    try { await purchaseBundle(id); setBundles((prev) => prev.map((b) => b.id === id ? { ...b, purchased: true } : b)); } catch { /* noop */ }
   }
 
-  const myBundles = useMemo(
-    () => bundles.filter((b) => b.purchased),
-    [bundles],
-  );
-  const available = useMemo(
-    () => bundles.filter((b) => !b.purchased),
-    [bundles],
-  );
+  const available = useMemo(() => bundles.filter((b) => !b.purchased), [bundles]);
+  const myBundles = useMemo(() => bundles.filter((b) => b.purchased), [bundles]);
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Curated Packages</V2SectionLabel>
-        <V2Display size="xl">Bundles.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Balicky cviku, jidel a vyzev od komunity. Platba XP body.
-        </p>
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Packages</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>Curated<br /><em className="v3-clay" style={{ fontWeight: 300 }}>for you.</em></h1>
+          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 12 }}>Exercise, meal, and challenge bundles from the community. Pay with XP.</p>
+        </section>
 
-      {error && (
-        <p className="mb-8 text-sm text-[#FF375F]">
-          Nepodarilo se nacist bundles.
-        </p>
-      )}
+        {error && <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 16 }}>Failed to load bundles.</p>}
 
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      ) : bundles.length === 0 ? (
-        <div className="py-20 text-center">
-          <p className="text-sm text-white/30">
-            Zatim zadne bundles.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Available */}
-          {available.length > 0 && (
-            <section className="mb-10">
-              <StaggerContainer>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {available.map((b) => (
-                    <StaggerItem key={b.id}>
-                      <BundleCard
-                        bundle={b}
-                        onPurchase={handlePurchase}
-                      />
-                    </StaggerItem>
-                  ))}
-                </div>
-              </StaggerContainer>
-            </section>
-          )}
-
-          {/* My bundles */}
-          {myBundles.length > 0 && (
-            <section className="mb-12">
-              <V2SectionLabel>Moje Bundles</V2SectionLabel>
-              <StaggerContainer>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}><span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span></div>
+        ) : bundles.length === 0 ? (
+          <Card padding={48} style={{ textAlign: 'center' as const }}><p className="v3-body" style={{ color: 'var(--text-3)' }}>No bundles yet.</p></Card>
+        ) : (
+          <>
+            {available.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, marginBottom: 32 }}>
+                {available.map((b) => (
+                  <Card key={b.id} padding={20}>
+                    <div className="v3-body" style={{ fontWeight: 700, color: 'var(--text-1)', fontSize: 16 }}>{b.name}</div>
+                    {b.description && <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>{b.description}</p>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginTop: 12 }}>
+                      {b.items.slice(0, 5).map((item, i) => (
+                        <Tag key={i}><FitIcon name={TYPE_ICON[item.type] || 'settings'} size={10} /> {item.name}</Tag>
+                      ))}
+                      {b.items.length > 5 && <Tag>+{b.items.length - 5}</Tag>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                      <span className="v3-caption" style={{ color: 'var(--text-3)' }}>by {b.creatorName || b.creator?.name || 'Unknown'}</span>
+                      {b.giftable && <Tag color="#BF5AF2">Giftable</Tag>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                      <span className="v3-numeric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>{b.priceXP} XP</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <Button variant="accent" size="sm" onClick={() => handlePurchase(b.id)}>Buy</Button>
+                        {b.giftable && <Button variant="ghost" size="sm">Gift</Button>}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+            {myBundles.length > 0 && (
+              <>
+                <SectionHeader title="My bundles" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
                   {myBundles.map((b) => (
-                    <StaggerItem key={b.id}>
-                      <BundleCard
-                        bundle={b}
-                        onPurchase={handlePurchase}
-                      />
-                    </StaggerItem>
+                    <Card key={b.id} padding={20}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{b.name}</div>
+                        <Tag color="var(--sage, #34d399)">Owned</Tag>
+                      </div>
+                      {b.description && <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>{b.description}</p>}
+                    </Card>
                   ))}
                 </div>
-              </StaggerContainer>
-            </section>
-          )}
-        </>
-      )}
-    </V2Layout>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </>
   );
 }

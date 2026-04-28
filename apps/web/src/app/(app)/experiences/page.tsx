@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
 import { getExperiences, bookExperience } from '@/lib/api';
@@ -95,7 +95,7 @@ export default function ExperiencesPage() {
   }
 
   return (
-    <V2Layout>
+    <>
       <Link
         href="/dashboard"
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -220,6 +220,6 @@ export default function ExperiencesPage() {
           })}
         </StaggerContainer>
       )}
-    </V2Layout>
+    </>
   );
 }

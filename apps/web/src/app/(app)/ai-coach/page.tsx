@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import {
   getFitnessProfile,
   updateFitnessProfile,
@@ -76,16 +76,16 @@ export default function AICoachV2Page() {
 
   if (!profile) {
     return (
-      <V2Layout>
+      <>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   return (
-    <V2Layout>
+    <>
       <section className="pt-12 pb-16">
         <V2SectionLabel>Personalizace</V2SectionLabel>
         <V2Display size="xl">AI Trenér.</V2Display>
@@ -271,6 +271,6 @@ export default function AICoachV2Page() {
           </div>
         </section>
       )}
-    </V2Layout>
+    </>
   );
 }

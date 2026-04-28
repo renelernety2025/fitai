@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Button, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getMicroWorkout, type MicroWorkoutData } from '@/lib/api';
 
 export default function MicroWorkoutPage() {
@@ -15,99 +16,81 @@ export default function MicroWorkoutPage() {
     setError(null);
     getMicroWorkout()
       .then(setData)
-      .catch((err) => setError(err?.message ?? 'Nepodařilo se načíst cviky'))
+      .catch((err) => setError(err?.message ?? 'Failed to load'))
       .finally(() => setLoading(false));
   }
 
   useEffect(() => { document.title = 'FitAI — Micro Workout'; }, []);
-
   useEffect(() => { loadChallenge(); }, []);
 
   return (
-    <V2Layout>
-      <Link
-        href="/dashboard"
-        className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
-      >
-        ← Dashboard
-      </Link>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; 5-min challenge</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Five minutes.<br />
+            <em className="v3-clay" style={{ fontWeight: 300 }}>No excuses.</em>
+          </h1>
+          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 16, maxWidth: 560 }}>
+            3 random exercises, 2 sets of 12, 30s rest. No plan, no thinking -- just start.
+          </p>
+        </section>
 
-      <section className="pt-8 pb-8">
-        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#FF9F0A]">
-          5 minut - 3 cviky - zadne vymluvy
-        </div>
-        <V2Display size="xl">Micro Workout</V2Display>
-        <p className="mt-4 max-w-2xl text-base text-white/55">
-          Denni 5-minutovy challenge. 3 nahodne cviky, 2 sety po 12 repech, 30s pauza.
-          Zadny plan, zadne premysleni — proste zacni.
-        </p>
-      </section>
+        {loading && (
+          <div style={{ display: 'flex', height: 160, alignItems: 'center', justifyContent: 'center' }}>
+            <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span>
+          </div>
+        )}
 
-      {loading && (
-        <div className="flex h-40 items-center justify-center">
-          <p className="text-sm text-white/40">Nacitam cviky...</p>
-        </div>
-      )}
+        {error && !loading && (
+          <Card padding={24} style={{ textAlign: 'center' as const, marginBottom: 32 }}>
+            <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>{error}</p>
+            <Button variant="ghost" onClick={loadChallenge}>Try again</Button>
+          </Card>
+        )}
 
-      {error && !loading && (
-        <div className="mb-12 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 p-6 text-center">
-          <p className="mb-3 text-sm text-[#FF375F]">{error}</p>
-          <button
-            onClick={loadChallenge}
-            className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/60 transition hover:text-white"
-          >
-            Zkusit znovu
-          </button>
-        </div>
-      )}
-
-      {data && !loading && !error && (
-        <>
-          <section className="mb-12">
-            <V2SectionLabel>Dnesni challenge</V2SectionLabel>
+        {data && !loading && !error && (
+          <>
+            <SectionHeader title="Today's challenge" />
             {data.exercises.length === 0 ? (
-              <p className="py-8 text-center text-sm text-white/40">Zadne cviky dostupne. Zkus pozdeji.</p>
+              <Card padding={32} style={{ textAlign: 'center' as const }}>
+                <p className="v3-body" style={{ color: 'var(--text-3)' }}>No exercises available.</p>
+              </Card>
             ) : (
-            <div className="space-y-4">
-              {data.exercises.map((ex, i) => (
-                <Link
-                  key={ex.id}
-                  href={`/exercises/${ex.id}`}
-                  className="block rounded-xl border border-white/8 p-5 transition hover:border-white/15 hover:bg-white/3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-lg font-bold text-white/60">
-                        {i + 1}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">{ex.nameCs}</div>
-                        <div className="text-[11px] text-white/40">
-                          {ex.muscleGroups.join(' · ')}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {data.exercises.map((ex, i) => (
+                  <Link key={ex.id} href={`/exercises/${ex.id}`} style={{ textDecoration: 'none' }}>
+                    <Card hover padding={20}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                          <span className="v3-numeric" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-3)', width: 32, textAlign: 'center' as const }}>{i + 1}</span>
+                          <div>
+                            <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{ex.nameCs}</span>
+                            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                              {ex.muscleGroups.map((mg) => <Tag key={mg}>{mg}</Tag>)}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' as const }}>
+                          <span className="v3-numeric" style={{ color: 'var(--text-1)', fontWeight: 600 }}>{ex.targetSets}x{ex.targetReps}</span>
+                          <div className="v3-caption" style={{ color: 'var(--text-3)' }}>{ex.restSeconds}s rest</div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right text-sm text-white/50">
-                      <div>{ex.targetSets}x{ex.targetReps}</div>
-                      <div className="text-[10px] text-white/30">{ex.restSeconds}s pauza</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
             )}
-          </section>
 
-          <div className="mb-24 flex gap-4">
-            <button
-              onClick={loadChallenge}
-              className="rounded-xl border border-white/15 px-6 py-3 text-sm font-semibold text-white/60 transition hover:border-white/30 hover:text-white"
-            >
-              Jiny challenge
-            </button>
-          </div>
-        </>
-      )}
-    </V2Layout>
+            <div style={{ marginTop: 32 }}>
+              <Button variant="ghost" icon={<FitIcon name="bolt" size={16} />} onClick={loadChallenge}>
+                Different challenge
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { V2Layout } from '@/components/v2/V2Layout';
 
 export const metadata: Metadata = {
   title: 'Podmínky používání — FitAI',
@@ -22,7 +21,7 @@ function Paragraph({ children }: { children: React.ReactNode }) {
 
 export default function TermsPage() {
   return (
-    <V2Layout>
+    <>
       <div className="mx-auto max-w-3xl py-12">
         <h1 className="mb-2 text-3xl font-bold tracking-tight">Podmínky používání</h1>
         <p className="mb-8 text-xs text-white/30">Poslední aktualizace: 21. 4. 2026</p>
@@ -78,6 +77,6 @@ export default function TermsPage() {
           po změně podmínek vyjadřujete souhlas s novým zněním.
         </Paragraph>
       </div>
-    </V2Layout>
+    </>
   );
 }

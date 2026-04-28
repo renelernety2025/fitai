@@ -1,115 +1,53 @@
 'use client';
 
-/**
- * Routine Builder — visual daily timeline with 6 time slots.
- */
-
 import { useEffect, useState, useCallback } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { GlassCard } from '@/components/v2/GlassCard';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
-import {
-  getMyRoutines,
-  createRoutine,
-  addRoutineItem,
-  removeRoutineItem,
-} from '@/lib/api';
+import { Card, Button, Chip, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import { getMyRoutines, createRoutine, addRoutineItem, removeRoutineItem } from '@/lib/api';
 
 type RoutineItem = { id: string; type: string; slot: string; name: string; order: number; notes?: string };
 type Routine = { id: string; name: string; isPublic: boolean; items: RoutineItem[] };
 
 const SLOTS = [
-  { key: 'morning', label: 'Morning', icon: '\u2600', time: '6:00 - 9:00', color: '#FF9F0A' },
-  { key: 'pre_workout', label: 'Pre-Workout', icon: '\u26A1', time: '30 min before', color: '#A8FF00' },
-  { key: 'during', label: 'During', icon: '\uD83C\uDFCB', time: 'Workout', color: '#FF375F' },
-  { key: 'post_workout', label: 'Post-Workout', icon: '\uD83E\uDD64', time: '30 min after', color: '#00E5FF' },
-  { key: 'evening', label: 'Evening', icon: '\uD83C\uDF19', time: '18:00 - 21:00', color: '#BF5AF2' },
-  { key: 'night', label: 'Night', icon: '\uD83D\uDCA4', time: 'Before sleep', color: '#6E6E73' },
+  { key: 'morning', label: 'Morning', time: '6:00-9:00', icon: 'bolt', color: '#FF9F0A' },
+  { key: 'pre_workout', label: 'Pre-Workout', time: '30 min before', icon: 'flame', color: 'var(--sage, #34d399)' },
+  { key: 'during', label: 'During', time: 'Workout', icon: 'dumbbell', color: 'var(--accent)' },
+  { key: 'post_workout', label: 'Post-Workout', time: '30 min after', icon: 'drop', color: '#00E5FF' },
+  { key: 'evening', label: 'Evening', time: '18:00-21:00', icon: 'heart', color: '#BF5AF2' },
+  { key: 'night', label: 'Night', time: 'Before sleep', icon: 'shield', color: 'var(--text-3)' },
 ];
 
 const ITEM_TYPES = [
-  { value: 'supplement', label: 'Supplement', icon: '\uD83D\uDC8A' },
-  { value: 'workout', label: 'Workout', icon: '\uD83C\uDFCB' },
-  { value: 'meal', label: 'Meal', icon: '\uD83C\uDF5D' },
-  { value: 'recovery', label: 'Recovery', icon: '\uD83E\uDDD8' },
-  { value: 'custom', label: 'Custom', icon: '\u2699' },
+  { value: 'supplement', label: 'Supplement', icon: 'pill' },
+  { value: 'workout', label: 'Workout', icon: 'dumbbell' },
+  { value: 'meal', label: 'Meal', icon: 'apple' },
+  { value: 'recovery', label: 'Recovery', icon: 'heart' },
+  { value: 'custom', label: 'Custom', icon: 'settings' },
 ];
 
-function typeIcon(type: string): string {
-  return ITEM_TYPES.find((t) => t.value === type)?.icon || '\u2699';
-}
-
-interface AddFormProps {
-  slot: string;
-  routineId: string;
-  onAdd: (item: RoutineItem) => void;
-  onClose: () => void;
-}
-
-function AddItemForm({ slot, routineId, onAdd, onClose }: AddFormProps) {
+function AddForm({ slot, routineId, onAdd, onClose }: { slot: string; routineId: string; onAdd: (item: RoutineItem) => void; onClose: () => void }) {
   const [type, setType] = useState('supplement');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit() {
+  async function submit() {
     if (!name.trim()) return;
     setSaving(true);
-    try {
-      const item = await addRoutineItem(routineId, {
-        slot,
-        type,
-        name: name.trim(),
-      });
-      onAdd(item);
-    } catch {
-      alert('Nepodarilo se pridat polozku. Zkus to znovu.');
-    } finally {
-      setSaving(false);
-    }
+    try { const item = await addRoutineItem(routineId, { slot, type, name: name.trim() }); onAdd(item); }
+    catch { /* noop */ } finally { setSaving(false); }
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="flex flex-wrap gap-2 mb-3">
-        {ITEM_TYPES.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setType(t.value)}
-            className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
-              type === t.value
-                ? 'bg-[#FF375F] text-white'
-                : 'bg-white/5 text-white/50 hover:bg-white/10'
-            }`}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
+    <Card padding={16} style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4, marginBottom: 8 }}>
+        {ITEM_TYPES.map((t) => <Chip key={t.value} active={type === t.value} onClick={() => setType(t.value)} icon={<FitIcon name={t.icon} size={12} />}>{t.label}</Chip>)}
       </div>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Nazev polozky..."
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-      />
-      <div className="mt-3 flex gap-2">
-        <button
-          onClick={handleSubmit}
-          disabled={saving || !name.trim()}
-          className="rounded-lg bg-[#A8FF00] px-4 py-1.5 text-xs font-semibold text-black disabled:opacity-40"
-        >
-          {saving ? 'Ukladam...' : 'Pridat'}
-        </button>
-        <button
-          onClick={onClose}
-          className="rounded-lg bg-white/5 px-4 py-1.5 text-xs text-white/50 hover:bg-white/10"
-        >
-          Zrusit
-        </button>
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Item name..." onKeyDown={(e) => e.key === 'Enter' && submit()} style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 8 }} />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button variant="accent" size="sm" onClick={submit} disabled={saving || !name.trim()}>{saving ? '...' : 'Add'}</Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -122,227 +60,102 @@ export default function RoutineBuilderPage() {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
 
+  useEffect(() => { document.title = 'FitAI — Routine Builder'; }, []);
   useEffect(() => {
-    document.title = 'FitAI — Routine Builder';
-  }, []);
-
-  useEffect(() => {
-    getMyRoutines()
-      .then((raw) => {
-        const data = raw as any as Routine[];
-        setRoutines(data);
-        if (data.length > 0) setActive(data[0]);
-      })
-      .catch(() => setError('Nepodarilo se nacist rutiny.'))
-      .finally(() => setLoading(false));
+    getMyRoutines().then((raw) => { const data = raw as any as Routine[]; setRoutines(data); if (data.length > 0) setActive(data[0]); }).catch(() => setError('Failed to load.')).finally(() => setLoading(false));
   }, []);
 
   const handleCreate = useCallback(async () => {
-    if (!newName.trim()) return;
-    setCreating(true);
-    try {
-      const r = await createRoutine({ name: newName.trim() });
-      setRoutines((prev) => [...prev, r]);
-      setActive(r);
-      setNewName('');
-    } catch {
-      setError('Nepodarilo se vytvorit rutinu. Zkus to znovu.');
-    } finally {
-      setCreating(false);
-    }
+    if (!newName.trim()) return; setCreating(true);
+    try { const r = await createRoutine({ name: newName.trim() }); setRoutines((p) => [...p, r]); setActive(r); setNewName(''); }
+    catch { setError('Failed to create.'); } finally { setCreating(false); }
   }, [newName]);
 
   function handleAddItem(item: RoutineItem) {
     if (!active) return;
-    const updated = {
-      ...active,
-      items: [...active.items, item],
-    };
-    setActive(updated);
-    setRoutines((prev) =>
-      prev.map((r) => (r.id === updated.id ? updated : r)),
-    );
-    setAddingSlot(null);
+    const updated = { ...active, items: [...active.items, item] };
+    setActive(updated); setRoutines((p) => p.map((r) => r.id === updated.id ? updated : r)); setAddingSlot(null);
   }
 
   async function handleRemove(itemId: string) {
     if (!active) return;
-    try {
-      await removeRoutineItem(active.id, itemId);
-      const updated = {
-        ...active,
-        items: active.items.filter((i) => i.id !== itemId),
-      };
-      setActive(updated);
-      setRoutines((prev) =>
-        prev.map((r) => (r.id === updated.id ? updated : r)),
-      );
-    } catch {
-      setError('Nepodarilo se odebrat polozku. Zkus to znovu.');
-    }
+    try { await removeRoutineItem(active.id, itemId); const updated = { ...active, items: active.items.filter((i) => i.id !== itemId) }; setActive(updated); setRoutines((p) => p.map((r) => r.id === updated.id ? updated : r)); }
+    catch { /* noop */ }
   }
 
-  function slotItems(slotKey: string): RoutineItem[] {
-    if (!active) return [];
-    return active.items
-      .filter((i) => i.slot === slotKey)
-      .sort((a, b) => a.order - b.order);
-  }
+  function slotItems(key: string): RoutineItem[] { return active?.items.filter((i) => i.slot === key).sort((a, b) => a.order - b.order) || []; }
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Daily Routine</V2SectionLabel>
-        <V2Display size="xl">Routine Builder.</V2Display>
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Daily routine</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>Build your<br /><em className="v3-clay" style={{ fontWeight: 300 }}>ritual.</em></h1>
+        </section>
 
-      {error && (
-        <p className="mb-8 text-sm text-[#FF375F]">
-          {error}
-        </p>
-      )}
+        {error && <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 16 }}>{error}</p>}
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Timeline */}
-          {active && (
-            <StaggerContainer>
-              <div className="relative mb-10">
-                {/* Vertical line */}
-                <div className="absolute left-5 top-0 bottom-0 w-px bg-white/8" />
-
+        {loading ? (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}><span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span></div>
+        ) : (
+          <>
+            {active && (
+              <div style={{ position: 'relative', paddingLeft: 24, marginBottom: 32 }}>
+                <div style={{ position: 'absolute', left: 6, top: 0, bottom: 0, width: 1, background: 'var(--stroke-1)' }} />
                 {SLOTS.map((slot) => {
                   const items = slotItems(slot.key);
                   return (
-                    <StaggerItem key={slot.key}>
-                      <div className="relative mb-6 pl-12">
-                        {/* Dot */}
-                        <div
-                          className="absolute left-3.5 top-1 h-3 w-3 rounded-full"
-                          style={{
-                            background: slot.color,
-                            boxShadow: `0 0 12px ${slot.color}66`,
-                          }}
-                        />
-
-                        <div className="flex items-baseline gap-3 mb-2">
-                          <span className="text-base font-bold tracking-tight text-white">
-                            {slot.icon} {slot.label}
-                          </span>
-                          <span className="text-[10px] text-white/30">
-                            {slot.time}
-                          </span>
-                        </div>
-
-                        {/* Items */}
-                        {items.length > 0 ? (
-                          <div className="space-y-1.5">
-                            {items.map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex items-center justify-between rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2"
-                              >
-                                <span className="text-sm text-white/70">
-                                  {typeIcon(item.type)} {item.name}
-                                </span>
-                                <button
-                                  onClick={() => handleRemove(item.id)}
-                                  className="text-[10px] text-white/20 hover:text-[#FF375F] transition-colors"
-                                >
-                                  &#10005;
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="rounded-lg border border-dashed border-white/10 px-3 py-3 text-center text-[11px] text-white/20">
-                            Prazdny slot
-                          </div>
-                        )}
-
-                        {/* Add button or form */}
-                        {addingSlot === slot.key ? (
-                          <AddItemForm
-                            slot={slot.key}
-                            routineId={active.id}
-                            onAdd={handleAddItem}
-                            onClose={() => setAddingSlot(null)}
-                          />
-                        ) : (
-                          <button
-                            onClick={() => setAddingSlot(slot.key)}
-                            className="mt-2 rounded-lg bg-white/5 px-3 py-1.5 text-[11px] text-white/40 hover:bg-white/10 hover:text-white/60 transition-all"
-                          >
-                            + Pridat polozku
-                          </button>
-                        )}
+                    <div key={slot.key} style={{ position: 'relative', marginBottom: 24 }}>
+                      <div style={{ position: 'absolute', left: -21, top: 4, width: 10, height: 10, borderRadius: '50%', background: slot.color }} />
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                        <FitIcon name={slot.icon} size={16} color={slot.color} />
+                        <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{slot.label}</span>
+                        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{slot.time}</span>
                       </div>
-                    </StaggerItem>
+                      {items.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {items.map((item) => (
+                            <Card key={item.id} padding="8px 14px">
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span className="v3-body" style={{ color: 'var(--text-2)' }}><FitIcon name={ITEM_TYPES.find((t) => t.value === item.type)?.icon || 'settings'} size={12} style={{ marginRight: 6 }} />{item.name}</span>
+                                <button onClick={() => handleRemove(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><FitIcon name="x" size={12} color="var(--text-3)" /></button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Card padding="10px 14px" style={{ borderStyle: 'dashed' }}>
+                          <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Empty slot</span>
+                        </Card>
+                      )}
+                      {addingSlot === slot.key ? <AddForm slot={slot.key} routineId={active.id} onAdd={handleAddItem} onClose={() => setAddingSlot(null)} /> : (
+                        <button onClick={() => setAddingSlot(slot.key)} style={{ marginTop: 6, background: 'none', border: 'none', color: 'var(--text-3)', fontSize: 12, cursor: 'pointer' }}>+ Add item</button>
+                      )}
+                    </div>
                   );
                 })}
               </div>
-            </StaggerContainer>
-          )}
+            )}
 
-          {/* My routines */}
-          <section className="mb-12">
-            <V2SectionLabel>My Routines</V2SectionLabel>
-            <div className="mt-4 space-y-2">
+            <SectionHeader title="My routines" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {routines.map((r) => (
-                <GlassCard
-                  key={r.id}
-                  className={`p-4 cursor-pointer ${
-                    active?.id === r.id
-                      ? 'border-[#A8FF00]/30'
-                      : ''
-                  }`}
-                  onClick={() => setActive(r)}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-white">
-                      {r.name}
-                    </span>
-                    <span className="text-[10px] text-white/30">
-                      {r.items.length} items
-                    </span>
+                <Card key={r.id} hover padding="12px 16px" onClick={() => setActive(r)} style={{ border: active?.id === r.id ? '1px solid var(--accent)' : undefined }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span className="v3-body" style={{ fontWeight: 500, color: 'var(--text-1)' }}>{r.name}</span>
+                    <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{r.items.length} items</span>
                   </div>
-                </GlassCard>
+                </Card>
               ))}
-
-              {routines.length === 0 && !creating && (
-                <div className="py-8 text-center text-sm text-white/30">
-                  Zatim zadne rutiny. Vytvor prvni.
-                </div>
-              )}
+              {routines.length === 0 && !creating && <p className="v3-caption" style={{ color: 'var(--text-3)', textAlign: 'center', padding: 24 }}>No routines yet. Create first.</p>}
             </div>
-
-            {/* Create new */}
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nazev nove rutiny..."
-                className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
-                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-              />
-              <button
-                onClick={handleCreate}
-                disabled={creating || !newName.trim()}
-                className="rounded-lg bg-[#A8FF00] px-4 py-2 text-xs font-semibold text-black disabled:opacity-40"
-              >
-                {creating ? '...' : 'Vytvorit'}
-              </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New routine name..." onKeyDown={(e) => e.key === 'Enter' && handleCreate()} style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              <Button variant="accent" size="sm" onClick={handleCreate} disabled={creating || !newName.trim()}>{creating ? '...' : 'Create'}</Button>
             </div>
-          </section>
-        </>
-      )}
-    </V2Layout>
+          </>
+        )}
+      </div>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getWorkoutPlan, type WorkoutPlanData } from '@/lib/api';
 
 export default function PlanV2DetailPage({ params }: { params: { id: string } }) {
@@ -14,16 +14,16 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
 
   if (!plan) {
     return (
-      <V2Layout>
+      <>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   return (
-    <V2Layout>
+    <>
       <div className="cinematic-enter">
       <Link
         href="/gym"
@@ -90,6 +90,6 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
         ))}
       </section>
       </div>
-    </V2Layout>
+    </>
   );
 }

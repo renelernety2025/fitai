@@ -2,21 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getWorkoutPlans, getMyStats, type WorkoutPlanData, type StatsData } from '@/lib/api';
 
-const planAccent: Record<string, string> = {
-  PUSH_PULL_LEGS: '#FF375F',
-  UPPER_LOWER: '#A8FF00',
-  FULL_BODY: '#00E5FF',
+const planColor: Record<string, string> = {
+  PUSH_PULL_LEGS: 'var(--accent)',
+  UPPER_LOWER: 'var(--sage, #34d399)',
+  FULL_BODY: 'var(--clay)',
   CUSTOM: '#BF5AF2',
 };
 
-export default function GymV2Page() {
+const quickLinks = [
+  { href: '/doma', icon: 'home', label: 'Doma', sub: '15-35 min' },
+  { href: '/videos', icon: 'camera', label: 'Lekce', sub: 'Yoga, HIIT' },
+  { href: '/ai-coach', icon: 'brain', label: 'AI Plan', sub: 'Personalizace' },
+  { href: '/micro-workout', icon: 'flame', label: 'Micro', sub: '5 minut' },
+];
+
+export default function GymPage() {
   const [plans, setPlans] = useState<WorkoutPlanData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
 
-  useEffect(() => { document.title = 'FitAI — Trénink'; }, []);
+  useEffect(() => { document.title = 'FitAI — Trenik'; }, []);
 
   useEffect(() => {
     getWorkoutPlans().then(setPlans).catch(console.error);
@@ -24,119 +32,64 @@ export default function GymV2Page() {
   }, []);
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Připraven?</V2SectionLabel>
-        <V2Display size="xl">Trénink.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Vyber svůj plán nebo začni rychlý workout. Forma má přednost před váhou.
-        </p>
-        {stats && stats.totalSessions > 0 && (
-          <div className="mt-4 flex gap-6 text-[11px] font-semibold tabular-nums text-white/30">
-            <span>{stats.totalSessions} treninku</span>
-            <span>{stats.currentStreak} dni streak</span>
-            <span>{stats.totalXP} XP</span>
-          </div>
-        )}
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Training</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Ready to<br />
+            <em className="v3-clay" style={{ fontWeight: 300 }}>train.</em>
+          </h1>
+          {stats && stats.totalSessions > 0 && (
+            <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+              <Tag>{stats.totalSessions} sessions</Tag>
+              <Tag>{stats.currentStreak}d streak</Tag>
+              <Tag>{stats.totalXP} XP</Tag>
+            </div>
+          )}
+        </section>
 
-      {/* Quick start cards */}
-      <section className="mb-24 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Link
-          href="/doma"
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 transition hover:border-white/30 hover:bg-white/[0.04]"
-        >
-          <div
-            className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-30 blur-3xl transition group-hover:opacity-60"
-            style={{ background: '#A8FF00' }}
-          />
-          <div className="relative">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Bez vybavení
-            </div>
-            <V2Display size="sm">Doma</V2Display>
-            <p className="mt-2 text-sm text-white/50">15-35 min</p>
-          </div>
-        </Link>
-        <Link
-          href="/videos"
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 transition hover:border-white/30 hover:bg-white/[0.04]"
-        >
-          <div
-            className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-30 blur-3xl transition group-hover:opacity-60"
-            style={{ background: '#00E5FF' }}
-          />
-          <div className="relative">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Video
-            </div>
-            <V2Display size="sm">Lekce</V2Display>
-            <p className="mt-2 text-sm text-white/50">Yoga, HIIT, mobilita</p>
-          </div>
-        </Link>
-        <Link
-          href="/ai-coach"
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 transition hover:border-white/30 hover:bg-white/[0.04]"
-        >
-          <div
-            className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-30 blur-3xl transition group-hover:opacity-60"
-            style={{ background: '#BF5AF2' }}
-          />
-          <div className="relative">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Personalizace
-            </div>
-            <V2Display size="sm">AI Plán</V2Display>
-            <p className="mt-2 text-sm text-white/50">Vygeneruj svůj plán</p>
-          </div>
-        </Link>
-        <Link
-          href="/micro-workout"
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-8 transition hover:border-white/30 hover:bg-white/[0.04]"
-        >
-          <div
-            className="absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-30 blur-3xl transition group-hover:opacity-60"
-            style={{ background: '#FF9F0A' }}
-          />
-          <div className="relative">
-            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              5 minut
-            </div>
-            <V2Display size="sm">Micro</V2Display>
-            <p className="mt-2 text-sm text-white/50">3 random cviky</p>
-          </div>
-        </Link>
-      </section>
-
-      {/* Plans list */}
-      <section>
-        <V2SectionLabel>Plány</V2SectionLabel>
-        <div className="space-y-1">
-          {plans.map((plan) => (
-            <Link
-              key={plan.id}
-              href={`/plans/${plan.id}`}
-              className="group flex items-baseline justify-between border-b border-white/8 py-8 transition hover:border-white/30"
-            >
-              <div className="flex-1">
-                <div
-                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
-                  style={{ color: planAccent[plan.type] || '#FFF' }}
-                >
-                  {plan.type.replace(/_/g, ' ')} · {plan.daysPerWeek}× týdně
-                </div>
-                <V2Display size="md">{plan.nameCs}</V2Display>
-                <p className="mt-2 max-w-xl text-sm text-white/50 line-clamp-1">
-                  {plan.description}
-                </p>
-              </div>
-              <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
-                →
-              </div>
+        <SectionHeader title="Quick start" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+          {quickLinks.map((q) => (
+            <Link key={q.href} href={q.href} style={{ textDecoration: 'none' }}>
+              <Card hover padding={24}>
+                <FitIcon name={q.icon} size={20} color="var(--accent)" />
+                <div className="v3-body" style={{ marginTop: 12, color: 'var(--text-1)' }}>{q.label}</div>
+                <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>{q.sub}</div>
+              </Card>
             </Link>
           ))}
         </div>
-      </section>
-    </V2Layout>
+
+        <div style={{ marginTop: 48 }}>
+          <SectionHeader title="Plans" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {plans.map((plan) => (
+              <Link key={plan.id} href={`/plans/${plan.id}`} style={{ textDecoration: 'none' }}>
+                <Card hover padding="24px 20px">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ flex: 1 }}>
+                      <Tag color={planColor[plan.type]}>
+                        {plan.type.replace(/_/g, ' ')} / {plan.daysPerWeek}x
+                      </Tag>
+                      <div className="v3-body" style={{ marginTop: 8, color: 'var(--text-1)', fontWeight: 600 }}>
+                        {plan.nameCs}
+                      </div>
+                      {plan.description && (
+                        <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>
+                          {plan.description}
+                        </div>
+                      )}
+                    </div>
+                    <FitIcon name="arrow" size={18} color="var(--text-3)" />
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { V2Layout } from '@/components/v2/V2Layout';
 
 export const metadata: Metadata = {
   title: 'Ochrana soukromí — FitAI',
@@ -22,7 +21,7 @@ function Paragraph({ children }: { children: React.ReactNode }) {
 
 export default function PrivacyPage() {
   return (
-    <V2Layout>
+    <>
       <div className="mx-auto max-w-3xl py-12">
         <h1 className="mb-2 text-3xl font-bold tracking-tight">Ochrana soukromí</h1>
         <p className="mb-8 text-xs text-white/30">Poslední aktualizace: 21. 4. 2026</p>
@@ -77,6 +76,6 @@ export default function PrivacyPage() {
           E-mail: privacy@fitai.bfevents.cz
         </Paragraph>
       </div>
-    </V2Layout>
+    </>
   );
 }

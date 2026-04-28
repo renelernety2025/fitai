@@ -1,92 +1,21 @@
 'use client';
 
-/**
- * Playlists — workout music playlists shared by community.
- */
-
 import { useEffect, useState, useMemo } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import { GlassCard } from '@/components/v2/GlassCard';
-import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
-import { SkeletonCard } from '@/components/v2/Skeleton';
+import { Card, Button, Chip, SectionHeader, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getPlaylists, addPlaylistLink, type PlaylistLink } from '@/lib/api';
 
-const WORKOUT_TYPES = ['All', 'Strength', 'Cardio', 'HIIT', 'Yoga', 'Recovery'];
-
-const TYPE_COLORS: Record<string, string> = {
-  strength: '#FF375F',
-  cardio: '#A8FF00',
-  hiit: '#FF9F0A',
-  yoga: '#BF5AF2',
-  recovery: '#00E5FF',
-};
+const TYPES = ['All', 'Strength', 'Cardio', 'HIIT', 'Yoga', 'Recovery'];
+const TYPE_COLOR: Record<string, string> = { strength: 'var(--accent)', cardio: 'var(--sage, #34d399)', hiit: '#FF9F0A', yoga: '#BF5AF2', recovery: '#00E5FF' };
 
 function detectPlatform(url: string): string {
   if (url.includes('spotify')) return 'Spotify';
-  if (url.includes('apple') || url.includes('music.apple'))
-    return 'Apple Music';
+  if (url.includes('apple') || url.includes('music.apple')) return 'Apple Music';
   if (url.includes('youtube')) return 'YouTube';
-  if (url.includes('soundcloud')) return 'SoundCloud';
   return 'Link';
 }
 
-function platformColor(platform: string): string {
-  if (platform === 'Spotify') return '#1DB954';
-  if (platform === 'Apple Music') return '#FC3C44';
-  if (platform === 'YouTube') return '#FF0000';
-  return '#6E6E73';
-}
-
-function getPlaylistUrl(playlist: PlaylistLink): string {
-  return playlist.spotifyUrl || playlist.appleMusicUrl || '#';
-}
-
-function PlaylistCard({ playlist }: { playlist: PlaylistLink }) {
-  const wt = playlist.workoutType || 'Other';
-  const color = TYPE_COLORS[wt.toLowerCase()] || '#6E6E73';
-  const url = getPlaylistUrl(playlist);
-  const platform = detectPlatform(url);
-  const pColor = platformColor(platform);
-
-  return (
-    <GlassCard className="p-5 h-full flex flex-col">
-      <div className="flex-1">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-base font-bold tracking-tight text-white">
-            {playlist.title}
-          </h3>
-          <span
-            className="flex-shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-            style={{
-              color,
-              background: `${color}15`,
-              border: `1px solid ${color}30`,
-            }}
-          >
-            {wt}
-          </span>
-        </div>
-
-        <div className="mt-3 flex items-center gap-4 text-[11px] text-white/40">
-          <span className="font-medium" style={{ color: pColor }}>
-            {platform}
-          </span>
-          <span>{playlist.bpm} BPM</span>
-          <span>by {playlist.user?.name || 'Unknown'}</span>
-        </div>
-      </div>
-
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60 hover:bg-white/10 transition-all"
-      >
-        Otevrit &#8599;
-      </a>
-    </GlassCard>
-  );
-}
+function getUrl(p: PlaylistLink): string { return p.spotifyUrl || p.appleMusicUrl || '#'; }
 
 export default function PlaylistsPage() {
   const [playlists, setPlaylists] = useState<PlaylistLink[]>([]);
@@ -94,31 +23,15 @@ export default function PlaylistsPage() {
   const [error, setError] = useState(false);
   const [filter, setFilter] = useState('All');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    url: '',
-    bpm: '',
-    workoutType: 'Strength',
-  });
+  const [form, setForm] = useState({ title: '', url: '', bpm: '', workoutType: 'Strength' });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    document.title = 'FitAI — Playlists';
-  }, []);
-
-  useEffect(() => {
-    getPlaylists()
-      .then(setPlaylists)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Playlists'; }, []);
+  useEffect(() => { getPlaylists().then(setPlaylists).catch(() => setError(true)).finally(() => setLoading(false)); }, []);
 
   const filtered = useMemo(() => {
     if (filter === 'All') return playlists;
-    return playlists.filter(
-      (p) =>
-        (p.workoutType || '').toLowerCase() === filter.toLowerCase(),
-    );
+    return playlists.filter((p) => (p.workoutType || '').toLowerCase() === filter.toLowerCase());
   }, [playlists, filter]);
 
   async function handleAdd() {
@@ -126,155 +39,77 @@ export default function PlaylistsPage() {
     setSaving(true);
     try {
       const isSpotify = form.url.includes('spotify');
-      const result = await addPlaylistLink({
-        title: form.title,
-        ...(isSpotify
-          ? { spotifyUrl: form.url }
-          : { appleMusicUrl: form.url }),
-        bpm: parseInt(form.bpm, 10),
-        workoutType: form.workoutType,
-      });
+      const result = await addPlaylistLink({ title: form.title, ...(isSpotify ? { spotifyUrl: form.url } : { appleMusicUrl: form.url }), bpm: parseInt(form.bpm, 10), workoutType: form.workoutType });
       setPlaylists((prev) => [result, ...prev]);
-      setForm({ title: '', url: '', bpm: '', workoutType: 'Strength' });
-      setShowForm(false);
-    } catch {
-      /* noop */
-    } finally {
-      setSaving(false);
-    }
+      setForm({ title: '', url: '', bpm: '', workoutType: 'Strength' }); setShowForm(false);
+    } catch { /* noop */ } finally { setSaving(false); }
   }
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Workout Music</V2SectionLabel>
-        <V2Display size="xl">Playlists.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Sdilej a objevuj playlisty pro kazdy typ treninku.
-        </p>
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Music</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>Your workout<br /><em className="v3-clay" style={{ fontWeight: 300 }}>soundtrack.</em></h1>
+        </section>
 
-      {/* Filter pills */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {WORKOUT_TYPES.map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={`rounded-full px-3.5 py-1.5 text-[11px] font-medium transition-all ${
-              filter === t
-                ? 'bg-[#FF375F] text-white'
-                : 'bg-white/5 text-white/50 hover:bg-white/10'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-        <div className="flex-1" />
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="rounded-lg bg-[#A8FF00] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#A8FF00]/80 transition-all"
-        >
-          {showForm ? 'Zrusit' : '+ Pridat Playlist'}
-        </button>
+        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, alignItems: 'center', marginBottom: 24 }}>
+          {TYPES.map((t) => <Chip key={t} active={filter === t} onClick={() => setFilter(t)}>{t}</Chip>)}
+          <div style={{ flex: 1 }} />
+          <Button variant={showForm ? 'ghost' : 'accent'} size="sm" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancel' : '+ Add Playlist'}
+          </Button>
+        </div>
+
+        {showForm && (
+          <Card padding={20} style={{ marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+              <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Playlist name" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="Spotify / Apple Music URL" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              <input type="number" value={form.bpm} onChange={(e) => setForm({ ...form, bpm: e.target.value })} placeholder="BPM" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              <select value={form.workoutType} onChange={(e) => setForm({ ...form, workoutType: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }}>
+                {TYPES.filter((t) => t !== 'All').map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ marginTop: 12 }}><Button variant="accent" onClick={handleAdd} disabled={saving}>{saving ? 'Saving...' : 'Add'}</Button></div>
+          </Card>
+        )}
+
+        {error && <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 16 }}>Failed to load playlists.</p>}
+
+        {loading ? (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}><span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span></div>
+        ) : filtered.length === 0 ? (
+          <Card padding={48} style={{ textAlign: 'center' as const }}>
+            <FitIcon name="music" size={28} color="var(--text-3)" />
+            <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>{filter === 'All' ? 'No playlists yet. Be first.' : `No ${filter} playlists.`}</p>
+          </Card>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+            {filtered.map((p) => {
+              const url = getUrl(p);
+              const platform = detectPlatform(url);
+              const wt = p.workoutType || 'Other';
+              return (
+                <Card key={p.id} padding={20}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                    <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{p.title}</span>
+                    <Tag color={TYPE_COLOR[wt.toLowerCase()]}>{wt}</Tag>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                    <span className="v3-caption" style={{ color: 'var(--text-2)' }}>{platform}</span>
+                    <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{p.bpm} BPM</span>
+                    <span className="v3-caption" style={{ color: 'var(--text-3)' }}>by {p.user?.name || 'Unknown'}</span>
+                  </div>
+                  <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                    Open &#8599;
+                  </a>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      {/* Add form */}
-      {showForm && (
-        <GlassCard className="p-6 mb-8" hover={false}>
-          <h3 className="mb-4 text-sm font-semibold text-white">
-            Novy playlist
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              placeholder="Nazev playlistu"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
-            />
-            <input
-              type="url"
-              value={form.url}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, url: e.target.value }))
-              }
-              placeholder="Spotify / Apple Music URL"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
-            />
-            <input
-              type="number"
-              value={form.bpm}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, bpm: e.target.value }))
-              }
-              placeholder="BPM (napr. 140)"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/20"
-            />
-            <select
-              value={form.workoutType}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  workoutType: e.target.value,
-                }))
-              }
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20"
-            >
-              {WORKOUT_TYPES.filter((t) => t !== 'All').map(
-                (t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-          <button
-            onClick={handleAdd}
-            disabled={saving || !form.title || !form.url}
-            className="mt-4 rounded-lg bg-[#FF375F] px-6 py-2 text-xs font-semibold text-white disabled:opacity-40 hover:bg-[#FF375F]/80 transition-all"
-          >
-            {saving ? 'Ukladam...' : 'Pridat'}
-          </button>
-        </GlassCard>
-      )}
-
-      {error && (
-        <p className="mb-8 text-sm text-[#FF375F]">
-          Nepodarilo se nacist playlisty.
-        </p>
-      )}
-
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-20 text-center">
-          <div className="mb-3 text-4xl text-white/15">
-            &#127925;
-          </div>
-          <p className="text-sm text-white/30">
-            {filter === 'All'
-              ? 'Zatim zadne playlisty. Bud prvni.'
-              : `Zadne ${filter} playlisty.`}
-          </p>
-        </div>
-      ) : (
-        <StaggerContainer>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-12">
-            {filtered.map((p) => (
-              <StaggerItem key={p.id}>
-                <PlaylistCard playlist={p} />
-              </StaggerItem>
-            ))}
-          </div>
-        </StaggerContainer>
-      )}
-    </V2Layout>
+    </>
   );
 }

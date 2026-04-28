@@ -1,36 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
-import {
-  getMaintenanceStatus,
-  getMaintenanceAlerts,
-  getBodyMileage,
-  markDeload,
-  dismissAlert,
-} from '@/lib/api';
+import { Card, Button, SectionHeader, Tag, Metric } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
+import { getMaintenanceStatus, getMaintenanceAlerts, getBodyMileage, markDeload, dismissAlert } from '@/lib/api';
 
 type MaintenanceStatus = { muscleGroup: string; status: string; sessionsSinceDeload: number; lastTrainedAt?: string };
 type MaintenanceAlert = { id: string; severity: string; muscleGroup: string; message: string };
 type BodyMileage = { totalVolumeKg: number; totalSessions: number; totalSets: number };
 
-const STATUS_COLOR: Record<string, string> = {
-  FRESH: '#A8FF00',
-  DUE: '#FF9F0A',
-  OVERDUE: '#FF375F',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  FRESH: 'Fresh',
-  DUE: 'Due',
-  OVERDUE: 'Overdue',
-};
-
-const SEVERITY_COLOR: Record<string, string> = {
-  LOW: '#A8FF00',
-  MEDIUM: '#FF9F0A',
-  HIGH: '#FF375F',
-};
+const STATUS_COLOR: Record<string, string> = { FRESH: 'var(--sage, #34d399)', DUE: '#FF9F0A', OVERDUE: 'var(--danger, #ef4444)' };
 
 export default function MaintenancePage() {
   const [muscles, setMuscles] = useState<MaintenanceStatus[]>([]);
@@ -41,11 +20,7 @@ export default function MaintenancePage() {
   useEffect(() => { document.title = 'FitAI — Body Maintenance'; }, []);
 
   const refresh = useCallback(() => {
-    Promise.all([
-      getMaintenanceStatus(),
-      getMaintenanceAlerts(),
-      getBodyMileage(),
-    ])
+    Promise.all([getMaintenanceStatus(), getMaintenanceAlerts(), getBodyMileage()])
       .then(([m, a, b]) => { setMuscles(m); setAlerts(a); setMileage(b); })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -53,148 +28,81 @@ export default function MaintenancePage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  function handleDeload(muscleGroup: string) {
-    markDeload(muscleGroup).then(refresh).catch(console.error);
-  }
-
-  function handleDismiss(alertId: string) {
-    dismissAlert(alertId).then(refresh).catch(console.error);
-  }
-
   if (loading) {
-    return (
-      <V2Layout>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </V2Layout>
-    );
+    return <><div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-3)', animation: 'pulse 1.5s infinite' }} /></div></>;
   }
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Service Book</V2SectionLabel>
-        <V2Display size="xl">Body Maintenance.</V2Display>
-      </section>
-
-      {/* Odometer — total mileage */}
-      {mileage && (
-        <section className="mb-16 rounded-2xl border border-white/8 bg-white/[0.03] p-8">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-            Total Mileage
-          </div>
-          <div className="flex items-baseline gap-3">
-            <span
-              className="font-bold tabular-nums"
-              style={{
-                fontSize: 'clamp(3rem, 8vw, 5rem)',
-                letterSpacing: '-0.04em',
-                lineHeight: 1,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {mileage.totalVolumeKg.toLocaleString('cs-CZ')}
-            </span>
-            <span className="text-lg text-white/30">kg</span>
-          </div>
-          <div className="mt-4 flex gap-8 text-sm text-white/55">
-            <span>{mileage.totalSessions} sessions</span>
-            <span>{mileage.totalSets} sets</span>
-          </div>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Service book</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Body<br />
+            <em className="v3-clay" style={{ fontWeight: 300 }}>maintenance.</em>
+          </h1>
         </section>
-      )}
 
-      {/* Muscle group grid */}
-      <section className="mb-16">
-        <V2SectionLabel>Muscle Groups</V2SectionLabel>
-        <div className="stagger-container mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {muscles.map((m) => (
-            <div
-              key={m.muscleGroup}
-              className="stagger-item animate-fadeIn rounded-2xl border border-white/8 bg-white/[0.03] p-6"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: STATUS_COLOR[m.status] }}
-                  />
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.3em]"
-                    style={{ color: STATUS_COLOR[m.status] }}
-                  >
-                    {STATUS_LABEL[m.status]}
-                  </span>
-                </div>
-                <span className="text-[11px] tabular-nums text-white/30">
-                  {m.sessionsSinceDeload} since deload
-                </span>
-              </div>
-
-              <div className="mb-4 text-base font-semibold tracking-tight text-white">
-                {m.muscleGroup}
-              </div>
-
-              {m.lastTrainedAt && (
-                <div className="mb-4 text-[11px] text-white/30">
-                  Last: {new Date(m.lastTrainedAt).toLocaleDateString('cs-CZ', {
-                    day: 'numeric', month: 'short',
-                  })}
-                </div>
-              )}
-
-              {(m.status === 'DUE' || m.status === 'OVERDUE') && (
-                <button
-                  onClick={() => handleDeload(m.muscleGroup)}
-                  className="w-full rounded-full border border-white/10 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-white/30 hover:text-white"
-                >
-                  Mark Deload
-                </button>
-              )}
+        {mileage && (
+          <Card padding={32} style={{ marginBottom: 32 }}>
+            <div className="v3-eyebrow" style={{ marginBottom: 8 }}>TOTAL MILEAGE</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span className="v3-numeric" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--text-1)' }}>
+                {mileage.totalVolumeKg.toLocaleString('cs-CZ')}
+              </span>
+              <span className="v3-numeric" style={{ fontSize: 16, color: 'var(--text-3)' }}>kg</span>
             </div>
+            <div style={{ display: 'flex', gap: 24, marginTop: 12 }}>
+              <Metric label="Sessions" value={mileage.totalSessions} />
+              <Metric label="Sets" value={mileage.totalSets} />
+            </div>
+          </Card>
+        )}
+
+        <SectionHeader title="Muscle groups" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 32 }}>
+          {muscles.map((m) => (
+            <Card key={m.muscleGroup} padding={20}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Tag color={STATUS_COLOR[m.status]}>{m.status}</Tag>
+                <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{m.sessionsSinceDeload} since deload</span>
+              </div>
+              <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{m.muscleGroup}</div>
+              {m.lastTrainedAt && (
+                <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>
+                  Last: {new Date(m.lastTrainedAt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
+                </div>
+              )}
+              {(m.status === 'DUE' || m.status === 'OVERDUE') && (
+                <div style={{ marginTop: 12 }}>
+                  <Button variant="ghost" size="sm" onClick={() => markDeload(m.muscleGroup).then(refresh)}>Mark Deload</Button>
+                </div>
+              )}
+            </Card>
           ))}
         </div>
-      </section>
 
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <section className="mb-32">
-          <V2SectionLabel>Active Alerts</V2SectionLabel>
-          <div className="mt-6 space-y-3">
-            {alerts.map((a) => (
-              <div
-                key={a.id}
-                className="animate-slideUp flex items-start justify-between rounded-2xl border border-white/8 bg-white/[0.03] p-5"
-              >
-                <div className="flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span
-                      className="inline-block h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: SEVERITY_COLOR[a.severity] }}
-                    />
-                    <span
-                      className="text-[10px] font-semibold uppercase tracking-[0.3em]"
-                      style={{ color: SEVERITY_COLOR[a.severity] }}
-                    >
-                      {a.severity} — {a.muscleGroup}
-                    </span>
+        {alerts.length > 0 && (
+          <>
+            <SectionHeader title="Active alerts" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {alerts.map((a) => (
+                <Card key={a.id} padding={16}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                    <div>
+                      <Tag color={STATUS_COLOR[a.severity === 'HIGH' ? 'OVERDUE' : a.severity === 'MEDIUM' ? 'DUE' : 'FRESH']}>
+                        {a.severity} -- {a.muscleGroup}
+                      </Tag>
+                      <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 8 }}>{a.message}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id).then(refresh)}>Dismiss</Button>
                   </div>
-                  <p className="text-sm leading-relaxed text-white/70">
-                    {a.message}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleDismiss(a.id)}
-                  className="ml-4 flex-shrink-0 rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40 transition hover:border-white/30 hover:text-white"
-                >
-                  Dismiss
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </V2Layout>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }

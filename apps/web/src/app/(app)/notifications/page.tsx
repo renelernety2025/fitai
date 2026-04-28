@@ -1,18 +1,41 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, SectionHeader } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getNotificationPrefs, updateNotificationPrefs, type NotificationPrefs } from '@/lib/api';
+
+function ToggleRow({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: () => void }) {
+  return (
+    <Card hover padding="16px 20px" onClick={onChange}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{label}</div>
+          <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 2 }}>{description}</div>
+        </div>
+        <div style={{
+          width: 44, height: 24, borderRadius: 12, padding: 2, cursor: 'pointer',
+          background: checked ? 'var(--accent)' : 'var(--bg-3)',
+          transition: 'background .2s ease',
+        }}>
+          <div style={{
+            width: 20, height: 20, borderRadius: '50%', background: 'white',
+            transform: checked ? 'translateX(20px)' : 'translateX(0)',
+            transition: 'transform .2s ease',
+            boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+          }} />
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default function NotificationsPage() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Notifikace'; }, []);
-
-  useEffect(() => {
-    getNotificationPrefs().then(setPrefs).catch(console.error);
-  }, []);
+  useEffect(() => { document.title = 'FitAI — Notifications'; }, []);
+  useEffect(() => { getNotificationPrefs().then(setPrefs).catch(console.error); }, []);
 
   async function toggle(key: keyof NotificationPrefs) {
     if (!prefs) return;
@@ -24,85 +47,58 @@ export default function NotificationsPage() {
   }
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Nastaveni</V2SectionLabel>
-        <V2Display size="xl">Notifikace.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Vyber ktere notifikace chces dostavat.
-        </p>
-      </section>
-
-      {prefs && (
-        <section className="mb-24 space-y-4">
-          <ToggleRow
-            label="Pripominky treninku"
-            description="Denni pripominka kdyz jsi jeste necvicil"
-            checked={prefs.workoutReminder}
-            onChange={() => toggle('workoutReminder')}
-          />
-          <ToggleRow
-            label="Varovani pred ztratou streak"
-            description="Upozorneni vecer pred ztratou serie"
-            checked={prefs.streakWarning}
-            onChange={() => toggle('streakWarning')}
-          />
-          <ToggleRow
-            label="Uspechy a achievementy"
-            description="Notifikace pri odemknuti noveho uspechu"
-            checked={prefs.achievements}
-            onChange={() => toggle('achievements')}
-          />
-        </section>
-      )}
-
-      {prefs && (
-        <section className="mb-24">
-          <V2SectionLabel>Tichy rezim</V2SectionLabel>
-          <p className="mb-4 text-sm text-white/40">
-            Zadne notifikace mezi {prefs.quietHoursStart}:00 a {prefs.quietHoursEnd}:00
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Settings</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Stay<br />
+            <em className="v3-clay" style={{ fontWeight: 300 }}>informed.</em>
+          </h1>
+          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 12 }}>
+            Choose which notifications you want to receive.
           </p>
         </section>
-      )}
 
-      {saving && (
-        <p className="text-[11px] text-white/30">Ukladam...</p>
-      )}
-    </V2Layout>
-  );
-}
+        {prefs && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 32 }}>
+            <ToggleRow
+              label="Workout reminders"
+              description="Daily reminder when you haven't trained yet"
+              checked={prefs.workoutReminder}
+              onChange={() => toggle('workoutReminder')}
+            />
+            <ToggleRow
+              label="Streak warning"
+              description="Evening alert before losing your streak"
+              checked={prefs.streakWarning}
+              onChange={() => toggle('streakWarning')}
+            />
+            <ToggleRow
+              label="Achievements"
+              description="Notification when unlocking a new badge"
+              checked={prefs.achievements}
+              onChange={() => toggle('achievements')}
+            />
+          </div>
+        )}
 
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <button
-      onClick={onChange}
-      className="flex w-full items-center justify-between rounded-xl border border-white/8 p-5 text-left transition hover:border-white/15"
-    >
-      <div>
-        <div className="text-sm font-semibold text-white">{label}</div>
-        <div className="mt-0.5 text-[11px] text-white/40">{description}</div>
+        {prefs && (
+          <section>
+            <SectionHeader title="Quiet hours" />
+            <Card padding={20}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FitIcon name="timer" size={16} color="var(--text-3)" />
+                <span className="v3-body" style={{ color: 'var(--text-2)' }}>
+                  No notifications between {prefs.quietHoursStart}:00 and {prefs.quietHoursEnd}:00
+                </span>
+              </div>
+            </Card>
+          </section>
+        )}
+
+        {saving && <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 16 }}>Saving...</p>}
       </div>
-      <div
-        className={`flex h-7 w-12 items-center rounded-full transition ${
-          checked ? 'bg-[#A8FF00]' : 'bg-white/15'
-        }`}
-      >
-        <div
-          className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </div>
-    </button>
+    </>
   );
 }

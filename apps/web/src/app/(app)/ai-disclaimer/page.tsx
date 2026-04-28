@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { V2Layout } from '@/components/v2/V2Layout';
 
 export const metadata: Metadata = {
   title: 'AI Disclaimer — FitAI',
@@ -22,7 +21,7 @@ function Paragraph({ children }: { children: React.ReactNode }) {
 
 export default function AiDisclaimerPage() {
   return (
-    <V2Layout>
+    <>
       <div className="mx-auto max-w-3xl py-12">
         <h1 className="mb-2 text-3xl font-bold tracking-tight">AI Disclaimer</h1>
         <p className="mb-8 text-xs text-white/30">Poslední aktualizace: 21. 4. 2026</p>
@@ -63,6 +62,6 @@ export default function AiDisclaimerPage() {
           Cvičte bezpečně, poslouchejte své tělo a v případě bolesti nebo nepohodlí přestaňte.
         </Paragraph>
       </div>
-    </V2Layout>
+    </>
   );
 }

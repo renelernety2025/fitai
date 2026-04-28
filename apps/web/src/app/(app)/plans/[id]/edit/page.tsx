@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { V2Layout, V2Display } from '@/components/v2/V2Layout';
+import { V2Display } from '@/components/v2/V2Layout';
 import { getWorkoutPlan, updateWorkoutPlan, type WorkoutPlanData } from '@/lib/api';
 import ExerciseCard, { type PlannedExerciseLocal } from '@/components/plans/ExerciseCard';
 import ExerciseGroup from '@/components/plans/ExerciseGroup';
@@ -163,11 +163,11 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
 
   if (!plan) {
     return (
-      <V2Layout>
+      <>
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
@@ -175,7 +175,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
   const grouped = groupExercises(currentExercises);
 
   return (
-    <V2Layout>
+    <>
       <Link
         href={`/plans/${plan.id}`}
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -293,7 +293,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
       </div>
 
       {showPicker && <ExercisePicker onSelect={handleAddExercise} onClose={() => setShowPicker(false)} />}
-    </V2Layout>
+    </>
   );
 }
 

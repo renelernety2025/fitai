@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getVideo, type VideoData } from '@/lib/api';
 
 const catAccent: Record<string, string> = {
@@ -22,16 +22,16 @@ export default function VideoV2DetailPage({ params }: { params: { id: string } }
 
   if (!video) {
     return (
-      <V2Layout>
+      <>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   return (
-    <V2Layout>
+    <>
       <Link
         href="/videos"
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -76,6 +76,6 @@ export default function VideoV2DetailPage({ params }: { params: { id: string } }
           </Link>
         </div>
       </section>
-    </V2Layout>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import { FadeIn, NumberTicker } from '@/components/v2/motion';
 
@@ -66,7 +66,7 @@ export default function AdminPage() {
 
   if (!user?.isAdmin) {
     return (
-      <V2Layout>
+      <>
         <section className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
             <V2Display size="xl">Pristup odepren</V2Display>
@@ -81,12 +81,12 @@ export default function AdminPage() {
             </Link>
           </div>
         </section>
-      </V2Layout>
+      </>
     );
   }
 
   return (
-    <V2Layout>
+    <>
       <Link
         href="/dashboard"
         className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white"
@@ -239,7 +239,7 @@ export default function AdminPage() {
           </section>
         </FadeIn>
       )}
-    </V2Layout>
+    </>
   );
 }
 

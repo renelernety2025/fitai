@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { TRAINING_SEQUENCES, getCategoryColor, type TrainingSequence } from '@/lib/training-sequences';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
 import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
@@ -27,7 +27,7 @@ export default function SequencesPage() {
     : TRAINING_SEQUENCES.filter((s) => s.category === filter);
 
   return (
-    <V2Layout>
+    <>
       <Link
         href="/sports"
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -107,6 +107,6 @@ export default function SequencesPage() {
           ))}
         </div>
       </section>
-    </V2Layout>
+    </>
   );
 }

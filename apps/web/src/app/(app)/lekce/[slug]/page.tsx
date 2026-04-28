@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getLesson, type Lesson } from '@/lib/api';
 
 const accent: Record<string, string> = {
@@ -21,18 +21,18 @@ export default function LessonV2DetailPage({ params }: { params: { slug: string 
 
   if (!lesson) {
     return (
-      <V2Layout>
+      <>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
         </div>
-      </V2Layout>
+      </>
     );
   }
 
   const color = accent[lesson.category] || '#FFF';
 
   return (
-    <V2Layout>
+    <>
       <Link
         href="/lekce"
         className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
@@ -78,6 +78,6 @@ export default function LessonV2DetailPage({ params }: { params: { slug: string 
           </Link>
         </div>
       </article>
-    </V2Layout>
+    </>
   );
 }

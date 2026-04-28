@@ -2,85 +2,69 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2Layout, V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
+import { Card, Chip, Tag } from '@/components/v3';
+import { FitIcon } from '@/components/icons/FitIcons';
 import { getLessons, type Lesson } from '@/lib/api';
 
 const CATEGORIES = [
-  { value: 'all', label: 'Vše' },
-  { value: 'technique', label: 'Technika' },
-  { value: 'nutrition', label: 'Výživa' },
-  { value: 'recovery', label: 'Regenerace' },
+  { value: 'all', label: 'All' },
+  { value: 'technique', label: 'Technique' },
+  { value: 'nutrition', label: 'Nutrition' },
+  { value: 'recovery', label: 'Recovery' },
   { value: 'mindset', label: 'Mindset' },
 ];
 
 const accent: Record<string, string> = {
-  technique: '#00E5FF',
-  nutrition: '#FF9500',
-  recovery: '#BF5AF2',
-  mindset: '#A8FF00',
+  technique: '#00E5FF', nutrition: '#FF9F0A', recovery: '#BF5AF2', mindset: 'var(--sage, #34d399)',
 };
 
-export default function LessonsV2Page() {
+export default function LessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [cat, setCat] = useState('all');
 
   useEffect(() => { document.title = 'FitAI — Lekce'; }, []);
-
-  useEffect(() => {
-    getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error);
-  }, [cat]);
+  useEffect(() => { getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error); }, [cat]);
 
   return (
-    <V2Layout>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Knihovna</V2SectionLabel>
-        <V2Display size="xl">Lekce.</V2Display>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Krátké, hluboké lekce o tréninku, výživě, regeneraci a mentalitě. Ne novinky. Principy.
-        </p>
-      </section>
+    <>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+        <section style={{ padding: '48px 0 32px' }}>
+          <p className="v3-eyebrow-serif">&#9670; Library</p>
+          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+            Learn the<br />
+            <em className="v3-clay" style={{ fontWeight: 300 }}>fundamentals.</em>
+          </h1>
+          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 16, maxWidth: 560 }}>
+            Short, deep lessons on training, nutrition, recovery, and mindset. Not news. Principles.
+          </p>
+        </section>
 
-      {/* Category filter */}
-      <div className="mb-16 flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setCat(c.value)}
-            className={`rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
-              cat === c.value
-                ? 'border-white bg-white text-black'
-                : 'border-white/15 text-white/60 hover:border-white/40 hover:text-white'
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 32 }}>
+          {CATEGORIES.map((c) => (
+            <Chip key={c.value} active={cat === c.value} onClick={() => setCat(c.value)}>{c.label}</Chip>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {lessons.map((lesson) => (
+            <Link key={lesson.id} href={`/lekce/${lesson.slug}`} style={{ textDecoration: 'none' }}>
+              <Card hover padding="20px">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ flex: 1, paddingRight: 16 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <Tag color={accent[lesson.category]}>{lesson.category}</Tag>
+                      <Tag>{lesson.durationMin} min</Tag>
+                    </div>
+                    <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 16 }}>{lesson.titleCs}</div>
+                    <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{lesson.bodyCs}</p>
+                  </div>
+                  <FitIcon name="arrow" size={18} color="var(--text-3)" />
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
       </div>
-
-      {/* Lessons list — magazine style */}
-      <section className="space-y-1">
-        {lessons.map((lesson) => (
-          <Link
-            key={lesson.id}
-            href={`/lekce/${lesson.slug}`}
-            className="group flex items-baseline justify-between border-b border-white/8 py-8 transition hover:border-white/30"
-          >
-            <div className="flex-1 pr-6">
-              <div
-                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
-                style={{ color: accent[lesson.category] || '#FFF' }}
-              >
-                {lesson.category} · {lesson.durationMin} min
-              </div>
-              <V2Display size="md">{lesson.titleCs}</V2Display>
-              <p className="mt-3 max-w-xl text-sm text-white/50 line-clamp-2">{lesson.bodyCs}</p>
-            </div>
-            <div className="text-2xl text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
-              →
-            </div>
-          </Link>
-        ))}
-      </section>
-    </V2Layout>
+    </>
   );
 }
