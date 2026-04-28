@@ -12,6 +12,8 @@ export function Chip({ children, active, onClick, icon, className = '' }: ChipPr
   return (
     <button
       onClick={onClick}
+      role="option"
+      aria-selected={active}
       className={`v3-chip ${className}`}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,

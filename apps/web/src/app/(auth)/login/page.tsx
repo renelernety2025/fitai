@@ -95,7 +95,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p style={{ color: '#FF375F', fontSize: 13, marginBottom: 16 }}>{error}</p>
+              <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 16 }}>{error}</p>
             )}
 
             <div className="login-meta-row">

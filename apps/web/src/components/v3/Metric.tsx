@@ -1,3 +1,5 @@
+import { Sparkline } from './Sparkline';
+
 interface MetricProps {
   label: string;
   value: string | number;
@@ -40,25 +42,5 @@ export function Metric({ label, value, unit, delta, deltaPositive, sub, sparkDat
         </div>
       )}
     </div>
-  );
-}
-
-// Inline mini sparkline for Metric integration
-function Sparkline({ data, width, height, color }: { data: number[]; width: number; height: number; color: string }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const d = data
-    .map((v, i) => {
-      const x = (i / (data.length - 1)) * width;
-      const y = height - ((v - min) / range) * (height - 4) - 2;
-      return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-
-  return (
-    <svg width={width} height={height} style={{ display: 'block' }}>
-      <path d={d} stroke={color} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

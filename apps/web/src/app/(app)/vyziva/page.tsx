@@ -9,7 +9,7 @@ import {
   addFoodLog,
   deleteFoodLog,
   getNutritionTips,
-  downloadExport,
+
   type NutritionToday,
   type QuickFood,
   type NutritionTip,

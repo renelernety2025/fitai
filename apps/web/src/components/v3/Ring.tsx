@@ -23,7 +23,7 @@ export function Ring({
 
   return (
     <div className={className} style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }} role="progressbar" aria-valuenow={clamped} aria-valuemin={0} aria-valuemax={100}>
         <circle
           cx={size / 2} cy={size / 2} r={r}
           stroke="var(--stroke-1, var(--bg-3))"

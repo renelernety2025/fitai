@@ -6,21 +6,7 @@ import Link from 'next/link';
 import { Card, Button, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { useAuth } from '@/lib/auth-context';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('fitai_token') : null; }
-
-async function apiPut(path: string, body: Record<string, string>) {
-  const res = await fetch(`${API_BASE}/api${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) });
-  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Request failed'); }
-  return res.json();
-}
-
-async function apiDelete(path: string) {
-  const res = await fetch(`${API_BASE}/api${path}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
-  if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Request failed'); }
-  return res.json();
-}
+import { request } from '@/lib/api';
 
 const SECTIONS = [
   { id: 'account', label: 'Account', icon: 'users' },
@@ -79,77 +65,100 @@ function Sidebar({ active, onSelect }: { active: string; onSelect: (id: string) 
   );
 }
 
-function AccountSection({ name: initName, onDeleted }: { name: string; onDeleted: () => void }) {
-  const [nm, setNm] = useState(initName);
-  const [nmMsg, setNmMsg] = useState('');
-  const [nmLoad, setNmLoad] = useState(false);
-  const [cur, setCur] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [conf, setConf] = useState('');
-  const [pwMsg, setPwMsg] = useState('');
-  const [pwErr, setPwErr] = useState('');
-  const [pwLoad, setPwLoad] = useState(false);
-  const [delConfirm, setDelConfirm] = useState(false);
-  const [delLoad, setDelLoad] = useState(false);
-  const [delErr, setDelErr] = useState('');
-  const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 14, marginBottom: 10 };
+const INPUT_STYLE: React.CSSProperties = { width: '100%', padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 14, marginBottom: 10 };
 
-  async function saveName(e: FormEvent) {
-    e.preventDefault(); setNmMsg(''); setNmLoad(true);
-    try { await apiPut('/users/me/name', { name: nm }); setNmMsg('Saved'); } catch (err: unknown) { setNmMsg(err instanceof Error ? err.message : 'Error'); } finally { setNmLoad(false); }
-  }
-  async function changePw(e: FormEvent) {
-    e.preventDefault(); setPwMsg(''); setPwErr('');
-    if (newPw !== conf) { setPwErr('Passwords do not match'); return; }
-    setPwLoad(true);
-    try { await apiPut('/users/me/password', { currentPassword: cur, newPassword: newPw }); setPwMsg('Changed'); setCur(''); setNewPw(''); setConf(''); } catch (err: unknown) { setPwErr(err instanceof Error ? err.message : 'Error'); } finally { setPwLoad(false); }
-  }
-  async function doDelete() {
-    setDelLoad(true); setDelErr('');
-    try { await apiDelete('/users/me'); onDeleted(); } catch (err: unknown) { setDelErr(err instanceof Error ? err.message : 'Error'); } finally { setDelLoad(false); }
+function NameChangeForm({ initName }: { initName: string }) {
+  const [nm, setNm] = useState(initName);
+  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault(); setMsg(''); setLoading(true);
+    try { await request('/users/me/name', { method: 'PUT', body: JSON.stringify({ name: nm }) }); setMsg('Saved'); } catch (err: unknown) { setMsg(err instanceof Error ? err.message : 'Error'); } finally { setLoading(false); }
   }
 
   return (
+    <Card padding={24} style={{ marginBottom: 20 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change name</div>
+      <form onSubmit={onSubmit} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <input value={nm} onChange={(e) => setNm(e.target.value)} required minLength={1} style={{ ...INPUT_STYLE, marginBottom: 0, flex: 1 }} />
+        <Button variant="accent" type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save'}</Button>
+        {msg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{msg}</span>}
+      </form>
+    </Card>
+  );
+}
+
+function PasswordChangeForm() {
+  const [cur, setCur] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [conf, setConf] = useState('');
+  const [msg, setMsg] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault(); setMsg(''); setErr('');
+    if (newPw !== conf) { setErr('Passwords do not match'); return; }
+    setLoading(true);
+    try { await request('/users/me/password', { method: 'PUT', body: JSON.stringify({ currentPassword: cur, newPassword: newPw }) }); setMsg('Changed'); setCur(''); setNewPw(''); setConf(''); } catch (error: unknown) { setErr(error instanceof Error ? error.message : 'Error'); } finally { setLoading(false); }
+  }
+
+  return (
+    <Card padding={24} style={{ marginBottom: 20 }}>
+      <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change password</div>
+      <form onSubmit={onSubmit}>
+        <input type="password" placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} required style={INPUT_STYLE} />
+        <input type="password" placeholder="New password (min 6)" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} style={INPUT_STYLE} />
+        <input type="password" placeholder="Confirm new" value={conf} onChange={(e) => setConf(e.target.value)} required minLength={6} style={INPUT_STYLE} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button variant="accent" type="submit" disabled={loading}>{loading ? 'Changing...' : 'Change'}</Button>
+          {msg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{msg}</span>}
+          {err && <span className="v3-caption" style={{ color: 'var(--danger)' }}>{err}</span>}
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+function DeleteAccountButton({ onDeleted }: { onDeleted: () => void }) {
+  const [confirm, setConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function doDelete() {
+    setLoading(true); setErr('');
+    try { await request('/users/me', { method: 'DELETE' }); onDeleted(); } catch (error: unknown) { setErr(error instanceof Error ? error.message : 'Error'); } finally { setLoading(false); }
+  }
+
+  return (
+    <div style={{ marginTop: 48 }}>
+      <SectionHeader eyebrow="Danger zone" title="Delete account" />
+      {!confirm ? (
+        <Button variant="ghost" style={{ color: 'var(--danger)', borderColor: 'color-mix(in srgb, var(--danger) 30%, transparent)' }} onClick={() => setConfirm(true)}>Delete account</Button>
+      ) : (
+        <Card padding={24} style={{ border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', background: 'color-mix(in srgb, var(--danger) 3%, transparent)' }}>
+          <div className="v3-body" style={{ color: 'var(--text-2)', marginBottom: 16 }}>This action is permanent and cannot be undone.</div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button variant="accent" style={{ background: 'var(--danger)' }} onClick={doDelete} disabled={loading}>{loading ? 'Deleting...' : 'Yes, delete'}</Button>
+            <Button variant="ghost" onClick={() => setConfirm(false)}>Cancel</Button>
+          </div>
+          {err && <div className="v3-caption" style={{ color: 'var(--danger)', marginTop: 8 }}>{err}</div>}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function AccountSection({ name, onDeleted }: { name: string; onDeleted: () => void }) {
+  return (
     <>
       <SectionShell eyebrow="Account" title="Your details," accent="your way.">
-        <Card padding={24} style={{ marginBottom: 20 }}>
-          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change name</div>
-          <form onSubmit={saveName} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <input value={nm} onChange={(e) => setNm(e.target.value)} required minLength={1} style={{ ...inp, marginBottom: 0, flex: 1 }} />
-            <Button variant="accent" type="submit" disabled={nmLoad}>{nmLoad ? 'Saving...' : 'Save'}</Button>
-            {nmMsg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{nmMsg}</span>}
-          </form>
-        </Card>
-        <Card padding={24} style={{ marginBottom: 20 }}>
-          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change password</div>
-          <form onSubmit={changePw}>
-            <input type="password" placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} required style={inp} />
-            <input type="password" placeholder="New password (min 6)" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} style={inp} />
-            <input type="password" placeholder="Confirm new" value={conf} onChange={(e) => setConf(e.target.value)} required minLength={6} style={inp} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Button variant="accent" type="submit" disabled={pwLoad}>{pwLoad ? 'Changing...' : 'Change'}</Button>
-              {pwMsg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{pwMsg}</span>}
-              {pwErr && <span className="v3-caption" style={{ color: '#ef4444' }}>{pwErr}</span>}
-            </div>
-          </form>
-        </Card>
+        <NameChangeForm initName={name} />
+        <PasswordChangeForm />
         <div style={{ marginTop: 24 }}><Link href="/export"><Button variant="ghost">Export data</Button></Link></div>
       </SectionShell>
-      <div style={{ marginTop: 48 }}>
-        <SectionHeader eyebrow="Danger zone" title="Delete account" />
-        {!delConfirm ? (
-          <Button variant="ghost" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => setDelConfirm(true)}>Delete account</Button>
-        ) : (
-          <Card padding={24} style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.03)' }}>
-            <div className="v3-body" style={{ color: 'var(--text-2)', marginBottom: 16 }}>This action is permanent and cannot be undone.</div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Button variant="accent" style={{ background: '#ef4444' }} onClick={doDelete} disabled={delLoad}>{delLoad ? 'Deleting...' : 'Yes, delete'}</Button>
-              <Button variant="ghost" onClick={() => setDelConfirm(false)}>Cancel</Button>
-            </div>
-            {delErr && <div className="v3-caption" style={{ color: '#ef4444', marginTop: 8 }}>{delErr}</div>}
-          </Card>
-        )}
-      </div>
+      <DeleteAccountButton onDeleted={onDeleted} />
     </>
   );
 }

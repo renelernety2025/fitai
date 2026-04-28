@@ -263,6 +263,12 @@ html { scroll-behavior: smooth; }
   animation-delay: -7s;
 }
 
+/* Accessibility — focus-visible for v3 buttons */
+.v3-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Cinematic list-to-detail transition */
 .cinematic-enter {
   animation: cinematicIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);

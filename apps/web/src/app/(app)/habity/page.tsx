@@ -149,7 +149,7 @@ function HabitRow({ field, done, value, onToggle }: {
         color: done ? '#000' : 'var(--text-3)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
       }}>
-        {done && <FitIcon name="check" size={16} color="#000" />}
+        {done && <FitIcon name="check" size={16} color="var(--bg-0)" />}
       </button>
     </div>
   );
