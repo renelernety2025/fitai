@@ -90,8 +90,13 @@ export default function ExportPage() {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
               });
               const html = await res.text();
-              const win = window.open('', '_blank');
-              if (win) { win.document.write(html); win.document.close(); }
+              const blob = new Blob([html], { type: 'text/html' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'fitai-workouts.html';
+              a.click();
+              URL.revokeObjectURL(url);
             } catch {
               setError('Export "workouts-pdf" selhal. Zkus to znovu.');
             } finally {

@@ -1,24 +1,44 @@
 'use client';
 
-function formatContent(raw: string): string {
-  let html = raw
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+import React from 'react';
 
-  // Bold: **text**
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+function renderContent(raw: string): React.ReactNode[] {
+  const lines = raw.split('\n');
+  const nodes: React.ReactNode[] = [];
 
-  // Bullet lists: lines starting with "- "
-  html = html.replace(
-    /(?:^|\n)- (.+?)(?=\n|$)/g,
-    (_m, item) => `<li class="ml-4 list-disc">${item}</li>`,
-  );
+  lines.forEach((line, i) => {
+    if (i > 0) nodes.push(<br key={`br-${i}`} />);
 
-  // Newlines to <br>
-  html = html.replace(/\n/g, '<br/>');
+    if (line.startsWith('- ')) {
+      nodes.push(
+        <li key={`li-${i}`} className="ml-4 list-disc">
+          {renderInline(line.slice(2))}
+        </li>,
+      );
+    } else {
+      nodes.push(<React.Fragment key={`l-${i}`}>{renderInline(line)}</React.Fragment>);
+    }
+  });
 
-  return html;
+  return nodes;
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let last = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
+    }
+    parts.push(<strong key={`b-${match.index}`}>{match[1]}</strong>);
+    last = match.index + match[0].length;
+  }
+
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
 }
 
 export function ChatBubble({
@@ -36,20 +56,18 @@ export function ChatBubble({
     return (
       <div className="flex items-start gap-3">
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-black"
-          style={{ background: 'linear-gradient(135deg, #A8FF00, #00E5FF)' }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{ background: 'var(--accent)', color: 'var(--bg-0)' }}
         >
-          A
+          AI
         </div>
-        <div className="rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 px-4 py-3">
+        <div className="rounded-2xl rounded-tl-sm px-4 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--stroke-1)' }}>
           <div className="flex gap-1 items-center h-4">
             {[0, 1, 2].map(i => (
               <div
                 key={i}
-                className="w-2 h-2 rounded-full bg-[#A8FF00]"
-                style={{
-                  animation: `typingDot 0.6s ease-in-out ${i * 0.15}s infinite`,
-                }}
+                className="w-2 h-2 rounded-full"
+                style={{ background: 'var(--accent)', animation: `typingDot 0.6s ease-in-out ${i * 0.15}s infinite` }}
               />
             ))}
           </div>
@@ -62,8 +80,8 @@ export function ChatBubble({
     return (
       <div className="flex justify-end">
         <div
-          className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed text-black"
-          style={{ background: 'linear-gradient(135deg, #A8FF00, #00E5FF)' }}
+          className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed"
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           {content}
         </div>
@@ -74,15 +92,17 @@ export function ChatBubble({
   return (
     <div className="flex items-start gap-3">
       <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-black"
-        style={{ background: 'linear-gradient(135deg, #A8FF00, #00E5FF)' }}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+        style={{ background: 'var(--accent)', color: 'var(--bg-0)' }}
       >
-        A
+        AI
       </div>
       <div
-        className="max-w-[80%] rounded-2xl rounded-tl-sm border border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed text-white/90"
-        dangerouslySetInnerHTML={{ __html: formatContent(content) }}
-      />
+        className="max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--stroke-1)', color: 'var(--text-1)' }}
+      >
+        {renderContent(content)}
+      </div>
     </div>
   );
 }
