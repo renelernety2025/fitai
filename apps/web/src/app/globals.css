@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import url('./typography.css');
 
 @tailwind base;
@@ -102,10 +103,10 @@
   --s-12: 48px; --s-16: 64px; --s-20: 80px; --s-24: 96px;
 
   /* v3 Fonts (applied via next/font classes) */
-  --font-display: var(--ff-fraunces, 'Georgia'), serif;
-  --font-display-alt: var(--ff-inter-tight, system-ui), sans-serif;
-  --font-text: var(--ff-inter, system-ui), sans-serif;
-  --font-mono: var(--ff-jetbrains, 'Menlo'), monospace;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-display-alt: 'Inter Tight', system-ui, sans-serif;
+  --font-text: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
 }
 
 /* Skeleton shimmer */
