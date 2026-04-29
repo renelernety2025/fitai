@@ -40,6 +40,7 @@ const MORE_NAV = [
   { href: '/coaching-notes', label: 'AI Notes' },
   { href: '/routine-builder', label: 'Rutina' },
   { href: '/bundles', label: 'Balíčky' },
+  { href: '/courses', label: 'Kurzy' },
   { href: '/wishlist', label: 'Wishlist' },
   { href: '/streaks', label: 'Streaky' },
   { href: '/playlists', label: 'Playlisty' },
@@ -61,6 +62,7 @@ const MORE_NAV = [
   { href: '/form-check', label: 'Form Check' },
   { href: '/paid-challenges', label: 'Souteze' },
   { href: '/creators', label: 'Creators' },
+  { href: '/enterprise', label: 'Business' },
 ];
 
 function MoreDropdown({ pathname }: { pathname: string }) {

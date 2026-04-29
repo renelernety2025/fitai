@@ -111,6 +111,84 @@ export function getPlans(): Promise<any[]> {
   return request('/billing/plans');
 }
 
+// ── Enterprise ──
+
+export interface OrgDashboard {
+  activeMembers: number;
+  sessionsThisWeek: number;
+  avgFitnessScore: number;
+  teamStreak: number;
+}
+
+export interface OrgMember {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  role: string;
+  xp: number;
+  streak: number;
+}
+
+export function getMyOrg(): Promise<any> {
+  return request('/enterprise/my-org');
+}
+
+export function createOrg(data: {
+  name: string;
+  slug: string;
+  industry?: string;
+  size?: string;
+}): Promise<any> {
+  return request('/enterprise/create', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function inviteOrgMember(
+  orgId: string,
+  email: string,
+): Promise<any> {
+  return request(`/enterprise/${orgId}/invite`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function getOrgDashboard(
+  orgId: string,
+): Promise<OrgDashboard> {
+  return request(`/enterprise/${orgId}/dashboard`);
+}
+
+export function getOrgLeaderboard(
+  orgId: string,
+): Promise<OrgMember[]> {
+  return request(`/enterprise/${orgId}/leaderboard`);
+}
+
+export function createOrgChallenge(
+  orgId: string,
+  data: {
+    name: string;
+    description?: string;
+    metric: string;
+    startDate: string;
+    endDate: string;
+  },
+): Promise<any> {
+  return request(`/enterprise/${orgId}/challenges`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getOrgChallenges(
+  orgId: string,
+): Promise<any[]> {
+  return request(`/enterprise/${orgId}/challenges`);
+}
+
 // ── Export ──
 
 export async function downloadExport(

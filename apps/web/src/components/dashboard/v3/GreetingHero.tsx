@@ -4,15 +4,26 @@ interface GreetingHeroProps {
   firstName: string;
   subtitle: string;
   motivation?: string | null;
+  morningBrief?: string | null;
   onRefresh?: () => void;
+}
+
+function timeContext(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Rano';
+  if (hour < 18) return 'Odpoledne';
+  return 'Vecer';
 }
 
 export default function GreetingHero({
   firstName,
   subtitle,
   motivation,
+  morningBrief,
   onRefresh,
 }: GreetingHeroProps) {
+  const hasContent = motivation || morningBrief;
+
   return (
     <section style={{ padding: '56px 0 40px', textAlign: 'center' }}>
       <div className="v3-eyebrow" style={{ marginBottom: 12 }}>
@@ -34,10 +45,33 @@ export default function GreetingHero({
 
       <h1
         className="v3-display-2 v3-clay"
-        style={{ marginBottom: motivation ? 16 : 0 }}
+        style={{ marginBottom: hasContent ? 16 : 0 }}
       >
         {firstName}.
       </h1>
+
+      {morningBrief && (
+        <div style={{
+          maxWidth: 480, margin: '0 auto 12px',
+          padding: '12px 20px', borderRadius: 'var(--r-lg, 12px)',
+          background: 'rgba(232,93,44,0.06)',
+          border: '1px solid rgba(232,93,44,0.12)',
+        }}>
+          <span className="v3-caption" style={{
+            color: 'var(--accent)', fontWeight: 600,
+            letterSpacing: '0.04em', textTransform: 'uppercase',
+            fontSize: 10,
+          }}>
+            {timeContext()} &middot; Tvuj AI Coach doporucuje
+          </span>
+          <p className="v3-body" style={{
+            margin: '6px 0 0', color: 'var(--text-2)',
+            lineHeight: 1.5,
+          }}>
+            {morningBrief}
+          </p>
+        </div>
+      )}
 
       {motivation && (
         <p

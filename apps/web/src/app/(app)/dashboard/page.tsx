@@ -68,6 +68,7 @@ export default function DashboardV3Page() {
           firstName={`${greeting}, ${name}`}
           subtitle={subtitle}
           motivation={motivation}
+          morningBrief={brief ? `${brief.workout.title} — ${brief.headline}` : null}
           onRefresh={reload}
         />
 

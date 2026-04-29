@@ -194,3 +194,71 @@ export function analyzeForm(data: {
 export function getFormCheckHistory(): Promise<any[]> {
   return request('/form-check/history');
 }
+
+// ── Video Courses ──
+
+export interface CourseData {
+  id: string;
+  title: string;
+  description: string;
+  coverUrl: string | null;
+  category: string;
+  difficulty: string;
+  totalLessons: number;
+  durationMinutes: number;
+  price: number;
+  isFree: boolean;
+  studentCount: number;
+  rating: number;
+  creator: { id: string; name: string; avatarUrl: string | null };
+  lessons?: CourseLessonData[];
+  enrollment?: CourseEnrollmentData | null;
+}
+
+export interface CourseLessonData {
+  id: string;
+  title: string;
+  description: string | null;
+  videoUrl: string | null;
+  durationMinutes: number;
+  sortOrder: number;
+  isFree: boolean;
+}
+
+export interface CourseEnrollmentData {
+  id: string;
+  completedLessons: string[];
+  enrolledAt: string;
+  completedAt: string | null;
+}
+
+export function getCourses(category?: string) {
+  const qs = category ? `?category=${category}` : '';
+  return request<CourseData[]>(`/courses${qs}`);
+}
+
+export function getCourse(id: string) {
+  return request<CourseData>(`/courses/${id}`);
+}
+
+export function enrollCourse(id: string) {
+  return request<CourseEnrollmentData>(`/courses/${id}/enroll`, {
+    method: 'POST',
+  });
+}
+
+export function completeCourseLesson(
+  courseId: string,
+  lessonId: string,
+) {
+  return request<CourseEnrollmentData>(
+    `/courses/${courseId}/lessons/${lessonId}/complete`,
+    { method: 'POST' },
+  );
+}
+
+export function getMyEnrollments() {
+  return request<
+    (CourseEnrollmentData & { course: CourseData })[]
+  >('/courses/my-enrollments');
+}

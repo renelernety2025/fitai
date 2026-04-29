@@ -116,6 +116,27 @@ ${cta('https://fitai.bfevents.cz/micro-workout', 'Quick 5-min workout &rarr;')}
 `);
 }
 
+export function morningBriefTemplate(
+  name: string,
+  workoutTitle: string,
+  recoveryLabel: string,
+  motivation: string,
+): string {
+  return wrapper(`
+<h1 style="font-family:${STYLE.serif};font-size:28px;font-weight:400;">
+  Dobre rano, <em style="color:${STYLE.clay};">${esc(name)}.</em>
+</h1>
+<p style="color:${STYLE.muted};line-height:1.6;">
+  Dnesni doporuceni: <strong style="color:${STYLE.accent};">${esc(workoutTitle)}</strong><br/>
+  Tve svaly jsou <strong>${esc(recoveryLabel)}</strong>.
+</p>
+<p style="color:${STYLE.text};line-height:1.6;font-style:italic;">
+  &ldquo;${esc(motivation)}&rdquo;
+</p>
+${cta('https://fitai.bfevents.cz/dashboard', 'Zobrazit plan &rarr;')}
+`);
+}
+
 export function achievementUnlockedTemplate(
   name: string,
   achievement: string,

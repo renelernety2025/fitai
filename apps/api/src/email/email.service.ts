@@ -7,6 +7,7 @@ import {
   weeklyDigestTemplate,
   streakWarningTemplate,
   achievementUnlockedTemplate,
+  morningBriefTemplate,
 } from './templates';
 
 @Injectable()
@@ -121,6 +122,20 @@ export class EmailService {
       email,
       `Achievement unlocked: ${achievement}`,
       achievementUnlockedTemplate(name, achievement),
+    );
+  }
+
+  async sendMorningBrief(
+    email: string,
+    name: string,
+    workoutTitle: string,
+    recoveryLabel: string,
+    motivation: string,
+  ): Promise<void> {
+    await this.send(
+      email,
+      `Dobre rano, ${name} — tvuj plan na dnes`,
+      morningBriefTemplate(name, workoutTitle, recoveryLabel, motivation),
     );
   }
 

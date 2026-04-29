@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiInsightsService } from '../ai-insights/ai-insights.service';
+import { EmailService } from '../email/email.service';
 import * as webpush from 'web-push';
 
 @Injectable()
@@ -8,7 +10,11 @@ export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
   private vapidConfigured = false;
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private aiInsights: AiInsightsService,
+    private emailService: EmailService,
+  ) {
     const publicKey = process.env.VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
     if (publicKey && privateKey) {
@@ -147,6 +153,74 @@ export class NotificationService {
     } catch (e: any) {
       this.logger.error(`Expo push failed: ${e.message}`);
       return { sent: 0, error: e.message };
+    }
+  }
+
+  /** Runs daily at 7:00 AM Prague time (5:00 UTC). */
+  @Cron('0 5 * * *')
+  async sendMorningBriefs() {
+    this.logger.log('[MORNING BRIEF] Cron triggered');
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setUTCDate(fourteenDaysAgo.getUTCDate() - 14);
+
+    const activeUsers = await this.prisma.user.findMany({
+      where: {
+        sessions: { some: { completedAt: { gte: fourteenDaysAgo } } },
+      },
+      select: { id: true, name: true, email: true },
+      take: 100,
+    });
+
+    let sent = 0;
+    for (const user of activeUsers) {
+      try {
+        await this.sendMorningBriefToUser(user);
+        sent++;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.logger.warn(`Morning brief failed for ${user.id}: ${msg}`);
+      }
+    }
+    this.logger.log(`[MORNING BRIEF] Sent ${sent}/${activeUsers.length}`);
+  }
+
+  private async sendMorningBriefToUser(user: {
+    id: string;
+    name: string;
+    email: string;
+  }) {
+    const prefs = await this.prisma.notificationPreference.findUnique({
+      where: { userId: user.id },
+    });
+    if (prefs && !prefs.workoutReminder) return;
+
+    const { brief } = await this.aiInsights.getDailyBrief(user.id);
+    const firstName = user.name?.split(' ')[0] || 'Athlete';
+    const recoveryLabel =
+      brief.recoveryScore >= 75
+        ? 'zotavene'
+        : brief.recoveryScore >= 50
+        ? 'v norme'
+        : 'unavene';
+    const body = `Dobre rano, ${firstName}! Dnes doporucuji ${brief.workout.title}. Tve svaly jsou ${recoveryLabel}. ${brief.motivationalHook}`;
+
+    const payload = { title: 'FitAI Morning Brief', body };
+
+    await this.sendToUser(user.id, {
+      ...payload,
+      url: '/dashboard',
+      tag: 'morning-brief',
+    });
+    await this.sendExpoToUser(user.id, payload);
+
+    if (prefs?.workoutReminder !== false) {
+      await this.emailService.sendMorningBrief(
+        user.email,
+        firstName,
+        brief.workout.title,
+        recoveryLabel,
+        brief.motivationalHook,
+      );
     }
   }
 
