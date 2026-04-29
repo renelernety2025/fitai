@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card, Chip, Tag, Sparkline, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
-import { getPersonalRecords } from '@/lib/api';
+import { getPersonalRecords, getPredictions } from '@/lib/api';
+import type { PredictionItem } from '@/lib/api/progress';
 
 type PersonalRecord = {
   exerciseId: string; exerciseName: string; category: string;
@@ -21,6 +22,7 @@ const FILTERS = [
 
 export default function RecordsPage() {
   const [records, setRecords] = useState<PersonalRecord[]>([]);
+  const [predictions, setPredictions] = useState<PredictionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -28,8 +30,10 @@ export default function RecordsPage() {
   useEffect(() => { document.title = 'FitAI — Records'; }, []);
 
   useEffect(() => {
-    getPersonalRecords()
-      .then((data) => setRecords(data as unknown as PersonalRecord[]))
+    Promise.all([
+      getPersonalRecords().then((d) => setRecords(d as unknown as PersonalRecord[])),
+      getPredictions().then((d) => setPredictions(d.predictions)).catch(() => {}),
+    ])
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -72,6 +76,17 @@ export default function RecordsPage() {
           <RecordCard key={pr.exerciseId} pr={pr} expanded={expanded === pr.exerciseId} onToggle={() => setExpanded(expanded === pr.exerciseId ? null : pr.exerciseId)} />
         ))}
       </div>
+
+      {predictions.length > 0 && (
+        <div style={{ marginTop: 56 }}>
+          <SectionHeader eyebrow="Predictions" title="What's next for you." />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {predictions.map((p) => (
+              <PredictionCard key={p.exerciseId} prediction={p} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -136,5 +151,88 @@ function RecordCard({ pr, expanded, onToggle }: { pr: PersonalRecord; expanded: 
         </div>
       )}
     </Card>
+  );
+}
+
+const CONFIDENCE_COLORS: Record<string, string> = {
+  high: 'var(--sage, #34d399)',
+  medium: '#FF9F0A',
+  low: 'var(--danger, #ef4444)',
+};
+
+function PredictionCard({ prediction: p }: { prediction: PredictionItem }) {
+  const projectedData = [
+    ...p.history,
+    p.predicted4w,
+    p.predicted8w,
+    p.predicted12w,
+  ];
+
+  return (
+    <Card padding={32}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{p.exerciseName}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <span className="v3-numeric" style={{ fontSize: 36, color: 'var(--text-1)', lineHeight: 1 }}>{p.currentBest}</span>
+            <span className="v3-caption">kg now</span>
+          </div>
+        </div>
+        <Tag color={CONFIDENCE_COLORS[p.confidence]}>
+          {p.confidence}
+        </Tag>
+      </div>
+
+      <PredictionSparkline data={projectedData} historyLen={p.history.length} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16 }}>
+        <PredictionTarget label="4 weeks" value={p.predicted4w} current={p.currentBest} />
+        <PredictionTarget label="8 weeks" value={p.predicted8w} current={p.currentBest} />
+        <PredictionTarget label="12 weeks" value={p.predicted12w} current={p.currentBest} />
+      </div>
+    </Card>
+  );
+}
+
+function PredictionTarget({ label, value, current }: { label: string; value: number; current: number }) {
+  const diff = +(value - current).toFixed(1);
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div className="v3-numeric" style={{ fontSize: 18, fontWeight: 600, color: 'var(--accent)' }}>{value}</div>
+      <div className="v3-caption" style={{ fontSize: 10 }}>{label}</div>
+      {diff > 0 && (
+        <div className="v3-numeric" style={{ fontSize: 10, color: 'var(--sage, #34d399)', marginTop: 2 }}>+{diff} kg</div>
+      )}
+    </div>
+  );
+}
+
+function PredictionSparkline({ data, historyLen }: { data: number[]; historyLen: number }) {
+  const width = 400;
+  const height = 60;
+  if (data.length < 2) return null;
+
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+
+  const points = data.map((v, i) => ({
+    x: (i / (data.length - 1)) * width,
+    y: height - ((v - min) / range) * (height - 4) - 2,
+  }));
+
+  const solidPath = points.slice(0, historyLen)
+    .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(' ');
+
+  const dashedPath = points.slice(historyLen - 1)
+    .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+    .join(' ');
+
+  return (
+    <svg width={width} height={height} style={{ display: 'block', width: '100%' }} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <path d={solidPath} stroke="var(--accent)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <path d={dashedPath} stroke="var(--accent)" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeDasharray="6 4" opacity="0.5" />
+    </svg>
   );
 }

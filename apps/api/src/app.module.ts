@@ -76,6 +76,9 @@ import { FormCheckModule } from './form-check/form-check.module';
 import { SmartNotificationsModule } from './smart-notifications/smart-notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { BillingModule } from './billing/billing.module';
+import { FitnessScoreModule } from './fitness-score/fitness-score.module';
+import { PaidChallengesModule } from './paid-challenges/paid-challenges.module';
+import { CreatorsModule } from './creators/creators.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -192,6 +195,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     SmartNotificationsModule,
     AnalyticsModule,
     BillingModule,
+    FitnessScoreModule,
+    PaidChallengesModule,
+    CreatorsModule,
   ],
   providers: [
     {

@@ -193,8 +193,25 @@ export interface Milestone {
   achievedAt: string | null;
 }
 
+export interface PredictionItem {
+  exerciseId: string;
+  exerciseName: string;
+  currentBest: number;
+  predicted4w: number;
+  predicted8w: number;
+  predicted12w: number;
+  confidence: 'high' | 'medium' | 'low';
+  history: number[];
+}
+
 export function getInsights() {
   return request<Insights>('/intelligence/insights');
+}
+
+export function getPredictions() {
+  return request<{ predictions: PredictionItem[] }>(
+    '/intelligence/predictions',
+  );
 }
 
 export function updatePriorityMuscles(muscles: string[]) {
@@ -410,6 +427,36 @@ export function getRehabSessions(
   planId: string,
 ): Promise<any[]> {
   return request(`/rehab/${planId}/sessions`);
+}
+
+export interface FitnessScoreData {
+  score: number;
+  breakdown: {
+    consistency: number;
+    strength: number;
+    cardio: number;
+    nutrition: number;
+    recovery: number;
+  };
+  trend: 'improving' | 'stable' | 'declining';
+  previousScore: number | null;
+  percentile: number;
+}
+
+export interface FitnessScoreHistoryEntry {
+  date: string;
+  score: number;
+  breakdown: Record<string, number>;
+}
+
+export function getFitnessScore() {
+  return request<FitnessScoreData>('/fitness-score');
+}
+
+export function getFitnessScoreHistory() {
+  return request<FitnessScoreHistoryEntry[]>(
+    '/fitness-score/history',
+  );
 }
 
 export function getWrapped(

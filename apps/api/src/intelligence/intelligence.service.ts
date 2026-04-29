@@ -255,6 +255,95 @@ export class IntelligenceService {
     return { plateaus, recovery, weakPoints };
   }
 
+  // ── PR Predictions ──
+  async getPredictions(userId: string) {
+    const history = await this.prisma.exerciseHistory.findMany({
+      where: { userId },
+      include: { exercise: { select: { id: true, nameCs: true } } },
+      orderBy: { date: 'desc' },
+    });
+
+    const byExercise = new Map<string, typeof history>();
+    for (const h of history) {
+      const arr = byExercise.get(h.exerciseId) || [];
+      arr.push(h);
+      byExercise.set(h.exerciseId, arr);
+    }
+
+    const predictions: Array<{
+      exerciseId: string;
+      exerciseName: string;
+      currentBest: number;
+      predicted4w: number;
+      predicted8w: number;
+      predicted12w: number;
+      confidence: 'high' | 'medium' | 'low';
+      history: number[];
+    }> = [];
+
+    for (const [exerciseId, entries] of byExercise) {
+      if (entries.length < 5) continue;
+
+      const sorted = [...entries]
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .slice(-20);
+
+      const weights = sorted.map((e) => e.bestWeight ?? 0);
+      const currentBest = Math.max(...weights);
+      if (currentBest === 0) continue;
+
+      const reg = this.linearRegression(weights);
+      const n = weights.length;
+
+      const predict = (weeksAhead: number) => {
+        const sessionsAhead = Math.round(
+          (weeksAhead / (n > 1
+            ? (sorted[n - 1].date.getTime() - sorted[0].date.getTime()) / (n - 1) / 604800000
+            : 1)) * weeksAhead,
+        );
+        return Math.max(
+          currentBest,
+          Math.round((reg.slope * (n + sessionsAhead) + reg.intercept) * 10) / 10,
+        );
+      };
+
+      const confidence: 'high' | 'medium' | 'low' =
+        reg.r2 >= 0.7 ? 'high' : reg.r2 >= 0.4 ? 'medium' : 'low';
+
+      predictions.push({
+        exerciseId,
+        exerciseName: entries[0].exercise.nameCs,
+        currentBest,
+        predicted4w: predict(4),
+        predicted8w: predict(8),
+        predicted12w: predict(12),
+        confidence,
+        history: weights,
+      });
+    }
+
+    return { predictions };
+  }
+
+  private linearRegression(ys: number[]) {
+    const n = ys.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+    for (let i = 0; i < n; i++) {
+      sumX += i;
+      sumY += ys[i];
+      sumXY += i * ys[i];
+      sumX2 += i * i;
+      sumY2 += ys[i] * ys[i];
+    }
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX || 1);
+    const intercept = (sumY - slope * sumX) / n;
+    const denom = Math.sqrt(
+      (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
+    ) || 1;
+    const r = (n * sumXY - sumX * sumY) / denom;
+    return { slope, intercept, r2: r * r };
+  }
+
   private getAccessoryExercises(muscle: string): string[] {
     const map: Record<string, string[]> = {
       CHEST: ['Push-ups', 'Dumbbell Fly', 'Cable Crossover'],

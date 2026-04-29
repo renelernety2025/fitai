@@ -11,6 +11,7 @@ import GreetingHero from '@/components/dashboard/v3/GreetingHero';
 import TodayWorkout from '@/components/dashboard/v3/TodayWorkout';
 import StatsStrip from '@/components/dashboard/v3/StatsStrip';
 import WeekStrip from '@/components/dashboard/v3/WeekStrip';
+import FitnessScore from '@/components/dashboard/v3/FitnessScore';
 import {
   getMyStats, getInsights, getLessonOfTheWeek, getNutritionToday,
   getWeeklyReview, getDailyBrief, getDailyMotivation, getMicroWorkout,
@@ -87,6 +88,9 @@ export default function DashboardV3Page() {
             <StatsStrip stats={stats} />
           </section>
         )}
+
+        {/* Fitness Score */}
+        <FitnessScore />
 
         {/* Week strip */}
         {stats && (

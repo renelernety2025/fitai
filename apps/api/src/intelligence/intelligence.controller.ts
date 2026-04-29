@@ -27,6 +27,11 @@ export class IntelligenceController {
     return this.intelligenceService.detectWeakPoints(req.user.id);
   }
 
+  @Get('predictions')
+  getPredictions(@Request() req: any) {
+    return this.intelligenceService.getPredictions(req.user.id);
+  }
+
   @Put('priority-muscles')
   updatePriorityMuscles(@Request() req: any, @Body('muscles') muscles: string[]) {
     return this.intelligenceService.updatePriorityMuscles(req.user.id, muscles || []);

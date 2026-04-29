@@ -322,4 +322,80 @@ export class GymSessionsService {
     if (!session) throw new NotFoundException('Session not found');
     return session;
   }
+
+  async getShareCard(sessionId: string) {
+    const session = await this.prisma.gymSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        exerciseSets: { include: { exercise: true } },
+        workoutPlan: { select: { nameCs: true } },
+        user: { select: { name: true } },
+        workoutSession: true,
+      },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const completed = session.exerciseSets.filter(
+      (s) => s.status === 'COMPLETED' && !s.isWarmup,
+    );
+    const totalReps = completed.reduce((s, x) => s + x.actualReps, 0);
+    const avgForm = completed.length
+      ? Math.round(
+          completed.reduce((s, x) => s + x.formScore, 0) / completed.length,
+        )
+      : 0;
+
+    const prs = this.detectSessionPRs(completed);
+    const xpEarned = await this.estimateXP(session);
+    const duration = session.durationSeconds
+      ? `${Math.floor(session.durationSeconds / 60)}:${String(session.durationSeconds % 60).padStart(2, '0')}`
+      : '0:00';
+
+    return {
+      workoutName: session.workoutPlan?.nameCs ?? 'Quick Workout',
+      duration,
+      totalReps,
+      avgForm,
+      xpEarned,
+      prs,
+      date: session.startedAt.toISOString(),
+      userName: session.user?.name ?? 'FitAI User',
+    };
+  }
+
+  private detectSessionPRs(
+    sets: Array<{ exerciseId: string; actualWeight: number | null; actualReps: number; exercise: { nameCs: string } }>,
+  ) {
+    const bestByExercise = new Map<string, { name: string; weight: number }>();
+    for (const s of sets) {
+      const w = s.actualWeight ?? 0;
+      const prev = bestByExercise.get(s.exerciseId);
+      if (!prev || w > prev.weight) {
+        bestByExercise.set(s.exerciseId, {
+          name: s.exercise.nameCs,
+          weight: w,
+        });
+      }
+    }
+    return Array.from(bestByExercise.values())
+      .filter((p) => p.weight > 0)
+      .slice(0, 3)
+      .map((p) => ({
+        exercise: p.name,
+        value: `${p.weight} kg`,
+      }));
+  }
+
+  private async estimateXP(session: any): Promise<number> {
+    const minutes = (session.durationSeconds ?? 0) / 60;
+    let xp = Math.round(minutes * 10);
+    const completed = (session.exerciseSets || []).filter(
+      (s: any) => s.status === 'COMPLETED',
+    );
+    const avgForm = completed.length
+      ? completed.reduce((s: number, x: any) => s + x.formScore, 0) / completed.length
+      : 0;
+    if (avgForm >= 80) xp += 20;
+    return xp;
+  }
 }

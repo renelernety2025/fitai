@@ -14,6 +14,7 @@ interface WorkoutCelebrationProps {
   totalReps: number;
   avgFormScore: number;
   xpGained: number;
+  sessionId?: string;
   onDismiss: () => void;
 }
 
@@ -22,6 +23,7 @@ export function WorkoutCelebration({
   totalReps,
   avgFormScore,
   xpGained,
+  sessionId,
   onDismiss,
 }: WorkoutCelebrationProps) {
   const [visible, setVisible] = useState(true);
@@ -36,6 +38,17 @@ export function WorkoutCelebration({
   if (!visible) return null;
 
   const minutes = Math.floor(durationSeconds / 60);
+
+  const handleShare = () => {
+    if (!sessionId) return;
+    const url = `${window.location.origin}/share/${sessionId}`;
+    if (navigator.share) {
+      navigator.share({ title: 'FitAI Workout', url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url).catch(() => {});
+      window.open(url, '_blank');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/95 backdrop-blur-sm">
@@ -60,14 +73,24 @@ export function WorkoutCelebration({
           <CelebStat value={`+${xpGained}`} label="XP" accent="#A8FF00" />
         </div>
 
-        <button
-          onClick={() => { setVisible(false); onDismiss(); }}
-          className={`rounded-full bg-white px-10 py-4 text-sm font-semibold text-black transition hover:scale-105 ${
-            canDismiss ? 'opacity-100' : 'opacity-30 pointer-events-none'
-          }`}
-        >
-          Pokracovat
-        </button>
+        <div className="flex items-center gap-4">
+          {sessionId && (
+            <button
+              onClick={handleShare}
+              className="rounded-full border border-white/20 px-8 py-4 text-sm font-semibold text-white transition hover:scale-105 hover:border-white/40"
+            >
+              Share
+            </button>
+          )}
+          <button
+            onClick={() => { setVisible(false); onDismiss(); }}
+            className={`rounded-full bg-white px-10 py-4 text-sm font-semibold text-black transition hover:scale-105 ${
+              canDismiss ? 'opacity-100' : 'opacity-30 pointer-events-none'
+            }`}
+          >
+            Pokracovat
+          </button>
+        </div>
       </div>
     </div>
   );

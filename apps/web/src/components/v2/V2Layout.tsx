@@ -59,6 +59,8 @@ const MORE_NAV = [
   { href: '/discover-weekly', label: 'Objev' },
   { href: '/gym-finder', label: 'Gymy' },
   { href: '/form-check', label: 'Form Check' },
+  { href: '/paid-challenges', label: 'Souteze' },
+  { href: '/creators', label: 'Creators' },
 ];
 
 function MoreDropdown({ pathname }: { pathname: string }) {

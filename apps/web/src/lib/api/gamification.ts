@@ -104,3 +104,62 @@ export function completeDailyQuest(
     method: 'POST',
   });
 }
+
+// Paid Challenges
+
+export function getPaidChallenges(): Promise<any[]> {
+  return request('/paid-challenges');
+}
+
+export function getPaidChallengeDetail(
+  id: string,
+): Promise<any> {
+  return request(`/paid-challenges/${id}`);
+}
+
+export function createPaidChallenge(
+  data: any,
+): Promise<any> {
+  return request('/paid-challenges', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function joinPaidChallenge(
+  id: string,
+): Promise<any> {
+  return request(`/paid-challenges/${id}/join`, {
+    method: 'POST',
+  });
+}
+
+// Creators
+
+export function getCreators(): Promise<any[]> {
+  return request('/creators');
+}
+
+export function getCreatorDetail(
+  id: string,
+): Promise<any> {
+  return request(`/creators/${id}`);
+}
+
+export function applyAsCreator(
+  data: any,
+): Promise<any> {
+  return request('/creators/apply', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateCreatorProfile(
+  data: any,
+): Promise<any> {
+  return request('/creators/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
