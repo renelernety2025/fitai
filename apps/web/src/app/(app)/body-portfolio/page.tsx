@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getBodyPortfolio } from '@/lib/api';
 
 const CATEGORIES = [
-  { key: 'strength', label: 'Sila', color: '#FF375F' },
-  { key: 'endurance', label: 'Vytrvalost', color: '#A8FF00' },
-  { key: 'form', label: 'Forma', color: '#00E5FF' },
-  { key: 'nutrition', label: 'Vyziva', color: '#FF9500' },
-  { key: 'mobility', label: 'Mobilita', color: '#BF5AF2' },
+  { key: 'strength', label: 'Sila', color: 'var(--accent)' },
+  { key: 'endurance', label: 'Vytrvalost', color: 'var(--sage)' },
+  { key: 'form', label: 'Forma', color: 'var(--clay)' },
+  { key: 'nutrition', label: 'Vyziva', color: 'var(--warning)' },
+  { key: 'mobility', label: 'Mobilita', color: 'var(--clay-deep)' },
 ] as const;
 
 function buildPentagonPoints(scores: number[], cx: number, cy: number, r: number): string {
@@ -68,9 +67,9 @@ function ScoreRing({ score, size, color }: { score: number; size: number; color:
       />
       <defs>
         <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A8FF00" />
-          <stop offset="50%" stopColor="#00E5FF" />
-          <stop offset="100%" stopColor="#BF5AF2" />
+          <stop offset="0%" stopColor="var(--sage)" />
+          <stop offset="50%" stopColor="var(--clay)" />
+          <stop offset="100%" stopColor="var(--clay-deep)" />
         </linearGradient>
       </defs>
     </svg>
@@ -99,7 +98,7 @@ export default function BodyPortfolioPage() {
     return (
       <>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20" style={{ borderTopColor: 'var(--sage)' }} />
         </div>
       </>
     );
@@ -107,13 +106,16 @@ export default function BodyPortfolioPage() {
 
   return (
     <>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Fintech pro tvoje telo</V2SectionLabel>
-        <V2Display size="xl">Portfolio.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Fintech pro tvoje telo</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Body<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Portfolio.</em>
+        </h1>
       </section>
 
       {err && (
-        <div className="mb-8 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+        <div className="mb-8 rounded-xl border px-6 py-4 text-sm" style={{ borderColor: 'color-mix(in srgb, var(--accent) 20%, transparent)', backgroundColor: 'color-mix(in srgb, var(--accent) 5%, transparent)', color: 'var(--accent)' }}>
           Nepodarilo se nacist data. Zkus to pozdeji.
         </div>
       )}
@@ -128,7 +130,7 @@ export default function BodyPortfolioPage() {
       {/* Overall score hero */}
       <section className="mb-20 flex flex-col items-center">
         <div className="relative">
-          <ScoreRing score={overall} size={220} color="#A8FF00" />
+          <ScoreRing score={overall} size={220} color="var(--sage)" />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-6xl font-bold tracking-tight tabular-nums text-white" style={{ letterSpacing: '-0.05em' }}>
               {overall}
@@ -155,7 +157,7 @@ export default function BodyPortfolioPage() {
                 {cat.label}
               </div>
               <div className="mt-2 text-3xl font-bold tabular-nums text-white">{s.score ?? 0}</div>
-              <div className={`mt-1 text-xs font-semibold ${change >= 0 ? 'text-[#A8FF00]' : 'text-[#FF375F]'}`}>
+              <div className="mt-1 text-xs font-semibold" style={{ color: change >= 0 ? 'var(--sage)' : 'var(--accent)' }}>
                 {change >= 0 ? '+' : ''}{change}%
               </div>
               <Sparkline data={s.history || [0, 0]} color={cat.color} />
@@ -166,7 +168,7 @@ export default function BodyPortfolioPage() {
 
       {/* Radar chart */}
       <section className="mb-20 flex flex-col items-center">
-        <V2SectionLabel>Radar profil</V2SectionLabel>
+        <p className="v3-eyebrow">Radar profil</p>
         <svg width={300} height={300} viewBox="0 0 300 300">
           {/* Grid rings */}
           {[0.25, 0.5, 0.75, 1].map((r) => (
@@ -192,7 +194,7 @@ export default function BodyPortfolioPage() {
           {/* Data polygon */}
           <polygon
             points={buildPentagonPoints(catScores, 150, 150, 120)}
-            fill="#A8FF0015" stroke="#A8FF00" strokeWidth={2}
+            fill="color-mix(in srgb, var(--sage) 8%, transparent)" stroke="var(--sage)" strokeWidth={2}
           />
           {/* Data dots */}
           {catScores.map((s, i) => {

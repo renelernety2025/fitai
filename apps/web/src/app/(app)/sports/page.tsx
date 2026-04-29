@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 
 const SPORTS = [
   {
@@ -10,7 +9,7 @@ const SPORTS = [
     title: 'Shadow Boxing',
     subtitle: 'Kombos, udery, obrana',
     description: 'AI treninkovy program pro box a MMA. Kombinace uderu, obrana, cardio.',
-    accent: '#FF375F',
+    accent: 'var(--accent)',
     icon: 'punch',
   },
   {
@@ -18,7 +17,7 @@ const SPORTS = [
     title: 'Golf Swing Lab',
     subtitle: 'Drive, Chip, Putt',
     description: 'Vizualizace a analyza golfoveho svingu. Procvic techniku bez hriste.',
-    accent: '#A8FF00',
+    accent: 'var(--sage)',
     icon: 'golf',
   },
   {
@@ -42,7 +41,7 @@ const SPORTS = [
     title: 'Workout Mode',
     subtitle: 'Follow-along · Timer',
     description: 'Cvic spolecne s 3D modelem. Timer, odpocinek, beep signaly. Staci sledovat.',
-    accent: '#00E5FF',
+    accent: 'var(--sage)',
     icon: 'timer',
   },
   {
@@ -50,7 +49,7 @@ const SPORTS = [
     title: 'Sekvence',
     subtitle: 'Choreografie · Prehrávac',
     description: 'Prohlizej animacni sekvence — box kolo, HIIT, golf. Bez timeru.',
-    accent: '#BF5AF2',
+    accent: 'var(--clay-deep)',
     icon: 'sequence',
   },
   {
@@ -58,7 +57,7 @@ const SPORTS = [
     title: 'Gym Workout',
     subtitle: 'Plan + AI Coach',
     description: 'Klasicky trenink s AI osobnim trenerem. Forma, opakovaní, pokrok.',
-    accent: '#00E5FF',
+    accent: 'var(--sage)',
     icon: 'gym',
   },
 ];
@@ -68,9 +67,12 @@ export default function SportsHubPage() {
 
   return (
     <>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Trenuj cokoliv</V2SectionLabel>
-        <V2Display size="xl">Sporty.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Trenuj cokoliv</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Vsechny<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>sporty.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Fitness, bojove sporty, golf — vsechno na jednom miste s 3D vizualizaci a AI coachem.
         </p>
@@ -94,7 +96,7 @@ export default function SportsHubPage() {
               >
                 {sport.subtitle}
               </div>
-              <V2Display size="md">{sport.title}</V2Display>
+              <h2 className="v3-title">{sport.title}</h2>
               <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/50">
                 {sport.description}
               </p>

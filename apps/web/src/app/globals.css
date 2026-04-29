@@ -254,12 +254,12 @@ html { scroll-behavior: smooth; }
 }
 .gradient-mesh::before {
   width: 600px; height: 600px;
-  background: #FF375F;
+  background: var(--accent);
   top: -200px; right: -100px;
 }
 .gradient-mesh::after {
   width: 500px; height: 500px;
-  background: #A8FF00;
+  background: var(--sage);
   bottom: -150px; left: -100px;
   animation-delay: -7s;
 }

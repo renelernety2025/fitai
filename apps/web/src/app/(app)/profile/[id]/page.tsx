@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display, V2Stat } from '@/components/v2/V2Layout';
 import PropsButton from '@/components/social/PropsButton';
 import {
   getPublicProfile,
@@ -13,11 +12,11 @@ import {
 import { useAuth } from '@/lib/auth-context';
 
 const LEVEL_COLORS: Record<string, string> = {
-  Zacatecnik: '#00E5FF',
-  Pokrocily: '#A8FF00',
-  Expert: '#BF5AF2',
-  Mistr: '#FFD600',
-  Legenda: '#FF375F',
+  Zacatecnik: 'var(--sage)',
+  Pokrocily: 'var(--sage)',
+  Expert: 'var(--clay-deep)',
+  Mistr: 'var(--warning)',
+  Legenda: 'var(--accent)',
 };
 
 interface PublicProfile {
@@ -97,7 +96,7 @@ export default function PublicProfilePage() {
     return (
       <>
         <div className="flex min-h-[50vh] items-center justify-center">
-          <div style={{ color: '#FF375F' }}>
+          <div style={{ color: 'var(--accent)' }}>
             {error || 'Profil nenalezen'}
           </div>
         </div>
@@ -114,7 +113,7 @@ export default function PublicProfilePage() {
         &larr; Komunita
       </Link>
       <section className="pt-12 pb-12">
-        <V2SectionLabel>Profil</V2SectionLabel>
+        <p className="v3-eyebrow">Profil</p>
 
         {/* Avatar + name */}
         <div className="mb-8 flex items-center gap-6">
@@ -128,7 +127,7 @@ export default function PublicProfilePage() {
             {profile.name.charAt(0).toUpperCase()}
           </div>
           <div>
-            <V2Display size="lg">{profile.name}</V2Display>
+            <h1 className="v3-display-2">{profile.name}</h1>
             <div
               className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em]"
               style={{ color: levelColor }}
@@ -156,13 +155,13 @@ export default function PublicProfilePage() {
               className="rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition"
               style={{
                 borderColor: following
-                  ? '#A8FF00'
+                  ? 'var(--sage)'
                   : 'rgba(255,255,255,0.2)',
                 backgroundColor: following
-                  ? 'rgba(168,255,0,0.1)'
+                  ? 'color-mix(in srgb, var(--sage) 10%, transparent)'
                   : 'transparent',
                 color: following
-                  ? '#A8FF00'
+                  ? 'var(--sage)'
                   : 'var(--text-secondary)',
               }}
             >
@@ -191,19 +190,28 @@ export default function PublicProfilePage() {
 
       {/* Stats */}
       <section className="mb-12 grid grid-cols-2 gap-8 sm:grid-cols-4">
-        <V2Stat
-          value={profile.stats.totalSessions}
-          label="treninku"
-        />
-        <V2Stat value={profile.stats.currentStreak} label="streak" />
-        <V2Stat value={profile.stats.totalXP} label="XP" />
-        <V2Stat value={profile.stats.propsCount} label="props" />
+        <div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.totalSessions}</div>
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">treninku</div>
+        </div>
+        <div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.currentStreak}</div>
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">streak</div>
+        </div>
+        <div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.totalXP}</div>
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">XP</div>
+        </div>
+        <div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.propsCount}</div>
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">props</div>
+        </div>
       </section>
 
       {/* Top achievements */}
       {profile.achievements.length > 0 && (
         <section className="mb-12">
-          <V2SectionLabel>Top uspechy</V2SectionLabel>
+          <p className="v3-eyebrow">Top uspechy</p>
           <div className="flex gap-4">
             {profile.achievements.slice(0, 3).map((a) => (
               <div

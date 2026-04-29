@@ -6,7 +6,6 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { V2SectionLabel } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { Confetti } from '@/components/v2/Confetti';
 import { getCurrentSeason, joinSeason, checkSeasonMissions } from '@/lib/api';
@@ -63,14 +62,12 @@ function LevelTrack({
           <div
             key={l}
             data-level={l}
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums transition-all ${
-              current
-                ? 'border-[#A8FF00] bg-[#A8FF00]/20 text-[#A8FF00]'
-                : past
-                ? 'border-[#A8FF00]/40 bg-[#A8FF00]/10 text-[#A8FF00]/60'
-                : 'border-white/10 text-white/20'
-            }`}
-            style={current ? { boxShadow: '0 0 24px #A8FF0044' } : {}}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums transition-all"
+            style={current
+              ? { borderColor: 'var(--sage)', background: 'color-mix(in srgb, var(--sage) 20%, transparent)', color: 'var(--sage)', boxShadow: '0 0 24px color-mix(in srgb, var(--sage) 26%, transparent)' }
+              : past
+              ? { borderColor: 'color-mix(in srgb, var(--sage) 40%, transparent)', background: 'color-mix(in srgb, var(--sage) 10%, transparent)', color: 'color-mix(in srgb, var(--sage) 60%, transparent)' }
+              : { borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.2)' }}
           >
             {l}
           </div>
@@ -91,20 +88,18 @@ function MissionCard({
   return (
     <div
       className={`rounded-xl border p-5 transition ${
-        mission.completed
-          ? 'border-[#A8FF00]/20 bg-[#A8FF00]/5'
-          : mission.locked
-          ? 'border-white/5 opacity-40'
-          : 'border-white/10'
+        mission.locked ? 'border-white/5 opacity-40' : !mission.completed ? 'border-white/10' : ''
       } ${isNew ? 'animate-pulse' : ''}`}
+      style={mission.completed ? { borderColor: 'color-mix(in srgb, var(--sage) 20%, transparent)', background: 'color-mix(in srgb, var(--sage) 5%, transparent)' } : undefined}
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className={`text-sm font-semibold ${
-          mission.completed ? 'text-[#A8FF00] line-through' : mission.locked ? 'text-white/30' : 'text-white'
-        }`}>
+        <span
+          className={`text-sm font-semibold ${mission.completed ? 'line-through' : ''} ${mission.locked ? 'text-white/30' : !mission.completed ? 'text-white' : ''}`}
+          style={mission.completed ? { color: 'var(--sage)' } : undefined}
+        >
           {mission.completed && '\u2713 '}{mission.title}
         </span>
-        <span className="rounded-full bg-[#FFD600]/15 px-3 py-1 text-[10px] font-bold text-[#FFD600]">
+        <span className="rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: 'color-mix(in srgb, var(--warning) 15%, transparent)', color: 'var(--warning)' }}>
           +{mission.xpReward} XP
         </span>
       </div>
@@ -112,8 +107,8 @@ function MissionCard({
         <>
           <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-[#A8FF00] transition-all duration-500"
-              style={{ width: `${Math.min(100, pct)}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ backgroundColor: 'var(--sage)', width: `${Math.min(100, pct)}%` }}
             />
           </div>
           <div className="text-[10px] tabular-nums text-white/40">
@@ -177,17 +172,17 @@ export default function SeasonPage() {
     <>
       <Confetti trigger={confettiTrigger} />
       <section className="pt-12 pb-24">
-        <V2SectionLabel>Sezona</V2SectionLabel>
+        <p className="v3-eyebrow">Sezona</p>
 
         {error && (
-          <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          <div className="mb-6 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-6 py-4 text-sm text-[var(--accent)]">
             {error}
           </div>
         )}
 
         {loading && (
           <div className="flex items-center justify-center py-32">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--sage)]" />
           </div>
         )}
 
@@ -202,7 +197,7 @@ export default function SeasonPage() {
             </h1>
             <div className="mb-8 flex items-baseline gap-3">
               <span
-                className="font-bold tabular-nums text-[#A8FF00]"
+                className="font-bold tabular-nums text-[var(--sage)]"
                 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em' }}
               >
                 Level {data.level}
@@ -217,7 +212,7 @@ export default function SeasonPage() {
             </div>
             <div className="mb-8 h-3 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-[#A8FF00] transition-all duration-700"
+                className="h-full rounded-full bg-[var(--sage)] transition-all duration-700"
                 style={{ width: `${data.nextLevelXP > 0 ? Math.min(100, (data.currentXP / data.nextLevelXP) * 100) : 0}%` }}
               />
             </div>
@@ -240,13 +235,13 @@ export default function SeasonPage() {
 
             {/* Level track */}
             <div className="mb-12">
-              <V2SectionLabel>Progress</V2SectionLabel>
+              <p className="v3-eyebrow">Progress</p>
               <LevelTrack level={data.level} maxLevel={data.maxLevel} />
             </div>
 
             {/* Missions */}
             <div className="mb-6 flex items-center justify-between">
-              <V2SectionLabel>Mise</V2SectionLabel>
+              <p className="v3-eyebrow">Mise</p>
               <button
                 onClick={handleCheck}
                 disabled={checking}

@@ -9,7 +9,7 @@ import { getWishlist, removeFromWishlist } from '@/lib/api';
 type WishlistItem = { id: string; itemType: string; itemId: string; addedAt: string; itemName?: string; savedCount?: number };
 
 const TABS = ['All', 'Exercises', 'Plans', 'Recipes', 'Experiences', 'Clips'];
-const TYPE_COLOR: Record<string, string> = { exercise: 'var(--accent)', plan: 'var(--sage, #34d399)', recipe: '#FF9F0A', experience: '#BF5AF2', clip: '#00E5FF' };
+const TYPE_COLOR: Record<string, string> = { exercise: 'var(--accent)', plan: 'var(--sage)', recipe: 'var(--warning)', experience: 'var(--clay-deep)', clip: 'var(--clay)' };
 
 export default function WishlistPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);

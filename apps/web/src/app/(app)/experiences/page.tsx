@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
 import { getExperiences, bookExperience } from '@/lib/api';
@@ -32,12 +31,12 @@ const CATEGORIES = [
 ] as const;
 
 const CATEGORY_COLORS: Record<string, string> = {
-  GROUP: '#FF375F',
-  OUTDOOR: '#A8FF00',
-  WELLNESS: '#BF5AF2',
+  GROUP: 'var(--accent)',
+  OUTDOOR: 'var(--sage)',
+  WELLNESS: 'var(--clay-deep)',
   COMBAT: '#FF9F0A',
-  ADVENTURE: '#00E5FF',
-  NUTRITION: '#FF375F',
+  ADVENTURE: 'var(--sage)',
+  NUTRITION: 'var(--accent)',
 };
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
@@ -103,9 +102,12 @@ export default function ExperiencesPage() {
         &larr; Dashboard
       </Link>
 
-      <section className="pt-8 pb-6">
-        <V2SectionLabel>DISCOVER</V2SectionLabel>
-        <V2Display size="xl">Experiences</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Discover</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Live<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Experiences.</em>
+        </h1>
         <p className="mt-3 max-w-xl text-sm text-white/50">
           Ziv zazitky s trenery. Outdoor treninky, wellness, bojove sporty a dalsi.
         </p>
@@ -175,7 +177,7 @@ export default function ExperiencesPage() {
                   </div>
                   <div className="p-5">
                     <Link href={`/experiences/${exp.id}`}>
-                      <h3 className="text-base font-bold tracking-tight text-white transition group-hover:text-[#00E5FF]">
+                      <h3 className="text-base font-bold tracking-tight text-white transition" style={{ '--hover-color': 'var(--sage)' } as React.CSSProperties}>
                         {exp.title}
                       </h3>
                     </Link>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getWorkoutPlan, type WorkoutPlanData } from '@/lib/api';
 
 export default function PlanV2DetailPage({ params }: { params: { id: string } }) {
@@ -36,11 +35,11 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
         <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
           {plan.type.replace(/_/g, ' ')} · {plan.daysPerWeek}× týdně
         </div>
-        <V2Display size="xl">{plan.nameCs}</V2Display>
+        <h1 className="v3-display-2">{plan.nameCs}</h1>
         <p className="mt-4 max-w-2xl text-base text-white/55">{plan.description}</p>
         <Link
           href={`/plans/${params.id}/edit`}
-          className="mt-6 inline-block rounded-full border border-white/15 px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-[#A8FF00]/40 hover:text-[#A8FF00]"
+          className="mt-6 inline-block rounded-full border border-white/15 px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-white/40 hover:text-white"
         >
           Upravit
         </Link>
@@ -54,7 +53,7 @@ export default function PlanV2DetailPage({ params }: { params: { id: string } })
                 <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
                   Den {day.dayIndex + 1}
                 </div>
-                <V2Display size="md">{day.nameCs}</V2Display>
+                <h2 className="v3-title">{day.nameCs}</h2>
               </div>
               <Link
                 href={`/gym/start?planId=${plan.id}&dayIndex=${day.dayIndex}`}

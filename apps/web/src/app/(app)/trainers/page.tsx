@@ -6,7 +6,6 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { GlassCard } from '@/components/v2/GlassCard';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
@@ -39,7 +38,7 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
           key={i}
           style={{
             fontSize: size,
-            color: i <= Math.round(rating) ? '#FFD600' : '#333',
+            color: i <= Math.round(rating) ? 'var(--warning)' : '#333',
           }}
         >
           &#9733;
@@ -76,7 +75,7 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
                 {trainer.name}
               </h3>
               {trainer.isSupertrainer && (
-                <span className="flex-shrink-0 rounded-full bg-[#BF5AF2]/20 px-2 py-0.5 text-[10px] font-semibold text-[#BF5AF2] border border-[#BF5AF2]/30">
+                <span className="flex-shrink-0 rounded-full bg-[var(--clay-deep)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--clay-deep)] border border-[var(--clay-deep)]/30">
                   SUPERTRAINER
                 </span>
               )}
@@ -142,9 +141,12 @@ export default function TrainersPage() {
 
   return (
     <>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Find Your Coach</V2SectionLabel>
-        <V2Display size="xl">Trainers.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Find Your Coach</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Top<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>treneri.</em>
+        </h1>
       </section>
 
       {/* Search */}
@@ -166,7 +168,7 @@ export default function TrainersPage() {
             onClick={() => setFilter(s)}
             className={`rounded-full px-3.5 py-1.5 text-[11px] font-medium transition-all ${
               filter === s
-                ? 'bg-[#FF375F] text-white'
+                ? 'bg-[var(--accent)] text-white'
                 : 'bg-white/5 text-white/50 hover:bg-white/10'
             }`}
           >
@@ -176,7 +178,7 @@ export default function TrainersPage() {
       </div>
 
       {error && (
-        <p className="mb-8 text-sm text-[#FF375F]">
+        <p className="mb-8 text-sm text-[var(--accent)]">
           Nepodarilo se nacist trenery.
         </p>
       )}

@@ -6,14 +6,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { V2SectionLabel } from '@/components/v2/V2Layout';
 import { FadeIn } from '@/components/v2/motion';
 import { getSkillTree, checkSkillTree } from '@/lib/api';
 
 const BRANCH_COLORS: Record<string, string> = {
-  strength: '#FF375F',
-  endurance: '#A8FF00',
-  form: '#00E5FF',
+  strength: 'var(--accent)',
+  endurance: 'var(--sage)',
+  form: 'var(--sage)',
   nutrition: '#FF9F0A',
 };
 
@@ -134,7 +133,7 @@ export default function SkillTreePage() {
       <section className="pt-12 pb-24">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <V2SectionLabel>Strom schopnosti</V2SectionLabel>
+            <p className="v3-eyebrow">Strom schopnosti</p>
             {data && (
               <span className="text-sm text-white/40">
                 {data.unlockedCount} / {data.totalNodes} odemceno
@@ -158,14 +157,14 @@ export default function SkillTreePage() {
         </h1>
 
         {error && (
-          <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+          <div className="mb-6 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-6 py-4 text-sm text-[var(--accent)]">
             {error}
           </div>
         )}
 
         {loading && (
           <div className="flex items-center justify-center py-32">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--sage)]" />
           </div>
         )}
 
@@ -182,9 +181,9 @@ export default function SkillTreePage() {
                   </div>
                   <div className="mt-2 text-xs">
                     {tooltip.unlocked
-                      ? <span className="text-[#A8FF00]">Odemceno</span>
+                      ? <span className="text-[var(--sage)]">Odemceno</span>
                       : tooltip.available
-                      ? <span className="text-[#FFD600]">Dostupne — splnit pozadavek</span>
+                      ? <span className="text-[var(--warning)]">Dostupne — splnit pozadavek</span>
                       : <span className="text-white/30">Zamceno</span>
                     }
                   </div>

@@ -3,7 +3,6 @@
 import { Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import {
   BOXING_COMBOS,
   BOXING_MOVES,
@@ -19,9 +18,9 @@ const SportViewer = dynamic(
 );
 
 const DIFFICULTIES = [
-  { v: 'beginner' as const, l: 'Zacatecnik', color: '#A8FF00' },
+  { v: 'beginner' as const, l: 'Zacatecnik', color: 'var(--sage)' },
   { v: 'intermediate' as const, l: 'Pokrocily', color: '#FF9F0A' },
-  { v: 'advanced' as const, l: 'Expert', color: '#FF375F' },
+  { v: 'advanced' as const, l: 'Expert', color: 'var(--accent)' },
 ];
 
 export default function ShadowBoxingPage() {
@@ -64,10 +63,11 @@ export default function ShadowBoxingPage() {
       </Link>
 
       <section className="pt-8 pb-12">
-        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#FF375F]">
-          Bojovy sport · Cardio · Koordinace
-        </div>
-        <V2Display size="xl">Shadow Boxing.</V2Display>
+        <p className="v3-eyebrow-serif">Bojovy sport</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Shadow<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Boxing.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Procvic kombinace uderu s 3D vizualizaci. Kazdy pohyb se zobrazi na modelu.
         </p>
@@ -85,12 +85,12 @@ export default function ShadowBoxingPage() {
         <section className="mb-12">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <V2Display size="md">{activeCombo.nameCs}</V2Display>
+              <h2 className="v3-title">{activeCombo.nameCs}</h2>
               <p className="mt-1 text-sm text-white/40">{activeCombo.description}</p>
             </div>
             <button
               onClick={nextMove}
-              className="rounded-full bg-[#FF375F] px-6 py-3 text-sm font-semibold text-white transition hover:scale-105"
+              className="rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white transition hover:scale-105"
             >
               Dalsi uder →
             </button>
@@ -102,7 +102,7 @@ export default function ShadowBoxingPage() {
                 onClick={() => setActiveMoveIdx(i)}
                 className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${
                   i === activeMoveIdx
-                    ? 'border-[#FF375F] bg-[#FF375F]/10 text-[#FF375F]'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
                     : 'border-white/10 text-white/50 hover:border-white/25'
                 }`}
               >
@@ -133,7 +133,7 @@ export default function ShadowBoxingPage() {
 
       {/* Combo list */}
       <section className="mb-16">
-        <V2SectionLabel>Kombinace</V2SectionLabel>
+        <p className="v3-eyebrow">Kombinace</p>
         <div className="space-y-3">
           {BOXING_COMBOS.filter(
             (c) => c.difficulty === difficulty || c.difficulty === 'beginner',
@@ -143,7 +143,7 @@ export default function ShadowBoxingPage() {
               onClick={() => startCombo(combo)}
               className={`block w-full rounded-xl border p-5 text-left transition ${
                 activeCombo?.name === combo.name
-                  ? 'border-[#FF375F]/30 bg-[#FF375F]/5'
+                  ? 'border-[var(--accent)]/30 bg-[var(--accent)]/5'
                   : 'border-white/8 hover:border-white/15 hover:bg-white/3'
               }`}
             >
@@ -167,10 +167,10 @@ export default function ShadowBoxingPage() {
 
       {/* Generate round */}
       <section className="mb-24">
-        <V2SectionLabel>Generuj kolo</V2SectionLabel>
+        <p className="v3-eyebrow">Generuj kolo</p>
         <button
           onClick={generateRound}
-          className="mb-6 rounded-xl border border-[#FF375F]/30 px-6 py-3 text-sm font-semibold text-[#FF375F] transition hover:bg-[#FF375F]/10"
+          className="mb-6 rounded-xl border border-[var(--accent)]/30 px-6 py-3 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent)]/10"
         >
           Generuj 6 kombinaci
         </button>

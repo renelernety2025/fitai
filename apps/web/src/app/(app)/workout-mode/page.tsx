@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { TRAINING_SEQUENCES, getCategoryColor, type TrainingSequence } from '@/lib/training-sequences';
 import FollowAlongWorkout from '@/components/workout/follow-along-workout';
 
@@ -40,10 +39,11 @@ export default function WorkoutModePage() {
       </Link>
 
       <section className="pt-8 pb-12">
-        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#00E5FF]">
-          Follow-along · Timer · 3D vizualizace
-        </div>
-        <V2Display size="xl">Workout Mode.</V2Display>
+        <p className="v3-eyebrow-serif">Follow-along</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Workout<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Mode.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Cvic spolecne s 3D modelem. Timer ti rekne kdy zacit, kdy odpocivat,
           kdy prepnout. Staci sledovat a delat to same.
@@ -52,8 +52,8 @@ export default function WorkoutModePage() {
 
       {/* Post-workout message */}
       {finished && (
-        <div className="mb-12 rounded-2xl border border-[#A8FF00]/20 bg-[#A8FF00]/5 p-8 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#A8FF00]">
+        <div className="mb-12 rounded-2xl border border-[var(--sage)]/20 bg-[var(--sage)]/5 p-8 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--sage)]">
             Trenink dokoncen!
           </p>
           <p className="mt-2 text-3xl font-bold text-white">
@@ -64,7 +64,7 @@ export default function WorkoutModePage() {
 
       {/* Workout cards */}
       <section className="mb-24">
-        <V2SectionLabel>Vyber trenink</V2SectionLabel>
+        <p className="v3-eyebrow">Vyber trenink</p>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           {workouts.map((seq) => (
             <button
@@ -79,7 +79,7 @@ export default function WorkoutModePage() {
                 >
                   {seq.category} · {seq.durationMin} min
                 </span>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold text-white/50 transition group-hover:bg-[#A8FF00] group-hover:text-black">
+                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold text-white/50 transition group-hover:bg-[var(--sage)] group-hover:text-black">
                   START
                 </span>
               </div>

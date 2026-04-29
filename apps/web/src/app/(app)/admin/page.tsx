@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import { FadeIn, NumberTicker } from '@/components/v2/motion';
 
@@ -69,7 +68,7 @@ export default function AdminPage() {
       <>
         <section className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <V2Display size="xl">Pristup odepren</V2Display>
+            <h1 className="v3-display-2">Pristup odepren</h1>
             <p className="mt-4 text-white/40">
               Tato stranka je dostupna pouze pro administratory.
             </p>
@@ -94,12 +93,15 @@ export default function AdminPage() {
         &larr; Dashboard
       </Link>
 
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Administrace</V2SectionLabel>
-        <V2Display size="xl">Admin panel</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Administrace</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Admin<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>panel.</em>
+        </h1>
       </section>
 
-      {error && <p className="mb-8 text-sm text-[#FF375F]">{error}</p>}
+      {error && <p className="mb-8 text-sm" style={{ color: 'var(--accent)' }}>{error}</p>}
 
       {stats && (
         <FadeIn delay={0.1}>
@@ -108,12 +110,12 @@ export default function AdminPage() {
             <StatCard
               value={stats.registrationsToday}
               label="Registrace dnes"
-              accent="#A8FF00"
+              accent="var(--sage)"
             />
             <StatCard
               value={stats.activeToday}
               label="Aktivnich dnes"
-              accent="#00E5FF"
+              accent="var(--sage)"
             />
             <StatCard value={stats.totalSessions} label="Treninku celkem" />
             <StatCard value={stats.totalFoodLogs} label="Zaznamu jidla" />
@@ -121,7 +123,7 @@ export default function AdminPage() {
             <StatCard
               value={stats.aiCallsToday}
               label="AI volani dnes"
-              accent="#BF5AF2"
+              accent="var(--clay-deep)"
             />
           </section>
         </FadeIn>
@@ -137,25 +139,25 @@ export default function AdminPage() {
               <StatCard
                 value={analytics.dauToday}
                 label="DAU (dnes)"
-                accent="#00E5FF"
+                accent="var(--sage)"
               />
               <StatCard
                 value={analytics.wauWeek}
                 label="WAU (7 dni)"
-                accent="#00E5FF"
+                accent="var(--sage)"
               />
               <StatCard
                 value={analytics.newUsersMonth}
                 label="MAU (30 dni)"
-                accent="#A8FF00"
+                accent="var(--sage)"
               />
               <StatCard
                 value={analytics.retentionRate}
                 label="Retence %"
                 accent={
                   analytics.retentionRate > 30
-                    ? '#A8FF00'
-                    : '#FF375F'
+                    ? 'var(--sage)'
+                    : 'var(--accent)'
                 }
               />
               <StatCard
@@ -174,19 +176,19 @@ export default function AdminPage() {
                     label="Dnes"
                     value={analytics.newUsersToday}
                     max={Math.max(analytics.newUsersMonth, 1)}
-                    color="#A8FF00"
+                    color="var(--sage)"
                   />
                   <BarMetric
                     label="7 dni"
                     value={analytics.newUsersWeek}
                     max={Math.max(analytics.newUsersMonth, 1)}
-                    color="#00E5FF"
+                    color="var(--sage)"
                   />
                   <BarMetric
                     label="30 dni"
                     value={analytics.newUsersMonth}
                     max={Math.max(analytics.newUsersMonth, 1)}
-                    color="#BF5AF2"
+                    color="var(--clay-deep)"
                   />
                 </div>
               </div>
@@ -200,13 +202,13 @@ export default function AdminPage() {
                     label="Dnes"
                     value={analytics.sessionsToday}
                     max={Math.max(analytics.sessionsWeek, 1)}
-                    color="#FF375F"
+                    color="var(--accent)"
                   />
                   <BarMetric
                     label="7 dni"
                     value={analytics.sessionsWeek}
                     max={Math.max(analytics.sessionsWeek, 1)}
-                    color="#FF9F0A"
+                    color="var(--warning)"
                   />
                 </div>
               </div>
@@ -224,8 +226,8 @@ export default function AdminPage() {
                       lineHeight: 1,
                       color:
                         analytics.retentionRate > 30
-                          ? '#A8FF00'
-                          : '#FF375F',
+                          ? 'var(--sage)'
+                          : 'var(--accent)',
                     }}
                   >
                     {analytics.retentionRate}%

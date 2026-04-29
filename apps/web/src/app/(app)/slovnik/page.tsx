@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getGlossary, type GlossaryTerm } from '@/lib/api';
 
 export default function GlossaryV2Page() {
@@ -17,9 +16,12 @@ export default function GlossaryV2Page() {
 
   return (
     <>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Knihovna</V2SectionLabel>
-        <V2Display size="xl">Slovník.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Knihovna</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Fitness<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>slovnik.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Fitness termíny vysvětleny jednoduše. {terms.length} termínů.
         </p>
@@ -37,7 +39,7 @@ export default function GlossaryV2Page() {
         {terms.map((t) => (
           <div key={t.id} className="border-b border-white/8 py-8">
             <div className="mb-3 flex items-baseline gap-3">
-              <V2Display size="md">{t.termCs}</V2Display>
+              <h2 className="v3-title">{t.termCs}</h2>
               {t.category && (
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
                   {t.category}

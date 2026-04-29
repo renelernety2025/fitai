@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { TRAINING_SEQUENCES, getCategoryColor, type TrainingSequence } from '@/lib/training-sequences';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
 import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
@@ -36,10 +35,11 @@ export default function SequencesPage() {
       </Link>
 
       <section className="pt-8 pb-12">
-        <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#BF5AF2]">
-          Plynule sekvence · Crossfade prechody · Choreografie
-        </div>
-        <V2Display size="xl">Treninky.</V2Display>
+        <p className="v3-eyebrow-serif">Sekvence</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Plynule<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>treninky.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Kompletni treninky slozene z vice animaci — plynule prechody mezi cviky.
           Box kolo, HIIT, golf trenink, ranni rozcvicka.

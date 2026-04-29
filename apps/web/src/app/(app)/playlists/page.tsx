@@ -6,7 +6,7 @@ import { FitIcon } from '@/components/icons/FitIcons';
 import { getPlaylists, addPlaylistLink, type PlaylistLink } from '@/lib/api';
 
 const TYPES = ['All', 'Strength', 'Cardio', 'HIIT', 'Yoga', 'Recovery'];
-const TYPE_COLOR: Record<string, string> = { strength: 'var(--accent)', cardio: 'var(--sage, #34d399)', hiit: '#FF9F0A', yoga: '#BF5AF2', recovery: '#00E5FF' };
+const TYPE_COLOR: Record<string, string> = { strength: 'var(--accent)', cardio: 'var(--sage)', hiit: 'var(--warning)', yoga: 'var(--clay-deep)', recovery: 'var(--clay)' };
 
 function detectPlatform(url: string): string {
   if (url.includes('spotify')) return 'Spotify';

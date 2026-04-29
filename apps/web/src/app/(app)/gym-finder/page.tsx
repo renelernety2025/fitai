@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getGymReviews, addGymReview } from '@/lib/api';
 
 const EQUIPMENT_OPTIONS = [
@@ -12,7 +11,7 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? '#FFD600' : '#333' }}>
+        <span key={i} style={{ fontSize: size, color: i <= Math.round(rating) ? 'var(--warning)' : '#333' }}>
           &#9733;
         </span>
       ))}
@@ -80,9 +79,12 @@ export default function GymFinderPage() {
 
   return (
     <>
-      <section className="pt-12 pb-8">
-        <V2SectionLabel>Komunita</V2SectionLabel>
-        <V2Display size="xl">Najdi posilovnu.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Komunita</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Najdi<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>posilovnu.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Recenze posiloven od komunity. Najdi tu pravou pro tvuj trenink.
         </p>
@@ -95,14 +97,14 @@ export default function GymFinderPage() {
       )}
 
       {error && (
-        <div className="mb-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+        <div className="mb-6 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-6 py-4 text-sm text-[var(--accent)]">
           {error}
         </div>
       )}
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <button onClick={() => setShowForm((p) => !p)}
-          className="rounded-full border border-[#A8FF00]/30 px-6 py-2.5 text-sm font-semibold text-[#A8FF00] transition hover:bg-[#A8FF00]/10"
+          className="rounded-full border border-[var(--sage)]/30 px-6 py-2.5 text-sm font-semibold text-[var(--sage)] transition hover:bg-[var(--sage)]/10"
         >
           + Pridat recenzi
         </button>
@@ -119,7 +121,7 @@ export default function GymFinderPage() {
           <button key={eq} onClick={() => toggleEquipFilter(eq)}
             className={`rounded-full border px-4 py-1.5 text-[11px] font-semibold transition ${
               equipFilter.includes(eq)
-                ? 'border-[#00E5FF] bg-[#00E5FF]/10 text-[#00E5FF]'
+                ? 'border-[var(--sage)] bg-[var(--sage)]/10 text-[var(--sage)]'
                 : 'border-white/15 text-white/50 hover:text-white'
             }`}
           >
@@ -131,7 +133,7 @@ export default function GymFinderPage() {
       {/* Add review form */}
       {showForm && (
         <div className="mb-8 rounded-2xl border border-white/10 bg-white/3 p-6">
-          <V2SectionLabel>Nova recenze</V2SectionLabel>
+          <p className="v3-eyebrow">Nova recenze</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input type="text" placeholder="Nazev posilovny" value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -148,7 +150,7 @@ export default function GymFinderPage() {
               {[1, 2, 3, 4, 5].map((r) => (
                 <button key={r} onClick={() => setForm({ ...form, rating: r })}
                   className="text-2xl transition hover:scale-110"
-                  style={{ color: r <= form.rating ? '#FFD600' : '#333' }}
+                  style={{ color: r <= form.rating ? 'var(--warning)' : '#333' }}
                 >
                   &#9733;
                 </button>
@@ -162,7 +164,7 @@ export default function GymFinderPage() {
                 <button key={eq} onClick={() => toggleFormEquip(eq)}
                   className={`rounded-full border px-3 py-1 text-[10px] font-semibold transition ${
                     form.equipment.includes(eq)
-                      ? 'border-[#A8FF00] bg-[#A8FF00]/10 text-[#A8FF00]'
+                      ? 'border-[var(--sage)] bg-[var(--sage)]/10 text-[var(--sage)]'
                       : 'border-white/15 text-white/40'
                   }`}
                 >

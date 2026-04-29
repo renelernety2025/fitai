@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getVideo, type VideoData } from '@/lib/api';
 
 const catAccent: Record<string, string> = {
-  YOGA: '#A8FF00',
-  PILATES: '#00E5FF',
+  YOGA: 'var(--sage)',
+  PILATES: 'var(--sage)',
   STRENGTH: '#FF9500',
-  CARDIO: '#FF375F',
-  MOBILITY: '#BF5AF2',
+  CARDIO: 'var(--accent)',
+  MOBILITY: 'var(--clay-deep)',
 };
 
 export default function VideoV2DetailPage({ params }: { params: { id: string } }) {
@@ -61,7 +60,7 @@ export default function VideoV2DetailPage({ params }: { params: { id: string } }
         >
           {video.category} · {video.difficulty} · {Math.floor(video.durationSeconds / 60)} min
         </div>
-        <V2Display size="xl">{video.title}</V2Display>
+        <h1 className="v3-display-2">{video.title}</h1>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/55">
           {video.description}
         </p>

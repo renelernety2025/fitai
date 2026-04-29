@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import {
   getChallengeDetail,
@@ -121,7 +120,7 @@ export default function ChallengeDetailPage() {
             </span>
           )}
         </div>
-        <V2Display size="xl">{challenge.nameCs}</V2Display>
+        <h1 className="v3-display-2">{challenge.nameCs}</h1>
         {challenge.description && (
           <p className="mt-4 max-w-xl text-base text-white/55">
             {challenge.description}
@@ -167,7 +166,7 @@ export default function ChallengeDetailPage() {
       {/* User progress */}
       {joined && (
         <section className="mb-12">
-          <V2SectionLabel>Tvůj pokrok</V2SectionLabel>
+          <p className="v3-eyebrow">Tvůj pokrok</p>
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-6">
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm text-white/60">
@@ -267,7 +266,7 @@ export default function ChallengeDetailPage() {
 
       {/* Leaderboard */}
       <section>
-        <V2SectionLabel>Zebricek</V2SectionLabel>
+        <p className="v3-eyebrow">Zebricek</p>
         <div className="mt-6 space-y-1">
           {challenge.participants.map((p: any, i: number) => {
             const participantPct = Math.min(

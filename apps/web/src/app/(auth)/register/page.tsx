@@ -94,7 +94,7 @@ export default function RegisterV2Page() {
           </div>
         </div>
 
-        {error && <p className="text-sm text-[#FF375F]">{error}</p>}
+        {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
 
         <div className="pt-4">
           <V2Button type="submit" disabled={loading} full>

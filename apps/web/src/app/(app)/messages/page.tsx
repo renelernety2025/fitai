@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { useAuth } from '@/lib/auth-context';
 import {
   getConversations,
@@ -220,7 +219,7 @@ function ChatPanel({
           onClick={handleSend}
           disabled={sending || !text.trim()}
           className="text-[11px] font-semibold uppercase tracking-[0.15em] transition disabled:opacity-30"
-          style={{ color: '#A8FF00' }}
+          style={{ color: 'var(--sage)' }}
         >
           Odeslat
         </button>
@@ -231,7 +230,7 @@ function ChatPanel({
 
 export default function MessagesPageWrapper() {
   return (
-    <Suspense fallback={<><div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-white/20 border-t-[#A8FF00] rounded-full animate-spin" /></div></>}>
+    <Suspense fallback={<><div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-white/20 border-t-[var(--sage)] rounded-full animate-spin" /></div></>}>
       <MessagesPage />
     </Suspense>
   );
@@ -265,9 +264,12 @@ function MessagesPage() {
 
   return (
     <>
-      <section className="pt-12 pb-6">
-        <V2SectionLabel>Zpravy</V2SectionLabel>
-        <V2Display size="lg">Chat.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Zpravy</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Tvoje<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>zpravy.</em>
+        </h1>
       </section>
 
       {loading ? (

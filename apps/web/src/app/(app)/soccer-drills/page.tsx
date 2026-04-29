@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { SOCCER_MOVES, type SportAnimation } from '@/lib/sport-animations';
 import ExerciseModelPlaceholder from '@/components/exercise/exercise-model-placeholder';
 import { ExerciseModelError } from '@/components/exercise/exercise-model-error';
@@ -14,7 +13,7 @@ const SportViewer = dynamic(
 );
 
 const CAT_COLORS: Record<string, string> = {
-  attack: '#FF375F',
+  attack: 'var(--accent)',
   defense: '#FF9F0A',
   goalkeeper: '#30D5C8',
 };
@@ -35,7 +34,10 @@ export default function SoccerDrillsPage() {
         <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#30D5C8]">
           Utok · Obrana · Brankar
         </div>
-        <V2Display size="xl">Soccer Drills.</V2Display>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Soccer<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Drills.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Fotbalove dovednosti s 3D vizualizaci — hlavicky, prihrávky, brankarsky trenink.
         </p>
@@ -55,7 +57,7 @@ export default function SoccerDrillsPage() {
       </div>
 
       <section className="mb-24">
-        <V2SectionLabel>Dovednosti</V2SectionLabel>
+        <p className="v3-eyebrow">Dovednosti</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {SOCCER_MOVES.map((move) => (
             <button

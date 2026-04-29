@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { downloadExport } from '@/lib/api';
 
 function getCurrentMonth(): string {
@@ -43,9 +42,12 @@ export default function ExportPage() {
 
   return (
     <>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Tvoje data</V2SectionLabel>
-        <V2Display size="xl">Export.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Tvoje data</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Data<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Export.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/55">
           Stahni si historii treninku, denik nebo vyzivu jako CSV soubor.
           CSV funguje v Excelu, Google Sheets i Numbers.
@@ -53,7 +55,7 @@ export default function ExportPage() {
       </section>
 
       {error && (
-        <div className="mb-8 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+        <div className="mb-8 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-6 py-4 text-sm text-[var(--accent)]">
           {error}
         </div>
       )}

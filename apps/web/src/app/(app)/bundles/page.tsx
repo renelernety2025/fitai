@@ -55,7 +55,7 @@ export default function BundlesPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                       <span className="v3-caption" style={{ color: 'var(--text-3)' }}>by {b.creatorName || b.creator?.name || 'Unknown'}</span>
-                      {b.giftable && <Tag color="#BF5AF2">Giftable</Tag>}
+                      {b.giftable && <Tag color="var(--clay-deep)">Giftable</Tag>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
                       <span className="v3-numeric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>{b.priceXP} XP</span>

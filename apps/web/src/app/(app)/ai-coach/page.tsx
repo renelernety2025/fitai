@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import {
   getFitnessProfile,
   updateFitnessProfile,
@@ -86,9 +85,12 @@ export default function AICoachV2Page() {
 
   return (
     <>
-      <section className="pt-12 pb-16">
-        <V2SectionLabel>Personalizace</V2SectionLabel>
-        <V2Display size="xl">AI Trenér.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Personalizace</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          AI<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>Trener.</em>
+        </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Plán generovaný Claude AI podle tvých cílů, slabých míst a regenerace.
         </p>
@@ -108,7 +110,7 @@ export default function AICoachV2Page() {
 
       {/* Goal */}
       <section className="mb-16">
-        <V2SectionLabel>Cíl</V2SectionLabel>
+        <p className="v3-eyebrow">Cíl</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {GOALS.map((g) => (
             <button
@@ -129,7 +131,7 @@ export default function AICoachV2Page() {
       {/* Schedule */}
       <section className="mb-16 grid grid-cols-1 gap-12 sm:grid-cols-3">
         <div>
-          <V2SectionLabel>Zkušenosti</V2SectionLabel>
+          <p className="v3-eyebrow">Zkušenosti</p>
           <input
             type="number"
             min={0}
@@ -140,7 +142,7 @@ export default function AICoachV2Page() {
           <div className="mt-1 text-xs text-white/40">měsíců</div>
         </div>
         <div>
-          <V2SectionLabel>Tréninky</V2SectionLabel>
+          <p className="v3-eyebrow">Tréninky</p>
           <select
             value={profile.daysPerWeek ?? 3}
             onChange={(e) => save('daysPerWeek', parseInt(e.target.value))}
@@ -154,7 +156,7 @@ export default function AICoachV2Page() {
           </select>
         </div>
         <div>
-          <V2SectionLabel>Délka</V2SectionLabel>
+          <p className="v3-eyebrow">Délka</p>
           <select
             value={profile.sessionMinutes ?? 45}
             onChange={(e) => save('sessionMinutes', parseInt(e.target.value))}
@@ -171,7 +173,7 @@ export default function AICoachV2Page() {
 
       {/* Equipment */}
       <section className="mb-16">
-        <V2SectionLabel>Vybavení</V2SectionLabel>
+        <p className="v3-eyebrow">Vybavení</p>
         <div className="flex flex-wrap gap-2">
           {EQUIPMENT.map((eq) => {
             const sel = profile.equipment?.includes(eq.v);
@@ -197,7 +199,7 @@ export default function AICoachV2Page() {
 
       {/* Injuries */}
       <section className="mb-16">
-        <V2SectionLabel>Zranění / omezení</V2SectionLabel>
+        <p className="v3-eyebrow">Zranění / omezení</p>
         <div className="flex flex-wrap gap-2">
           {INJURIES.map((inj) => {
             const sel = profile.injuries?.includes(inj.v);
@@ -210,7 +212,7 @@ export default function AICoachV2Page() {
                 }}
                 className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
                   sel
-                    ? 'border-[#FF375F] bg-[#FF375F] text-white'
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
                     : 'border-white/15 text-white/60 hover:border-white/40'
                 }`}
               >
@@ -236,15 +238,15 @@ export default function AICoachV2Page() {
       {/* Asymmetry */}
       {asymmetry && (
         <section className="mb-16">
-          <V2SectionLabel>Analýza těla</V2SectionLabel>
+          <p className="v3-eyebrow">Analýza těla</p>
           {asymmetry.asymmetries.length > 0 ? (
             <div className="space-y-1">
               {asymmetry.asymmetries.map((a, i) => (
                 <div key={i} className="border-b border-white/8 py-6">
-                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#FF375F]">
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.25em]" style={{ color: 'var(--accent)' }}>
                     Asymetrie · {a.count}× detekováno
                   </div>
-                  <V2Display size="sm">{a.joint}</V2Display>
+                  <h2 className="v3-title">{a.joint}</h2>
                   <p className="mt-2 text-sm text-white/55">{a.recommendation}</p>
                 </div>
               ))}
@@ -260,7 +262,7 @@ export default function AICoachV2Page() {
               Forma klesá o{' '}
               <span
                 className={
-                  asymmetry.fatigue.dropPercentage > 15 ? 'text-[#FF375F]' : 'text-[#A8FF00]'
+                  asymmetry.fatigue.dropPercentage > 15 ? 'text-[var(--accent)]' : 'text-[var(--sage)]'
                 }
               >
                 {asymmetry.fatigue.dropPercentage}%

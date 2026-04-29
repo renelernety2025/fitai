@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import { getLesson, type Lesson } from '@/lib/api';
 
 const accent: Record<string, string> = {

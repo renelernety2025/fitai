@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { V2Display } from '@/components/v2/V2Layout';
 import { getWorkoutPlan, updateWorkoutPlan, type WorkoutPlanData } from '@/lib/api';
 import ExerciseCard, { type PlannedExerciseLocal } from '@/components/plans/ExerciseCard';
 import ExerciseGroup from '@/components/plans/ExerciseGroup';
@@ -165,7 +164,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
     return (
       <>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#A8FF00]" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[var(--sage)]" />
         </div>
       </>
     );
@@ -184,7 +183,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
       </Link>
 
       <section className="pt-6 pb-8">
-        <V2Display size="xl">Upravit plan</V2Display>
+        <h1 className="v3-display-2">Upravit plan</h1>
         <p className="mt-2 text-sm text-white/40">{plan.nameCs}</p>
       </section>
 
@@ -263,14 +262,14 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
       {/* Add exercise */}
       <button
         onClick={() => setShowPicker(true)}
-        className="mt-4 w-full rounded-xl border border-dashed border-white/15 py-4 text-sm text-white/40 hover:border-[#A8FF00]/40 hover:text-[#A8FF00] transition"
+        className="mt-4 w-full rounded-xl border border-dashed border-white/15 py-4 text-sm text-white/40 hover:border-[var(--sage)]/40 hover:text-[var(--sage)] transition"
       >
         + Pridat cvik
       </button>
 
       {/* Save error */}
       {saveError && (
-        <div className="mt-6 rounded-xl border border-[#FF375F]/20 bg-[#FF375F]/5 px-6 py-4 text-sm text-[#FF375F]">
+        <div className="mt-6 rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-6 py-4 text-sm text-[var(--accent)]">
           {saveError}
         </div>
       )}
@@ -280,7 +279,7 @@ export default function PlanEditorPage({ params }: { params: { id: string } }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="rounded-full bg-[#A8FF00] px-8 py-3 text-sm font-bold text-black transition hover:bg-[#A8FF00]/80 disabled:opacity-50"
+          className="rounded-full px-8 py-3 text-sm font-bold text-black transition disabled:opacity-50" style={{ backgroundColor: 'var(--sage)' }}
         >
           {saving ? 'Ukladam...' : 'Ulozit zmeny'}
         </button>
@@ -342,8 +341,8 @@ function DayTabs({ days, activeDay, onSelect, onAdd, onDelete }: {
 function GroupActions({ onGroup, count }: { onGroup: (type: string) => void; count: number }) {
   const types = [
     { key: 'superset', label: 'Superset', color: '#0A84FF' },
-    { key: 'circuit', label: 'Circuit', color: '#A8FF00' },
-    { key: 'giant', label: 'Giant set', color: '#BF5AF2' },
+    { key: 'circuit', label: 'Circuit', color: 'var(--sage)' },
+    { key: 'giant', label: 'Giant set', color: 'var(--clay-deep)' },
     { key: 'drop', label: 'Drop set', color: '#FF9500' },
   ];
   return (

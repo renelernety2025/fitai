@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { V2SectionLabel, V2Display } from '@/components/v2/V2Layout';
 import BuddyProfileForm from '@/components/social/BuddyProfileForm';
 import BuddyCard from '@/components/social/BuddyCard';
 import {
@@ -102,9 +101,12 @@ export default function GymBuddyPage() {
 
   return (
     <>
-      <section className="pt-12 pb-12">
-        <V2SectionLabel>Gym Buddy</V2SectionLabel>
-        <V2Display size="xl">Najdi trenaka.</V2Display>
+      <section style={{ padding: '48px 0 32px' }}>
+        <p className="v3-eyebrow-serif">Gym Buddy</p>
+        <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+          Najdi<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>trenaka.</em>
+        </h1>
       </section>
 
       {error && (
@@ -125,7 +127,7 @@ export default function GymBuddyPage() {
           <div className="text-center">
             <div
               className="mb-4 text-5xl font-black"
-              style={{ color: '#A8FF00' }}
+              style={{ color: 'var(--sage)' }}
             >
               Match!
             </div>
@@ -240,9 +242,9 @@ export default function GymBuddyPage() {
                 onClick={() => handleMessage(m.user.id)}
                 className="rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition"
                 style={{
-                  backgroundColor: 'rgba(168,255,0,0.1)',
-                  color: '#A8FF00',
-                  border: '1px solid rgba(168,255,0,0.2)',
+                  backgroundColor: 'color-mix(in srgb, var(--sage) 10%, transparent)',
+                  color: 'var(--sage)',
+                  border: '1px solid color-mix(in srgb, var(--sage) 20%, transparent)',
                 }}
               >
                 Napsat

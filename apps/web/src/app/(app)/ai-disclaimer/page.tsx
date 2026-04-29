@@ -5,11 +5,9 @@ export const metadata: Metadata = {
   description: 'Informace o AI technologiích používaných v platformě FitAI.',
 };
 
-const LIME = '#A8FF00';
-
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 mt-10 text-lg font-bold" style={{ color: LIME }}>
+    <h2 className="mb-3 mt-10 text-lg font-bold" style={{ color: 'var(--accent)' }}>
       {children}
     </h2>
   );
