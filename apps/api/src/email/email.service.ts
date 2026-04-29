@@ -128,6 +128,7 @@ export class EmailService {
   @Cron('0 18 * * 5')
   async handleWeeklyDigest(): Promise<void> {
     this.logger.log('[EMAIL] Weekly digest cron triggered');
+    // TODO: Add full pagination for large user bases
     const users = await this.prisma.user.findMany({
       select: {
         email: true,
@@ -137,6 +138,7 @@ export class EmailService {
           select: { currentStreak: true, totalXP: true },
         },
       },
+      take: 100,
     });
     for (const u of users) {
       await this.sendWeeklyDigest(u.email, u.name, {

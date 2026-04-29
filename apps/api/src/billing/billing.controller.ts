@@ -7,6 +7,7 @@ import {
   Headers,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BillingService } from './billing.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
@@ -23,6 +24,7 @@ export class BillingController {
 
   @Post('checkout')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   createCheckout(
     @Request() req: any,
     @Body() dto: CreateCheckoutDto,
@@ -35,6 +37,7 @@ export class BillingController {
 
   @Post('portal')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   createPortal(@Request() req: any) {
     return this.service.createPortal(req.user.id);
   }

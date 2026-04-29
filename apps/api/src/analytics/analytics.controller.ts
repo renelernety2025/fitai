@@ -7,14 +7,19 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
-import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsInt, Min, Max, MaxLength } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
 
+const MAX_PROPERTIES_BYTES = 5120; // 5 KB
+
 class TrackEventDto {
   @IsString()
+  @MaxLength(100)
   event: string;
 
   @IsOptional()
@@ -39,7 +44,16 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Post('event')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   trackEvent(@Body() dto: TrackEventDto, @Req() req: any) {
+    if (dto.properties) {
+      const size = JSON.stringify(dto.properties).length;
+      if (size > MAX_PROPERTIES_BYTES) {
+        throw new BadRequestException(
+          `properties exceeds max size (${MAX_PROPERTIES_BYTES} bytes)`,
+        );
+      }
+    }
     const userId = req.user?.id ?? null;
     this.analyticsService.logEvent(userId, dto.event, dto.properties);
     return { ok: true };

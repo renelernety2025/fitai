@@ -29,7 +29,11 @@ export default function LoginPage() {
       const res = await authLogin(email, password);
       login(res.accessToken, res.user);
       const redirect = searchParams.get('redirect');
-      router.push(redirect || '/dashboard');
+      const safeRedirect =
+        redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+          ? redirect
+          : '/dashboard';
+      router.push(safeRedirect);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
       setError(msg);

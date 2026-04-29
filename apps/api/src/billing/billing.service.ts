@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 const PLANS = [
@@ -92,8 +92,19 @@ export class BillingService {
   }
 
   async handleWebhook(body: unknown, signature: string) {
-    this.logger.log('Webhook received (mock mode — ignored)');
-    return { received: true };
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!secret) {
+      this.logger.warn(
+        'Webhook received but STRIPE_WEBHOOK_SECRET not configured — ignoring',
+      );
+      return { received: false, reason: 'not_configured' };
+    }
+    // TODO: When Stripe SDK is installed:
+    // const event = stripe.webhooks.constructEvent(rawBody, signature, secret);
+    // Process event...
+    throw new BadRequestException(
+      'Stripe webhook not yet implemented',
+    );
   }
 
   getPlans() {

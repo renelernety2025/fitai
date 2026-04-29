@@ -1,3 +1,11 @@
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const STYLE = {
   bg: '#0B0907',
   text: '#F5EDE0',
@@ -31,7 +39,7 @@ function cta(href: string, label: string): string {
 export function welcomeTemplate(name: string): string {
   return wrapper(`
 <h1 style="font-family:${STYLE.serif};font-size:28px;font-weight:400;">
-  Welcome to FitAI, <em style="color:${STYLE.clay};">${name}.</em>
+  Welcome to FitAI, <em style="color:${STYLE.clay};">${esc(name)}.</em>
 </h1>
 <p style="color:${STYLE.muted};line-height:1.6;">
   Your AI coach is ready. Start your first workout and discover what personalized training feels like.
@@ -83,7 +91,7 @@ export function weeklyDigestTemplate(
 
   return wrapper(`
 <h1 style="font-family:${STYLE.serif};font-size:28px;font-weight:400;">
-  Your week, <em style="color:${STYLE.clay};">${name}.</em>
+  Your week, <em style="color:${STYLE.clay};">${esc(name)}.</em>
 </h1>
 <ul style="color:${STYLE.muted};line-height:2;padding-left:20px;">
   ${rows || '<li>No activity this week &mdash; let\'s change that!</li>'}
@@ -98,7 +106,7 @@ export function streakWarningTemplate(
 ): string {
   return wrapper(`
 <h1 style="font-family:${STYLE.serif};font-size:28px;font-weight:400;">
-  Don't break it, <em style="color:${STYLE.clay};">${name}!</em>
+  Don't break it, <em style="color:${STYLE.clay};">${esc(name)}!</em>
 </h1>
 <p style="color:${STYLE.muted};line-height:1.6;">
   You have a <strong style="color:${STYLE.accent};">${streak}-day streak</strong>.
@@ -117,8 +125,8 @@ export function achievementUnlockedTemplate(
   New achievement unlocked!
 </h1>
 <p style="color:${STYLE.muted};line-height:1.6;">
-  Congratulations <em style="color:${STYLE.clay};">${name}</em>,
-  you earned <strong style="color:${STYLE.accent};">${achievement}</strong>.
+  Congratulations <em style="color:${STYLE.clay};">${esc(name)}</em>,
+  you earned <strong style="color:${STYLE.accent};">${esc(achievement)}</strong>.
 </p>
 ${cta('https://fitai.bfevents.cz/uspechy', 'View achievements &rarr;')}
 `);

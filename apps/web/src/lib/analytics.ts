@@ -9,7 +9,8 @@ type EventName =
   | 'squad_created' | 'squad_joined'
   | 'drop_purchased' | 'bundle_purchased'
   | 'signup_completed' | 'onboarding_completed'
-  | 'subscription_started' | 'subscription_canceled';
+  | 'subscription_started' | 'subscription_canceled'
+  | 'client_error';
 
 class Analytics {
   private enabled: boolean;
@@ -26,13 +27,11 @@ class Analytics {
     }
 
     try {
-      const token = localStorage.getItem('fitai_token');
       const url = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/analytics/event`;
       fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           event,

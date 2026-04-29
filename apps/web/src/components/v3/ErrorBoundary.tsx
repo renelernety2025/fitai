@@ -2,6 +2,7 @@
 
 import React, { Component } from 'react';
 import { Button } from './Button';
+import { analytics } from '@/lib/analytics';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -19,25 +20,11 @@ export class ErrorBoundary extends Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ErrorBoundary]', error, info);
-    try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/analytics/event`;
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'client_error',
-          properties: {
-            message: error.message,
-            stack: error.stack?.slice(0, 500),
-            componentStack: info?.componentStack?.slice(0, 500),
-          },
-        }),
-      }).catch(() => {});
-    } catch {
-      // Fire and forget
-    }
+  componentDidCatch(error: Error) {
+    console.error('[ErrorBoundary]', error);
+    analytics.track('client_error', {
+      errorMessage: error.message,
+    });
   }
 
   render() {

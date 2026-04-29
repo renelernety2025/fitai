@@ -25,8 +25,8 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    getPlans().then(setPlans);
-    getBillingStatus().then(setBilling);
+    getPlans().then(setPlans).catch(() => {});
+    getBillingStatus().then(setBilling).catch(() => {});
   }, []);
 
   async function handleUpgrade(tier: string) {
