@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIT_AI — Cinematic Coach Platform</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,200..700,30..100;1,9..144,200..700,30..100&family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  body { background: #050507; }
+  /* Canvas wrapper */
+  .canvas-bg {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,75,18,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(107,227,210,0.04) 0%, transparent 50%),
+      #050507;
+    min-height: 100vh;
+  }
+  .canvas-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="images.js"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="screen-landing.jsx"></script>
+<script type="text/babel" src="screen-dashboard.jsx"></script>
+<script type="text/babel" src="screen-calendar.jsx"></script>
+<script type="text/babel" src="screen-workout.jsx"></script>
+<script type="text/babel" src="screen-library-community.jsx"></script>
+<script type="text/babel" src="screen-mobile.jsx"></script>
+<script type="text/babel" src="screen-auth-onboarding.jsx"></script>
+<script type="text/babel" src="screen-coach-progress-nutrition-profile.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+// Read screen from URL hash
+const getInitial = () => {
+  const h = (window.location.hash || '#all').slice(1);
+  return ['all','landing','dashboard','calendar','workout','library','community','mobile','login','onboarding','coach','progress','nutrition','profile'].includes(h) ? h : 'all';
+};
+
+const SCREENS = [
+  { id: 'all',       label: 'Overview',  desc: 'All screens · gallery view' },
+  { id: 'landing',   label: 'Landing',   desc: 'Cinematic marketing homepage' },
+  { id: 'dashboard', label: 'Dashboard', desc: 'Today · stats · plan · AI insight' },
+  { id: 'calendar',  label: 'Calendar',  desc: 'Periodization timeline + month grid' },
+  { id: 'workout',   label: 'Workout',   desc: 'Detail · movements · sidekick' },
+  { id: 'library',   label: 'Library',   desc: 'Coach roster · MasterClass-style' },
+  { id: 'community', label: 'Community', desc: 'Feed · squads · challenges' },
+  { id: 'mobile',    label: 'Mobile',    desc: 'iOS today + active workout' },
+  { id: 'login',     label: 'Login',     desc: 'Sign in · split layout' },
+  { id: 'onboarding',label: 'Onboard',   desc: 'New member flow' },
+  { id: 'coach',     label: 'AI Coach',  desc: 'Chat with your coach' },
+  { id: 'progress',  label: 'Progress',  desc: 'Records · photos · trends' },
+  { id: 'nutrition', label: 'Nutrition', desc: 'Daily macros + meals' },
+  { id: 'profile',   label: 'Profile',   desc: 'Member profile + achievements' },
+];
+
+// ─── Navigation strip (only on focused views) ────────────
+const NavStrip = ({ current, setCurrent }) => (
+  <div style={{
+    position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
+    zIndex: 100, padding: 6, borderRadius: 999,
+    background: 'rgba(12,12,16,0.85)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    display: 'flex', gap: 4, alignItems: 'center',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+  }}>
+    <div style={{ padding: '0 10px 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Logo size={16}/>
+    </div>
+    <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)' }}/>
+    {SCREENS.map(s => (
+      <button key={s.id} onClick={() => { setCurrent(s.id); window.location.hash = s.id; }}
+        style={{
+          padding: '8px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500,
+          background: current === s.id ? '#fff' : 'transparent',
+          color: current === s.id ? '#000' : 'rgba(255,255,255,0.7)',
+          transition: 'all .15s',
+        }}>{s.label}</button>
+    ))}
+  </div>
+);
+
+// ─── Frame with label ────────────────────────────────────
+const Frame = ({ label, sub, w, children }) => (
+  <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '0 4px' }}>
+      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.5)' }}>◆ {label}</span>
+      {sub && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{sub}</span>}
+      <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{w}</span>
+    </div>
+    <div>{children}</div>
+  </div>
+);
+
+// ─── Wrap a screen in the chrome window ──────────────────
+const InWindow = ({ url, children, w = 1440, h = 900 }) => (
+  <ChromeWindow url={url} tabs={[{ title: 'FIT_AI · ' + url }]} width={w} height={h}>
+    <div style={{ width: w, height: h - 84, overflow: 'auto', background: 'var(--bg-0)' }}>
+      {children}
+    </div>
+  </ChromeWindow>
+);
+
+// ─── Focused view (single screen, scrolls) ───────────────
+const Focused = ({ screen }) => {
+  if (screen === 'mobile') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: 40, padding: '120px 32px 60px', flexWrap: 'wrap' }}>
+        <Frame label="MOBILE · TODAY" sub="Daily home" w="402×874">
+          <IOSDevice dark width={402} height={874}>
+            <MobileToday/>
+          </IOSDevice>
+        </Frame>
+        <Frame label="MOBILE · WORKOUT ACTIVE" sub="Live training UI" w="402×874">
+          <IOSDevice dark width={402} height={874}>
+            <MobileWorkoutActive/>
+          </IOSDevice>
+        </Frame>
+      </div>
+    );
+  }
+  const map = {
+    landing:   { url: 'fitai.app',                C: Landing },
+    dashboard: { url: 'fitai.app/today',          C: Dashboard },
+    calendar:  { url: 'fitai.app/calendar',       C: Calendar },
+    workout:   { url: 'fitai.app/workout/glute',  C: Workout },
+    library:   { url: 'fitai.app/library',        C: Library },
+    community: { url: 'fitai.app/community',      C: Community },
+    login:     { url: 'fitai.app/login',          C: Login },
+    onboarding:{ url: 'fitai.app/onboarding',     C: Onboarding },
+    coach:     { url: 'fitai.app/ai-coach',       C: AICoach },
+    progress:  { url: 'fitai.app/progress',       C: Progress },
+    nutrition: { url: 'fitai.app/vyziva',         C: Nutrition },
+    profile:   { url: 'fitai.app/profile',        C: Profile },
+  };
+  const item = map[screen];
+  if (!item) return null;
+  return (
+    <div style={{ padding: '88px 40px 40px', display: 'flex', justifyContent: 'center' }}>
+      <ChromeWindow url={item.url} tabs={[{ title: 'FIT_AI · ' + item.url }]} width={1440} height={900}>
+        <div style={{ width: 1440, height: 816, overflow: 'auto', background: 'var(--bg-0)' }}>
+          <item.C/>
+        </div>
+      </ChromeWindow>
+    </div>
+  );
+};
+
+// ─── Overview / gallery ──────────────────────────────────
+const Overview = () => (
+  <div style={{ padding: '120px 64px 80px', maxWidth: 1800, margin: '0 auto' }}>
+    {/* Header */}
+    <div style={{ marginBottom: 64, maxWidth: 900 }}>
+      <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 500, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
+        ◉ DESIGN EXPLORATION · v1 · APR 2026
+      </div>
+      <div style={{ fontFamily: 'Inter Tight, sans-serif', fontSize: 72, fontWeight: 800, letterSpacing: '-0.035em', lineHeight: 0.96, color: '#fff', marginBottom: 24 }}>
+        FIT_AI — a cinematic<br/>
+        <span style={{ fontStyle: 'italic', fontWeight: 400, color: 'rgba(255,255,255,0.6)' }}>coach platform</span> for everyone.
+      </div>
+      <p style={{ fontSize: 17, lineHeight: 1.5, color: 'rgba(255,255,255,0.65)', maxWidth: 720 }}>
+        Premium dark canvas, ember accents, sport-grade data density. The faculty (MasterClass) meets your training plan (Notion) meets the moment (Nike) meets the layout (Apple Music). Built for desktop and mobile, day one.
+      </p>
+
+      {/* Direction notes */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 48 }}>
+        {[
+          { l: 'CANVAS', v: 'Near-black #07070A · warm bias · subtle ember glow' },
+          { l: 'ACCENT', v: 'Ember #FF4B12 · used as signal, not decoration' },
+          { l: 'TYPE',   v: 'Inter Tight display · Inter text · JetBrains Mono for data' },
+          { l: 'VIBE',   v: 'Cinematic hero blocks · modular cards · Notion data density' },
+        ].map((n, i) => (
+          <div key={i} style={{ padding: 18, borderRadius: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 500, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>{n.l}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{n.v}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Section: Web */}
+    <div style={{ marginBottom: 80 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 32 }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: '0.14em', color: 'var(--accent-hot)', fontWeight: 500 }}>◆ 01 — DESKTOP WEB</span>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>1440 × 900 · 6 surfaces</span>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 48 }}>
+        {[
+          { id: 'landing',   url: 'fitai.app',                C: Landing,   sub: 'Marketing homepage' },
+          { id: 'dashboard', url: 'fitai.app/today',          C: Dashboard, sub: 'Today · personalized' },
+          { id: 'calendar',  url: 'fitai.app/calendar',       C: Calendar,  sub: 'Periodization plan' },
+          { id: 'workout',   url: 'fitai.app/workout/glute',  C: Workout,   sub: 'Workout detail' },
+          { id: 'library',   url: 'fitai.app/library',        C: Library,   sub: 'Coach faculty' },
+          { id: 'community', url: 'fitai.app/community',      C: Community, sub: 'Feed + squads' },
+        ].map(s => (
+          <Frame key={s.id} label={s.id.toUpperCase()} sub={s.sub} w="1440 × 900">
+            <div style={{ transform: 'scale(0.46)', transformOrigin: 'top left', width: 1440, height: 900 }}>
+              <ChromeWindow url={s.url} tabs={[{ title: 'FIT_AI · ' + s.url }]} width={1440} height={900}>
+                <div style={{ width: 1440, height: 816, overflow: 'hidden', background: 'var(--bg-0)' }}>
+                  <s.C/>
+                </div>
+              </ChromeWindow>
+            </div>
+            {/* Reserve scaled space */}
+            <div style={{ marginTop: -900 + 900 * 0.46, height: 0 }}/>
+          </Frame>
+        ))}
+      </div>
+    </div>
+
+    {/* Section: Mobile */}
+    <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 32 }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, letterSpacing: '0.14em', color: 'var(--accent-hot)', fontWeight: 500 }}>◆ 02 — MOBILE · iOS</span>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>iPhone · 402 × 874 · 2 surfaces</span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 48, flexWrap: 'wrap' }}>
+        <Frame label="MOBILE · TODAY" sub="Daily home" w="402 × 874">
+          <IOSDevice dark width={402} height={874}>
+            <MobileToday/>
+          </IOSDevice>
+        </Frame>
+        <Frame label="MOBILE · WORKOUT" sub="Active training" w="402 × 874">
+          <IOSDevice dark width={402} height={874}>
+            <MobileWorkoutActive/>
+          </IOSDevice>
+        </Frame>
+
+        {/* Notes panel */}
+        <div style={{ flex: 1, minWidth: 320, maxWidth: 480, padding: 28, borderRadius: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', alignSelf: 'flex-start' }}>
+          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>NOTES · MOBILE</div>
+          <div style={{ fontFamily: 'Inter Tight, sans-serif', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 16, color: '#fff' }}>One-thumb cinematic.</div>
+          <p style={{ fontSize: 13, lineHeight: 1.6, color: 'rgba(255,255,255,0.65)', margin: 0 }}>
+            The mobile UI keeps the same visual DNA as desktop — full-bleed hero card, modular blocks, mono numerics — but compresses the data density into a 2×2 stat grid. The active-workout screen is full-screen-no-chrome: just you, the bar, and Maya's voice.
+          </p>
+          <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              ['Hero card', 'Mirrors desktop "Today" block, full bleed'],
+              ['Tab bar', 'Floating · accent CTA in center · liquid glass'],
+              ['Workout screen', 'Big numbers · live cues · rest timer ring'],
+              ['Patterns', 'Same Card / Tag / Ring / Sparkline as web'],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+                <span style={{ width: 100, color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>{k}</span>
+                <span style={{ color: 'rgba(255,255,255,0.85)' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Footer */}
+    <div style={{ marginTop: 80, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+      <span>FIT_AI · cinematic-coach-v1 · apr 2026</span>
+      <span>Click any nav pill above to focus a single screen</span>
+    </div>
+  </div>
+);
+
+// ─── App ─────────────────────────────────────────────────
+const App = () => {
+  const [current, setCurrent] = useState(getInitial());
+  React.useEffect(() => {
+    const onHash = () => setCurrent(getInitial());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  return (
+    <div className="canvas-bg">
+      <NavStrip current={current} setCurrent={setCurrent}/>
+      {current === 'all' ? <Overview/> : <Focused screen={current}/>}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

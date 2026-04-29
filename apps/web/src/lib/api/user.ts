@@ -88,6 +88,31 @@ export function checkVIPEligibility(): Promise<VIPEligibility> {
   return request('/vip/check-eligibility');
 }
 
+// ── Billing ──
+
+export function getBillingStatus(): Promise<any> {
+  return request('/billing/status');
+}
+
+export function createCheckout(
+  tier: string,
+): Promise<any> {
+  return request('/billing/checkout', {
+    method: 'POST',
+    body: JSON.stringify({ tier }),
+  });
+}
+
+export function getBillingPortal(): Promise<any> {
+  return request('/billing/portal', { method: 'POST' });
+}
+
+export function getPlans(): Promise<any[]> {
+  return request('/billing/plans');
+}
+
+// ── Export ──
+
 export async function downloadExport(
   path: string,
   filename: string,
