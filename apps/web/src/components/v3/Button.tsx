@@ -12,6 +12,7 @@ interface ButtonProps {
   className?: string;
   style?: React.CSSProperties;
   type?: 'button' | 'submit' | 'reset';
+  'aria-label'?: string;
 }
 
 const sizes = {
@@ -51,6 +52,7 @@ export function Button({
   className = '',
   style,
   type = 'button',
+  'aria-label': ariaLabel,
 }: ButtonProps) {
   const s = sizes[size];
   const v = variants[variant];
@@ -60,6 +62,7 @@ export function Button({
       type={type}
       disabled={disabled}
       onClick={onClick}
+      aria-label={ariaLabel}
       className={`v3-btn v3-btn--${variant} ${className}`}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

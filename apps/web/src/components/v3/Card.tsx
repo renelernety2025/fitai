@@ -17,9 +17,19 @@ export function Card({
   className = '',
   style,
 }: CardProps) {
+  const isInteractive = !!onClick;
+
   return (
     <div
       onClick={onClick}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      onKeyDown={isInteractive ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      } : undefined}
       className={`v3-card ${hover ? 'v3-card--hover' : ''} ${className}`}
       style={{
         background: 'var(--bg-card)',

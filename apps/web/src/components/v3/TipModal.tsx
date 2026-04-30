@@ -59,7 +59,6 @@ export function TipModal({ creatorId, creatorName, onClose, onTipped }: TipModal
       >
       <Card
         padding={24}
-        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <h3
           id={headingId}

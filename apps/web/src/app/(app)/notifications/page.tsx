@@ -152,26 +152,38 @@ function ToggleRow({ label, description, checked, onChange }: {
   label: string; description: string; checked: boolean; onChange: () => void;
 }) {
   return (
-    <Card hover padding="16px 20px" onClick={onChange}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{label}</div>
-          <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 2 }}>{description}</div>
+    <button
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+    >
+      <Card hover padding="16px 20px">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{label}</div>
+            <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 2 }}>{description}</div>
+          </div>
+          <div
+            aria-hidden="true"
+            style={{
+              width: 44, height: 24, borderRadius: 12, padding: 2,
+              background: checked ? 'var(--accent)' : 'var(--bg-3)',
+              transition: 'background .2s ease',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{
+              width: 20, height: 20, borderRadius: '50%', background: 'white',
+              transform: checked ? 'translateX(20px)' : 'translateX(0)',
+              transition: 'transform .2s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+            }} />
+          </div>
         </div>
-        <div style={{
-          width: 44, height: 24, borderRadius: 12, padding: 2, cursor: 'pointer',
-          background: checked ? 'var(--accent)' : 'var(--bg-3)',
-          transition: 'background .2s ease',
-        }}>
-          <div style={{
-            width: 20, height: 20, borderRadius: '50%', background: 'white',
-            transform: checked ? 'translateX(20px)' : 'translateX(0)',
-            transition: 'transform .2s ease',
-            boxShadow: '0 1px 3px rgba(0,0,0,.3)',
-          }} />
-        </div>
-      </div>
-    </Card>
+      </Card>
+    </button>
   );
 }
 
@@ -278,14 +290,17 @@ export default function NotificationsPage() {
           <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)}>
             {t.label}
             {t.id === 'all' && unreadCount > 0 && (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                minWidth: 18, height: 18, borderRadius: 9,
-                background: 'var(--accent)', color: 'white',
-                fontSize: 11, fontWeight: 700, padding: '0 4px',
-                marginLeft: 4,
-              }}>
-                {unreadCount > 99 ? '99+' : unreadCount}
+              <span
+                aria-label={`${unreadCount} nepřečtených`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 18, height: 18, borderRadius: 9,
+                  background: 'var(--accent)', color: 'white',
+                  fontSize: 11, fontWeight: 700, padding: '0 4px',
+                  marginLeft: 4,
+                }}
+              >
+                <span aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>
               </span>
             )}
           </Chip>

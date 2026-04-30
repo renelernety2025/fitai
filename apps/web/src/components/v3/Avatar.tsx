@@ -23,7 +23,7 @@ export function Avatar({ src, size = 32, online, ring, name, className = '' }: A
       }}
     >
       {src ? (
-        <img src={src} alt={name ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={src} alt={name ? `${name} avatar` : 'User avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : name ? (
         <div style={{
           width: '100%', height: '100%',
