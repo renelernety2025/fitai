@@ -89,6 +89,7 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
                 src={`${process.env.NEXT_PUBLIC_CDN_URL || ''}/${post.photos[photoIndex].s3Key}`}
                 alt=""
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
               {post.photos.length > 1 && (
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
