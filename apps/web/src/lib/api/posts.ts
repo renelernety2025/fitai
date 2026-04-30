@@ -40,43 +40,43 @@ export interface PostCommentData {
 }
 
 export function getUploadUrls(count: number, contentType = 'image/jpeg') {
-  return request('/api/posts/upload-url', {
+  return request('/posts/upload-url', {
     method: 'POST',
     body: JSON.stringify({ count, contentType }),
   });
 }
 
 export function createPost(data: { caption?: string; type: string; photoKeys?: string[]; cardData?: any }) {
-  return request('/api/posts', {
+  return request('/posts', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export function getPost(id: string): Promise<PostData> {
-  return request(`/api/posts/${id}`);
+  return request(`/posts/${id}`);
 }
 
 export function deletePost(id: string) {
-  return request(`/api/posts/${id}`, { method: 'DELETE' });
+  return request(`/posts/${id}`, { method: 'DELETE' });
 }
 
 export function togglePostLike(id: string) {
-  return request(`/api/posts/${id}/like`, { method: 'POST' });
+  return request(`/posts/${id}/like`, { method: 'POST' });
 }
 
 export function addPostComment(id: string, content: string) {
-  return request(`/api/posts/${id}/comment`, {
+  return request(`/posts/${id}/comment`, {
     method: 'POST',
     body: JSON.stringify({ content }),
   });
 }
 
 export function deletePostComment(commentId: string) {
-  return request(`/api/posts/comments/${commentId}`, { method: 'DELETE' });
+  return request(`/posts/comments/${commentId}`, { method: 'DELETE' });
 }
 
 export function getUserPosts(userId: string, cursor?: string): Promise<PostData[]> {
   const params = cursor ? `?cursor=${cursor}` : '';
-  return request(`/api/posts/user/${userId}${params}`);
+  return request(`/posts/user/${userId}${params}`);
 }

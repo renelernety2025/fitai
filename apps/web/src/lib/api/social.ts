@@ -323,24 +323,24 @@ export function startConversation(
 // Feed
 export function getForYouFeed(cursor?: string) {
   const params = cursor ? `?cursor=${cursor}` : '';
-  return request(`/api/feed/for-you${params}`);
+  return request(`/feed/for-you${params}`);
 }
 
 export function getFollowingFeed(cursor?: string) {
   const params = cursor ? `?cursor=${cursor}` : '';
-  return request(`/api/feed/following${params}`);
+  return request(`/feed/following${params}`);
 }
 
 export function getTrendingFeed(cursor?: string) {
   const params = cursor ? `?cursor=${cursor}` : '';
-  return request(`/api/feed/trending${params}`);
+  return request(`/feed/trending${params}`);
 }
 
 // Promo
 export function getPromoCards() {
-  return request('/api/promo/for-feed');
+  return request('/promo/for-feed');
 }
 
 export function dismissPromo(id: string) {
-  return request(`/api/promo/${id}/dismiss`, { method: 'POST' });
+  return request(`/promo/${id}/dismiss`, { method: 'POST' });
 }

@@ -14,18 +14,18 @@ export interface TrendingHashtag {
 }
 
 export function getTrendingHashtags(period: '24h' | '7d' = '24h'): Promise<TrendingHashtag[]> {
-  return request(`/api/hashtags/trending?period=${period === '7d' ? 'D7' : 'H24'}`);
+  return request(`/hashtags/trending?period=${period === '7d' ? 'D7' : 'H24'}`);
 }
 
 export function searchHashtags(query: string): Promise<HashtagData[]> {
-  return request(`/api/hashtags/search?q=${encodeURIComponent(query)}`);
+  return request(`/hashtags/search?q=${encodeURIComponent(query)}`);
 }
 
 export function getSuggestedHashtags(): Promise<HashtagData[]> {
-  return request('/api/hashtags/suggested');
+  return request('/hashtags/suggested');
 }
 
 export function getPostsByHashtag(name: string, cursor?: string) {
   const params = cursor ? `?cursor=${cursor}` : '';
-  return request(`/api/hashtags/${encodeURIComponent(name)}/posts${params}`);
+  return request(`/hashtags/${encodeURIComponent(name)}/posts${params}`);
 }
