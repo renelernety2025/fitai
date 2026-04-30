@@ -84,6 +84,7 @@ import { EnterpriseModule } from './enterprise/enterprise.module';
 import { PostsModule } from './posts/posts.module';
 import { HashtagsModule } from './hashtags/hashtags.module';
 import { FeedModule } from './feed/feed.module';
+import { PromoModule } from './promo/promo.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
