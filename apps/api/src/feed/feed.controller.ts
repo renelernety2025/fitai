@@ -18,7 +18,7 @@ export class FeedController {
   }
 
   @Get('trending')
-  async getTrending(@Query('cursor') cursor?: string) {
-    return this.feedService.getTrendingFeed(cursor);
+  async getTrending(@Request() req, @Query('cursor') cursor?: string) {
+    return this.feedService.getTrendingFeed(req.user.id, cursor);
   }
 }

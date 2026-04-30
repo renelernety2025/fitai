@@ -15,7 +15,7 @@ export class FeedService {
     const followedIds = await this.getFollowedIds(userId);
 
     if (followedIds.length < 5) {
-      return this.getChronologicalPublic(cursor, limit);
+      return this.getChronologicalPublic(userId, cursor, limit);
     }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -23,6 +23,7 @@ export class FeedService {
     const posts = await this.prisma.post.findMany({
       where: {
         isPublic: true,
+        isScheduled: false,
         createdAt: { gte: sevenDaysAgo },
       },
       take: 200,
@@ -79,7 +80,7 @@ export class FeedService {
       diversified.push(picked);
     }
 
-    return diversified;
+    return this.blurSubscriberOnlyPosts(diversified, userId);
   }
 
   async getFollowingFeed(userId: string, cursor?: string, limit = 20) {
@@ -88,6 +89,7 @@ export class FeedService {
     const posts = await this.prisma.post.findMany({
       where: {
         userId: { in: [userId, ...followedIds] },
+        isScheduled: false,
         ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       take: limit,
@@ -99,15 +101,16 @@ export class FeedService {
       },
     });
 
-    return posts;
+    return this.blurSubscriberOnlyPosts(posts, userId);
   }
 
-  async getTrendingFeed(cursor?: string, limit = 20) {
+  async getTrendingFeed(userId: string, cursor?: string, limit = 20) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const posts = await this.prisma.post.findMany({
       where: {
         isPublic: true,
+        isScheduled: false,
         createdAt: { gte: oneDayAgo },
         ...(cursor ? { engagementScore: { lt: parseFloat(cursor) } } : {}),
       },
@@ -120,7 +123,7 @@ export class FeedService {
       },
     });
 
-    return posts;
+    return this.blurSubscriberOnlyPosts(posts, userId);
   }
 
   private async getFollowedIds(userId: string): Promise<string[]> {
@@ -133,10 +136,33 @@ export class FeedService {
     });
   }
 
-  private async getChronologicalPublic(cursor?: string, limit = 20) {
-    return this.prisma.post.findMany({
+  private async isSubscribed(userId: string, creatorId: string): Promise<boolean> {
+    const sub = await this.prisma.creatorSubscription.findUnique({
+      where: { subscriberId_creatorId: { subscriberId: userId, creatorId } },
+    });
+    return !!sub?.isActive;
+  }
+
+  private async blurSubscriberOnlyPosts(posts: any[], userId: string) {
+    const results = [];
+    for (const post of posts) {
+      if (post.isSubscriberOnly && post.userId !== userId) {
+        const subscribed = await this.isSubscribed(userId, post.userId);
+        if (!subscribed) {
+          results.push({ ...post, caption: null, photos: [], cardData: null, isBlurred: true });
+          continue;
+        }
+      }
+      results.push({ ...post, isBlurred: false });
+    }
+    return results;
+  }
+
+  private async getChronologicalPublic(userId: string, cursor?: string, limit = 20) {
+    const posts = await this.prisma.post.findMany({
       where: {
         isPublic: true,
+        isScheduled: false,
         ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       take: limit,
@@ -147,5 +173,6 @@ export class FeedService {
         hashtags: { include: { hashtag: true } },
       },
     });
+    return this.blurSubscriberOnlyPosts(posts, userId);
   }
 }

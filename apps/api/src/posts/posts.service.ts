@@ -101,6 +101,15 @@ export class PostsService {
       isLiked = !!like;
     }
 
+    if (post.isSubscriberOnly && post.userId !== currentUserId) {
+      const sub = await this.prisma.creatorSubscription.findUnique({
+        where: { subscriberId_creatorId: { subscriberId: currentUserId || '', creatorId: post.userId } },
+      });
+      if (!sub?.isActive) {
+        return { ...post, caption: null, photos: [], cardData: null, isBlurred: true, isLiked };
+      }
+    }
+
     return { ...post, isLiked };
   }
 
