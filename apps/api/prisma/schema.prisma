@@ -76,6 +76,8 @@ model User {
   expoPushToken String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  badgeType       BadgeType @default(NONE)
+  badgeVerifiedAt DateTime?
 
   sessions              WorkoutSession[]
   progress              UserProgress?
@@ -174,6 +176,10 @@ model User {
   // Phase 8: Enterprise
   orgsAdministered      Organization[]          @relation("OrgAdmin")
   orgMemberships        OrganizationMember[]
+  // Phase 9: Social Posts
+  posts                 Post[]
+  postComments          PostComment[]           @relation("PostComments")
+  postLikes             PostLike[]              @relation("PostLikes")
 }
 
 model UserProgress {
@@ -2039,6 +2045,39 @@ enum SubscriptionStatus {
   TRIALING
 }
 
+enum PostType {
+  TEXT
+  PHOTO
+  AUTO_CARD
+}
+
+enum TrendingPeriod {
+  H24
+  D7
+}
+
+enum BadgeType {
+  NONE
+  CREATOR
+  VERIFIED
+}
+
+enum PromoType {
+  FEATURE_DISCOVERY
+  UPGRADE
+  CHALLENGE
+  CONTENT
+}
+
+enum PromoAudience {
+  ALL
+  FREE_TIER
+  NO_STREAK
+  NEW_USER
+  NO_MEAL_PLAN
+  NO_JOURNAL
+}
+
 model Subscription {
   id                   String             @id @default(uuid())
   userId               String             @unique
@@ -2269,4 +2308,117 @@ model OrganizationChallenge {
   org Organization @relation(fields: [orgId], references: [id])
 
   @@index([orgId])
+}
+
+// ── Social Posts & Discovery ──
+
+model Post {
+  id               String        @id @default(uuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  caption          String?       @db.VarChar(2000)
+  type             PostType      @default(TEXT)
+  cardData         Json?
+  likeCount        Int           @default(0)
+  commentCount     Int           @default(0)
+  shareCount       Int           @default(0)
+  engagementScore  Float         @default(0)
+  isPublic         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  photos           PostPhoto[]
+  comments         PostComment[]
+  likes            PostLike[]
+  hashtags         PostHashtag[]
+
+  @@index([userId, createdAt])
+  @@index([engagementScore])
+  @@index([createdAt])
+}
+
+model PostPhoto {
+  id      String @id @default(uuid())
+  postId  String
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  s3Key   String
+  width   Int?
+  height  Int?
+  order   Int    @default(0)
+
+  @@index([postId])
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("PostComments", fields: [userId], references: [id])
+  content   String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model PostLike {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("PostLikes", fields: [userId], references: [id])
+
+  @@unique([postId, userId])
+}
+
+model Hashtag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  postCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  posts     PostHashtag[]
+  trending  TrendingSnapshot[]
+
+  @@index([postCount])
+}
+
+model PostHashtag {
+  postId    String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtagId String
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id])
+
+  @@unique([postId, hashtagId])
+  @@index([hashtagId])
+}
+
+model TrendingSnapshot {
+  id         String         @id @default(uuid())
+  hashtagId  String
+  hashtag    Hashtag        @relation(fields: [hashtagId], references: [id])
+  period     TrendingPeriod
+  score      Float
+  rank       Int
+  snapshotAt DateTime       @default(now())
+
+  @@index([period, rank])
+  @@index([snapshotAt])
+}
+
+model PromoCard {
+  id             String        @id @default(uuid())
+  type           PromoType
+  title          String
+  subtitle       String?
+  ctaText        String
+  ctaUrl         String
+  imageS3Key     String?
+  targetAudience PromoAudience @default(ALL)
+  priority       Int           @default(5)
+  isActive       Boolean       @default(true)
+  startDate      DateTime      @default(now())
+  endDate        DateTime?
+
+  @@index([isActive, targetAudience])
 }
