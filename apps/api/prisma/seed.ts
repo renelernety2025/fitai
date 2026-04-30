@@ -6,30 +6,35 @@ import { seedPromoCards } from './promo-seed';
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash('demo1234', 10);
+  let admin: { email: string } | null = null;
+  let user: { email: string } | null = null;
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@fitai.com' },
-    update: { passwordHash },
-    create: {
-      email: 'admin@fitai.com',
-      passwordHash,
-      name: 'Admin',
-      level: 'ADVANCED',
-      isAdmin: true,
-    },
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    const passwordHash = await bcrypt.hash('demo1234', 10);
 
-  const user = await prisma.user.upsert({
-    where: { email: 'demo@fitai.com' },
-    update: { passwordHash },
-    create: {
-      email: 'demo@fitai.com',
-      passwordHash,
-      name: 'Demo User',
-      level: 'BEGINNER',
-    },
-  });
+    admin = await prisma.user.upsert({
+      where: { email: 'admin@fitai.com' },
+      update: { passwordHash },
+      create: {
+        email: 'admin@fitai.com',
+        passwordHash,
+        name: 'Admin',
+        level: 'ADVANCED',
+        isAdmin: true,
+      },
+    });
+
+    user = await prisma.user.upsert({
+      where: { email: 'demo@fitai.com' },
+      update: { passwordHash },
+      create: {
+        email: 'demo@fitai.com',
+        passwordHash,
+        name: 'Demo User',
+        level: 'BEGINNER',
+      },
+    });
+  }
 
   const video1 = await prisma.video.upsert({
     where: { id: '00000000-0000-0000-0000-000000000001' },
@@ -308,7 +313,7 @@ async function main() {
   await seedPromoCards(prisma);
 
   console.log('Seed complete:', {
-    users: [admin.email, user.email],
+    users: admin && user ? [admin.email, user.email] : ['(skipped in production)'],
     videos: [video1.title, video2.title, video3.title],
     exercises: exercises.length,
     plans: 3,

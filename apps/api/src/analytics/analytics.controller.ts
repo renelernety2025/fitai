@@ -10,10 +10,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { IsString, IsOptional, IsInt, Min, Max, MaxLength } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AnalyticsService } from './analytics.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 const MAX_PROPERTIES_BYTES = 5120; // 5 KB
 
@@ -41,9 +42,13 @@ class SummaryQueryDto {
 
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post('event')
+  @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   trackEvent(@Body() dto: TrackEventDto, @Req() req: any) {
     if (dto.properties) {
@@ -61,8 +66,12 @@ export class AnalyticsController {
 
   @Get('summary')
   @UseGuards(JwtAuthGuard)
-  getSummary(@Query() query: SummaryQueryDto, @Req() req: any) {
-    if (!req.user?.isAdmin) {
+  async getSummary(@Query() query: SummaryQueryDto, @Req() req: any) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { isAdmin: true },
+    });
+    if (!user?.isAdmin) {
       throw new ForbiddenException('Admin only');
     }
     return this.analyticsService.getSummary(query.days ?? 7);
