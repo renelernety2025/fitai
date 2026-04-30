@@ -40,6 +40,16 @@ export class PostsService {
   async create(userId: string, dto: CreatePostDto) {
     const hashtags = this.parseHashtags(dto.caption || '');
 
+    // Validate S3 keys belong to this user
+    if (dto.photoKeys?.length) {
+      const prefix = `posts/${userId}/`;
+      for (const key of dto.photoKeys) {
+        if (!key.startsWith(prefix)) {
+          throw new ForbiddenException('Invalid photo key');
+        }
+      }
+    }
+
     const post = await this.prisma.post.create({
       data: {
         userId,
@@ -102,12 +112,11 @@ export class PostsService {
   }
 
   async toggleLike(postId: string, userId: string) {
-    const existing = await this.prisma.postLike.findUnique({
-      where: { postId_userId: { postId, userId } },
+    const { count } = await this.prisma.postLike.deleteMany({
+      where: { postId, userId },
     });
 
-    if (existing) {
-      await this.prisma.postLike.delete({ where: { id: existing.id } });
+    if (count > 0) {
       await this.prisma.post.update({
         where: { id: postId },
         data: { likeCount: { decrement: 1 } },

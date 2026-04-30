@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { UploadUrlDto } from './dto/upload-url.dto';
 
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
@@ -14,9 +15,9 @@ export class PostsController {
   @Throttle({ short: { limit: 10, ttl: 60000 } })
   async getUploadUrl(
     @Request() req,
-    @Body() body: { count: number; contentType: string },
+    @Body() body: UploadUrlDto,
   ) {
-    return this.postsService.getUploadUrls(req.user.id, body.count || 1, body.contentType || 'image/jpeg');
+    return this.postsService.getUploadUrls(req.user.id, body.count, body.contentType);
   }
 
   @Get('user/:userId')

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, MaxLength, ArrayMaxSize, IsObject } from 'class-validator';
 
 export enum PostTypeDto {
   TEXT = 'TEXT',
@@ -22,5 +22,6 @@ export class CreatePostDto {
   photoKeys?: string[];
 
   @IsOptional()
-  cardData?: Record<string, any>;
+  @IsObject()
+  cardData?: Record<string, unknown>;
 }
