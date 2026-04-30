@@ -9,3 +9,6 @@ export { Sparkline } from './Sparkline';
 export { BarChart } from './BarChart';
 export { Ring } from './Ring';
 export { Logo } from './Logo';
+export { Badge } from './Badge';
+export { PostComposer } from './PostComposer';
+export { PostCard } from './PostCard';
