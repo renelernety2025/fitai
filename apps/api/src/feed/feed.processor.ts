@@ -69,7 +69,7 @@ export class FeedProcessor {
     }
 
     const recentSessions = await this.prisma.gymSession.findMany({
-      where: { createdAt: { gte: twoHoursAgo } },
+      where: { startedAt: { gte: twoHoursAgo } },
       select: { userId: true },
       take: 100,
     });
