@@ -560,3 +560,31 @@ export function searchHashtags(query: string) {
 // ── Promo ──
 export function getPromoCards() { return request<any>('/promo/for-feed'); }
 export function dismissPromo(id: string) { return request<any>(`/promo/${id}/dismiss`, { method: 'POST' }); }
+
+// ── Creator Economy ──
+export function subscribeToCreator(creatorId: string) {
+  return request<any>(`/creator-economy/subscribe/${creatorId}`, { method: 'POST' });
+}
+export function unsubscribeFromCreator(creatorId: string) {
+  return request<any>(`/creator-economy/unsubscribe/${creatorId}`, { method: 'POST' });
+}
+export function tipCreator(creatorId: string, xpAmount: number, message?: string) {
+  return request<any>(`/creator-economy/tip/${creatorId}`, { method: 'POST', body: JSON.stringify({ xpAmount, message }) });
+}
+export function checkSubscription(creatorId: string) {
+  return request<any>(`/creator-economy/check/${creatorId}`);
+}
+export function getCreatorEarnings() { return request<any>('/creator-economy/earnings'); }
+
+// ── Social Notifications ──
+export function getSocialNotifications(cursor?: string) {
+  const params = cursor ? `?cursor=${cursor}` : '';
+  return request<any>(`/smart-notifications/social${params}`);
+}
+export function getUnreadNotificationCount() { return request<any>('/smart-notifications/unread-count'); }
+export function markNotificationRead(id: string) {
+  return request<any>(`/smart-notifications/${id}/read`, { method: 'POST' });
+}
+export function markAllNotificationsRead() {
+  return request<any>('/smart-notifications/read-all', { method: 'POST' });
+}

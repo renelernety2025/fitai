@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View, Text } from 'react-native';
+import { FlatList, RefreshControl, View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../lib/auth-context';
 import {
   getChallenges, joinChallenge, getFollowCounts,
@@ -8,6 +8,27 @@ import {
 import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
 
 type FeedTab = 'forYou' | 'following' | 'trending' | 'challenges';
+
+const styles = StyleSheet.create({
+  feedItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: v2.border,
+    paddingVertical: 16,
+  },
+  blurOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+  },
+  blurLabel: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+  },
+});
 
 function timeAgo(date: string) {
   const m = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
@@ -53,7 +74,7 @@ export function CommunityScreen() {
   }, [tab, fetchFeed]);
 
   const renderFeedItem = ({ item }: { item: any }) => (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 16 }}>
+    <View style={styles.feedItem}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
         <Text style={{ color: '#FFF', fontWeight: '600' }}>{item.user?.name ?? item.author?.name ?? '—'}</Text>
         <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
@@ -62,6 +83,11 @@ export function CommunityScreen() {
       </View>
       <Text style={{ color: '#FFF', fontSize: 15, marginTop: 4 }}>{item.title ?? item.caption}</Text>
       {item.body ? <Text style={{ color: v2.muted, fontSize: 13 }}>{item.body}</Text> : null}
+      {item.isBlurred ? (
+        <View style={styles.blurOverlay}>
+          <Text style={styles.blurLabel}>Subscriber Only</Text>
+        </View>
+      ) : null}
     </View>
   );
 
