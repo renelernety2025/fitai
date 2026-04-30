@@ -180,6 +180,12 @@ model User {
   posts                 Post[]
   postComments          PostComment[]           @relation("PostComments")
   postLikes             PostLike[]              @relation("PostLikes")
+  subscriptions         CreatorSubscription[]   @relation("Subscriptions")
+  subscribers           CreatorSubscription[]   @relation("Subscribers")
+  tipsSent              CreatorTip[]            @relation("TipsSent")
+  tipsReceived          CreatorTip[]            @relation("TipsReceived")
+  socialNotifications   SocialNotification[]    @relation("SocialNotifications")
+  actedNotifications    SocialNotification[]    @relation("NotificationActor")
 }
 
 model UserProgress {
@@ -191,6 +197,7 @@ model UserProgress {
   lastWorkoutDate DateTime?
   totalSessions   Int       @default(0)
   totalMinutes    Int       @default(0)
+  totalXPSpent    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -2078,6 +2085,20 @@ enum PromoAudience {
   NO_JOURNAL
 }
 
+enum SocialNotificationType {
+  NEW_FOLLOWER
+  POST_LIKED
+  POST_COMMENTED
+  CHALLENGE_INVITE
+  CHALLENGE_COMPLETED
+  SQUAD_PR
+  BUDDY_WORKOUT
+  SUBSCRIBER_NEW
+  TIP_RECEIVED
+  POST_MILESTONE
+  STREAK_BUDDY
+}
+
 model Subscription {
   id                   String             @id @default(uuid())
   userId               String             @unique
@@ -2195,8 +2216,11 @@ model CreatorProfile {
   specializations String[]
   isApproved      Boolean  @default(false)
   totalEarnings   Float    @default(0)
-  subscriberCount Int      @default(0)
-  createdAt       DateTime @default(now())
+  subscriberCount     Int      @default(0)
+  subscriptionPriceXP Int      @default(500)
+  totalXPEarned       Int      @default(0)
+  monthlyXPEarned     Int      @default(0)
+  createdAt           DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }
@@ -2324,6 +2348,10 @@ model Post {
   shareCount       Int           @default(0)
   engagementScore  Float         @default(0)
   isPublic         Boolean       @default(true)
+  isSubscriberOnly Boolean       @default(false)
+  isPinned         Boolean       @default(false)
+  publishAt        DateTime?
+  isScheduled      Boolean       @default(false)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -2421,4 +2449,50 @@ model PromoCard {
   endDate        DateTime?
 
   @@index([isActive, targetAudience])
+}
+
+model CreatorSubscription {
+  id           String   @id @default(uuid())
+  subscriberId String
+  subscriber   User     @relation("Subscriptions", fields: [subscriberId], references: [id])
+  creatorId    String
+  creator      User     @relation("Subscribers", fields: [creatorId], references: [id])
+  xpPerMonth   Int      @default(500)
+  startedAt    DateTime @default(now())
+  renewsAt     DateTime
+  isActive     Boolean  @default(true)
+
+  @@unique([subscriberId, creatorId])
+  @@index([creatorId, isActive])
+  @@index([renewsAt])
+}
+
+model CreatorTip {
+  id          String   @id @default(uuid())
+  fromUserId  String
+  fromUser    User     @relation("TipsSent", fields: [fromUserId], references: [id])
+  toCreatorId String
+  toCreator   User     @relation("TipsReceived", fields: [toCreatorId], references: [id])
+  xpAmount    Int
+  message     String?  @db.VarChar(200)
+  createdAt   DateTime @default(now())
+
+  @@index([toCreatorId, createdAt])
+}
+
+model SocialNotification {
+  id         String                 @id @default(uuid())
+  userId     String
+  user       User                   @relation("SocialNotifications", fields: [userId], references: [id])
+  type       SocialNotificationType
+  actorId    String
+  actor      User                   @relation("NotificationActor", fields: [actorId], references: [id])
+  targetType String?
+  targetId   String?
+  message    String
+  isRead     Boolean                @default(false)
+  createdAt  DateTime               @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, type, actorId, targetId])
 }
