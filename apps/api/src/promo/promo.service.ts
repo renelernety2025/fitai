@@ -13,19 +13,32 @@ export class PromoService {
     const dismissedKey = `promo:dismissed:${userId}`;
     const dismissed: string[] = (await this.cache.get<string[]>(dismissedKey)) || [];
 
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { level: true, createdAt: true },
+    });
+
+    const audiences = ['ALL'];
+    if (user) {
+      const daysSinceJoin = (Date.now() - user.createdAt.getTime()) / 86400000;
+      if (daysSinceJoin < 7) audiences.push('NEW_USER');
+      if (user.level === 'BEGINNER') audiences.push('FREE_TIER');
+    }
+
     const now = new Date();
     const promos = await this.prisma.promoCard.findMany({
       where: {
         isActive: true,
         id: { notIn: dismissed },
+        targetAudience: { in: audiences as any },
         startDate: { lte: now },
         OR: [{ endDate: null }, { endDate: { gte: now } }],
       },
       orderBy: { priority: 'desc' },
-      take: limit * 2,
+      take: limit,
     });
 
-    return promos.slice(0, limit);
+    return promos;
   }
 
   async dismiss(userId: string, promoId: string) {
