@@ -14,6 +14,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [suggestedTags, setSuggestedTags] = useState<{ name: string }[]>([]);
   const [posting, setPosting] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState(-1);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleCaptionChange = useCallback(async (value: string) => {
@@ -53,6 +54,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
       if (photos.length > 0) {
         const urls = await getUploadUrls(photos.length);
         for (let i = 0; i < photos.length; i++) {
+          setUploadingIndex(i);
           await fetch(urls[i].uploadUrl, {
             method: 'PUT',
             body: photos[i],
@@ -60,6 +62,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
           });
           photoKeys.push(urls[i].s3Key);
         }
+        setUploadingIndex(-1);
       }
 
       await createPost({
@@ -74,6 +77,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
       onPostCreated();
     } finally {
       setPosting(false);
+      setUploadingIndex(-1);
     }
   }, [caption, photos, onPostCreated]);
 
@@ -83,6 +87,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
         value={caption}
         onChange={(e) => handleCaptionChange(e.target.value)}
         placeholder="Co je nového? Použij #hashtagy..."
+        aria-label="Text příspěvku"
         className="w-full bg-transparent border-none outline-none resize-none text-[var(--text-1)]"
         rows={3}
         maxLength={2000}
@@ -102,13 +107,35 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
         <div className="flex gap-2 mt-3">
           {previews.map((src, i) => (
             <div key={i} className="relative w-20 h-20">
-              <img src={src} alt="" className="w-full h-full object-cover rounded-lg" />
-              <button
-                onClick={() => handleRemovePhoto(i)}
-                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
-              >
-                ×
-              </button>
+              <img src={src} alt={`Náhled fotky ${i + 1}`} className="w-full h-full object-cover rounded-lg" />
+              {uploadingIndex === i && (
+                <div
+                  className="absolute inset-0 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(0,0,0,0.55)' }}
+                >
+                  <svg
+                    className="animate-spin"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                </div>
+              )}
+              {uploadingIndex !== i && (
+                <button
+                  onClick={() => handleRemovePhoto(i)}
+                  aria-label={`Odebrat fotku ${i + 1}`}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -124,7 +151,7 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
             className="hidden"
             onChange={handlePhotoSelect}
           />
-          <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
+          <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()} aria-label="Přidat fotku">
             Fotka
           </Button>
         </div>
@@ -133,7 +160,11 @@ export function PostComposer({ onPostCreated }: PostComposerProps) {
           onClick={handleSubmit}
           disabled={posting || (!caption.trim() && photos.length === 0)}
         >
-          {posting ? 'Publikuji...' : 'Publikovat'}
+          {posting
+            ? uploadingIndex >= 0
+              ? `Nahrávám ${uploadingIndex + 1}/${photos.length}...`
+              : 'Publikuji...'
+            : 'Publikovat'}
         </Button>
       </div>
     </Card>

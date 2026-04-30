@@ -175,9 +175,19 @@ export default function CommunityPage() {
 
       {!loading && posts.length === 0 && (
         <Card className="p-8 text-center">
-          <p className="text-[var(--text-2)]">
-            Zatím žádné posty. Buď první!
-          </p>
+          {tab === 'following' ? (
+            <>
+              <p className="text-[var(--text-2)] mb-3">Nikoho nesleduješ.</p>
+              <Button size="sm" onClick={() => setTab('trending')}>Najdi lidi</Button>
+            </>
+          ) : tab === 'for-you' ? (
+            <>
+              <p className="text-[var(--text-2)] mb-3">Zatím žádné posty. Začni sledovat lidi!</p>
+              <Button size="sm" onClick={() => setTab('trending')}>Objevuj</Button>
+            </>
+          ) : (
+            <p className="text-[var(--text-2)]">Zatím žádné trending posty.</p>
+          )}
         </Card>
       )}
 

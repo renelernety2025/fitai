@@ -19,6 +19,20 @@ import {
   type StatsData, type Insights, type WeeklyReview, type DailyBrief, type TodayAction,
 } from '@/lib/api';
 
+function SectionError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card padding={16} style={{ textAlign: 'center', marginBottom: 32 }}>
+      <p style={{ fontSize: 14, color: 'var(--text-3)', margin: '0 0 8px' }}>Nepodařilo se načíst</p>
+      <button
+        onClick={onRetry}
+        style={{ fontSize: 14, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
+      >
+        Zkusit znovu
+      </button>
+    </Card>
+  );
+}
+
 export default function DashboardV3Page() {
   const { user, isLoading } = useAuth();
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -28,15 +42,40 @@ export default function DashboardV3Page() {
   const [motivation, setMotivation] = useState<string | null>(null);
   const [todayAction, setTodayAction] = useState<TodayAction | null>(null);
 
+  const [statsError, setStatsError] = useState(false);
+  const [insightsError, setInsightsError] = useState(false);
+  const [briefError, setBriefError] = useState(false);
+  const [weeklyError, setWeeklyError] = useState(false);
+
   useEffect(() => { document.title = 'FitAI - Dashboard'; }, []);
 
+  function loadStats() {
+    setStatsError(false);
+    getMyStats().then(setStats).catch(() => setStatsError(true));
+  }
+
+  function loadInsights() {
+    setInsightsError(false);
+    getInsights().then(setInsights).catch(() => setInsightsError(true));
+  }
+
+  function loadBrief() {
+    setBriefError(false);
+    getDailyBrief().then((r) => setBrief(r.brief)).catch(() => setBriefError(true));
+  }
+
+  function loadWeekly() {
+    setWeeklyError(false);
+    getWeeklyReview().then((r) => setWeekly(r.review)).catch(() => setWeeklyError(true));
+  }
+
   function reload() {
-    getMyStats().then(setStats).catch(console.error);
-    getInsights().then(setInsights).catch(console.error);
-    getWeeklyReview().then((r) => setWeekly(r.review)).catch(console.error);
-    getDailyBrief().then((r) => setBrief(r.brief)).catch(console.error);
-    getDailyMotivation().then((r) => setMotivation(r.message)).catch(console.error);
-    getTodayAction().then(setTodayAction).catch(console.error);
+    loadStats();
+    loadInsights();
+    loadBrief();
+    loadWeekly();
+    getDailyMotivation().then((r) => setMotivation(r.message)).catch(() => {});
+    getTodayAction().then(setTodayAction).catch(() => {});
     // Pre-warm caches for sub-pages
     getLessonOfTheWeek().catch(() => {});
     getNutritionToday().catch(() => {});
@@ -81,6 +120,7 @@ export default function DashboardV3Page() {
             <TodayWorkout brief={brief} />
           </section>
         )}
+        {briefError && <SectionError onRetry={loadBrief} />}
 
         {/* Stats strip */}
         {stats && (
@@ -89,6 +129,7 @@ export default function DashboardV3Page() {
             <StatsStrip stats={stats} />
           </section>
         )}
+        {statsError && <SectionError onRetry={loadStats} />}
 
         {/* Fitness Score */}
         <FitnessScore />
@@ -112,8 +153,11 @@ export default function DashboardV3Page() {
             </Card>
           </section>
         )}
+        {insightsError && <SectionError onRetry={loadInsights} />}
 
         {brief && <section style={{ marginBottom: 40 }}><V2DailyBrief brief={brief} /></section>}
+
+        {weeklyError && <SectionError onRetry={loadWeekly} />}
 
         <OnboardingTour />
       </div>
