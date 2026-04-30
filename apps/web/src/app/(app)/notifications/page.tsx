@@ -1,11 +1,156 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, SectionHeader } from '@/components/v3';
+import { useEffect, useState, useCallback } from 'react';
+import { Card, Chip, Avatar, Badge, Button, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
-import { getNotificationPrefs, updateNotificationPrefs, type NotificationPrefs } from '@/lib/api';
+import {
+  getSocialNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getUnreadCount,
+  getNotificationPrefs,
+  updateNotificationPrefs,
+  type NotificationPrefs,
+} from '@/lib/api';
 
-function ToggleRow({ label, description, checked, onChange }: { label: string; description: string; checked: boolean; onChange: () => void }) {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type NotifType =
+  | 'NEW_FOLLOWER' | 'POST_LIKED' | 'POST_COMMENTED'
+  | 'CHALLENGE_INVITE' | 'CHALLENGE_COMPLETED' | 'SQUAD_PR'
+  | 'BUDDY_WORKOUT' | 'SUBSCRIBER_NEW' | 'TIP_RECEIVED'
+  | 'POST_MILESTONE' | 'STREAK_BUDDY';
+
+interface SocialNotif {
+  id: string;
+  type: NotifType;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  actor: { id: string; name: string; avatarUrl?: string; badgeType?: 'NONE' | 'CREATOR' | 'VERIFIED' };
+}
+
+type FilterTab = 'all' | 'social' | 'workout' | 'system';
+
+const SOCIAL_TYPES: NotifType[] = [
+  'NEW_FOLLOWER', 'POST_LIKED', 'POST_COMMENTED', 'SUBSCRIBER_NEW',
+  'TIP_RECEIVED', 'POST_MILESTONE',
+];
+const WORKOUT_TYPES: NotifType[] = [
+  'CHALLENGE_INVITE', 'CHALLENGE_COMPLETED', 'SQUAD_PR', 'BUDDY_WORKOUT', 'STREAK_BUDDY',
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'právě teď';
+  if (mins < 60) return `před ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `před ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `před ${days} d`;
+  return new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' });
+}
+
+function notifTypeIcon(type: NotifType): string {
+  if (type === 'NEW_FOLLOWER' || type === 'SUBSCRIBER_NEW') return 'user-plus';
+  if (type === 'POST_LIKED') return 'heart';
+  if (type === 'POST_COMMENTED') return 'message';
+  if (type === 'TIP_RECEIVED') return 'star';
+  if (type === 'CHALLENGE_INVITE' || type === 'CHALLENGE_COMPLETED') return 'trophy';
+  if (type === 'SQUAD_PR') return 'lightning';
+  if (type === 'STREAK_BUDDY') return 'fire';
+  return 'bell';
+}
+
+function matchesTab(notif: SocialNotif, tab: FilterTab): boolean {
+  if (tab === 'all') return true;
+  if (tab === 'social') return SOCIAL_TYPES.includes(notif.type);
+  if (tab === 'workout') return WORKOUT_TYPES.includes(notif.type);
+  return false;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function NotifItem({ notif, onRead }: { notif: SocialNotif; onRead: (id: string) => void }) {
+  return (
+    <Card
+      hover
+      padding="14px 16px"
+      onClick={() => !notif.isRead && onRead(notif.id)}
+      style={{ opacity: notif.isRead ? 0.6 : 1, cursor: notif.isRead ? 'default' : 'pointer' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {/* Unread dot */}
+        <div style={{ paddingTop: 6, flexShrink: 0, width: 8 }}>
+          {!notif.isRead && (
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: 'var(--accent)',
+            }} />
+          )}
+        </div>
+
+        {/* Avatar */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <Avatar src={notif.actor.avatarUrl} name={notif.actor.name} size={40} />
+          <span style={{
+            position: 'absolute', bottom: -2, right: -2,
+            background: 'var(--bg-2)', borderRadius: '50%',
+            width: 18, height: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '1px solid var(--stroke-1)',
+          }}>
+            <FitIcon name={notifTypeIcon(notif.type)} size={10} color="var(--accent)" />
+          </span>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>
+              {notif.actor.name}
+            </span>
+            {notif.actor.badgeType && notif.actor.badgeType !== 'NONE' && (
+              <Badge type={notif.actor.badgeType} size={14} />
+            )}
+          </div>
+          <p className="v3-caption" style={{ color: 'var(--text-2)', marginTop: 2, lineHeight: 1.4 }}>
+            {notif.message}
+          </p>
+          <span className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4, display: 'block' }}>
+            {timeAgo(notif.createdAt)}
+          </span>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function EmptyState({ tab }: { tab: FilterTab }) {
+  const labels: Record<FilterTab, string> = {
+    all: 'Žádné notifikace',
+    social: 'Žádné sociální notifikace',
+    workout: 'Žádné tréninkové notifikace',
+    system: 'Žádné systémové notifikace',
+  };
+  return (
+    <div style={{
+      textAlign: 'center', padding: '48px 16px',
+      color: 'var(--text-3)',
+    }}>
+      <FitIcon name="bell" size={32} color="var(--text-3)" />
+      <p className="v3-body" style={{ marginTop: 12, color: 'var(--text-2)' }}>{labels[tab]}</p>
+      <p className="v3-caption" style={{ marginTop: 4 }}>Brzy se tu něco objeví.</p>
+    </div>
+  );
+}
+
+function ToggleRow({ label, description, checked, onChange }: {
+  label: string; description: string; checked: boolean; onChange: () => void;
+}) {
   return (
     <Card hover padding="16px 20px" onClick={onChange}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -30,14 +175,54 @@ function ToggleRow({ label, description, checked, onChange }: { label: string; d
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function NotificationsPage() {
+  const [tab, setTab] = useState<FilterTab>('all');
+  const [notifs, setNotifs] = useState<SocialNotif[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifs, setLoadingNotifs] = useState(true);
+  const [markingAll, setMarkingAll] = useState(false);
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { document.title = 'FitAI — Notifications'; }, []);
+  useEffect(() => { document.title = 'Notifikace | FitAI'; }, []);
+
+  const fetchData = useCallback(async () => {
+    setLoadingNotifs(true);
+    try {
+      const [notifData, countData] = await Promise.all([
+        getSocialNotifications() as Promise<SocialNotif[]>,
+        getUnreadCount(),
+      ]);
+      setNotifs(notifData ?? []);
+      setUnreadCount(countData.unreadCount);
+    } catch {
+      // silently degrade
+    } finally {
+      setLoadingNotifs(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { getNotificationPrefs().then(setPrefs).catch(console.error); }, []);
 
-  async function toggle(key: keyof NotificationPrefs) {
+  async function handleMarkRead(id: string) {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    await markNotificationRead(id).catch(console.error);
+  }
+
+  async function handleMarkAll() {
+    if (!unreadCount) return;
+    setMarkingAll(true);
+    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    await markAllNotificationsRead().catch(console.error);
+    setMarkingAll(false);
+  }
+
+  async function togglePref(key: keyof NotificationPrefs) {
     if (!prefs) return;
     setSaving(true);
     const updated = { ...prefs, [key]: !prefs[key] };
@@ -46,59 +231,131 @@ export default function NotificationsPage() {
     setSaving(false);
   }
 
-  return (
-    <>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
-        <section style={{ padding: '48px 0 32px' }}>
-          <p className="v3-eyebrow-serif">&#9670; Settings</p>
-          <h1 className="v3-display-2" style={{ marginTop: 8 }}>
-            Stay<br />
-            <em className="v3-clay" style={{ fontWeight: 300 }}>informed.</em>
-          </h1>
-          <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 12 }}>
-            Choose which notifications you want to receive.
-          </p>
-        </section>
+  const filtered = tab === 'system'
+    ? []
+    : notifs.filter(n => matchesTab(n, tab));
 
+  const TABS: { id: FilterTab; label: string }[] = [
+    { id: 'all', label: 'Vše' },
+    { id: 'social', label: 'Sociální' },
+    { id: 'workout', label: 'Trénink' },
+    { id: 'system', label: 'Systém' },
+  ];
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
+      {/* Hero */}
+      <section style={{ padding: '48px 0 24px' }}>
+        <p className="v3-eyebrow-serif">&#9670; Inbox</p>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1 className="v3-display-2" style={{ marginTop: 8 }}>
+              Tvoje<br />
+              <em className="v3-clay" style={{ fontWeight: 300 }}>notifikace.</em>
+            </h1>
+            {unreadCount > 0 && (
+              <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 10 }}>
+                {unreadCount} nepřečtených
+              </p>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAll}
+              disabled={markingAll}
+            >
+              {markingAll ? 'Označuji...' : 'Označit vše jako přečtené'}
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+        {TABS.map(t => (
+          <Chip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)}>
+            {t.label}
+            {t.id === 'all' && unreadCount > 0 && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                minWidth: 18, height: 18, borderRadius: 9,
+                background: 'var(--accent)', color: 'white',
+                fontSize: 11, fontWeight: 700, padding: '0 4px',
+                marginLeft: 4,
+              }}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Chip>
+        ))}
+      </div>
+
+      {/* Notification list */}
+      <section style={{ marginBottom: 40 }}>
+        {loadingNotifs ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{
+                height: 72, borderRadius: 'var(--r-lg)',
+                background: 'var(--bg-2)', opacity: 0.5,
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState tab={tab} />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {filtered.map(n => (
+              <NotifItem key={n.id} notif={n} onRead={handleMarkRead} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Notification preferences */}
+      <section style={{ marginBottom: 32 }}>
+        <SectionHeader title="Nastavení notifikací" />
         {prefs && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <ToggleRow
-              label="Workout reminders"
-              description="Daily reminder when you haven't trained yet"
+              label="Připomínky tréninku"
+              description="Denní připomínka když jsi ještě necvičil"
               checked={prefs.workoutReminder}
-              onChange={() => toggle('workoutReminder')}
+              onChange={() => togglePref('workoutReminder')}
             />
             <ToggleRow
-              label="Streak warning"
-              description="Evening alert before losing your streak"
+              label="Varování před ztrátou streaku"
+              description="Večerní alert před ztrátou tvého streaku"
               checked={prefs.streakWarning}
-              onChange={() => toggle('streakWarning')}
+              onChange={() => togglePref('streakWarning')}
             />
             <ToggleRow
-              label="Achievements"
-              description="Notification when unlocking a new badge"
+              label="Úspěchy"
+              description="Notifikace při odemknutí nového odznaku"
               checked={prefs.achievements}
-              onChange={() => toggle('achievements')}
+              onChange={() => togglePref('achievements')}
             />
           </div>
         )}
-
         {prefs && (
-          <section>
-            <SectionHeader title="Quiet hours" />
-            <Card padding={20}>
+          <div style={{ marginTop: 12 }}>
+            <Card padding={16}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FitIcon name="timer" size={16} color="var(--text-3)" />
                 <span className="v3-body" style={{ color: 'var(--text-2)' }}>
-                  No notifications between {prefs.quietHoursStart}:00 and {prefs.quietHoursEnd}:00
+                  Žádné notifikace mezi {prefs.quietHoursStart}:00 a {prefs.quietHoursEnd}:00
                 </span>
               </div>
             </Card>
-          </section>
+          </div>
         )}
-
-        {saving && <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 16 }}>Saving...</p>}
-      </div>
-    </>
+        {saving && (
+          <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 10 }}>Ukládám...</p>
+        )}
+      </section>
+    </div>
   );
 }
