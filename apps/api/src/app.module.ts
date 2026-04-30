@@ -87,6 +87,7 @@ import { FeedModule } from './feed/feed.module';
 import { PromoModule } from './promo/promo.module';
 import { NotifyModule } from './notify/notify.module';
 import { CreatorEconomyModule } from './creator-economy/creator-economy.module';
+import { CreatorDashboardModule } from './creator-dashboard/creator-dashboard.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -215,6 +216,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PromoModule,
     NotifyModule,
     CreatorEconomyModule,
+    CreatorDashboardModule,
   ],
   providers: [
     {
