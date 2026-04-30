@@ -81,6 +81,8 @@ import { PaidChallengesModule } from './paid-challenges/paid-challenges.module';
 import { CreatorsModule } from './creators/creators.module';
 import { CoursesModule } from './courses/courses.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
+import { PostsModule } from './posts/posts.module';
+import { HashtagsModule } from './hashtags/hashtags.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -202,6 +204,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     CreatorsModule,
     CoursesModule,
     EnterpriseModule,
+    PostsModule,
+    HashtagsModule,
   ],
   providers: [
     {
