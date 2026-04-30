@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { V2Layout } from '@/components/v2/V2Layout';
 import { ErrorBoundary } from '@/components/v3/ErrorBoundary';
+import { Logo } from '@/components/v3/Logo';
 import { analytics } from '@/lib/analytics';
 
 export default function AppLayout({
@@ -29,7 +30,11 @@ export default function AppLayout({
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-0)' }} />
+      <div style={{ minHeight: '100vh', background: 'var(--bg-0)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ animation: 'pulse 2s ease-in-out infinite' }}>
+          <Logo size={64} />
+        </div>
+      </div>
     );
   }
 

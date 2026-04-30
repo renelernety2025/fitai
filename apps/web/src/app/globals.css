@@ -270,6 +270,30 @@ html { scroll-behavior: smooth; }
   outline-offset: 2px;
 }
 
+/* ═══ v3 Interactive States ═══ */
+.v3-btn, .v3-chip, .v3-card--hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v3-btn:hover { filter: brightness(1.12); transform: scale(1.02); }
+.v3-btn:active { transform: scale(0.97); filter: brightness(0.95); }
+.v3-btn:disabled { pointer-events: none; }
+
+.v3-card--hover:hover {
+  border-color: var(--stroke-2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.v3-chip:hover { background: var(--bg-glass-hover); }
+.v3-chip:active { transform: scale(0.96); }
+
+/* App loading pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
 /* Cinematic list-to-detail transition */
 .cinematic-enter {
   animation: cinematicIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);

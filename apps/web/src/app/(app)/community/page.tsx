@@ -147,7 +147,30 @@ export default function CommunityPage() {
       {renderFeed()}
 
       {loading && (
-        <p className="text-center text-[var(--text-3)] py-8">Načítám...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="skeleton-shimmer"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--stroke-1)',
+                borderRadius: 'var(--r-lg)',
+                padding: 16,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-3)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ width: 96, height: 12, borderRadius: 6, background: 'var(--bg-3)' }} />
+                  <div style={{ width: 64, height: 10, borderRadius: 6, background: 'var(--bg-3)' }} />
+                </div>
+              </div>
+              <div style={{ height: 192, borderRadius: 'var(--r-md)', background: 'var(--bg-3)', marginBottom: 12 }} />
+              <div style={{ width: '75%', height: 12, borderRadius: 6, background: 'var(--bg-3)' }} />
+            </div>
+          ))}
+        </div>
       )}
 
       {!loading && posts.length === 0 && (

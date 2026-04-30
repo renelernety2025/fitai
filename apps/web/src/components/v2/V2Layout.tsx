@@ -10,60 +10,79 @@ const PRIMARY_NAV: { href: string; label: string; tour?: string }[] = [
   { href: '/dashboard', label: 'Dnes' },
   { href: '/gym', label: 'Trénink', tour: 'nav-gym' },
   { href: '/vyziva', label: 'Výživa' },
-  { href: '/habity', label: 'Habity' },
-  { href: '/journal', label: 'Deník', tour: 'nav-journal' },
+  { href: '/community', label: 'Komunita' },
+  { href: '/ai-chat', label: 'AI Coach', tour: 'nav-ai-chat' },
   { href: '/progress', label: 'Pokrok' },
-  { href: '/ai-chat', label: 'AI Chat', tour: 'nav-ai-chat' },
-  { href: '/calendar', label: 'Kalendář' },
-  { href: '/season', label: 'Sezóna' },
-  { href: '/leagues', label: 'Ligy', tour: 'nav-leagues' },
 ];
 
-const MORE_NAV = [
-  { href: '/duels', label: 'Duely' },
-  { href: '/squads', label: 'Squad' },
-  { href: '/clips', label: 'Clips' },
-  { href: '/experiences', label: 'Zážitky' },
-  { href: '/trainers', label: 'Trenéři' },
-  { href: '/drops', label: 'Drops' },
-  { href: '/vip', label: 'VIP' },
-  { href: '/micro-workout', label: 'Micro' },
-  { href: '/sports', label: 'Sporty' },
-  { href: '/exercises', label: 'Cviky' },
-  { href: '/community', label: 'Komunita' },
-  { href: '/gym-buddy', label: 'Trenak' },
-  { href: '/messages', label: 'Zpravy' },
-  { href: '/records', label: 'Rekordy' },
-  { href: '/supplements', label: 'Supl.' },
-  { href: '/gear', label: 'Gear' },
-  { href: '/maintenance', label: 'Servis' },
-  { href: '/coaching-notes', label: 'AI Notes' },
-  { href: '/routine-builder', label: 'Rutina' },
-  { href: '/bundles', label: 'Balíčky' },
-  { href: '/courses', label: 'Kurzy' },
-  { href: '/wishlist', label: 'Wishlist' },
-  { href: '/streaks', label: 'Streaky' },
-  { href: '/playlists', label: 'Playlisty' },
-  { href: '/lekce', label: 'Lekce' },
-  { href: '/uspechy', label: 'Úspěchy' },
-  { href: '/progres-fotky', label: 'Fotky' },
-  { href: '/recepty', label: 'Recepty' },
-  { href: '/jidelnicek', label: 'Jídelníček' },
-  { href: '/export', label: 'Export' },
-  { href: '/wrapped', label: 'Wrapped' },
-  { href: '/skill-tree', label: 'Skills' },
-  { href: '/body-portfolio', label: 'Portfolio' },
-  { href: '/bloodwork', label: 'Krev' },
-  { href: '/rehab', label: 'Rehab' },
-  { href: '/marketplace', label: 'Market' },
-  { href: '/boss-fights', label: 'Aréna' },
-  { href: '/discover-weekly', label: 'Objev' },
-  { href: '/gym-finder', label: 'Gymy' },
-  { href: '/form-check', label: 'Form Check' },
-  { href: '/paid-challenges', label: 'Souteze' },
-  { href: '/creators', label: 'Creators' },
-  { href: '/creator-dashboard', label: 'Creator Hub' },
-  { href: '/enterprise', label: 'Business' },
+const MORE_CATEGORIES = [
+  {
+    title: 'Trénink',
+    items: [
+      { href: '/exercises', label: 'Cviky' },
+      { href: '/calendar', label: 'Kalendář' },
+      { href: '/records', label: 'Rekordy' },
+      { href: '/form-check', label: 'Form Check' },
+      { href: '/micro-workout', label: 'Micro' },
+      { href: '/doma', label: 'Doma' },
+      { href: '/workout-mode', label: 'Workout Mode' },
+    ],
+  },
+  {
+    title: 'Výživa & Zdraví',
+    items: [
+      { href: '/jidelnicek', label: 'Jídelníček' },
+      { href: '/recepty', label: 'Recepty' },
+      { href: '/supplements', label: 'Suplementy' },
+      { href: '/habity', label: 'Habity' },
+      { href: '/journal', label: 'Deník', tour: 'nav-journal' },
+      { href: '/bloodwork', label: 'Krevní testy' },
+    ],
+  },
+  {
+    title: 'Komunita',
+    items: [
+      { href: '/clips', label: 'Clips' },
+      { href: '/messages', label: 'Zprávy' },
+      { href: '/gym-buddy', label: 'Gym Buddy' },
+      { href: '/squads', label: 'Squady' },
+      { href: '/duels', label: 'Duely' },
+      { href: '/creators', label: 'Creators' },
+    ],
+  },
+  {
+    title: 'Gamifikace',
+    items: [
+      { href: '/leagues', label: 'Ligy', tour: 'nav-leagues' },
+      { href: '/season', label: 'Sezóna' },
+      { href: '/skill-tree', label: 'Skill Tree' },
+      { href: '/boss-fights', label: 'Boss Fights' },
+      { href: '/uspechy', label: 'Úspěchy' },
+      { href: '/wrapped', label: 'Wrapped' },
+    ],
+  },
+  {
+    title: 'Marketplace',
+    items: [
+      { href: '/marketplace', label: 'Marketplace' },
+      { href: '/trainers', label: 'Trenéři' },
+      { href: '/experiences', label: 'Zážitky' },
+      { href: '/courses', label: 'Kurzy' },
+      { href: '/bundles', label: 'Balíčky' },
+      { href: '/drops', label: 'Drops' },
+    ],
+  },
+  {
+    title: 'Nástroje',
+    items: [
+      { href: '/creator-dashboard', label: 'Creator Hub' },
+      { href: '/progres-fotky', label: 'Progress Fotky' },
+      { href: '/body-portfolio', label: 'Portfolio' },
+      { href: '/routine-builder', label: 'Rutiny' },
+      { href: '/export', label: 'Export' },
+      { href: '/settings', label: 'Nastavení' },
+    ],
+  },
 ];
 
 function MoreDropdown({ pathname }: { pathname: string }) {
@@ -80,37 +99,119 @@ function MoreDropdown({ pathname }: { pathname: string }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const isMoreActive = MORE_NAV.some((i) => pathname === i.href);
+  const isMoreActive = MORE_CATEGORIES.some((cat) =>
+    cat.items.some((i) => pathname === i.href)
+  );
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="transition hover:opacity-80"
+        className="flex items-center gap-1 transition hover:opacity-80"
         style={isMoreActive ? { color: 'var(--text-primary)' } : undefined}
       >
-        Vice...
+        Více
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full z-50 mt-2 grid max-h-[70vh] w-56 grid-cols-2 gap-1 overflow-y-auto rounded-lg p-2 shadow-xl backdrop-blur-md"
-          style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-strong)' }}
+          className="absolute right-0 top-full z-50 mt-2 w-[640px] overflow-y-auto rounded-xl p-5 shadow-2xl backdrop-blur-md"
+          style={{
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-strong)',
+            maxHeight: '75vh',
+          }}
         >
-          {MORE_NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="rounded px-2 py-1.5 text-[12px] transition"
-              style={{
-                color: pathname === item.href ? 'var(--text-primary)' : 'var(--text-secondary)',
-              }}
-            >
-              {item.label}
-            </Link>
-          ))}
+          <div className="grid grid-cols-3 gap-6">
+            {MORE_CATEGORIES.map((cat) => (
+              <div key={cat.title}>
+                <div
+                  className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {cat.title}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  {cat.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className="rounded px-2 py-1.5 text-[13px] transition hover:opacity-90"
+                      style={{
+                        color: pathname === item.href ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        backgroundColor: pathname === item.href ? 'var(--bg-tertiary)' : 'transparent',
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MobileMenuOverlay({ pathname, onClose }: { pathname: string; onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
+      <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid var(--border-strong)' }}>
+        <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+          Navigace
+        </span>
+        <button
+          onClick={onClose}
+          style={{ color: 'var(--text-muted)' }}
+          aria-label="Zavřít menu"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-6 p-6">
+        {MORE_CATEGORIES.map((cat) => (
+          <div key={cat.title}>
+            <div
+              className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {cat.title}
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {cat.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className="rounded px-2 py-2 text-[14px] transition"
+                  style={{
+                    color: pathname === item.href ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: pathname === item.href ? 'var(--bg-tertiary)' : 'transparent',
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -148,6 +249,23 @@ function ThemeToggle() {
 
 export function V2Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const mobileNavItems = [
+    { href: '/dashboard', label: 'Dnes', icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    )},
+    { href: '/gym', label: 'Trénink', icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="8.5" width="4" height="7" rx="1"/><rect x="18" y="8.5" width="4" height="7" rx="1"/><line x1="6.5" y1="12" x2="17.5" y2="12"/></svg>
+    )},
+    { href: '/community', label: 'Komunita', icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    )},
+    { href: '/ai-chat', label: 'AI Coach', icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    )},
+  ];
+
   return (
     <div className="min-h-screen antialiased" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       <div
@@ -178,14 +296,29 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
             <MoreDropdown pathname={pathname} />
           </div>
         </nav>
-        <div className="hidden items-center gap-4 sm:flex">
-          <ThemeToggle />
-          <Link href="/notifications" style={{ color: 'var(--text-muted)' }} className="transition hover:opacity-80" title="Notifikace">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </Link>
-          <Link href="/profile" style={{ color: 'var(--text-muted)' }} className="transition hover:opacity-80" title="Profil">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
-          </Link>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4">
+            <ThemeToggle />
+            <Link href="/notifications" style={{ color: 'var(--text-muted)' }} className="transition hover:opacity-80" title="Notifikace">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </Link>
+            <Link href="/profile" style={{ color: 'var(--text-muted)' }} className="transition hover:opacity-80" title="Profil">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+            </Link>
+          </div>
+          {/* Mobile hamburger */}
+          <button
+            className="sm:hidden transition"
+            style={{ color: 'var(--text-muted)' }}
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Otevřít menu"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 pb-32 sm:pb-32 pb-24">{children}</main>
@@ -201,25 +334,14 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
 
       <CommandPalette />
 
+      {/* Mobile full-screen menu overlay */}
+      {mobileMenuOpen && (
+        <MobileMenuOverlay pathname={pathname} onClose={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex justify-around border-t border-white/10 bg-black/95 backdrop-blur-md py-2 sm:hidden">
-        {[
-          { href: '/dashboard', label: 'Dnes', icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          )},
-          { href: '/gym', label: 'Trenink', icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="8.5" width="4" height="7" rx="1"/><rect x="18" y="8.5" width="4" height="7" rx="1"/><line x1="6.5" y1="12" x2="17.5" y2="12"/></svg>
-          )},
-          { href: '/ai-chat', label: 'Chat', icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          )},
-          { href: '/journal', label: 'Denik', icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          )},
-          { href: '/leagues', label: 'Ligy', icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
-          )},
-        ].map((item) => (
+        {mobileNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -229,6 +351,18 @@ export function V2Layout({ children }: { children: React.ReactNode }) {
             <span>{item.label}</span>
           </Link>
         ))}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-0.5 text-[10px] text-white/40"
+          aria-label="Více"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span>Více</span>
+        </button>
       </nav>
     </div>
   );

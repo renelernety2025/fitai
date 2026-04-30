@@ -8,9 +8,42 @@ import { getTrendingHashtags, getPostsByHashtag, getTrendingFeed } from '@/lib/a
 import type { TrendingHashtag } from '@/lib/api/hashtags';
 import type { PostData } from '@/lib/api/posts';
 
+function FeedSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="skeleton-shimmer"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--stroke-1)',
+            borderRadius: 'var(--r-lg)',
+            padding: 16,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-3)' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ width: 96, height: 12, borderRadius: 6, background: 'var(--bg-3)' }} />
+              <div style={{ width: 64, height: 10, borderRadius: 6, background: 'var(--bg-3)' }} />
+            </div>
+          </div>
+          <div style={{ height: 192, borderRadius: 'var(--r-md)', background: 'var(--bg-3)', marginBottom: 12 }} />
+          <div style={{ width: '75%', height: 12, borderRadius: 6, background: 'var(--bg-3)' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TrendingPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p style={{ color: 'var(--text-3)' }}>Načítám...</p></div>}>
+    <Suspense fallback={
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <FeedSkeleton />
+      </div>
+    }>
       <TrendingContent />
     </Suspense>
   );
@@ -60,9 +93,7 @@ function TrendingContent() {
           <SectionHeader title={`#${tagFilter}`} eyebrow={`${posts.length} postů`} />
         </div>
 
-        {loading && (
-          <p style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>Načítám...</p>
-        )}
+        {loading && <FeedSkeleton />}
         {!loading && posts.length === 0 && (
           <Card style={{ padding: 32, textAlign: 'center' }}>
             <p style={{ color: 'var(--text-2)' }}>Žádné posty s tímto hashtagem.</p>
@@ -125,9 +156,7 @@ function TrendingContent() {
       <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 16 }}>
         Hot Posts
       </p>
-      {loading && (
-        <p style={{ textAlign: 'center', color: 'var(--text-3)', padding: '32px 0' }}>Načítám...</p>
-      )}
+      {loading && <FeedSkeleton />}
       {!loading && posts.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center' }}>
           <p style={{ color: 'var(--text-2)' }}>Zatím žádné trending posty.</p>
