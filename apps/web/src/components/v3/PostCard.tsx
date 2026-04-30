@@ -92,7 +92,10 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
           onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-1.5 text-sm text-[var(--text-3)]"
         >
-          💬 {post.commentCount}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 1C4.134 1 1 3.582 1 6.75c0 1.754.936 3.326 2.41 4.376L3 15l3.16-1.688C6.72 13.44 7.35 13.5 8 13.5c3.866 0 7-2.582 7-5.75S11.866 1 8 1z"/>
+          </svg>
+          {post.commentCount}
         </button>
       </div>
 

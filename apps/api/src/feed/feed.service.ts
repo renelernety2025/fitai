@@ -49,8 +49,37 @@ export class FeedService {
 
     scored.sort((a, b) => b.feedScore - a.feedScore);
 
-    const startIndex = cursor ? scored.findIndex((p) => p.id === cursor) + 1 : 0;
-    return scored.slice(startIndex, startIndex + limit);
+    // Apply diversity boost — avoid same author in consecutive positions
+    const diversified: typeof scored = [];
+    const recentAuthors: string[] = [];
+    const recentTypes: string[] = [];
+    const remaining = [...scored];
+
+    while (remaining.length > 0 && diversified.length < limit) {
+      let bestIdx = 0;
+      let bestScore = -1;
+
+      for (let i = 0; i < Math.min(remaining.length, 10); i++) {
+        let boost = 1.0;
+        const last3Authors = recentAuthors.slice(-3);
+        if (!last3Authors.includes(remaining[i].userId)) boost *= 1.3;
+        const last2Types = recentTypes.slice(-2);
+        if (!last2Types.includes(remaining[i].type)) boost *= 1.1;
+
+        const adjusted = remaining[i].feedScore * boost;
+        if (adjusted > bestScore) {
+          bestScore = adjusted;
+          bestIdx = i;
+        }
+      }
+
+      const picked = remaining.splice(bestIdx, 1)[0];
+      recentAuthors.push(picked.userId);
+      recentTypes.push(picked.type);
+      diversified.push(picked);
+    }
+
+    return diversified;
   }
 
   async getFollowingFeed(userId: string, cursor?: string, limit = 20) {
@@ -59,7 +88,7 @@ export class FeedService {
     const posts = await this.prisma.post.findMany({
       where: {
         userId: { in: [userId, ...followedIds] },
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+        ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -108,7 +137,7 @@ export class FeedService {
     return this.prisma.post.findMany({
       where: {
         isPublic: true,
-        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+        ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       take: limit,
       orderBy: { createdAt: 'desc' },
