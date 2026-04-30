@@ -80,6 +80,9 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - ~~**Export dat**~~ ✅ — CSV/PDF workout history, journal, nutrition. /export page
 - **Dark/light mode** přepínač
 
+### Fitness Instagram ✅ Wave 1
+- ~~**Fitness Instagram Wave 1**~~ ✅ — Posts, algorithmic feed (For You/Following/Trending), hashtags, verified badges, promo cards. Wave 2 (monetization: paid posts, creator analytics, sponsored content) is next.
+
 ### Cross-industry ✅
 - ~~**FitAI Wrapped**~~ ✅ — Spotify-style monthly/yearly recap, AI summary, shareable
 - ~~**Ligy/Divize**~~ ✅ — Weekly XP competition, 5 tiers, promotion/relegation

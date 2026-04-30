@@ -8,6 +8,51 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Fitness Instagram Wave 1 — Posts, Feed, Hashtags, Badges, Promo] 2026-04-30
+
+### Post System
+- New Post model with photos (1-4), captions (2000 chars), auto-cards
+- S3 presigned upload for post photos
+- Like/unlike toggle, comments, delete own posts
+- Hashtag auto-parsing from captions (#BenchPR → clickable links)
+
+### Algorithmic "For You" Feed
+- 3 feed tabs: Pro tebe (algorithmic), Sledovani (chronological), Trending
+- Scoring: engagement * sourceWeight * timeDecay * diversityBoost
+- Background workers: engagement recompute (10 min), trending hashtags (hourly)
+- Fallback to chronological for users with < 5 follows
+
+### Hashtags + Trending
+- Hashtag model with auto-parse, upsert, postCount tracking
+- Trending computation: recent uses / log(total) penalizes evergreen tags
+- /trending page: top 3 hero, hashtag grid (24h/7d), hot posts
+- Autocomplete search while composing posts
+
+### Verified Badges
+- BadgeType enum: NONE / CREATOR (orange star) / VERIFIED (blue check)
+- Auto-set CREATOR on creator approval (won't downgrade VERIFIED)
+- Admin endpoints: verify/unverify user
+
+### Promo Cards
+- PromoCard model with audience targeting + priority
+- Feed injection at positions 5, 12, 20 (max 3 per load)
+- Dismiss tracking via Redis (30-day TTL)
+- 8 seed promo cards for feature discovery
+
+### Frontend
+- v3 Badge, PostComposer, PostCard components
+- Community page refactored with feed tabs + infinite scroll
+- Trending page with hashtag grid + hot posts
+- Mobile CommunityScreen with feed tabs
+
+### Backend
+- 4 new NestJS modules: posts (8 endpoints), hashtags (4), feed (3), promo (5)
+- 8 new Prisma models, 5 new enums
+- User.badgeType + badgeVerifiedAt fields
+- 2 cron jobs (engagement scoring, trending computation)
+
+---
+
 ## [Social Platform — Stories, Reactions, Buddy Finder, DMs, Props, Flash] 2026-04-22
 
 ### Workout Stories (Instagram)

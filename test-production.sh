@@ -216,14 +216,31 @@ pages=(
   "/messages"
   "/profile"
   "/notifications"
+  # Fitness Instagram Wave 1
+  "/community"
+  "/trending"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"
 done
 
-# 6. Routing sanity (API vs page collision)
+# === Fitness Instagram Wave 1 ===
 echo ""
-echo "$(yellow '[5] Routing sanity')"
+echo "$(yellow '[6] Fitness Instagram Wave 1')"
+# Feed
+check "GET /api/feed/for-you" "200" "$(http_status "$ALB/api/feed/for-you" "$AUTH")"
+check "GET /api/feed/following" "200" "$(http_status "$ALB/api/feed/following" "$AUTH")"
+check "GET /api/feed/trending" "200" "$(http_status "$ALB/api/feed/trending" "$AUTH")"
+# Hashtags
+check "GET /api/hashtags/trending" "200" "$(http_status "$ALB/api/hashtags/trending" "$AUTH")"
+check "GET /api/hashtags/search?q=test" "200" "$(http_status "$ALB/api/hashtags/search?q=test" "$AUTH")"
+check "GET /api/hashtags/suggested" "200" "$(http_status "$ALB/api/hashtags/suggested" "$AUTH")"
+# Promo
+check "GET /api/promo/for-feed" "200" "$(http_status "$ALB/api/promo/for-feed" "$AUTH")"
+
+# 7. Routing sanity (API vs page collision)
+echo ""
+echo "$(yellow '[7] Routing sanity')"
 API_EX=$(curl -s "$ALB/api/exercises" -H "$AUTH" -o /dev/null -w "%{content_type}")
 check_contains "/api/exercises returns JSON" "application/json" "$API_EX"
 
