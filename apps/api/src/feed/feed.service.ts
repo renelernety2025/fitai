@@ -136,26 +136,42 @@ export class FeedService {
     });
   }
 
-  private async isSubscribed(userId: string, creatorId: string): Promise<boolean> {
-    const sub = await this.prisma.creatorSubscription.findUnique({
-      where: { subscriberId_creatorId: { subscriberId: userId, creatorId } },
-    });
-    return !!sub?.isActive;
-  }
-
   private async blurSubscriberOnlyPosts(posts: any[], userId: string) {
-    const results = [];
-    for (const post of posts) {
-      if (post.isSubscriberOnly && post.userId !== userId) {
-        const subscribed = await this.isSubscribed(userId, post.userId);
-        if (!subscribed) {
-          results.push({ ...post, caption: null, photos: [], cardData: null, isBlurred: true });
-          continue;
-        }
-      }
-      results.push({ ...post, isBlurred: false });
+    // Collect all creator IDs that have subscriber-only posts
+    const subscriberOnlyCreatorIds = [
+      ...new Set(
+        posts
+          .filter((p) => p.isSubscriberOnly && p.userId !== userId)
+          .map((p) => p.userId)
+      ),
+    ];
+
+    // Single batch query instead of N+1
+    let subscribedSet = new Set<string>();
+    if (subscriberOnlyCreatorIds.length > 0) {
+      const activeSubs = await this.prisma.creatorSubscription.findMany({
+        where: {
+          subscriberId: userId,
+          creatorId: { in: subscriberOnlyCreatorIds },
+          isActive: true,
+        },
+        select: { creatorId: true },
+      });
+      subscribedSet = new Set(activeSubs.map((s) => s.creatorId));
     }
-    return results;
+
+    return posts.map((post) => {
+      if (post.isSubscriberOnly && post.userId !== userId && !subscribedSet.has(post.userId)) {
+        return {
+          ...post,
+          caption: null,
+          photos: [],
+          cardData: null,
+          isBlurred: true,
+        };
+      }
+      return { ...post, isBlurred: false };
+    });
   }
 
   private async getChronologicalPublic(userId: string, cursor?: string, limit = 20) {
