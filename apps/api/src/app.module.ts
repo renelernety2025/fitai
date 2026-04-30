@@ -85,6 +85,7 @@ import { PostsModule } from './posts/posts.module';
 import { HashtagsModule } from './hashtags/hashtags.module';
 import { FeedModule } from './feed/feed.module';
 import { PromoModule } from './promo/promo.module';
+import { NotifyModule } from './notify/notify.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -132,6 +133,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PrismaModule,
     CacheModule,
     MetricsModule,
+    NotifyModule,
     HealthModule,
     AuthModule,
     UsersModule,
