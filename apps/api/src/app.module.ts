@@ -83,6 +83,7 @@ import { CoursesModule } from './courses/courses.module';
 import { EnterpriseModule } from './enterprise/enterprise.module';
 import { PostsModule } from './posts/posts.module';
 import { HashtagsModule } from './hashtags/hashtags.module';
+import { FeedModule } from './feed/feed.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 /**
@@ -206,6 +207,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EnterpriseModule,
     PostsModule,
     HashtagsModule,
+    FeedModule,
   ],
   providers: [
     {
