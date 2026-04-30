@@ -150,6 +150,31 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Acquire a distributed lock via Redis SET NX.
+   * Returns true if this task won the lock, false if another task holds it.
+   * On Redis failure returns false (skip, don't block).
+   */
+  async acquireLock(key: string, ttlSeconds: number): Promise<boolean> {
+    if (!this.client || !this.ready) return false;
+    try {
+      const result = await this.client.set(`lock:${key}`, '1', 'EX', ttlSeconds, 'NX');
+      return result === 'OK';
+    } catch {
+      return false;
+    }
+  }
+
+  /** Release a distributed lock. Silently ignores errors. */
+  async releaseLock(key: string): Promise<void> {
+    if (!this.client || !this.ready) return;
+    try {
+      await this.client.del(`lock:${key}`);
+    } catch {
+      // ignore
+    }
+  }
+
   /** Basic health info for /health endpoint or metrics. */
   async stats(): Promise<{ connected: boolean; hits?: number; misses?: number }> {
     return { connected: this.ready };

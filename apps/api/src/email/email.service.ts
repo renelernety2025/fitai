@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import {
   welcomeTemplate,
   passwordResetTemplate,
@@ -15,7 +16,10 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private resend: any = null;
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {
     const key = process.env.RESEND_API_KEY;
     if (key) {
       try {
@@ -142,27 +146,33 @@ export class EmailService {
   /** Friday 18:00 — send weekly digest to all users. */
   @Cron('0 18 * * 5')
   async handleWeeklyDigest(): Promise<void> {
-    this.logger.log('[EMAIL] Weekly digest cron triggered');
-    // TODO: Add full pagination for large user bases
-    const users = await this.prisma.user.findMany({
-      select: {
-        email: true,
-        name: true,
-        id: true,
-        progress: {
-          select: { currentStreak: true, totalXP: true },
+    const acquired = await this.cache.acquireLock('cron:handleWeeklyDigest', 82800);
+    if (!acquired) return;
+    try {
+      this.logger.log('[EMAIL] Weekly digest cron triggered');
+      // TODO: Add full pagination for large user bases
+      const users = await this.prisma.user.findMany({
+        select: {
+          email: true,
+          name: true,
+          id: true,
+          progress: {
+            select: { currentStreak: true, totalXP: true },
+          },
         },
-      },
-      take: 100,
-    });
-    for (const u of users) {
-      await this.sendWeeklyDigest(u.email, u.name, {
-        streak: u.progress?.currentStreak ?? 0,
-        xp: u.progress?.totalXP ?? 0,
+        take: 100,
       });
+      for (const u of users) {
+        await this.sendWeeklyDigest(u.email, u.name, {
+          streak: u.progress?.currentStreak ?? 0,
+          xp: u.progress?.totalXP ?? 0,
+        });
+      }
+      this.logger.log(
+        `[EMAIL] Weekly digest sent to ${users.length} users`,
+      );
+    } finally {
+      await this.cache.releaseLock('cron:handleWeeklyDigest');
     }
-    this.logger.log(
-      `[EMAIL] Weekly digest sent to ${users.length} users`,
-    );
   }
 }

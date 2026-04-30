@@ -1,13 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { LeagueTier } from '@prisma/client';
 
 @Injectable()
 export class LeaguesService {
   private readonly logger = new Logger(LeaguesService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   /** Monday 00:00 UTC of the current week */
   getCurrentWeekStart(): Date {
@@ -92,8 +96,16 @@ export class LeaguesService {
 
   @Cron('0 0 * * 1') // Every Monday 00:00
   async handleWeekEnd() {
-    this.logger.log('Processing league week end...');
-    await this.processWeekEnd().catch(e => this.logger.error(`League week end failed: ${e.message}`));
+    const acquired = await this.cache.acquireLock('cron:handleWeekEnd', 82800);
+    if (!acquired) return;
+    try {
+      this.logger.log('Processing league week end...');
+      await this.processWeekEnd();
+    } catch (e: any) {
+      this.logger.error(`League week end failed: ${e.message}`);
+    } finally {
+      await this.cache.releaseLock('cron:handleWeekEnd');
+    }
   }
 
   async processWeekEnd() {
