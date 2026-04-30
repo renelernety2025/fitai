@@ -156,6 +156,49 @@ export class SmartNotificationsService {
     });
   }
 
+  async getSocialNotifications(userId: string, cursor?: string, limit = 20) {
+    return this.prisma.socialNotification.findMany({
+      where: {
+        userId,
+        ...(cursor && !isNaN(new Date(cursor).getTime())
+          ? { createdAt: { lt: new Date(cursor) } }
+          : {}),
+      },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        actor: { select: { id: true, name: true, avatarUrl: true, badgeType: true } },
+      },
+    });
+  }
+
+  async getUnreadCount(userId: string) {
+    const count = await this.prisma.socialNotification.count({
+      where: { userId, isRead: false },
+    });
+    return { unreadCount: count };
+  }
+
+  async markAsRead(notificationId: string, userId: string) {
+    const notif = await this.prisma.socialNotification.findUnique({
+      where: { id: notificationId },
+    });
+    if (!notif || notif.userId !== userId) return { success: false };
+    await this.prisma.socialNotification.update({
+      where: { id: notificationId },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
+
+  async markAllAsRead(userId: string) {
+    await this.prisma.socialNotification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+    return { success: true };
+  }
+
   private async getOptimalHour(
     userId: string,
   ): Promise<number | null> {

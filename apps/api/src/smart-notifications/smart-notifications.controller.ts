@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Body,
+  Param,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -27,5 +29,29 @@ export class SmartNotificationsController {
     @Body() dto: SavePreferencesDto,
   ) {
     return this.service.savePreferences(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('social')
+  async getSocial(@Request() req: any, @Query('cursor') cursor?: string) {
+    return this.service.getSocialNotifications(req.user.id, cursor);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('unread-count')
+  async getUnreadCount(@Request() req: any) {
+    return this.service.getUnreadCount(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('read-all')
+  async markAllAsRead(@Request() req: any) {
+    return this.service.markAllAsRead(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/read')
+  async markAsRead(@Param('id') id: string, @Request() req: any) {
+    return this.service.markAsRead(id, req.user.id);
   }
 }
