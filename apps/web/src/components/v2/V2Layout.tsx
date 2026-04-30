@@ -62,6 +62,7 @@ const MORE_NAV = [
   { href: '/form-check', label: 'Form Check' },
   { href: '/paid-challenges', label: 'Souteze' },
   { href: '/creators', label: 'Creators' },
+  { href: '/creator-dashboard', label: 'Creator Hub' },
   { href: '/enterprise', label: 'Business' },
 ];
 
