@@ -516,3 +516,47 @@ export function analyzeForm(data: { s3Key: string; exerciseId: string }) {
   });
 }
 export function getFormCheckHistory() { return request<any[]>('/form-check/history'); }
+
+// ── Posts ──
+export function getUploadUrls(count: number, contentType = 'image/jpeg') {
+  return request<any>('/posts/upload-url', { method: 'POST', body: JSON.stringify({ count, contentType }) });
+}
+export function createPost(data: { caption?: string; type: string; photoKeys?: string[]; cardData?: any }) {
+  return request<any>('/posts', { method: 'POST', body: JSON.stringify(data) });
+}
+export function getPost(id: string) { return request<any>(`/posts/${id}`); }
+export function deletePost(id: string) { return request<any>(`/posts/${id}`, { method: 'DELETE' }); }
+export function togglePostLike(id: string) { return request<any>(`/posts/${id}/like`, { method: 'POST' }); }
+export function addPostComment(id: string, content: string) {
+  return request<any>(`/posts/${id}/comment`, { method: 'POST', body: JSON.stringify({ content }) });
+}
+export function getUserPosts(userId: string, cursor?: string) {
+  const params = cursor ? `?cursor=${cursor}` : '';
+  return request<any>(`/posts/user/${userId}${params}`);
+}
+
+// ── Feed ──
+export function getForYouFeed(cursor?: string) {
+  const params = cursor ? `?cursor=${cursor}` : '';
+  return request<any>(`/feed/for-you${params}`);
+}
+export function getFollowingFeed(cursor?: string) {
+  const params = cursor ? `?cursor=${cursor}` : '';
+  return request<any>(`/feed/following${params}`);
+}
+export function getTrendingFeed(cursor?: string) {
+  const params = cursor ? `?cursor=${cursor}` : '';
+  return request<any>(`/feed/trending${params}`);
+}
+
+// ── Hashtags ──
+export function getTrendingHashtags(period = 'H24') {
+  return request<any>(`/hashtags/trending?period=${period}`);
+}
+export function searchHashtags(query: string) {
+  return request<any>(`/hashtags/search?q=${encodeURIComponent(query)}`);
+}
+
+// ── Promo ──
+export function getPromoCards() { return request<any>('/promo/for-feed'); }
+export function dismissPromo(id: string) { return request<any>(`/promo/${id}/dismiss`, { method: 'POST' }); }
