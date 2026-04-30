@@ -12,3 +12,5 @@ export * from './cross-industry';
 export * from './marketplace';
 export * from './user';
 export * from './admin';
+export * from './posts';
+export * from './hashtags';

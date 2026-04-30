@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { exercises, bodyweightExercises, equipmentMap } from './exercises-data';
+import { seedPromoCards } from './promo-seed';
 
 const prisma = new PrismaClient();
 
@@ -303,6 +304,8 @@ async function main() {
       create: term,
     });
   }
+
+  await seedPromoCards(prisma);
 
   console.log('Seed complete:', {
     users: [admin.email, user.email],
