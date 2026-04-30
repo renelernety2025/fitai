@@ -1,7 +1,13 @@
 import { Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import type { ThrottlerStorage } from '@nestjs/throttler';
-import type { ThrottlerStorageRecord } from '@nestjs/throttler';
+
+interface ThrottlerStorageRecord {
+  totalHits: number;
+  timeToExpire: number;
+  isBlocked: boolean;
+  timeToBlockExpire: number;
+}
 
 /**
  * Redis-backed ThrottlerStorage implementation.
