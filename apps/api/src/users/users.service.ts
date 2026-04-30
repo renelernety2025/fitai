@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { S3Client, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserLevel } from '@prisma/client';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -14,7 +15,14 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true, email: true, name: true, avatarUrl: true, bio: true,
+        level: true, isAdmin: true, badgeType: true, badgeVerifiedAt: true,
+        createdAt: true, updatedAt: true,
+      },
+    });
   }
 
   async findByEmail(email: string) {
@@ -68,6 +76,32 @@ export class UsersService {
   }
 
   async deleteAccount(userId: string) {
+    // 1. Collect all S3 keys before DB deletion
+    const [bodyPhotos, postPhotos, journalPhotos] = await Promise.all([
+      this.prisma.bodyPhoto.findMany({ where: { userId }, select: { s3Key: true } }),
+      (this.prisma as any).postPhoto.findMany({ where: { post: { userId } }, select: { s3Key: true } }),
+      this.prisma.journalPhoto.findMany({ where: { journalEntry: { userId } }, select: { s3Key: true } }),
+    ]);
+
+    const allS3Keys = [
+      ...bodyPhotos.map((p: any) => p.s3Key),
+      ...postPhotos.map((p: any) => p.s3Key),
+      ...journalPhotos.map((p: any) => p.s3Key),
+    ].filter(Boolean) as string[];
+
+    if (allS3Keys.length > 0) {
+      const s3 = new S3Client({ region: process.env.AWS_REGION || 'eu-west-1' });
+      const bucket = process.env.S3_BUCKET || 'fitai-assets-production';
+      for (let i = 0; i < allS3Keys.length; i += 1000) {
+        const batch = allS3Keys.slice(i, i + 1000);
+        await s3.send(new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: batch.map(Key => ({ Key })) },
+        })).catch((e: any) => console.error('S3 cleanup error:', e.message));
+      }
+    }
+
+    // 2. Delete all DB records in dependency order (children before parents)
     await this.prisma.$transaction([
       // New cross-industry models (Phase 1-5)
       (this.prisma as any).sectorTime.deleteMany({
@@ -124,6 +158,22 @@ export class UsersService {
       (this.prisma as any).vIPMembership.deleteMany({ where: { userId } }),
       (this.prisma as any).userTitle.deleteMany({ where: { userId } }),
       (this.prisma as any).userBrand.deleteMany({ where: { userId } }),
+      // Creator economy models (Wave 1+2) — children before parents
+      (this.prisma as any).socialNotification.deleteMany({
+        where: { OR: [{ userId }, { actorId: userId }] },
+      }),
+      (this.prisma as any).postLike.deleteMany({ where: { userId } }),
+      (this.prisma as any).postComment.deleteMany({ where: { userId } }),
+      (this.prisma as any).postHashtag.deleteMany({ where: { post: { userId } } }),
+      (this.prisma as any).postPhoto.deleteMany({ where: { post: { userId } } }),
+      (this.prisma as any).post.deleteMany({ where: { userId } }),
+      (this.prisma as any).creatorTip.deleteMany({
+        where: { OR: [{ fromUserId: userId }, { toCreatorId: userId }] },
+      }),
+      (this.prisma as any).creatorSubscription.deleteMany({
+        where: { OR: [{ subscriberId: userId }, { creatorId: userId }] },
+      }),
+      (this.prisma as any).creatorProfile.deleteMany({ where: { userId } }),
       // Original models
       this.prisma.journalPhoto.deleteMany({
         where: { journalEntry: { userId } },

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -279,7 +279,7 @@ Buď respektující, motivační, konkrétní. Žádné medical advice. Nevypisu
       return analysis;
     } catch (e: any) {
       this.logger.error(`Claude Vision analysis failed: ${e.message}`);
-      throw e;
+      throw new InternalServerErrorException('Photo analysis failed');
     }
   }
 
