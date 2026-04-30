@@ -219,14 +219,31 @@ pages=(
   # Fitness Instagram Wave 1
   "/community"
   "/trending"
+  # Fitness Instagram Wave 2
+  "/creator-dashboard"
 )
 for page in "${pages[@]}"; do
   check "GET $page" "200" "$(http_status "$ALB$page")"
 done
 
+# === Fitness Instagram Wave 2 ===
+echo ""
+echo "$(yellow '[6] Fitness Instagram Wave 2')"
+# Creator Economy
+check "GET /api/creator-economy/subscriptions" "200" "$(http_status "$ALB/api/creator-economy/subscriptions" "$AUTH")"
+check "GET /api/creator-economy/earnings" "200" "$(http_status "$ALB/api/creator-economy/earnings" "$AUTH")"
+# Smart Notifications
+check "GET /api/smart-notifications/social" "200" "$(http_status "$ALB/api/smart-notifications/social" "$AUTH")"
+check "GET /api/smart-notifications/unread-count" "200" "$(http_status "$ALB/api/smart-notifications/unread-count" "$AUTH")"
+# Creator Dashboard
+check "GET /api/creator-dashboard/stats" "200" "$(http_status "$ALB/api/creator-dashboard/stats" "$AUTH")"
+check "GET /api/creator-dashboard/subscriber-growth" "200" "$(http_status "$ALB/api/creator-dashboard/subscriber-growth" "$AUTH")"
+check "GET /api/creator-dashboard/earnings" "200" "$(http_status "$ALB/api/creator-dashboard/earnings" "$AUTH")"
+check "GET /api/creator-dashboard/post-performance" "200" "$(http_status "$ALB/api/creator-dashboard/post-performance" "$AUTH")"
+
 # === Fitness Instagram Wave 1 ===
 echo ""
-echo "$(yellow '[6] Fitness Instagram Wave 1')"
+echo "$(yellow '[7] Fitness Instagram Wave 1')"
 # Feed
 check "GET /api/feed/for-you" "200" "$(http_status "$ALB/api/feed/for-you" "$AUTH")"
 check "GET /api/feed/following" "200" "$(http_status "$ALB/api/feed/following" "$AUTH")"
@@ -238,9 +255,9 @@ check "GET /api/hashtags/suggested" "200" "$(http_status "$ALB/api/hashtags/sugg
 # Promo
 check "GET /api/promo/for-feed" "200" "$(http_status "$ALB/api/promo/for-feed" "$AUTH")"
 
-# 7. Routing sanity (API vs page collision)
+# 8. Routing sanity (API vs page collision)
 echo ""
-echo "$(yellow '[7] Routing sanity')"
+echo "$(yellow '[8] Routing sanity')"
 API_EX=$(curl -s "$ALB/api/exercises" -H "$AUTH" -o /dev/null -w "%{content_type}")
 check_contains "/api/exercises returns JSON" "application/json" "$API_EX"
 

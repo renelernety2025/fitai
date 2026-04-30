@@ -1,6 +1,6 @@
 # FitAI — Module Index
 
-> 80 modulů · 357 endpointů · 107 DB modelů · 87 web stránek · 47 mobile screens
+> 83 modulů · 381 endpointů · 110 DB modelů · 88 web stránek · 47 mobile screens
 > Aktualizováno: 2026-04-30
 
 ## Jak používat
@@ -20,7 +20,7 @@ cat apps/web/src/app/\(app\)/<page>/page.tsx
 grep -A2 "export function" apps/web/src/lib/api/<domain>.ts | grep <module>
 ```
 
-## Backend moduly (80)
+## Backend moduly (83)
 
 ### Auth & Users
 | Modul | Prefix | EP | Popis | Web | Mobile |
@@ -77,6 +77,9 @@ grep -A2 "export function" apps/web/src/lib/api/<domain>.ts | grep <module>
 | hashtags | /hashtags | 4 | Trending hashtags, search, discovery | trending | — |
 | feed | /feed | 3 | Algorithmic For You, Following, Trending feeds | community | CommunityScreen |
 | promo | /promo | 5 | Internal promo cards for feed | community | — |
+| creator-economy | /creator-economy | 7 | XP subscriptions, tips, earnings | creator-dashboard | — |
+| notify | — | 0 | Global notification creation service | — | — |
+| creator-dashboard | /creator-dashboard | 13 | Creator stats, analytics, content tools | creator-dashboard | — |
 
 ### Gamification
 | Modul | Prefix | EP | Popis | Web | Mobile |
