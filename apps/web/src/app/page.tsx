@@ -16,7 +16,13 @@ const METRICS: { value: string; label: string }[] = [
   { value: '115', label: 'Tests passing' },
 ];
 
-const NAV_LINKS = ['Train', 'Coaches', 'Programs', 'Community', 'Pricing'];
+const NAV_LINKS = [
+  { label: 'Train', href: '/exercises' },
+  { label: 'Coaches', href: '/trainers' },
+  { label: 'Programs', href: '/courses' },
+  { label: 'Community', href: '/community' },
+  { label: 'Pricing', href: '/pricing' },
+];
 
 export default function LandingPage() {
   return (
@@ -37,7 +43,7 @@ export default function LandingPage() {
           <Logo size={20} />
           <div style={{ display: 'flex', gap: 36, fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
             {NAV_LINKS.map((l) => (
-              <span key={l} style={{ cursor: 'pointer' }}>{l}</span>
+              <Link key={l.label} href={l.href} style={{ color: 'var(--text-2)', textDecoration: 'none' }}>{l.label}</Link>
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
