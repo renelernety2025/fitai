@@ -2363,6 +2363,7 @@ model Post {
   @@index([userId, createdAt])
   @@index([engagementScore])
   @@index([createdAt])
+  @@index([isPublic, isScheduled, createdAt])
 }
 
 model PostPhoto {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedis } from './throttler/throttler-storage-redis';
 import { UserIdThrottlerGuard } from './throttler/user-id-throttler.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { SentryModule } from '@sentry/nestjs/setup';
@@ -126,11 +127,14 @@ import { ScheduleModule } from '@nestjs/schedule';
         },
       },
     }),
-    ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 10 },
-      { name: 'medium', ttl: 60_000, limit: 200 },
-      { name: 'long', ttl: 3_600_000, limit: 3000 },
-    ]),
+    ThrottlerModule.forRoot({
+      storage: new ThrottlerStorageRedis(),
+      throttlers: [
+        { name: 'short', ttl: 1000, limit: 10 },
+        { name: 'medium', ttl: 60_000, limit: 200 },
+        { name: 'long', ttl: 3_600_000, limit: 3000 },
+      ],
+    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     CacheModule,
