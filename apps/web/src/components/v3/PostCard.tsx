@@ -65,7 +65,7 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
                 className="text-xs font-medium px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--bg-3)', color: 'var(--text-3)' }}
               >
-                📌 Pinned
+                📌 Připnuto
               </span>
             )}
           </div>
@@ -87,7 +87,7 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
             <div className="relative aspect-square bg-[var(--bg-1)]">
               <img
                 src={`${process.env.NEXT_PUBLIC_CDN_URL || ''}/${post.photos[photoIndex].s3Key}`}
-                alt=""
+                alt={post.caption ? post.caption.slice(0, 100) : `Photo by ${post.user.name}`}
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
@@ -97,6 +97,8 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
                     <button
                       key={i}
                       onClick={() => setPhotoIndex(i)}
+                      aria-label={`Foto ${i + 1} z ${post.photos.length}`}
+                      aria-current={i === photoIndex ? 'true' : undefined}
                       className={`w-2 h-2 rounded-full ${i === photoIndex ? 'bg-white' : 'bg-white/40'}`}
                     />
                   ))}
@@ -114,17 +116,24 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
       )}
 
       <div className="flex items-center gap-4 px-4 py-3">
-        <button onClick={handleLike} className="flex items-center gap-1.5 text-sm">
-          <span style={{ color: liked ? '#E85D2C' : 'var(--text-3)' }}>
+        <button
+          onClick={handleLike}
+          aria-label={liked ? 'Odebrat like' : 'Dát like'}
+          aria-pressed={liked}
+          className="flex items-center gap-1.5 text-sm"
+        >
+          <span style={{ color: liked ? '#E85D2C' : 'var(--text-3)' }} aria-hidden="true">
             {liked ? '♥' : '♡'}
           </span>
           <span className="text-[var(--text-3)]">{likeCount}</span>
         </button>
         <button
           onClick={() => setShowComments(!showComments)}
+          aria-label={showComments ? 'Skrýt komentáře' : 'Zobrazit komentáře'}
+          aria-expanded={showComments}
           className="flex items-center gap-1.5 text-sm text-[var(--text-3)]"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
             <path d="M8 1C4.134 1 1 3.582 1 6.75c0 1.754.936 3.326 2.41 4.376L3 15l3.16-1.688C6.72 13.44 7.35 13.5 8 13.5c3.866 0 7-2.582 7-5.75S11.866 1 8 1z"/>
           </svg>
           {post.commentCount}
@@ -139,9 +148,14 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleComment()}
               placeholder="Napsat komentář..."
+              aria-label="Text komentáře"
               className="flex-1 bg-[var(--bg-1)] rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none"
             />
-            <button onClick={handleComment} className="text-sm text-[var(--accent)]">
+            <button
+              onClick={handleComment}
+              aria-label="Odeslat komentář"
+              className="text-sm text-[var(--accent)]"
+            >
               Odeslat
             </button>
           </div>

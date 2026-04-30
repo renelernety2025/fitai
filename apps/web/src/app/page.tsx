@@ -10,10 +10,10 @@ const DISCIPLINES = [
 ];
 
 const METRICS: { value: string; label: string }[] = [
-  { value: '60+', label: 'Exercises' },
-  { value: '42', label: 'Pages' },
-  { value: '250+', label: 'API endpoints' },
-  { value: '115', label: 'Tests passing' },
+  { value: '60+', label: 'Cviků v knihovně' },
+  { value: 'AI', label: 'Osobní trenér' },
+  { value: '100%', label: 'Kompletní výživa' },
+  { value: '∞', label: 'Reálný pokrok' },
 ];
 
 const NAV_LINKS = [

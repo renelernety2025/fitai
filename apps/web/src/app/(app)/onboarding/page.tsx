@@ -10,7 +10,7 @@ import {
   type OnboardingData,
 } from './steps';
 
-const STEP_LABELS = ['Welcome', 'Your goal', 'Experience', 'Schedule', 'All set'];
+const STEP_LABELS = ['Vítej', 'Tvůj cíl', 'Zkušenosti', 'Plán', 'Hotovo'];
 const TOTAL = STEP_LABELS.length;
 
 export default function OnboardingPage() {
@@ -18,7 +18,8 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState<OnboardingData>({
-    name: '', age: '', goal: null, experience: null,
+    name: '', age: '', weightKg: '', heightCm: '',
+    goal: null, experience: null,
     activityLevel: 3, days: Array(7).fill(false),
     preferredTime: null, duration: null,
   });
@@ -28,7 +29,12 @@ export default function OnboardingPage() {
   }
 
   function canContinue(): boolean {
-    if (step === 1) return data.name.trim().length > 0 && data.age.trim().length > 0;
+    if (step === 1) return (
+      data.name.trim().length > 0 &&
+      data.age.trim().length > 0 &&
+      data.weightKg.trim().length > 0 &&
+      data.heightCm.trim().length > 0
+    );
     if (step === 2) return data.goal !== null;
     if (step === 3) return data.experience !== null;
     if (step === 4) return data.days.some(Boolean) && data.preferredTime !== null && data.duration !== null;
@@ -39,7 +45,9 @@ export default function OnboardingPage() {
     setSaving(true);
     try {
       const age = parseInt(data.age) || 25;
-      await saveOnboardingMeasurements({ age, weightKg: 75, heightCm: 175 });
+      const weightKg = parseFloat(data.weightKg) || 75;
+      const heightCm = parseFloat(data.heightCm) || 175;
+      await saveOnboardingMeasurements({ age, weightKg, heightCm });
       await completeOnboarding();
       router.push('/dashboard');
     } catch {
@@ -82,10 +90,10 @@ export default function OnboardingPage() {
           })}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Step {step} of {TOTAL}</span>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Krok {step} z {TOTAL}</span>
           <button onClick={() => router.push('/dashboard')}
             style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-            Skip
+            Přeskočit
           </button>
         </div>
       </header>
@@ -106,11 +114,11 @@ export default function OnboardingPage() {
       }}>
         {step > 1 && (
           <Button variant="ghost" size="lg" onClick={() => setStep(step - 1)}>
-            &larr; Back
+            &larr; Zpět
           </Button>
         )}
         <Button variant="accent" size="lg" disabled={!canContinue() || saving} onClick={handleNext}>
-          {step === TOTAL ? (saving ? 'Saving...' : 'Start training \u2192') : 'Continue \u2192'}
+          {step === TOTAL ? (saving ? 'Ukládám...' : 'Začít trénovat \u2192') : 'Pokračovat \u2192'}
         </Button>
       </footer>
     </div>

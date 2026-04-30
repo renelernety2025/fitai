@@ -41,8 +41,9 @@ export function SubscriberBlur({ creatorId, priceXP, onSubscribed }: SubscriberB
       <div
         className="w-12 h-12 rounded-full flex items-center justify-center"
         style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)' }}
+        aria-hidden="true"
       >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent)" aria-hidden="true">
           <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
         </svg>
       </div>
@@ -69,6 +70,7 @@ export function SubscriberBlur({ creatorId, priceXP, onSubscribed }: SubscriberB
           size="sm"
           onClick={() => setConfirming(true)}
           disabled={!canAfford}
+          aria-label={`Odebírat obsah za ${priceXP.toLocaleString('cs-CZ')} XP měsíčně`}
         >
           Odebírat
         </Button>
@@ -78,10 +80,10 @@ export function SubscriberBlur({ creatorId, priceXP, onSubscribed }: SubscriberB
             Odebírat za {priceXP.toLocaleString('cs-CZ')} XP/měsíc?
           </p>
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={loading}>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} disabled={loading} aria-label="Zrušit předplatné">
               Zrušit
             </Button>
-            <Button variant="accent" size="sm" onClick={handleConfirm} disabled={loading}>
+            <Button variant="accent" size="sm" onClick={handleConfirm} disabled={loading} aria-label="Potvrdit předplatné">
               {loading ? 'Aktivuji...' : 'Potvrdit'}
             </Button>
           </div>
