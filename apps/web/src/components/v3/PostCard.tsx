@@ -3,11 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Card, Avatar, Badge } from '@/components/v3';
+import { SubscriberBlur } from './SubscriberBlur';
 import { togglePostLike, addPostComment } from '@/lib/api';
 import type { PostData } from '@/lib/api/posts';
 
+type PostCardData = PostData & {
+  isBlurred?: boolean;
+  isPinned?: boolean;
+  isSubscriberOnly?: boolean;
+  user: PostData['user'] & { subscriptionPriceXP?: number };
+};
+
 interface PostCardProps {
-  post: PostData;
+  post: PostCardData;
   onUpdate?: () => void;
 }
 
@@ -50,35 +58,58 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
             </Link>
             <Badge type={post.user.badgeType} size={14} />
           </div>
-          <span className="text-xs text-[var(--text-3)]">{timeAgo}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-[var(--text-3)]">{timeAgo}</span>
+            {post.isPinned && (
+              <span
+                className="text-xs font-medium px-1.5 py-0.5 rounded"
+                style={{ background: 'var(--bg-3)', color: 'var(--text-3)' }}
+              >
+                📌 Pinned
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {post.photos.length > 0 && (
+      {post.isBlurred ? (
         <div className="relative aspect-square bg-[var(--bg-1)]">
-          <img
-            src={`${process.env.NEXT_PUBLIC_CDN_URL || ''}/${post.photos[photoIndex].s3Key}`}
-            alt=""
-            className="w-full h-full object-cover"
+          <div className="w-full h-full" style={{ filter: 'blur(24px)', opacity: 0.4, background: 'var(--bg-2)' }} />
+          <SubscriberBlur
+            creatorId={post.userId}
+            priceXP={post.user.subscriptionPriceXP ?? 500}
+            onSubscribed={onUpdate}
           />
-          {post.photos.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {post.photos.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPhotoIndex(i)}
-                  className={`w-2 h-2 rounded-full ${i === photoIndex ? 'bg-white' : 'bg-white/40'}`}
-                />
-              ))}
+        </div>
+      ) : (
+        <>
+          {post.photos.length > 0 && (
+            <div className="relative aspect-square bg-[var(--bg-1)]">
+              <img
+                src={`${process.env.NEXT_PUBLIC_CDN_URL || ''}/${post.photos[photoIndex].s3Key}`}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+              {post.photos.length > 1 && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {post.photos.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPhotoIndex(i)}
+                      className={`w-2 h-2 rounded-full ${i === photoIndex ? 'bg-white' : 'bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {post.caption && (
-        <div className="px-4 pt-3 text-[var(--text-1)] text-sm leading-relaxed">
-          {renderCaption(post.caption)}
-        </div>
+          {post.caption && (
+            <div className="px-4 pt-3 text-[var(--text-1)] text-sm leading-relaxed">
+              {renderCaption(post.caption)}
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex items-center gap-4 px-4 py-3">
