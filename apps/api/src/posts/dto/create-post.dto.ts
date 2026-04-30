@@ -23,5 +23,5 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsObject()
-  cardData?: Record<string, unknown>;
+  cardData?: Record<string, any>;
 }
