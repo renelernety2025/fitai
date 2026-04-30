@@ -1,134 +1,219 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Card, Button, Chip, Avatar, SectionHeader } from '@/components/v3';
-import { FitIcon } from '@/components/icons/FitIcons';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Card, Button, Chip, SectionHeader } from '@/components/v3';
+import { PostComposer, PostCard } from '@/components/v3';
 import {
-  getSocialFeed,
-  type FeedItem,
+  getForYouFeed,
+  getFollowingFeed,
+  getTrendingFeed,
+  getPromoCards,
+  dismissPromo,
 } from '@/lib/api';
+import type { PostData } from '@/lib/api/posts';
 
-function timeAgo(date: string) {
-  const m = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+type FeedTab = 'for-you' | 'following' | 'trending';
+
+const PROMO_POSITIONS = [5, 12, 20];
+const PAGE_SIZE = 20;
+
+interface PromoCard {
+  id: string;
+  title: string;
+  subtitle?: string;
+  ctaText: string;
+  ctaUrl: string;
 }
-
-type Filter = 'following' | 'squads' | 'worldwide';
 
 export default function CommunityPage() {
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [filter, setFilter] = useState<Filter>('following');
+  const [tab, setTab] = useState<FeedTab>('for-you');
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [promos, setPromos] = useState<PromoCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cursor, setCursor] = useState<string | undefined>();
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
-  useEffect(() => { document.title = 'FitAI — Community'; }, []);
   useEffect(() => {
-    getSocialFeed().then(setFeed).catch(console.error).finally(() => setLoading(false));
+    document.title = 'Komunita | FitAI';
+    getPromoCards().then(setPromos).catch(() => {});
   }, []);
 
-  return (
-    <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
-      <Header />
-      <ComposerCard />
-      <FilterChips filter={filter} onChange={setFilter} />
-      <FeedList feed={feed} loading={loading} />
-    </div>
-  );
-}
+  const fetchFeed = useCallback(
+    async (reset: boolean, currentCursor: string | undefined) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      setLoading(true);
 
-function Header() {
-  return (
-    <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-      <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Community</div>
-        <h1 className="display-2" style={{ margin: 0 }}>
-          The<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>feed.</em>
-        </h1>
-      </div>
-      <Button variant="primary" icon={<FitIcon name="plus" size={14} />}>New post</Button>
-    </div>
-  );
-}
+      const fetcher =
+        tab === 'for-you'
+          ? getForYouFeed
+          : tab === 'following'
+            ? getFollowingFeed
+            : getTrendingFeed;
 
-function ComposerCard() {
-  return (
-    <Card padding={20} style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <Avatar size={36} name="You" />
-        <div style={{ flex: 1, fontSize: 14, color: 'var(--text-3)' }}>
-          Share your session, your PR, your wins...
-        </div>
-        <Button size="sm" variant="glass" icon={<FitIcon name="dumbbell" size={12} />}>Workout</Button>
-        <Button size="sm" variant="glass" icon={<FitIcon name="trophy" size={12} />}>PR</Button>
-        <Button size="sm" variant="accent">Post</Button>
-      </div>
-    </Card>
+      try {
+        const data: PostData[] = await fetcher(currentCursor);
+        if (reset) {
+          setPosts(data);
+        } else {
+          setPosts((prev) => [...prev, ...data]);
+        }
+        setHasMore(data.length >= PAGE_SIZE);
+        if (data.length > 0) {
+          setCursor(data[data.length - 1].id);
+        }
+      } catch {
+        // silent fail
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
+      }
+    },
+    [tab],
   );
-}
 
-function FilterChips({ filter, onChange }: { filter: Filter; onChange: (f: Filter) => void }) {
-  const filters: Filter[] = ['following', 'squads', 'worldwide'];
+  // Reset feed on tab change
+  useEffect(() => {
+    setCursor(undefined);
+    setHasMore(true);
+    fetchFeed(true, undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+          fetchFeed(false, cursor);
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, cursor, fetchFeed]);
+
+  function handlePostCreated() {
+    setCursor(undefined);
+    fetchFeed(true, undefined);
+  }
+
+  function handleDismissPromo(id: string) {
+    dismissPromo(id).catch(() => {});
+    setPromos((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function renderFeed() {
+    const items: React.ReactNode[] = [];
+    let promoIndex = 0;
+
+    posts.forEach((post, i) => {
+      if (PROMO_POSITIONS.includes(i) && promoIndex < promos.length) {
+        const promo = promos[promoIndex++];
+        items.push(<PromoCardItem key={`promo-${promo.id}`} promo={promo} onDismiss={handleDismissPromo} />);
+      }
+      items.push(
+        <PostCard key={post.id} post={post} onUpdate={() => fetchFeed(true, undefined)} />,
+      );
+    });
+
+    return items;
+  }
+
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-      {filters.map(f => (
-        <Chip key={f} active={filter === f} onClick={() => onChange(f)}>
-          {f.charAt(0).toUpperCase() + f.slice(1)}
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <SectionHeader eyebrow="Komunita" title="Feed" />
+
+      <PostComposer onPostCreated={handlePostCreated} />
+
+      <div className="flex gap-2 mb-6">
+        <Chip active={tab === 'for-you'} onClick={() => setTab('for-you')}>
+          Pro tebe
         </Chip>
-      ))}
+        <Chip active={tab === 'following'} onClick={() => setTab('following')}>
+          Sledovaní
+        </Chip>
+        <Chip active={tab === 'trending'} onClick={() => setTab('trending')}>
+          Trending
+        </Chip>
+      </div>
+
+      {renderFeed()}
+
+      {loading && (
+        <p className="text-center text-[var(--text-3)] py-8">Načítám...</p>
+      )}
+
+      {!loading && posts.length === 0 && (
+        <Card className="p-8 text-center">
+          <p className="text-[var(--text-2)]">
+            Zatím žádné posty. Buď první!
+          </p>
+        </Card>
+      )}
+
+      <div ref={sentinelRef} className="h-4" />
     </div>
   );
 }
 
-function PostCard({ item }: { item: FeedItem }) {
-  const isPR = item.type === 'pr' || item.type === 'personal_record';
-  const isStreak = item.type === 'streak';
+function PromoCardItem({
+  promo,
+  onDismiss,
+}: {
+  promo: PromoCard;
+  onDismiss: (id: string) => void;
+}) {
   return (
-    <Card padding={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
-      <div style={{ padding: '20px 24px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Avatar src={item.user.avatarUrl ?? undefined} name={item.user.name} size={40} />
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Link href={`/profile/${item.user.id}`} style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', textDecoration: 'none' }}>
-              {item.user.name}
-            </Link>
-            {isPR && <span className="v3-tag" style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)', padding: '4px 10px', borderRadius: 'var(--r-xs)', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>NEW PR</span>}
-            {isStreak && <span className="v3-tag" style={{ background: 'color-mix(in srgb, #FFB547 12%, transparent)', color: '#FFB547', padding: '4px 10px', borderRadius: 'var(--r-xs)', fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>STREAK</span>}
-          </div>
-          <div className="caption">{timeAgo(item.createdAt)}</div>
+    <Card className="mb-4 p-4 border border-[var(--accent)]/30 bg-gradient-to-r from-[var(--bg-1)] to-[var(--bg-0)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <span
+            style={{
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: 'var(--text-3)',
+            }}
+          >
+            Promoted
+          </span>
+          <h4 className="text-[var(--text-1)] font-semibold mt-1 truncate">
+            {promo.title}
+          </h4>
+          {promo.subtitle && (
+            <p className="text-sm text-[var(--text-2)] mt-0.5 line-clamp-2">
+              {promo.subtitle}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="sm" onClick={() => { window.location.href = promo.ctaUrl; }}>
+            {promo.ctaText}
+          </Button>
+          <button
+            onClick={() => onDismiss(promo.id)}
+            aria-label="Zavřít promo"
+            style={{
+              fontSize: 16,
+              lineHeight: 1,
+              color: 'var(--text-3)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 4px',
+            }}
+          >
+            ×
+          </button>
         </div>
       </div>
-      <div style={{ padding: '0 24px 16px' }}>
-        <p style={{ fontSize: 15, color: 'var(--text-1)', margin: 0, lineHeight: 1.5 }}>{item.title}</p>
-        {item.body && <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '4px 0 0', lineHeight: 1.5 }}>{item.body}</p>}
-      </div>
-      <EngagementFooter />
     </Card>
   );
-}
-
-function EngagementFooter() {
-  return (
-    <div style={{ padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 20, borderTop: '1px solid var(--stroke-1)' }}>
-      <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}>
-        <FitIcon name="heart" size={16} /> <span>0</span>
-      </button>
-      <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>
-        <FitIcon name="bolt" size={16} /> <span>High-five</span>
-      </button>
-    </div>
-  );
-}
-
-function FeedList({ feed, loading }: { feed: FeedItem[]; loading: boolean }) {
-  if (loading) {
-    return <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-3)' }}>Loading...</div>;
-  }
-  if (feed.length === 0) {
-    return <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-3)', fontSize: 14 }}>Feed is empty. Follow other athletes or start training.</div>;
-  }
-  return <>{feed.map(item => <PostCard key={item.id} item={item} />)}</>;
 }
