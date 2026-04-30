@@ -48,6 +48,32 @@ export class CreatorsService {
     });
   }
 
+  async approveCreator(userId: string) {
+    const profile = await this.prisma.creatorProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new NotFoundException('No creator profile');
+
+    const updated = await this.prisma.creatorProfile.update({
+      where: { userId },
+      data: { isApproved: true },
+    });
+
+    // Auto-set CREATOR badge — don't downgrade VERIFIED users
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { badgeType: true },
+    });
+    if (user && user.badgeType === 'NONE') {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { badgeType: 'CREATOR' },
+      });
+    }
+
+    return updated;
+  }
+
   async updateProfile(userId: string, dto: UpdateCreatorDto) {
     const profile = await this.prisma.creatorProfile.findUnique({
       where: { userId },

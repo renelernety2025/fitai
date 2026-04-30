@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Param,
   UseGuards,
   Request,
   ForbiddenException,
@@ -34,5 +36,21 @@ export class AdminController {
       throw new ForbiddenException('Admin access required');
     }
     return this.adminService.getAnalytics();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-user/:userId')
+  async verifyUser(@Param('userId') userId: string, @Request() req: any) {
+    const user = await this.usersService.findById(req.user.id);
+    if (!user?.isAdmin) throw new ForbiddenException('Admin access required');
+    return this.adminService.verifyUser(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('unverify-user/:userId')
+  async unverifyUser(@Param('userId') userId: string, @Request() req: any) {
+    const user = await this.usersService.findById(req.user.id);
+    if (!user?.isAdmin) throw new ForbiddenException('Admin access required');
+    return this.adminService.unverifyUser(userId);
   }
 }

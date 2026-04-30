@@ -46,6 +46,24 @@ export class AdminService {
     };
   }
 
+  async verifyUser(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { badgeType: 'VERIFIED', badgeVerifiedAt: new Date() },
+    });
+  }
+
+  async unverifyUser(userId: string) {
+    const creator = await this.prisma.creatorProfile.findUnique({
+      where: { userId },
+    });
+    const badgeType = creator?.isApproved ? 'CREATOR' : 'NONE';
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { badgeType, badgeVerifiedAt: null },
+    });
+  }
+
   async getAnalytics() {
     const now = new Date();
     const today = new Date(
