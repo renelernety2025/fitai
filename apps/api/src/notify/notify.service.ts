@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class NotifyService {
   private readonly logger = new Logger(NotifyService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async create(
     type: string,
@@ -29,6 +33,12 @@ export class NotifyService {
         message,
       },
     });
+
+    const cacheKey = `notif:unread:${recipientId}`;
+    const current = await this.cache.get<number>(cacheKey);
+    if (current !== null && current !== undefined) {
+      await this.cache.set(cacheKey, current + 1, 300);
+    }
   }
 
   async createBatched(

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 
 export interface SmartNotification {
   type: string;
@@ -11,7 +12,10 @@ export interface SmartNotification {
 
 @Injectable()
 export class SmartNotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async getUpcoming(userId: string): Promise<SmartNotification[]> {
     const notifications: SmartNotification[] = [];
@@ -173,9 +177,15 @@ export class SmartNotificationsService {
   }
 
   async getUnreadCount(userId: string) {
+    const cacheKey = `notif:unread:${userId}`;
+    const cached = await this.cache.get<number>(cacheKey);
+    if (cached !== null && cached !== undefined) {
+      return { unreadCount: cached };
+    }
     const count = await this.prisma.socialNotification.count({
       where: { userId, isRead: false },
     });
+    await this.cache.set(cacheKey, count, 300);
     return { unreadCount: count };
   }
 
@@ -188,6 +198,11 @@ export class SmartNotificationsService {
       where: { id: notificationId },
       data: { isRead: true },
     });
+    const cacheKey = `notif:unread:${userId}`;
+    const current = await this.cache.get<number>(cacheKey);
+    if (current !== null && current !== undefined && current > 0) {
+      await this.cache.set(cacheKey, current - 1, 300);
+    }
     return { success: true };
   }
 
@@ -196,6 +211,7 @@ export class SmartNotificationsService {
       where: { userId, isRead: false },
       data: { isRead: true },
     });
+    await this.cache.set(`notif:unread:${userId}`, 0, 300);
     return { success: true };
   }
 
