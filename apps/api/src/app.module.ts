@@ -209,6 +209,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PostsModule,
     HashtagsModule,
     FeedModule,
+    PromoModule,
   ],
   providers: [
     {
