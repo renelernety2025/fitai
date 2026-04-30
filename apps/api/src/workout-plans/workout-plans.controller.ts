@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } f
 import { WorkoutPlansService } from './workout-plans.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { CreatePlanDto } from './dto/create-plan.dto';
 
 @Controller('workout-plans')
 @UseGuards(JwtAuthGuard)
@@ -19,7 +20,7 @@ export class WorkoutPlansController {
   }
 
   @Post()
-  create(@Request() req: any, @Body() dto: any) {
+  create(@Request() req: any, @Body() dto: CreatePlanDto) {
     return this.plansService.create(req.user.id, dto);
   }
 

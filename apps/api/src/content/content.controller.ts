@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ContentService } from './content.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateMarketplaceItemDto } from './dto/create-marketplace-item.dto';
 
 @Controller('content')
 @UseGuards(JwtAuthGuard)
@@ -30,7 +31,7 @@ export class ContentController {
   }
 
   @Post('marketplace')
-  createItem(@Request() req: any, @Body() dto: any) {
+  createItem(@Request() req: any, @Body() dto: CreateMarketplaceItemDto) {
     return this.contentService.createMarketplaceItem(req.user.id, dto);
   }
 

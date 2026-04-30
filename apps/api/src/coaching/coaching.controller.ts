@@ -5,6 +5,8 @@ import { CoachingService, type StreamEvent } from './coaching.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AskCoachDto } from './dto/ask-coach.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
+import { CoachingFeedbackDto } from './dto/coaching-feedback.dto';
+import { SafetyEventDto } from './dto/safety-event.dto';
 
 @Controller('coaching')
 @UseGuards(JwtAuthGuard)
@@ -13,7 +15,7 @@ export class CoachingController {
 
   @Throttle({ default: { limit: 60, ttl: seconds(60) } })
   @Post('feedback')
-  generateFeedback(@Request() req: any, @Body() dto: any) {
+  generateFeedback(@Request() req: any, @Body() dto: CoachingFeedbackDto) {
     return this.coachingService.generateFeedback({
       userId: req.user.id,
       ...dto,
@@ -21,7 +23,7 @@ export class CoachingController {
   }
 
   @Post('safety-event')
-  logSafetyEvent(@Request() req: any, @Body() dto: any) {
+  logSafetyEvent(@Request() req: any, @Body() dto: SafetyEventDto) {
     return this.coachingService.logSafetyEvent({
       userId: req.user.id,
       ...dto,

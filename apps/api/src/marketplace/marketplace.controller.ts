@@ -10,6 +10,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MarketplaceService } from './marketplace.service';
 import { CreateListingDto } from './dto/create-listing.dto';
@@ -49,6 +50,7 @@ export class MarketplaceController {
     return this.service.update(req.user.id, id, dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @Post(':id/purchase')
   purchase(@Request() req: any, @Param('id') id: string) {
     return this.service.purchase(req.user.id, id);

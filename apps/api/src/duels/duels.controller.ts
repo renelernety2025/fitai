@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { DuelsService } from './duels.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChallengeDuelDto } from './dto/challenge-duel.dto';
@@ -9,11 +10,13 @@ import { SubmitScoreDto } from './dto/submit-score.dto';
 export class DuelsController {
   constructor(private duelsService: DuelsService) {}
 
+  @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @Post('challenge')
   challenge(@Request() req: any, @Body() dto: ChallengeDuelDto) {
     return this.duelsService.challenge(req.user.id, dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @Post(':id/accept')
   accept(@Request() req: any, @Param('id') id: string) {
     return this.duelsService.accept(req.user.id, id);

@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { HabitsService } from './habits.service';
+import { DailyCheckInDto } from './dto/daily-check-in.dto';
 
 @Controller('habits')
 @UseGuards(JwtAuthGuard)
@@ -13,8 +14,8 @@ export class HabitsController {
   }
 
   @Put('today')
-  upsert(@Request() req: any, @Body() body: any) {
-    return this.service.upsertToday(req.user.id, body);
+  upsert(@Request() req: any, @Body() dto: DailyCheckInDto) {
+    return this.service.upsertToday(req.user.id, dto);
   }
 
   @Get('history')

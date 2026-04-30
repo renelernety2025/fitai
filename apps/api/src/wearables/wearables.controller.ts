@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { WearablesService } from './wearables.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SyncWearablesDto } from './dto/sync-wearables.dto';
 
 @Controller('wearables')
 @UseGuards(JwtAuthGuard)
@@ -8,7 +9,7 @@ export class WearablesController {
   constructor(private wearablesService: WearablesService) {}
 
   @Post('sync')
-  sync(@Request() req: any, @Body() dto: any) {
+  sync(@Request() req: any, @Body() dto: SyncWearablesDto) {
     return this.wearablesService.syncData(req.user.id, dto);
   }
 

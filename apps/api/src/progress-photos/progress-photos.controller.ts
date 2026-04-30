@@ -12,6 +12,7 @@ import {
 import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProgressPhotosService } from './progress-photos.service';
+import { UploadPhotoUrlDto } from './dto/upload-photo-url.dto';
 
 type PhotoSide = 'FRONT' | 'SIDE' | 'BACK';
 
@@ -22,16 +23,13 @@ export class ProgressPhotosController {
 
   /** Get presigned upload URL + DB row id */
   @Post('upload-url')
-  uploadUrl(
-    @Request() req: any,
-    @Body() body: { contentType: string; side: PhotoSide; weightKg?: number; bodyFatPct?: number; notes?: string },
-  ) {
+  uploadUrl(@Request() req: any, @Body() dto: UploadPhotoUrlDto) {
     return this.service.getUploadUrl(req.user.id, {
-      contentType: body.contentType || 'image/jpeg',
-      side: body.side || 'FRONT',
-      weightKg: body.weightKg,
-      bodyFatPct: body.bodyFatPct,
-      notes: body.notes,
+      contentType: dto.contentType,
+      side: dto.side,
+      weightKg: dto.weightKg,
+      bodyFatPct: dto.bodyFatPct,
+      notes: dto.notes,
     });
   }
 

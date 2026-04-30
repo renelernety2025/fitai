@@ -3,6 +3,7 @@ import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { MuscleGroup, VideoDifficulty } from '@prisma/client';
+import { CreateExerciseDto } from './dto/create-exercise.dto';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -35,13 +36,13 @@ export class ExercisesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, AdminGuard)
-  create(@Body() dto: any) {
+  create(@Body() dto: CreateExerciseDto) {
     return this.exercisesService.create(dto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  update(@Param('id') id: string, @Body() dto: any) {
+  update(@Param('id') id: string, @Body() dto: CreateExerciseDto) {
     return this.exercisesService.update(id, dto);
   }
 

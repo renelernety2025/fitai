@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { PaidChallengesService } from './paid-challenges.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreatePaidChallengeDto } from './dto/create-paid-challenge.dto';
@@ -31,6 +32,7 @@ export class PaidChallengesController {
     return this.service.create(req.user.id, dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: seconds(60) } })
   @Post(':id/join')
   join(@Request() req: any, @Param('id') id: string) {
     return this.service.join(req.user.id, id);

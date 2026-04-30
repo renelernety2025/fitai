@@ -13,6 +13,10 @@ import {
 import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { NutritionService } from './nutrition.service';
+import { SetGoalsDto } from './dto/set-goals.dto';
+import { AddFoodDto } from './dto/add-food.dto';
+import { GenerateMealPlanDto } from './dto/generate-meal-plan.dto';
+import { AnalyzePhotoDto } from './dto/analyze-photo.dto';
 
 @Controller('nutrition')
 @UseGuards(JwtAuthGuard)
@@ -25,8 +29,8 @@ export class NutritionController {
   }
 
   @Put('goals')
-  setGoals(@Request() req: any, @Body() body: any) {
-    return this.service.setGoals(req.user.id, body);
+  setGoals(@Request() req: any, @Body() dto: SetGoalsDto) {
+    return this.service.setGoals(req.user.id, dto);
   }
 
   @Post('goals/auto')
@@ -45,8 +49,8 @@ export class NutritionController {
   }
 
   @Post('log')
-  addFood(@Request() req: any, @Body() body: any) {
-    return this.service.addFood(req.user.id, body);
+  addFood(@Request() req: any, @Body() dto: AddFoodDto) {
+    return this.service.addFood(req.user.id, dto);
   }
 
   @Delete('log/:id')
@@ -77,17 +81,8 @@ export class NutritionController {
    * Heavy Claude call — ~10k tokens. Real use case is 1x/week, 3/day is debug safety. */
   @Post('meal-plan/generate')
   @Throttle({ default: { limit: 3, ttl: seconds(86400) } }) // 3/day
-  generateMealPlan(
-    @Request() req: any,
-    @Body()
-    body: {
-      weekStart?: string;
-      preferences?: string;
-      allergies?: string[];
-      cuisine?: string;
-    } = {},
-  ) {
-    return this.service.generateMealPlan(req.user.id, body);
+  generateMealPlan(@Request() req: any, @Body() dto: GenerateMealPlanDto) {
+    return this.service.generateMealPlan(req.user.id, dto);
   }
 
   @Delete('meal-plan/:id')
@@ -106,7 +101,7 @@ export class NutritionController {
   /** Analyze uploaded food photo via Claude Vision → return estimated macros */
   @Post('analyze-photo')
   @Throttle({ default: { limit: 20, ttl: seconds(86400) } })
-  analyzeFoodPhoto(@Request() req: any, @Body() body: { s3Key: string }) {
-    return this.service.analyzeFoodPhoto(req.user.id, body.s3Key);
+  analyzeFoodPhoto(@Request() req: any, @Body() dto: AnalyzePhotoDto) {
+    return this.service.analyzeFoodPhoto(req.user.id, dto.s3Key);
   }
 }

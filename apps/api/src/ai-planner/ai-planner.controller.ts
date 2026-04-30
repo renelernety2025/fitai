@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/co
 import { Throttle, seconds } from '@nestjs/throttler';
 import { AIPlannerService } from './ai-planner.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdatePlannerProfileDto } from './dto/update-planner-profile.dto';
 
 @Controller('ai-planner')
 @UseGuards(JwtAuthGuard)
@@ -14,7 +15,7 @@ export class AIPlannerController {
   }
 
   @Put('profile')
-  updateProfile(@Request() req: any, @Body() dto: any) {
+  updateProfile(@Request() req: any, @Body() dto: UpdatePlannerProfileDto) {
     return this.aiPlannerService.updateProfile(req.user.id, dto);
   }
 
