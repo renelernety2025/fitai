@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotifyService } from '../notify/notify.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { ReactDto } from './dto/react.dto';
@@ -19,7 +20,10 @@ import { ShareDto } from './dto/share.dto';
 export class SocialService {
   private readonly logger = new Logger(SocialService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifyService: NotifyService,
+  ) {}
 
   // ── Flash Challenge Cron ──
 
@@ -51,11 +55,20 @@ export class SocialService {
     const target = await this.prisma.user.findUnique({ where: { id: followedId } });
     if (!target) throw new NotFoundException('Uživatel nenalezen');
 
-    return this.prisma.follow.upsert({
+    const result = await this.prisma.follow.upsert({
       where: { followerId_followedId: { followerId, followedId } },
       update: {},
       create: { followerId, followedId },
     });
+
+    const actor = await this.prisma.user.findUnique({ where: { id: followerId }, select: { name: true } });
+    await this.notifyService.create(
+      'NEW_FOLLOWER', followedId, followerId,
+      `${actor?.name || 'Někdo'} tě začal sledovat`,
+      'user', followerId,
+    );
+
+    return result;
   }
 
   async unfollow(followerId: string, followedId: string) {

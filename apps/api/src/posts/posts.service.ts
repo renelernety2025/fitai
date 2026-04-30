@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { NotifyService } from '../notify/notify.service';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -14,6 +15,7 @@ export class PostsService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private notifyService: NotifyService,
   ) {
     this.s3 = new S3Client({
       region: process.env.AWS_REGION || 'eu-west-1',
@@ -129,6 +131,18 @@ export class PostsService {
       where: { id: postId },
       data: { likeCount: { increment: 1 } },
     });
+
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { userId: true } });
+    if (post) {
+      const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      await this.notifyService.createBatched(
+        'POST_LIKED', post.userId, userId,
+        `${actor?.name || 'Někdo'} lajknul tvůj post`,
+        `{count} lidí lajklo tvůj post`,
+        'post', postId,
+      );
+    }
+
     return { liked: true };
   }
 
@@ -145,6 +159,16 @@ export class PostsService {
       where: { id: postId },
       data: { commentCount: { increment: 1 } },
     });
+
+    if (post.userId !== userId) {
+      const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+      await this.notifyService.createBatched(
+        'POST_COMMENTED', post.userId, userId,
+        `${actor?.name || 'Někdo'} okomentoval tvůj post`,
+        `{count} lidí okomentovalo tvůj post`,
+        'post', postId,
+      );
+    }
 
     return comment;
   }
