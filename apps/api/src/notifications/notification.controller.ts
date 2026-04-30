@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('notifications')
 export class NotificationController {
-  constructor(private notificationService: NotificationService) {}
+  constructor(
+    private notificationService: NotificationService,
+    private prisma: PrismaService,
+  ) {}
 
   @Get('vapid-public-key')
   getVapidKey() {
@@ -31,7 +35,9 @@ export class NotificationController {
 
   @Post('send-streak-reminders')
   @UseGuards(JwtAuthGuard)
-  sendStreakReminders() {
+  async sendStreakReminders(@Request() req: any) {
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user?.isAdmin) throw new ForbiddenException();
     return this.notificationService.sendStreakReminders();
   }
 

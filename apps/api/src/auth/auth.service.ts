@@ -35,7 +35,6 @@ export class AuthService {
       email: dto.email,
       passwordHash,
       name: dto.name,
-      level: dto.level,
     });
 
     await this.emailService.sendWelcome(user.email, user.name);
@@ -76,6 +75,10 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (user) {
+      // Invalidate existing unused tokens before creating new one
+      await this.prisma.passwordResetToken.deleteMany({
+        where: { userId: user.id, usedAt: null },
+      });
       const token = randomUUID();
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
       await this.prisma.passwordResetToken.create({
@@ -126,7 +129,6 @@ export class AuthService {
       name: user.name,
       avatarUrl: user.avatarUrl,
       level: user.level,
-      isAdmin: user.isAdmin,
       createdAt: user.createdAt.toISOString(),
     };
   }

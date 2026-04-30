@@ -13,7 +13,11 @@ import { EmailModule } from '../email/email.module';
     PassportModule,
     EmailModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'change-me-in-production',
+      secret: (() => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret) throw new Error('JWT_SECRET environment variable is required');
+        return secret;
+      })(),
       signOptions: { expiresIn: '7d' },
     }),
   ],
