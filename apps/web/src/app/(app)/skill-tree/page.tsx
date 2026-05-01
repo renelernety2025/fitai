@@ -17,10 +17,10 @@ const BRANCH_COLORS: Record<string, string> = {
 };
 
 const BRANCH_LABELS: Record<string, string> = {
-  strength: 'Sila',
-  endurance: 'Vytrvalost',
-  form: 'Forma',
-  nutrition: 'Vyziva',
+  strength: 'Strength',
+  endurance: 'Endurance',
+  form: 'Form',
+  nutrition: 'Nutrition',
 };
 
 interface SkillNode {
@@ -112,7 +112,7 @@ export default function SkillTreePage() {
       const fresh = await getSkillTree();
       setData(fresh);
     } catch {
-      setError('Nepodarilo se zkontrolovat pokrok');
+      setError('Failed to check progress');
     }
     setChecking(false);
   }
@@ -133,10 +133,10 @@ export default function SkillTreePage() {
       <section className="pt-12 pb-24">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="v3-eyebrow">Strom schopnosti</p>
+            <p className="v3-eyebrow">Skill tree</p>
             {data && (
               <span className="text-sm text-white/40">
-                {data.unlockedCount} / {data.totalNodes} odemceno
+                {data.unlockedCount} / {data.totalNodes} unlocked
               </span>
             )}
           </div>
@@ -145,7 +145,7 @@ export default function SkillTreePage() {
             disabled={checking}
             className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-105 disabled:opacity-50"
           >
-            {checking ? 'Kontroluji...' : 'Zkontrolovat pokrok'}
+            {checking ? 'Checking...' : 'Check progress'}
           </button>
         </div>
 
@@ -153,7 +153,7 @@ export default function SkillTreePage() {
           className="mb-16 font-bold tracking-tight text-white"
           style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
         >
-          Strom schopnosti
+          Skill tree
         </h1>
 
         {error && (
@@ -177,13 +177,13 @@ export default function SkillTreePage() {
                   <h3 className="mb-2 text-lg font-bold text-white">{tooltip.name}</h3>
                   <p className="mb-3 text-sm text-white/60">{tooltip.description}</p>
                   <div className="text-xs text-white/40">
-                    Pozadavek: {tooltip.requirement}
+                    Requirement: {tooltip.requirement}
                   </div>
                   <div className="mt-2 text-xs">
                     {tooltip.unlocked
-                      ? <span className="text-[var(--sage)]">Odemceno</span>
+                      ? <span className="text-[var(--sage)]">Unlocked</span>
                       : tooltip.available
-                      ? <span className="text-[var(--warning)]">Dostupne — splnit pozadavek</span>
+                      ? <span className="text-[var(--warning)]">Available — meet the requirement</span>
                       : <span className="text-white/30">Zamceno</span>
                     }
                   </div>
@@ -191,7 +191,7 @@ export default function SkillTreePage() {
                     onClick={() => setTooltip(null)}
                     className="mt-4 text-xs text-white/40 transition hover:text-white"
                   >
-                    Zavrit
+                    Close
                   </button>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export default function SkillTreePage() {
         )}
 
         {!loading && !data && (
-          <p className="py-24 text-center text-white/40">Skill tree neni dostupny.</p>
+          <p className="py-24 text-center text-white/40">Skill tree is not available.</p>
         )}
       </section>
     </>

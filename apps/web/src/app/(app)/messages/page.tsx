@@ -26,7 +26,7 @@ function timeAgo(date: string) {
   const m = Math.floor(
     (Date.now() - new Date(date).getTime()) / 60000,
   );
-  if (m < 1) return 'ted';
+  if (m < 1) return 'now';
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
@@ -48,7 +48,7 @@ function ConversationList({
         className="py-12 text-center text-sm"
         style={{ color: 'var(--text-muted)' }}
       >
-        Zadne zpravy. Najdi trenaka nebo sleduj pratele.
+        No messages. Find a buddy or follow friends.
       </div>
     );
   }
@@ -211,7 +211,7 @@ function ChatPanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSend();
           }}
-          placeholder="Napsat zpravu..."
+          placeholder="Write a message..."
           className="flex-1 bg-transparent text-sm focus:outline-none"
           style={{ color: 'var(--text-primary)' }}
         />
@@ -221,7 +221,7 @@ function ChatPanel({
           className="text-[11px] font-semibold uppercase tracking-[0.15em] transition disabled:opacity-30"
           style={{ color: 'var(--sage)' }}
         >
-          Odeslat
+          Send
         </button>
       </div>
     </div>
@@ -265,10 +265,10 @@ function MessagesPage() {
   return (
     <>
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Zpravy</p>
+        <p className="v3-eyebrow-serif">Messages</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
-          Tvoje<br/>
-          <em className="v3-clay" style={{ fontWeight: 300 }}>zpravy.</em>
+          Your<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>messages.</em>
         </h1>
       </section>
 
@@ -277,7 +277,7 @@ function MessagesPage() {
           className="py-20 text-center text-sm"
           style={{ color: 'var(--text-muted)' }}
         >
-          Nacitam...
+          Loading...
         </div>
       ) : (
         <div
@@ -315,7 +315,7 @@ function MessagesPage() {
                   className="flex h-full items-center justify-center text-sm"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  Vyber konverzaci
+                  Select a conversation
                 </div>
               )}
             </div>

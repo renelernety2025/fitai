@@ -94,14 +94,14 @@ function StatStrip({ stats, sessions, volume }: { stats: StatsData; sessions: Gy
   }).length);
 
   const items = [
-    { label: 'Total volume', value: totalVol > 1000 ? `${Math.round(totalVol / 1000)}k` : String(totalVol), unit: 'kg', delta: '+248%', spark: [12, 18, 14, 22, 19, 28, 24, 32, 30, 38, 34, 42] },
-    { label: 'Sessions', value: String(stats.totalSessions), unit: 'completed', delta: `+${stats.currentStreak} streak`, spark: sparkSessions.length > 1 ? sparkSessions : [3, 4, 5, 4, 6, 5, 6] },
-    { label: 'Time', value: String(Math.floor((stats.totalMinutes || 0) / 60)), unit: 'hrs', delta: '', spark: [6, 7, 6.5, 7.2, 7, 7.1, 7.3] },
+    { label: 'Total volume', value: totalVol > 1000 ? `${Math.round(totalVol / 1000)}k` : String(totalVol), unit: 'kg', delta: '', spark: [] },
+    { label: 'Sessions', value: String(stats.totalSessions), unit: 'completed', delta: `${stats.currentStreak}d streak`, spark: sparkSessions.length > 1 ? sparkSessions : [] },
+    { label: 'Time', value: String(Math.floor((stats.totalMinutes || 0) / 60)), unit: 'hrs', delta: '', spark: [] },
     { label: 'XP', value: stats.totalXP.toLocaleString(), unit: '', delta: '', spark: [] },
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
       {items.map((m) => (
         <Card key={m.label} padding={20}>
           <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{m.label}</div>

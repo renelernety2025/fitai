@@ -110,13 +110,13 @@ function BadgeCard({ achievement: a }: { achievement: Achievement }) {
           <FitIcon name="lock" size={16} color="var(--text-3)" />
         </div>
       )}
-      <div className="title" style={{ marginBottom: 4 }}>{a.titleCs}</div>
-      <div className="caption" style={{ marginBottom: 12, minHeight: 32 }}>{a.descriptionCs}</div>
+      <div className="title" style={{ marginBottom: 4 }}>{a.title || a.titleCs}</div>
+      <div className="caption" style={{ marginBottom: 12, minHeight: 32 }}>{a.description || a.descriptionCs}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
         <span style={{ color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{rarity}</span>
         <span style={{ color: 'var(--text-3)' }}>
           {a.unlocked && a.unlockedAt
-            ? new Date(a.unlockedAt).toLocaleDateString('cs-CZ')
+            ? new Date(a.unlockedAt).toLocaleDateString('en-US')
             : `+${a.xpReward} XP`}
         </span>
       </div>

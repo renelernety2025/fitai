@@ -80,7 +80,7 @@ export default function GymBuddyPage() {
       const conv = await startConversation(userId);
       router.push(`/messages?c=${conv.id}`);
     } catch {
-      setError('Nepodarilo se zahajit konverzaci');
+      setError('Failed to start conversation');
     }
   }
 
@@ -92,7 +92,7 @@ export default function GymBuddyPage() {
             className="text-sm"
             style={{ color: 'var(--text-muted)' }}
           >
-            Nacitam...
+            Loading...
           </div>
         </div>
       </>
@@ -104,8 +104,8 @@ export default function GymBuddyPage() {
       <section style={{ padding: '48px 0 32px' }}>
         <p className="v3-eyebrow-serif">Gym Buddy</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
-          Najdi<br/>
-          <em className="v3-clay" style={{ fontWeight: 300 }}>trenaka.</em>
+          Find your<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>training partner.</em>
         </h1>
       </section>
 
@@ -132,7 +132,7 @@ export default function GymBuddyPage() {
               Match!
             </div>
             <div style={{ color: 'var(--text-secondary)' }}>
-              Mate spolecny zajem o trenovani spolu
+              You both want to train together
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ export default function GymBuddyPage() {
                 : 'border-white/15 text-white/60'
             }`}
           >
-            Karty
+            Cards
           </button>
           <button
             onClick={loadMatches}
@@ -161,13 +161,13 @@ export default function GymBuddyPage() {
                 : 'border-white/15 text-white/60'
             }`}
           >
-            Shody
+            Matches
           </button>
           <button
             onClick={() => setStep('profile')}
             className="rounded-full border border-white/15 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition"
           >
-            Profil
+            Profile
           </button>
         </div>
       )}
@@ -187,7 +187,7 @@ export default function GymBuddyPage() {
               className="py-20 text-center text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
-              Zadne dalsi karty. Zkus to pozdeji.
+              No more cards. Try again later.
             </div>
           ) : (
             <BuddyCard
@@ -207,7 +207,7 @@ export default function GymBuddyPage() {
               className="py-20 text-center text-sm"
               style={{ color: 'var(--text-muted)' }}
             >
-              Zatim zadne shody. Swipuj karty!
+              No matches yet. Swipe some cards!
             </div>
           )}
           {matches.map((m: any) => (
@@ -247,7 +247,7 @@ export default function GymBuddyPage() {
                   border: '1px solid color-mix(in srgb, var(--sage) 20%, transparent)',
                 }}
               >
-                Napsat
+                Message
               </button>
             </div>
           ))}

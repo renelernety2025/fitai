@@ -28,7 +28,7 @@ export default function ProgresFotkyPage() {
   const [compareIds, setCompareIds] = useState<[string?, string?]>([]);
   const fileRef = useRef<HTMLInputElement>(null!);
 
-  useEffect(() => { document.title = 'FitAI — Progress Fotky'; }, []);
+  useEffect(() => { document.title = 'FitAI — Progress Photos'; }, []);
 
   const reload = () => {
     getProgressPhotos(filter === 'ALL' ? undefined : filter).then(setPhotos).catch(console.error);

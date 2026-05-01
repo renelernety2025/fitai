@@ -36,7 +36,7 @@ export default function CommunityPage() {
   const loadingRef = useRef(false);
 
   useEffect(() => {
-    document.title = 'Komunita | FitAI';
+    document.title = 'Community | FitAI';
     getPromoCards().then(setPromos).catch(() => {});
   }, []);
 
@@ -128,13 +128,13 @@ export default function CommunityPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <SectionHeader eyebrow="Komunita" title="Feed" />
+      <SectionHeader eyebrow="Community" title="Feed" />
 
       <PostComposer onPostCreated={handlePostCreated} />
 
       <div className="flex gap-2 mb-6">
         <Chip active={tab === 'for-you'} onClick={() => setTab('for-you')}>
-          Pro tebe
+          For you
         </Chip>
         <Chip active={tab === 'following'} onClick={() => setTab('following')}>
           Following
@@ -178,12 +178,12 @@ export default function CommunityPage() {
           {tab === 'following' ? (
             <>
               <p className="text-[var(--text-2)] mb-3">You're not following anyone.</p>
-              <Button size="sm" onClick={() => setTab('trending')}>Najdi lidi</Button>
+              <Button size="sm" onClick={() => setTab('trending')}>Find people</Button>
             </>
           ) : tab === 'for-you' ? (
             <>
               <p className="text-[var(--text-2)] mb-3">No posts yet. Start following people!</p>
-              <Button size="sm" onClick={() => setTab('trending')}>Objevuj</Button>
+              <Button size="sm" onClick={() => setTab('trending')}>Discover</Button>
             </>
           ) : (
             <p className="text-[var(--text-2)]">No trending posts yet.</p>

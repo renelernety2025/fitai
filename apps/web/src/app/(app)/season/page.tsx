@@ -145,7 +145,7 @@ export default function SeasonPage() {
       const d = await joinSeason();
       setData(d);
     } catch {
-      setError('Nepodarilo se pripojit k sezone');
+      setError('Failed to join season');
     }
     setJoining(false);
   }
@@ -163,7 +163,7 @@ export default function SeasonPage() {
       const fresh = await getCurrentSeason();
       setData(fresh);
     } catch {
-      setError('Nepodarilo se zkontrolovat mise');
+      setError('Failed to check missions');
     }
     setChecking(false);
   }
@@ -207,7 +207,7 @@ export default function SeasonPage() {
 
             {/* XP bar */}
             <div className="mb-2 flex justify-between text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-              <span>XP do dalsiho levelu</span>
+              <span>XP to next level</span>
               <span>{data.currentXP} / {data.nextLevelXP}</span>
             </div>
             <div className="mb-8 h-3 overflow-hidden rounded-full bg-white/10">
@@ -220,7 +220,7 @@ export default function SeasonPage() {
             {/* Timer + join */}
             <div className="mb-8 flex items-center gap-6">
               <span className="text-sm text-white/40">
-                Zbyva <span className="font-semibold text-white/70">{daysRemaining(data.endsAt)} dni</span>
+                Remaining <span className="font-semibold text-white/70">{daysRemaining(data.endsAt)} days</span>
               </span>
               {!data.joined && (
                 <button
@@ -228,7 +228,7 @@ export default function SeasonPage() {
                   disabled={joining}
                   className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition hover:scale-105 disabled:opacity-50"
                 >
-                  {joining ? 'Pripojuji...' : 'Pripojit se'}
+                  {joining ? 'Joining...' : 'Join'}
                 </button>
               )}
             </div>
@@ -241,17 +241,17 @@ export default function SeasonPage() {
 
             {/* Missions */}
             <div className="mb-6 flex items-center justify-between">
-              <p className="v3-eyebrow">Mise</p>
+              <p className="v3-eyebrow">Missions</p>
               <button
                 onClick={handleCheck}
                 disabled={checking}
                 className="rounded-full border border-white/10 px-5 py-2 text-xs font-semibold text-white/60 transition hover:text-white disabled:opacity-50"
               >
-                {checking ? 'Kontroluji...' : 'Zkontrolovat mise'}
+                {checking ? 'Checking...' : 'Check missions'}
               </button>
             </div>
             {data.missions.length === 0 && (
-              <p className="py-8 text-center text-sm text-white/30">Zatim zadne mise.</p>
+              <p className="py-8 text-center text-sm text-white/30">No missions yet.</p>
             )}
             <StaggerContainer className="space-y-3">
               {data.missions.map((m) => (
@@ -272,15 +272,15 @@ export default function SeasonPage() {
               className="mb-6 font-bold tracking-tight text-white"
               style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', letterSpacing: '-0.04em' }}
             >
-              Zadna aktivni sezona
+              No active season
             </h1>
-            <p className="mb-8 text-white/40">Sezona zatim nebyla spustena.</p>
+            <p className="mb-8 text-white/40">Season has not started yet.</p>
             <button
               onClick={handleJoin}
               disabled={joining}
               className="rounded-full bg-white px-8 py-4 text-sm font-semibold text-black transition hover:scale-105 disabled:opacity-50"
             >
-              {joining ? 'Pripojuji...' : 'Pripojit se'}
+              {joining ? 'Joining...' : 'Join'}
             </button>
           </div>
         )}

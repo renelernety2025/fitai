@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { getBodyPortfolio } from '@/lib/api';
 
 const CATEGORIES = [
-  { key: 'strength', label: 'Sila', color: 'var(--accent)' },
-  { key: 'endurance', label: 'Vytrvalost', color: 'var(--sage)' },
-  { key: 'form', label: 'Forma', color: 'var(--clay)' },
-  { key: 'nutrition', label: 'Vyziva', color: 'var(--warning)' },
-  { key: 'mobility', label: 'Mobilita', color: 'var(--clay-deep)' },
+  { key: 'strength', label: 'Strength', color: 'var(--accent)' },
+  { key: 'endurance', label: 'Endurance', color: 'var(--sage)' },
+  { key: 'form', label: 'Form', color: 'var(--clay)' },
+  { key: 'nutrition', label: 'Nutrition', color: 'var(--warning)' },
+  { key: 'mobility', label: 'Mobility', color: 'var(--clay-deep)' },
 ] as const;
 
 function buildPentagonPoints(scores: number[], cx: number, cy: number, r: number): string {
@@ -107,7 +107,7 @@ export default function BodyPortfolioPage() {
   return (
     <>
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Fintech pro tvoje telo</p>
+        <p className="v3-eyebrow-serif">Fintech for your body</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Body<br/>
           <em className="v3-clay" style={{ fontWeight: 300 }}>Portfolio.</em>
@@ -116,14 +116,14 @@ export default function BodyPortfolioPage() {
 
       {err && (
         <div className="mb-8 rounded-xl border px-6 py-4 text-sm" style={{ borderColor: 'color-mix(in srgb, var(--accent) 20%, transparent)', backgroundColor: 'color-mix(in srgb, var(--accent) 5%, transparent)', color: 'var(--accent)' }}>
-          Nepodarilo se nacist data. Zkus to pozdeji.
+          Failed to load data. Try again later.
         </div>
       )}
 
       {!err && !data && (
         <div className="py-16 text-center text-white/30">
-          <p className="text-lg">Zatim zadna data</p>
-          <p className="mt-2 text-sm">Zacni trenovat a sledovat navyky pro zobrazeni portfolia.</p>
+          <p style={{ fontSize: 18 }}>No data yet</p>
+          <p style={{ marginTop: 8, fontSize: 14 }}>Start training and tracking habits to display your portfolio.</p>
         </div>
       )}
 
@@ -136,7 +136,7 @@ export default function BodyPortfolioPage() {
               {overall}
             </span>
             <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Celkove skore
+              Overall score
             </span>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function BodyPortfolioPage() {
 
       {/* Radar chart */}
       <section className="mb-20 flex flex-col items-center">
-        <p className="v3-eyebrow">Radar profil</p>
+        <p className="v3-eyebrow">Radar profile</p>
         <svg width={300} height={300} viewBox="0 0 300 300">
           {/* Grid rings */}
           {[0.25, 0.5, 0.75, 1].map((r) => (

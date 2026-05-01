@@ -149,7 +149,7 @@ function QuestsSection({ bosses, defeatedSet, activeBoss, onStart, running, time
                   label={isActive ? formatTime(timer) : undefined} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ marginBottom: 6 }}><Tag color="var(--accent)">+{b.xpReward || 0} XP</Tag></div>
-                  <div className="title" style={{ marginBottom: 2 }}>{b.nameCs || b.name}</div>
+                  <div className="title" style={{ marginBottom: 2 }}>{b.name || b.nameCs}</div>
                   <div className="caption">{b.description}</div>
                 </div>
                 {!isActive && !isDefeated && (

@@ -81,7 +81,7 @@ export default function ExperiencesPage() {
   }
 
   function formatDate(d: string): string {
-    return new Date(d).toLocaleDateString('cs-CZ', {
+    return new Date(d).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -109,7 +109,7 @@ export default function ExperiencesPage() {
           <em className="v3-clay" style={{ fontWeight: 300 }}>Experiences.</em>
         </h1>
         <p className="mt-3 max-w-xl text-sm text-white/50">
-          Ziv zazitky s trenery. Outdoor treninky, wellness, bojove sporty a dalsi.
+          Live experiences with trainers. Outdoor training, wellness, combat sports, and more.
         </p>
       </section>
 
@@ -122,7 +122,7 @@ export default function ExperiencesPage() {
               : 'text-white/40 hover:text-white/70'
           }`}
         >
-          Vse
+          All
         </button>
         {CATEGORIES.map((c) => (
           <button
@@ -148,7 +148,7 @@ export default function ExperiencesPage() {
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16 text-center">
           <p className="mb-2 text-3xl">{'\uD83C\uDFD5\uFE0F'}</p>
           <p className="text-sm text-white/40">
-            Zatim zadne zazitky. Pridej se jako trener a vytvor prvni!
+            No experiences yet. Join as a trainer and create the first!
           </p>
         </div>
       ) : (
@@ -203,7 +203,7 @@ export default function ExperiencesPage() {
                           {exp.price} {exp.currency || 'Kc'}
                         </p>
                         <p className="text-[10px] text-white/30">
-                          {exp.spotsLeft}/{exp.spotsTotal} mist
+                          {exp.spotsLeft}/{exp.spotsTotal} spots
                         </p>
                       </div>
                       <button
@@ -212,7 +212,7 @@ export default function ExperiencesPage() {
                         className="rounded-xl px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white transition disabled:opacity-40"
                         style={{ backgroundColor: color }}
                       >
-                        {exp.spotsLeft <= 0 ? 'Plno' : 'Book'}
+                        {exp.spotsLeft <= 0 ? 'Full' : 'Book'}
                       </button>
                     </div>
                   </div>
