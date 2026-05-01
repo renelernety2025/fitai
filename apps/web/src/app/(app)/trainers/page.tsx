@@ -145,7 +145,7 @@ export default function TrainersPage() {
         <p className="v3-eyebrow-serif">Find Your Coach</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Top<br/>
-          <em className="v3-clay" style={{ fontWeight: 300 }}>treneri.</em>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>coaches.</em>
         </h1>
       </section>
 
@@ -155,7 +155,7 @@ export default function TrainersPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Hledat trenera..."
+          placeholder="Search trainers..."
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/20 transition-colors"
         />
       </div>
@@ -179,7 +179,7 @@ export default function TrainersPage() {
 
       {error && (
         <p className="mb-8 text-sm text-[var(--accent)]">
-          Nepodarilo se nacist trenery.
+          Failed to load trainers.
         </p>
       )}
 
@@ -191,7 +191,7 @@ export default function TrainersPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center">
-          <p className="text-sm text-white/30">Zadni treneri nenalezeni.</p>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}>No trainers found.</p>
         </div>
       ) : (
         <StaggerContainer>

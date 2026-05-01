@@ -7,7 +7,7 @@ import { SkeletonCard } from '@/components/v2/Skeleton';
 import { getCourses, type CourseData } from '@/lib/api/content';
 
 const CATEGORIES = [
-  { key: null, label: 'Vse' },
+  { key: null, label: 'All' },
   { key: 'strength', label: 'Strength' },
   { key: 'yoga', label: 'Yoga' },
   { key: 'running', label: 'Running' },
@@ -52,7 +52,7 @@ export default function CoursesPage() {
   const [filter, setFilter] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'FitAI — Kurzy';
+    document.title = 'FitAI — Courses';
   }, []);
 
   useEffect(() => {

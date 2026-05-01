@@ -103,7 +103,7 @@ function Analytics({ growth, earnings, posts, hashtags }: {
                     <td style={{ padding: '10px 12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{p.comments}</td>
                     <td style={{ padding: '10px 12px' }}>
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 'var(--r-pill)', background: p.isSubscriberOnly ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'var(--bg-3)', color: p.isSubscriberOnly ? 'var(--accent)' : 'var(--text-3)' }}>
-                        {p.isSubscriberOnly ? 'Placené' : 'Zdarma'}
+                        {p.isSubscriberOnly ? 'Paid' : 'Free'}
                       </span>
                     </td>
                   </tr>
@@ -115,7 +115,7 @@ function Analytics({ growth, earnings, posts, hashtags }: {
 
       {hashtags.length > 0 && (
         <Card padding={20}>
-          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Top hashtagy</div>
+          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Top hashtags</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {hashtags.map((tag) => <Chip key={tag}>#{tag}</Chip>)}
           </div>

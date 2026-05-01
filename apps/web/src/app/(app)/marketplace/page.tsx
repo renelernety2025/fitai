@@ -61,7 +61,7 @@ export default function MarketplacePage() {
       {/* Featured */}
       <SectionHeader eyebrow="FEATURED" title="This week's picks" />
       <div style={{
-        display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16, marginBottom: 64,
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 64,
       }}>
         {FEATURED.map((p, i) => (
           <Card key={p.title} padding={0} hover style={{ overflow: 'hidden', minHeight: i === 0 ? 420 : 'auto' }}>
@@ -105,7 +105,7 @@ export default function MarketplacePage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {PROGRAMS.map((p) => (
           <Card key={p.title} padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
             <div style={{
