@@ -112,7 +112,7 @@ function TrendingContent() {
 
       {/* Period tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <Chip active={period === '24h'} onClick={() => setPeriod('24h')}>24 hodin</Chip>
+        <Chip active={period === '24h'} onClick={() => setPeriod('24h')}>24 hours</Chip>
         <Chip active={period === '7d'} onClick={() => setPeriod('7d')}>7 days</Chip>
       </div>
 

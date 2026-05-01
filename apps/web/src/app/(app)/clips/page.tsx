@@ -37,7 +37,7 @@ export default function ClipsPage() {
     function onKey(e: KeyboardEvent) { if (e.key === 'ArrowDown') scrollTo(current + 1); if (e.key === 'ArrowUp') scrollTo(current - 1); }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [current, clips.length]);
 
   if (loading) return <><div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center' }}><span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading clips...</span></div></>;
 

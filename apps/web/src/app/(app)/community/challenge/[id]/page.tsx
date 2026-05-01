@@ -11,10 +11,10 @@ import {
 } from '@/lib/api';
 
 const TYPE_LABELS: Record<string, string> = {
-  workouts: 'Treninky',
-  volume: 'Objem (kg)',
+  workouts: 'Workouts',
+  volume: 'Volume (kg)',
   streak: 'Streak',
-  steps: 'Kroky',
+  steps: 'Steps',
 };
 
 export default function ChallengeDetailPage() {
@@ -78,7 +78,7 @@ export default function ChallengeDetailPage() {
       const updated = await getChallengeDetail(challenge.id);
       setChallenge(updated);
     } catch {
-      setError('Nepodarilo se pripojit k vyzve');
+      setError('Failed to join challenge');
     }
   }
 
@@ -87,7 +87,7 @@ export default function ChallengeDetailPage() {
       await inviteToChallenge(challenge.id, targetUserId);
       setInviteSent((prev) => new Set(prev).add(targetUserId));
     } catch {
-      setError('Nepodarilo se odeslat pozvanku');
+      setError('Failed to send invite');
     }
   }
 
@@ -98,7 +98,7 @@ export default function ChallengeDetailPage() {
         onClick={() => router.push('/community')}
         className="mb-8 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40 transition hover:text-white"
       >
-        &larr; Komunita
+        &larr; Community
       </button>
 
       {/* Error */}
@@ -116,11 +116,11 @@ export default function ChallengeDetailPage() {
           </span>
           {challenge.isExpired && (
             <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red-400">
-              Ukoncena
+              Ended
             </span>
           )}
         </div>
-        <h1 className="v3-display-2">{challenge.nameCs}</h1>
+        <h1 className="v3-display-2">{challenge.name || challenge.nameCs}</h1>
         {challenge.description && (
           <p className="mt-4 max-w-xl text-base text-white/55">
             {challenge.description}
@@ -131,7 +131,7 @@ export default function ChallengeDetailPage() {
         <div className="mt-6 flex gap-8">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Ucastnici
+              Participants
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-white">
               {challenge._count.participants}
@@ -139,7 +139,7 @@ export default function ChallengeDetailPage() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Zbyvajici dny
+              Days remaining
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-white">
               {challenge.daysRemaining}
@@ -147,7 +147,7 @@ export default function ChallengeDetailPage() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/40">
-              Cil
+              Target
             </p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-white">
               {challenge.targetValue}
@@ -158,7 +158,7 @@ export default function ChallengeDetailPage() {
         {/* Creator */}
         {challenge.creator && (
           <p className="mt-4 text-sm text-white/40">
-            Vytvoril: {challenge.creator.name}
+            Created by: {challenge.creator.name}
           </p>
         )}
       </section>
@@ -166,7 +166,7 @@ export default function ChallengeDetailPage() {
       {/* User progress */}
       {joined && (
         <section className="mb-12">
-          <p className="v3-eyebrow">Tvůj pokrok</p>
+          <p className="v3-eyebrow">Your progress</p>
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-6">
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm text-white/60">
@@ -191,12 +191,12 @@ export default function ChallengeDetailPage() {
             onClick={handleJoin}
             className="rounded-full bg-white px-8 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-black transition hover:bg-white/90"
           >
-            Pripojit se
+            Join
           </button>
         )}
         {joined && (
           <span className="flex items-center gap-2 rounded-full border border-[#A8FF00]/30 bg-[#A8FF00]/10 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#A8FF00]">
-            Ucastnis se
+            Joined
           </span>
         )}
         {!challenge.isExpired && (
@@ -204,7 +204,7 @@ export default function ChallengeDetailPage() {
             onClick={() => setInviteOpen(!inviteOpen)}
             className="rounded-full border border-white/20 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-white hover:text-white"
           >
-            Pozvat pritele
+            Invite a friend
           </button>
         )}
       </div>
@@ -216,7 +216,7 @@ export default function ChallengeDetailPage() {
             type="text"
             value={inviteQuery}
             onChange={(e) => setInviteQuery(e.target.value)}
-            placeholder="Hledej uzivatele..."
+            placeholder="Search users..."
             className="mb-4 w-full border-b border-white/15 bg-transparent py-3 text-base text-white placeholder-white/30 focus:border-white focus:outline-none"
           />
           <div className="space-y-1">
@@ -238,18 +238,18 @@ export default function ChallengeDetailPage() {
                   </div>
                   {alreadyIn ? (
                     <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">
-                      Uz je ve vyzve
+                      Already in challenge
                     </span>
                   ) : sent ? (
                     <span className="text-[10px] uppercase tracking-[0.2em] text-[#A8FF00]">
-                      Pozvano
+                      Invited
                     </span>
                   ) : (
                     <button
                       onClick={() => handleInvite(u.id)}
                       className="rounded-full border border-white/20 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/60 transition hover:border-[#00E5FF] hover:text-[#00E5FF]"
                     >
-                      Pozvat
+                      Invite
                     </button>
                   )}
                 </div>
@@ -257,7 +257,7 @@ export default function ChallengeDetailPage() {
             })}
             {inviteQuery.length >= 2 && inviteResults.length === 0 && (
               <p className="py-4 text-center text-sm text-white/40">
-                Nikdo nenalezen.
+                No one found.
               </p>
             )}
           </div>
@@ -266,7 +266,7 @@ export default function ChallengeDetailPage() {
 
       {/* Leaderboard */}
       <section>
-        <p className="v3-eyebrow">Zebricek</p>
+        <p className="v3-eyebrow">Leaderboard</p>
         <div className="mt-6 space-y-1">
           {challenge.participants.map((p: any, i: number) => {
             const participantPct = Math.min(
@@ -300,7 +300,7 @@ export default function ChallengeDetailPage() {
                       {p.user.name}
                       {isMe && (
                         <span className="ml-2 text-[10px] text-[#A8FF00]">
-                          (ty)
+                          (you)
                         </span>
                       )}
                     </span>
@@ -329,7 +329,7 @@ export default function ChallengeDetailPage() {
           })}
           {challenge.participants.length === 0 && (
             <p className="py-12 text-center text-sm text-white/40">
-              Zatim zadni ucastnici.
+              No participants yet.
             </p>
           )}
         </div>
