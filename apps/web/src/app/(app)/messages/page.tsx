@@ -244,7 +244,7 @@ function MessagesPage() {
   const [active, setActive] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { document.title = 'FitAI — Zprávy'; }, []);
+  useEffect(() => { document.title = 'FitAI — Messages'; }, []);
 
   useEffect(() => {
     getConversations()

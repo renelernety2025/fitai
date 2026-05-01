@@ -10,7 +10,7 @@ import {
   type OnboardingData,
 } from './steps';
 
-const STEP_LABELS = ['Vítej', 'Tvůj cíl', 'Zkušenosti', 'Plán', 'Hotovo'];
+const STEP_LABELS = ['Welcome', 'Your goal', 'Experience', 'Plan', 'Done'];
 const TOTAL = STEP_LABELS.length;
 
 export default function OnboardingPage() {
@@ -53,7 +53,7 @@ export default function OnboardingPage() {
       await completeOnboarding();
       router.push('/dashboard');
     } catch {
-      setError('Nepodařilo se uložit profil. Zkuste to znovu.');
+      setError('Failed to save profile. Please try again.');
       setSaving(false);
     }
   }
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
           <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Krok {step} z {TOTAL}</span>
           <button onClick={() => router.push('/dashboard')}
             style={{ fontSize: 12, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-            Přeskočit
+            Skip
           </button>
         </div>
       </header>
@@ -121,7 +121,7 @@ export default function OnboardingPage() {
         <div style={{ display: 'flex', gap: 12 }}>
           {step > 1 && (
             <Button variant="ghost" size="lg" onClick={() => setStep(step - 1)}>
-              &larr; Zpět
+              &larr; Back
             </Button>
           )}
           <Button variant="accent" size="lg" disabled={!canContinue() || saving} onClick={handleNext}>

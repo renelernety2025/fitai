@@ -23,12 +23,12 @@ export interface PostRow { id: string; title: string; views: number; likes: numb
 
 function StatsHero({ stats }: { stats: Stats | null }) {
   const metrics = stats ? [
-    { label: 'Odběratelé', value: stats.subscriberCount, delta: stats.subscriberDelta, pos: stats.subscriberPositive },
-    { label: 'XP tento měsíc', value: stats.monthlyXP.toLocaleString('cs-CZ'), unit: 'XP' },
-    { label: 'Celkem XP', value: stats.totalXP.toLocaleString('cs-CZ'), unit: 'XP' },
-    { label: 'Příspěvky', value: stats.postCount },
+    { label: 'Subscribers', value: stats.subscriberCount, delta: stats.subscriberDelta, pos: stats.subscriberPositive },
+    { label: 'XP this month', value: stats.monthlyXP.toLocaleString('en-US'), unit: 'XP' },
+    { label: 'Total XP', value: stats.totalXP.toLocaleString('en-US'), unit: 'XP' },
+    { label: 'Posts', value: stats.postCount },
     { label: 'Engagement', value: stats.engagementRate, unit: '%' },
-    { label: 'Top příspěvek', value: stats.topPostTitle || '—' },
+    { label: 'Top post', value: stats.topPostTitle || '—' },
   ] : Array(6).fill(null);
 
   return (
@@ -36,7 +36,7 @@ function StatsHero({ stats }: { stats: Stats | null }) {
       <div style={{ marginBottom: 20 }}>
         <div className="v3-eyebrow" style={{ color: 'var(--text-3)', marginBottom: 6 }}>Creator Dashboard</div>
         <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-1)', lineHeight: 1 }}>
-          Tvůj kreativní hub
+          Your creative hub
         </h1>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -70,35 +70,35 @@ function Analytics({ growth, earnings, posts, hashtags }: {
       <div className="v3-eyebrow" style={{ color: 'var(--text-3)', marginBottom: 16 }}>Analytika</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <Card padding={20}>
-          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Růst odběratelů (30 dní)</div>
+          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Subscriber growth (30 days)</div>
           <BarChart data={growth.map((g) => g.value)} labels={growth.map((g) => g.label)}
             height={80} barW={12} gap={4} color="var(--accent)" highlight={growth.length - 1} />
         </Card>
         <Card padding={20}>
-          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Příjmy XP (týdny)</div>
+          <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>XP earnings (weeks)</div>
           <BarChart data={earnings.map((e) => e.xp)} labels={earnings.map((e) => e.label)}
             height={80} barW={12} gap={4} color="var(--accent)" highlight={earnings.length - 1} />
         </Card>
       </div>
 
       <Card padding={20} style={{ marginBottom: 16 }}>
-        <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Výkon příspěvků</div>
+        <div style={{ marginBottom: 12, fontWeight: 600, color: 'var(--text-1)', fontSize: 14 }}>Post performance</div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--stroke-1)' }}>
-                {['Příspěvek', 'Zobrazení', 'Lajky', 'Komentáře', 'Typ'].map((h) => (
+                {['Post', 'Views', 'Likes', 'Comments', 'Type'].map((h) => (
                   <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-3)', fontWeight: 500, fontSize: 11 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {posts.length === 0
-                ? <tr><td colSpan={5} style={{ padding: '20px 12px', color: 'var(--text-3)', textAlign: 'center' }}>Žádné příspěvky</td></tr>
+                ? <tr><td colSpan={5} style={{ padding: '20px 12px', color: 'var(--text-3)', textAlign: 'center' }}>No posts</td></tr>
                 : posts.map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid var(--stroke-1)' }}>
                     <td style={{ padding: '10px 12px', color: 'var(--text-1)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</td>
-                    <td style={{ padding: '10px 12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{p.views.toLocaleString('cs-CZ')}</td>
+                    <td style={{ padding: '10px 12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{p.views.toLocaleString('en-US')}</td>
                     <td style={{ padding: '10px 12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{p.likes}</td>
                     <td style={{ padding: '10px 12px', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{p.comments}</td>
                     <td style={{ padding: '10px 12px' }}>

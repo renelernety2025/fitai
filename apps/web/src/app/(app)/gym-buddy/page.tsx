@@ -22,7 +22,7 @@ export default function GymBuddyPage() {
   const [matchAnim, setMatchAnim] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { document.title = 'FitAI — Najdi tréňáka'; }, []);
+  useEffect(() => { document.title = 'FitAI — Gym Buddy'; }, []);
 
   useEffect(() => {
     getBuddyProfile()

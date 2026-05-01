@@ -5,7 +5,7 @@ import { Button, Card, Tag, Chip, Avatar, AvatarStack, SectionHeader, Metric, Sp
 
 const SPARK = [12, 18, 14, 22, 19, 28, 24, 32, 29, 38, 34, 42];
 const BARS = [24, 31, 18, 28, 0, 12, 8];
-const BAR_LABELS = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+const BAR_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const AVATARS = [
   { name: 'Sara L.' }, { name: 'Maya S.' }, { name: 'Kai B.' },
   { name: 'Alex R.' }, { name: 'Lena V.' },

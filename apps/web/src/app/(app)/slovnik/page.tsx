@@ -23,7 +23,7 @@ export default function GlossaryV2Page() {
           <em className="v3-clay" style={{ fontWeight: 300 }}>slovnik.</em>
         </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
-          Fitness termíny vysvětleny jednoduše. {terms.length} termínů.
+          Fitness terms explained simply. {terms.length} terms.
         </p>
       </section>
 
@@ -31,7 +31,7 @@ export default function GlossaryV2Page() {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Hledej termín…"
+        placeholder="Search terms..."
         className="mb-16 w-full border-b border-white/15 bg-transparent py-4 text-2xl text-white placeholder-white/20 focus:border-white focus:outline-none"
       />
 
@@ -50,7 +50,7 @@ export default function GlossaryV2Page() {
           </div>
         ))}
         {terms.length === 0 && (
-          <p className="py-12 text-center text-sm text-white/40">Žádné výsledky.</p>
+          <p className="py-12 text-center text-sm text-white/40">No results.</p>
         )}
       </div>
     </>

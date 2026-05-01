@@ -129,7 +129,7 @@ export default function SeasonPage() {
   const [confettiTrigger, setConfettiTrigger] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { document.title = 'FitAI — Sezóna'; }, []);
+  useEffect(() => { document.title = 'FitAI — Season'; }, []);
 
   useEffect(() => {
     getCurrentSeason()

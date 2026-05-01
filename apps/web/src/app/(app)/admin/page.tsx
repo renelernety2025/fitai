@@ -169,7 +169,7 @@ export default function AdminPage() {
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/8 p-6">
                 <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                  Noví uzivatele
+                  New users
                 </div>
                 <div className="space-y-3">
                   <BarMetric

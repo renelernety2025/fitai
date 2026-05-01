@@ -137,7 +137,7 @@ export default function CommunityPage() {
           Pro tebe
         </Chip>
         <Chip active={tab === 'following'} onClick={() => setTab('following')}>
-          Sledovaní
+          Following
         </Chip>
         <Chip active={tab === 'trending'} onClick={() => setTab('trending')}>
           Trending
@@ -177,16 +177,16 @@ export default function CommunityPage() {
         <Card className="p-8 text-center">
           {tab === 'following' ? (
             <>
-              <p className="text-[var(--text-2)] mb-3">Nikoho nesleduješ.</p>
+              <p className="text-[var(--text-2)] mb-3">You're not following anyone.</p>
               <Button size="sm" onClick={() => setTab('trending')}>Najdi lidi</Button>
             </>
           ) : tab === 'for-you' ? (
             <>
-              <p className="text-[var(--text-2)] mb-3">Zatím žádné posty. Začni sledovat lidi!</p>
+              <p className="text-[var(--text-2)] mb-3">No posts yet. Start following people!</p>
               <Button size="sm" onClick={() => setTab('trending')}>Objevuj</Button>
             </>
           ) : (
-            <p className="text-[var(--text-2)]">Zatím žádné trending posty.</p>
+            <p className="text-[var(--text-2)]">No trending posts yet.</p>
           )}
         </Card>
       )}
@@ -232,7 +232,7 @@ function PromoCardItem({
           </Button>
           <button
             onClick={() => onDismiss(promo.id)}
-            aria-label="Zavřít promo"
+            aria-label="Close promo"
             style={{
               fontSize: 16,
               lineHeight: 1,

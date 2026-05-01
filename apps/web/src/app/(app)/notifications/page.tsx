@@ -45,13 +45,13 @@ const WORKOUT_TYPES: NotifType[] = [
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'právě teď';
-  if (mins < 60) return `před ${mins} min`;
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `před ${hrs} h`;
+  if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `před ${days} d`;
-  return new Date(iso).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' });
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 }
 
 function notifTypeIcon(type: NotifType): string {
@@ -131,10 +131,10 @@ function NotifItem({ notif, onRead }: { notif: SocialNotif; onRead: (id: string)
 
 function EmptyState({ tab }: { tab: FilterTab }) {
   const labels: Record<FilterTab, string> = {
-    all: 'Žádné notifikace',
-    social: 'Žádné sociální notifikace',
-    workout: 'Žádné tréninkové notifikace',
-    system: 'Žádné systémové notifikace',
+    all: 'No notifications',
+    social: 'No social notifications',
+    workout: 'No workout notifications',
+    system: 'No system notifications',
   };
   return (
     <div style={{
@@ -143,7 +143,7 @@ function EmptyState({ tab }: { tab: FilterTab }) {
     }}>
       <FitIcon name="bell" size={32} color="var(--text-3)" />
       <p className="v3-body" style={{ marginTop: 12, color: 'var(--text-2)' }}>{labels[tab]}</p>
-      <p className="v3-caption" style={{ marginTop: 4 }}>Brzy se tu něco objeví.</p>
+      <p className="v3-caption" style={{ marginTop: 4 }}>Something will appear here soon.</p>
     </div>
   );
 }
@@ -198,7 +198,7 @@ export default function NotificationsPage() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { document.title = 'Notifikace | FitAI'; }, []);
+  useEffect(() => { document.title = 'Notifications | FitAI'; }, []);
 
   const fetchData = useCallback(async () => {
     setLoadingNotifs(true);
@@ -248,10 +248,10 @@ export default function NotificationsPage() {
     : notifs.filter(n => matchesTab(n, tab));
 
   const TABS: { id: FilterTab; label: string }[] = [
-    { id: 'all', label: 'Vše' },
-    { id: 'social', label: 'Sociální' },
-    { id: 'workout', label: 'Trénink' },
-    { id: 'system', label: 'Systém' },
+    { id: 'all', label: 'All' },
+    { id: 'social', label: 'Social' },
+    { id: 'workout', label: 'Workout' },
+    { id: 'system', label: 'System' },
   ];
 
   return (
@@ -262,12 +262,12 @@ export default function NotificationsPage() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 className="v3-display-2" style={{ marginTop: 8 }}>
-              Tvoje<br />
-              <em className="v3-clay" style={{ fontWeight: 300 }}>notifikace.</em>
+              Your<br />
+              <em className="v3-clay" style={{ fontWeight: 300 }}>notifications.</em>
             </h1>
             {unreadCount > 0 && (
               <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 10 }}>
-                {unreadCount} nepřečtených
+                {unreadCount} unread
               </p>
             )}
           </div>
@@ -278,7 +278,7 @@ export default function NotificationsPage() {
               onClick={handleMarkAll}
               disabled={markingAll}
             >
-              {markingAll ? 'Označuji...' : 'Označit vše jako přečtené'}
+              {markingAll ? 'Marking...' : 'Mark all as read'}
             </Button>
           )}
         </div>
@@ -291,7 +291,7 @@ export default function NotificationsPage() {
             {t.label}
             {t.id === 'all' && unreadCount > 0 && (
               <span
-                aria-label={`${unreadCount} nepřečtených`}
+                aria-label={`${unreadCount} unread`}
                 style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   minWidth: 18, height: 18, borderRadius: 9,
@@ -332,24 +332,24 @@ export default function NotificationsPage() {
 
       {/* Notification preferences */}
       <section style={{ marginBottom: 32 }}>
-        <SectionHeader title="Nastavení notifikací" />
+        <SectionHeader title="Notification settings" />
         {prefs && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <ToggleRow
-              label="Připomínky tréninku"
-              description="Denní připomínka když jsi ještě necvičil"
+              label="Workout reminders"
+              description="Daily reminder when you haven't trained yet"
               checked={prefs.workoutReminder}
               onChange={() => togglePref('workoutReminder')}
             />
             <ToggleRow
-              label="Varování před ztrátou streaku"
-              description="Večerní alert před ztrátou tvého streaku"
+              label="Streak loss warning"
+              description="Evening alert before losing your streak"
               checked={prefs.streakWarning}
               onChange={() => togglePref('streakWarning')}
             />
             <ToggleRow
-              label="Úspěchy"
-              description="Notifikace při odemknutí nového odznaku"
+              label="Achievements"
+              description="Notification when you unlock a new badge"
               checked={prefs.achievements}
               onChange={() => togglePref('achievements')}
             />
@@ -361,14 +361,14 @@ export default function NotificationsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FitIcon name="timer" size={16} color="var(--text-3)" />
                 <span className="v3-body" style={{ color: 'var(--text-2)' }}>
-                  Žádné notifikace mezi {prefs.quietHoursStart}:00 a {prefs.quietHoursEnd}:00
+                  No notifications between {prefs.quietHoursStart}:00 and {prefs.quietHoursEnd}:00
                 </span>
               </div>
             </Card>
           </div>
         )}
         {saving && (
-          <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 10 }}>Ukládám...</p>
+          <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 10 }}>Saving...</p>
         )}
       </section>
     </div>

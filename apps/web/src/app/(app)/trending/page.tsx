@@ -90,13 +90,13 @@ function TrendingContent() {
           <Link href="/trending" style={{ color: 'var(--text-3)', fontSize: 20, lineHeight: 1 }}>
             &larr;
           </Link>
-          <SectionHeader title={`#${tagFilter}`} eyebrow={`${posts.length} postů`} />
+          <SectionHeader title={`#${tagFilter}`} eyebrow={`${posts.length} posts`} />
         </div>
 
         {loading && <FeedSkeleton />}
         {!loading && posts.length === 0 && (
           <Card style={{ padding: 32, textAlign: 'center' }}>
-            <p style={{ color: 'var(--text-2)' }}>Žádné posty s tímto hashtagem.</p>
+            <p style={{ color: 'var(--text-2)' }}>No posts with this hashtag.</p>
           </Card>
         )}
         {posts.map((post) => (
@@ -108,12 +108,12 @@ function TrendingContent() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <SectionHeader title="Trending" eyebrow="Co hýbe komunitou" />
+      <SectionHeader title="Trending" eyebrow="What's moving the community" />
 
       {/* Period tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <Chip active={period === '24h'} onClick={() => setPeriod('24h')}>24 hodin</Chip>
-        <Chip active={period === '7d'} onClick={() => setPeriod('7d')}>7 dní</Chip>
+        <Chip active={period === '7d'} onClick={() => setPeriod('7d')}>7 days</Chip>
       </div>
 
       {/* Top 3 hero */}
@@ -126,7 +126,7 @@ function TrendingContent() {
                 <p style={{ fontWeight: 600, color: 'var(--text-1)', marginTop: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 14 }}>
                   #{tag.name}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{tag.postCount} postů</p>
+                <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{tag.postCount} posts</p>
               </Card>
             </Link>
           ))}
@@ -137,7 +137,7 @@ function TrendingContent() {
       {hashtags.length > 3 && (
         <div style={{ marginBottom: 32 }}>
           <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 12 }}>
-            Všechny trending
+            All trending
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {hashtags.slice(3).map((tag) => (
@@ -159,7 +159,7 @@ function TrendingContent() {
       {loading && <FeedSkeleton />}
       {!loading && posts.length === 0 && (
         <Card style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-2)' }}>Zatím žádné trending posty.</p>
+          <p style={{ color: 'var(--text-2)' }}>No trending posts yet.</p>
         </Card>
       )}
       {posts.map((post) => (
