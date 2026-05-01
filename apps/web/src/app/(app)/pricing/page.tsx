@@ -33,7 +33,16 @@ export default function PricingPage() {
     setLoading(tier);
     try {
       const res = await createCheckout(tier);
-      if (res.url) window.location.href = res.url;
+      if (res.url) {
+        try {
+          const parsed = new URL(res.url);
+          if (['https:', 'http:'].includes(parsed.protocol)) {
+            window.location.href = res.url;
+          }
+        } catch {
+          window.location.href = res.url;
+        }
+      }
     } finally {
       setLoading(null);
     }

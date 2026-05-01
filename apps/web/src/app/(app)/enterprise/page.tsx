@@ -113,7 +113,7 @@ function StatsGrid({ stats }: { stats: OrgDashboard | null }) {
       {items.map((s) => (
         <Card key={s.label} padding={24}>
           <div className="v3-caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>{s.label}</div>
-          <div className="display-3" style={{ color: 'var(--text-1)' }}>{s.value}</div>
+          <div className="v3-display-3" style={{ color: 'var(--text-1)' }}>{s.value}</div>
         </Card>
       ))}
     </div>

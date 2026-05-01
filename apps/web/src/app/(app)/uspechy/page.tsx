@@ -59,7 +59,7 @@ function PageHeader({ earned, total }: { earned: number; total: number }) {
       </div>
       <div style={{ display: 'flex', gap: 32 }}>
         <div>
-          <div className="eyebrow">Earned</div>
+          <div className="v3-eyebrow">Earned</div>
           <div className="v3-numeric" style={{ fontSize: 40 }}>
             {earned}<span style={{ fontSize: 18, color: 'var(--text-3)' }}>/{total}</span>
           </div>

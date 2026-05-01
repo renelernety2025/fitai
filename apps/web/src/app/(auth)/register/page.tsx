@@ -89,7 +89,7 @@ export default function RegisterPage() {
               <FormInput
                 label="Name"
                 type="text"
-                placeholder="Jan Novák"
+                placeholder="Your name"
                 value={name}
                 onChange={setName}
               />

@@ -227,7 +227,14 @@ function PromoCardItem({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button size="sm" onClick={() => { window.location.href = promo.ctaUrl; }}>
+          <Button size="sm" onClick={() => {
+              const url = promo.ctaUrl;
+              if (url.startsWith('/')) {
+                window.location.href = url;
+              } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }
+            }}>
             {promo.ctaText}
           </Button>
           <button

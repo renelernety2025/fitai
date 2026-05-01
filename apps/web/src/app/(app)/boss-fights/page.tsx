@@ -97,7 +97,7 @@ function SkillTreeCard({ defeatedSet }: { defeatedSet: Set<string> }) {
   const earnedCount = Math.min(SKILLS.length, defeatedSet.size + 3);
   return (
     <Card padding={32}>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>Skill tree · {earnedCount} of {SKILLS.length} unlocked</div>
+      <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Skill tree · {earnedCount} of {SKILLS.length} unlocked</div>
       <div className="v3-title" style={{ marginBottom: 24 }}>Where you have grown</div>
       <div style={{ position: 'relative', aspectRatio: '4/5', borderRadius: 12 }}>
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 100 110" preserveAspectRatio="none">
@@ -174,7 +174,7 @@ function XPBar({ xp, level, nextXP }: { xp: number; level: number; nextXP: numbe
     <Card padding={24} style={{ marginTop: 16, background: 'linear-gradient(135deg, var(--bg-card), rgba(232,93,44,0.08))' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
         <div>
-          <div className="eyebrow">Level</div>
+          <div className="v3-eyebrow">Level</div>
           <div className="v3-numeric" style={{ fontSize: 48, lineHeight: 1, color: 'var(--accent)' }}>{level}</div>
         </div>
         <div style={{ textAlign: 'right' }}>

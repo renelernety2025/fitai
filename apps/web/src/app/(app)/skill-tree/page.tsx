@@ -184,7 +184,7 @@ export default function SkillTreePage() {
                       ? <span className="text-[var(--sage)]">Unlocked</span>
                       : tooltip.available
                       ? <span className="text-[var(--warning)]">Available — meet the requirement</span>
-                      : <span className="text-white/30">Zamceno</span>
+                      : <span className="text-white/30">Locked</span>
                     }
                   </div>
                   <button

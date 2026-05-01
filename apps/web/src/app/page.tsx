@@ -81,7 +81,7 @@ export default function LandingPage() {
             }}>
               Start free
             </Link>
-            <button className="landing-hamburger" aria-label="Menu" style={{
+            <button className="landing-hamburger" aria-label="Menu" onClick={() => { window.location.href = '/register'; }} style={{
               display: 'none', background: 'none', border: 'none',
               color: 'var(--text-1)', fontSize: 24, cursor: 'pointer', padding: 4,
             }}>

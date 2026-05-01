@@ -80,7 +80,7 @@ function StatCards({ streak, stats }: { streak: number; stats: HabitsStats | nul
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 56 }}>
       {items.map(([label, value, sub]) => (
         <Card key={label} padding={24}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>{label}</div>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>{label}</div>
           <div className="v3-numeric" style={{ fontSize: 56, lineHeight: 1 }}>{value}</div>
           <div className="v3-caption" style={{ marginTop: 8 }}>{sub}</div>
         </Card>
@@ -145,7 +145,7 @@ function FreezesSection({ freezes }: { freezes: { available: number; max: number
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
         <div style={{ flex: 1 }}>
           <div className="v3-eyebrow-serif" style={{ marginBottom: 8 }}>Safety net</div>
-          <div className="display-3" style={{ marginBottom: 8 }}>Streak freezes</div>
+          <div className="v3-display-3" style={{ marginBottom: 8 }}>Streak freezes</div>
           <div className="v3-body" style={{ maxWidth: 560 }}>
             Life happens. Use a freeze to skip a day without losing your streak.
           </div>
