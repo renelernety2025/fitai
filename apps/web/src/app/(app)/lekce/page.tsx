@@ -22,7 +22,7 @@ export default function LessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [cat, setCat] = useState('all');
 
-  useEffect(() => { document.title = 'FitAI — Lekce'; }, []);
+  useEffect(() => { document.title = 'FitAI — Lessons'; }, []);
   useEffect(() => { getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error); }, [cat]);
 
   return (
@@ -55,8 +55,8 @@ export default function LessonsPage() {
                       <Tag color={accent[lesson.category]}>{lesson.category}</Tag>
                       <Tag>{lesson.durationMin} min</Tag>
                     </div>
-                    <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 16 }}>{lesson.titleCs}</div>
-                    <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{lesson.bodyCs}</p>
+                    <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 16 }}>{lesson.title || lesson.titleCs}</div>
+                    <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>{lesson.body || lesson.bodyCs}</p>
                   </div>
                   <FitIcon name="arrow" size={18} color="var(--text-3)" />
                 </div>

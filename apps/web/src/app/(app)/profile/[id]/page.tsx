@@ -78,7 +78,7 @@ export default function PublicProfilePage() {
       const conv = await startConversation(profile.id);
       router.push(`/messages?c=${conv.id}`);
     } catch {
-      setError('Nepodarilo se zahajit konverzaci');
+      setError('Failed to start conversation');
     }
   }
 
@@ -86,7 +86,7 @@ export default function PublicProfilePage() {
     return (
       <>
         <div className="flex min-h-[50vh] items-center justify-center">
-          <div style={{ color: 'var(--text-muted)' }}>Nacitam...</div>
+          <div style={{ color: 'var(--text-muted)' }}>Loading...</div>
         </div>
       </>
     );

@@ -49,6 +49,14 @@ export default function LivePage() {
         50% { opacity: 0.3; }
       }`}</style>
 
+      {/* Coming soon banner */}
+      <Card padding={20} style={{ marginBottom: 32, border: '1px solid rgba(232,93,44,0.2)', background: 'rgba(232,93,44,0.05)', textAlign: 'center' }}>
+        <span className="v3-eyebrow" style={{ color: 'var(--accent)' }}>COMING SOON</span>
+        <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 4 }}>
+          Live classes are in development. Below is a preview of what&apos;s coming.
+        </p>
+      </Card>
+
       {/* Header */}
       <div style={{ marginBottom: 48 }}>
         <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Live</div>
@@ -98,8 +106,8 @@ export default function LivePage() {
                     with {l.coach} &middot; {l.attendees} training now
                   </div>
                 </div>
-                <Button variant="accent" icon={<FitIcon name="bolt" size={16} color="#fff" />}>
-                  Join
+                <Button variant="accent" icon={<FitIcon name="bolt" size={16} color="#fff" />} disabled>
+                  Coming soon
                 </Button>
               </div>
             </div>

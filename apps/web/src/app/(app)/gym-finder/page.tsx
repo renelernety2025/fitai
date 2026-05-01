@@ -35,7 +35,7 @@ export default function GymFinderPage() {
   useEffect(() => {
     getGymReviews()
       .then(setGyms)
-      .catch(() => setError('Nepodarilo se nacist recenze'))
+      .catch(() => setError('Failed to load reviews'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -215,7 +215,7 @@ export default function GymFinderPage() {
 
       {filtered.length === 0 && (
         <div className="py-16 text-center text-white/30">
-          Zadne posilovny. Bud prvni kdo prida recenzi!
+          No gyms yet. Be the first to add a review!
         </div>
       )}
     </>

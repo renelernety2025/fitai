@@ -34,7 +34,7 @@ export default function ExportPage() {
     try {
       await downloadExport(path, filename);
     } catch {
-      setError(`Export "${key}" selhal. Zkus to znovu.`);
+      setError(`Export "${key}" failed. Please try again.`);
     } finally {
       setLoading(null);
     }
@@ -43,14 +43,14 @@ export default function ExportPage() {
   return (
     <>
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Tvoje data</p>
+        <p className="v3-eyebrow-serif">Your data</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Data<br/>
           <em className="v3-clay" style={{ fontWeight: 300 }}>Export.</em>
         </h1>
-        <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/55">
-          Stahni si historii treninku, denik nebo vyzivu jako CSV soubor.
-          CSV funguje v Excelu, Google Sheets i Numbers.
+        <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 16, maxWidth: 560 }}>
+          Download your workout history, journal, or nutrition as a CSV file.
+          Works with Excel, Google Sheets, and Numbers.
         </p>
       </section>
 

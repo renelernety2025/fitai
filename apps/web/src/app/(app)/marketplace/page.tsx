@@ -37,13 +37,15 @@ const CATS = ['All', 'Running', 'Strength', 'Yoga', 'Mobility', 'Nutrition', 'Re
 
 export default function MarketplacePage() {
   const [cat, setCat] = useState('All');
-  const [apiListings, setApiListings] = useState<unknown[]>([]);
+  const [apiListings, setApiListings] = useState<any[]>([]);
 
   useEffect(() => { document.title = 'FitAI — Marketplace'; }, []);
 
   useEffect(() => {
-    getMarketplace().then(setApiListings).catch(() => {});
-  }, []);
+    getMarketplace({ type: cat === 'All' ? undefined : cat })
+      .then((data) => setApiListings(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [cat]);
 
   return (
     <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 48px' }}>
@@ -106,6 +108,22 @@ export default function MarketplacePage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+        {/* Community listings from API */}
+        {apiListings.map((item: any) => (
+          <Card key={item.id} padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
+            <div style={{ height: 180, background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))' }} />
+            <div style={{ padding: 20 }}>
+              <div className="v3-title" style={{ marginBottom: 4, fontSize: 15 }}>{item.title}</div>
+              <div className="v3-caption" style={{ marginBottom: 12 }}>
+                {item.trainerName || 'Community'} &middot; {item.type}
+              </div>
+              <span className="v3-numeric" style={{ color: 'var(--accent)', fontSize: 18 }}>
+                {item.priceXP || 0} XP
+              </span>
+            </div>
+          </Card>
+        ))}
+        {/* Curated programs */}
         {PROGRAMS.map((p) => (
           <Card key={p.title} padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
             <div style={{
