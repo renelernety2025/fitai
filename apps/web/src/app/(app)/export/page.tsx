@@ -63,8 +63,8 @@ export default function ExportPage() {
       <div className="space-y-6">
         {/* Workouts CSV */}
         <ExportCard
-          title="Historie treninku"
-          description="Posledních 100 treninku — datum, doba, cviky, repy, forma, objem."
+          title="Workout history"
+          description="Last 100 workouts — date, duration, exercises, reps, form, volume."
           loading={loading === 'workouts-csv'}
           onExport={() =>
             handleExport(
@@ -73,13 +73,13 @@ export default function ExportPage() {
               `fitai-workouts-${today()}.csv`,
             )
           }
-          buttonLabel="Stahnout CSV"
+          buttonLabel="Download CSV"
         />
 
         {/* Workouts print page */}
         <ExportCard
-          title="Treninky — tisk"
-          description="HTML stranka pro tisk (Ctrl+P / Cmd+P). Prehledna tabulka."
+          title="Workouts — print"
+          description="HTML page for printing (Ctrl+P / Cmd+P). Clean table layout."
           loading={loading === 'workouts-pdf'}
           onExport={async () => {
             setLoading('workouts-pdf');
@@ -100,26 +100,26 @@ export default function ExportPage() {
               a.click();
               URL.revokeObjectURL(url);
             } catch {
-              setError('Export "workouts-pdf" selhal. Zkus to znovu.');
+              setError('Export "workouts-pdf" failed. Please try again.');
             } finally {
               setLoading(null);
             }
           }}
-          buttonLabel="Otevrit pro tisk"
+          buttonLabel="Open for print"
         />
 
         {/* Journal CSV */}
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-8">
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-white">Denik</h3>
+            <h3 className="text-lg font-bold text-white">Journal</h3>
             <p className="mt-1 text-sm text-white/40">
-              Zapisy z deniku za zvoleny mesic — hodnoceni, nalada, poznamky, tagy.
+              Journal entries for selected month — rating, mood, notes, tags.
             </p>
           </div>
           <div className="mb-6 flex items-end gap-4">
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Mesic
+                Month
               </span>
               <input
                 type="month"
@@ -138,22 +138,22 @@ export default function ExportPage() {
                 `fitai-journal-${journalMonth}.csv`,
               )
             }
-            label="Stahnout CSV"
+            label="Download CSV"
           />
         </div>
 
         {/* Nutrition CSV */}
         <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-8">
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-white">Vyziva</h3>
+            <h3 className="text-lg font-bold text-white">Nutrition</h3>
             <p className="mt-1 text-sm text-white/40">
-              Vsechny zaznamy jidla v rozmezi — jidlo, kalorie, makra, zdroj.
+              All food records in range — food, calories, macros, source.
             </p>
           </div>
           <div className="mb-6 flex flex-wrap items-end gap-4">
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Od
+                From
               </span>
               <input
                 type="date"
@@ -166,7 +166,7 @@ export default function ExportPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                Do
+                To
               </span>
               <input
                 type="date"
@@ -187,7 +187,7 @@ export default function ExportPage() {
                 `fitai-nutrition-${nutritionRange.from}_${nutritionRange.to}.csv`,
               )
             }
-            label="Stahnout CSV"
+            label="Download CSV"
           />
         </div>
       </div>

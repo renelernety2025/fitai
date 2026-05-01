@@ -228,7 +228,7 @@ export default function RoutineBuilderPage() {
       {aiSuggestion && (
         <Card padding="12px 16px" style={{ marginBottom: 16, borderLeft: '3px solid var(--accent)' }}>
           <span className="v3-caption" style={{ color: 'var(--text-3)' }}>
-            AI doporuceni: {aiSuggestion}
+            AI recommendation: {aiSuggestion}
           </span>
         </Card>
       )}

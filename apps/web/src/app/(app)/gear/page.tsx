@@ -61,7 +61,7 @@ export default function GearPage() {
               const color = wearColor(pct);
               return (
                 <Card key={item.id} padding={20} style={{ position: 'relative' }}>
-                  <button onClick={() => deleteGearItem(item.id).then(load)} style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }} title="Delete">
+                  <button onClick={() => { if (confirm('Delete this gear item?')) deleteGearItem(item.id).then(load); }} style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.3 }} title="Delete">
                     <FitIcon name="x" size={14} color="var(--text-3)" />
                   </button>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { getGymReviews, addGymReview } from '@/lib/api';
 
 const EQUIPMENT_OPTIONS = [
-  'Cinky', 'Jednoruky', 'Stroje', 'Kladky', 'Kardio', 'Kettlebells', 'TRX',
+  'Barbells', 'Dumbbells', 'Machines', 'Cables', 'Cardio', 'Kettlebells', 'TRX',
 ];
 
 function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
@@ -30,7 +30,7 @@ export default function GymFinderPage() {
     name: '', address: '', rating: 4, equipment: [] as string[], notes: '',
   });
 
-  useEffect(() => { document.title = 'FitAI — Posilovny'; }, []);
+  useEffect(() => { document.title = 'FitAI — Gym Finder'; }, []);
 
   useEffect(() => {
     getGymReviews()
@@ -80,13 +80,13 @@ export default function GymFinderPage() {
   return (
     <>
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Komunita</p>
+        <p className="v3-eyebrow-serif">Community</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
-          Najdi<br/>
-          <em className="v3-clay" style={{ fontWeight: 300 }}>posilovnu.</em>
+          Find your<br/>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>gym.</em>
         </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
-          Recenze posiloven od komunity. Najdi tu pravou pro tvuj trenink.
+          Community gym reviews. Find the right one for your training.
         </p>
       </section>
 
@@ -106,12 +106,12 @@ export default function GymFinderPage() {
         <button onClick={() => setShowForm((p) => !p)}
           className="rounded-full border border-[var(--sage)]/30 px-6 py-2.5 text-sm font-semibold text-[var(--sage)] transition hover:bg-[var(--sage)]/10"
         >
-          + Pridat recenzi
+          + Add review
         </button>
         <button onClick={() => setSortBy(sortBy === 'rating' ? 'name' : 'rating')}
           className="rounded-full border border-white/15 px-5 py-2.5 text-xs font-semibold text-white/60 transition hover:text-white"
         >
-          Radit: {sortBy === 'rating' ? 'Hodnoceni' : 'Nazev'}
+          Sort: {sortBy === 'rating' ? 'Rating' : 'Name'}
         </button>
       </div>
 
@@ -133,19 +133,19 @@ export default function GymFinderPage() {
       {/* Add review form */}
       {showForm && (
         <div className="mb-8 rounded-2xl border border-white/10 bg-white/3 p-6">
-          <p className="v3-eyebrow">Nova recenze</p>
+          <p className="v3-eyebrow">New review</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <input type="text" placeholder="Nazev posilovny" value={form.name}
+            <input type="text" placeholder="Gym name" value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
             />
-            <input type="text" placeholder="Adresa" value={form.address}
+            <input type="text" placeholder="Address" value={form.address}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               className="rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
             />
           </div>
           <div className="mt-4">
-            <label className="mb-2 block text-xs text-white/50">Hodnoceni</label>
+            <label className="mb-2 block text-xs text-white/50">Rating</label>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((r) => (
                 <button key={r} onClick={() => setForm({ ...form, rating: r })}
@@ -158,7 +158,7 @@ export default function GymFinderPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="mb-2 block text-xs text-white/50">Vybaveni</label>
+            <label className="mb-2 block text-xs text-white/50">Equipment</label>
             <div className="flex flex-wrap gap-2">
               {EQUIPMENT_OPTIONS.map((eq) => (
                 <button key={eq} onClick={() => toggleFormEquip(eq)}
@@ -173,7 +173,7 @@ export default function GymFinderPage() {
               ))}
             </div>
           </div>
-          <textarea placeholder="Poznamky (nepovinne)" value={form.notes}
+          <textarea placeholder="Notes (optional)" value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             className="mt-4 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
             rows={2}
@@ -181,7 +181,7 @@ export default function GymFinderPage() {
           <button onClick={handleAdd}
             className="mt-4 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
           >
-            Odeslat recenzi
+            Submit review
           </button>
         </div>
       )}

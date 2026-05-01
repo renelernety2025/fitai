@@ -16,13 +16,15 @@ export default function MaintenancePage() {
   const [alerts, setAlerts] = useState<MaintenanceAlert[]>([]);
   const [mileage, setMileage] = useState<BodyMileage | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Body Maintenance'; }, []);
 
   const refresh = useCallback(() => {
+    setError(false);
     Promise.all([getMaintenanceStatus(), getMaintenanceAlerts(), getBodyMileage()])
       .then(([m, a, b]) => { setMuscles(m); setAlerts(a); setMileage(b); })
-      .catch(console.error)
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -43,12 +45,18 @@ export default function MaintenancePage() {
           </h1>
         </section>
 
+        {error && (
+          <Card padding={24} style={{ marginBottom: 16 }}>
+            <p className="v3-body" style={{ color: 'var(--danger, #ef4444)' }}>Failed to load maintenance data.</p>
+          </Card>
+        )}
+
         {mileage && (
           <Card padding={32} style={{ marginBottom: 32 }}>
             <div className="v3-eyebrow" style={{ marginBottom: 8 }}>TOTAL MILEAGE</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span className="v3-numeric" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 700, letterSpacing: '-0.04em', color: 'var(--text-1)' }}>
-                {mileage.totalVolumeKg.toLocaleString('cs-CZ')}
+                {mileage.totalVolumeKg.toLocaleString('en-US')}
               </span>
               <span className="v3-numeric" style={{ fontSize: 16, color: 'var(--text-3)' }}>kg</span>
             </div>
@@ -70,7 +78,7 @@ export default function MaintenancePage() {
               <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{m.muscleGroup}</div>
               {m.lastTrainedAt && (
                 <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>
-                  Last: {new Date(m.lastTrainedAt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
+                  Last: {new Date(m.lastTrainedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
                 </div>
               )}
               {(m.status === 'DUE' || m.status === 'OVERDUE') && (
