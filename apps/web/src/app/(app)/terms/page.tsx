@@ -68,6 +68,12 @@ export default function TermsPage() {
           přesnost AI analýz (rozpoznání jídla, hodnocení formy, odhad tělesného tuku).
         </Paragraph>
 
+        <SectionTitle>Rozhodné právo</SectionTitle>
+        <Paragraph>
+          Tyto podmínky se řídí právním řádem České republiky. Případné spory budou
+          řešeny přednostně dohodou, v případě neúspěchu pak příslušným soudem v České republice.
+        </Paragraph>
+
         <SectionTitle>Změny podmínek</SectionTitle>
         <Paragraph>
           Vyhrazujeme si právo tyto podmínky upravit. O významných změnách vás budeme

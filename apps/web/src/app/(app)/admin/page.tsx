@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { FadeIn, NumberTicker } from '@/components/v2/motion';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 interface AdminStats {
   totalUsers: number;
   registrationsToday: number;
@@ -41,27 +39,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user?.isAdmin) return;
-    const token = localStorage.getItem('fitai_token');
-    fetch(`${API_BASE}/api/admin/stats`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('Failed to load');
-        return r.json();
-      })
-      .then(setStats)
-      .catch(() => setError('Failed to load data'));
-
-    fetch(`${API_BASE}/api/admin/analytics`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('Failed to load analytics');
-        return r.json();
-      })
-      .then(setAnalytics)
-      .catch(() => {});
-  }, [user]);
+    import('@/lib/api').then(({ request }) => {
+      request<AdminStats>('/admin/stats').then(setStats).catch(() => setError('Failed to load data'));
+      request<AdminAnalytics>('/admin/analytics').then(setAnalytics).catch(() => {});
+    });
+  }, [user?.isAdmin]);
 
   if (!user?.isAdmin) {
     return (

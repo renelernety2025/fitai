@@ -69,6 +69,21 @@ export default function PrivacyPage() {
           zpracování. Pro uplatnění práv nás kontaktujte na níže uvedeném e-mailu.
         </Paragraph>
 
+        <SectionTitle>Smazání účtu</SectionTitle>
+        <Paragraph>
+          Svůj účet a všechna související data můžete kdykoliv smazat v{' '}
+          <a href="/settings" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>Nastavení → Smazat účet</a>.
+          Smazání je okamžité a nevratné — odstraní se veškerá tréninková historie,
+          fotografie, jídelníčky, check-iny a AI data.
+        </Paragraph>
+
+        <SectionTitle>Uchovávání dat</SectionTitle>
+        <Paragraph>
+          Vaše data uchováváme po dobu trvání vašeho účtu. Po smazání účtu jsou
+          všechna data trvale odstraněna do 30 dnů. Anonymizované agregované
+          statistiky (bez osobních údajů) mohou být uchovány pro účely zlepšování služby.
+        </Paragraph>
+
         <SectionTitle>Kontakt</SectionTitle>
         <Paragraph>
           E-mail: privacy@fitai.bfevents.cz
