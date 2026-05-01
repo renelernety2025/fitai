@@ -109,7 +109,7 @@ function StatsGrid({ stats }: { stats: OrgDashboard | null }) {
     { label: 'Team streak', value: `${stats.teamStreak}d` },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
       {items.map((s) => (
         <Card key={s.label} padding={24}>
           <div className="v3-caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>{s.label}</div>
@@ -169,7 +169,7 @@ function ChallengesSection({ challenges, isAdmin, onCreate }: { challenges: OrgC
         <SectionHeader eyebrow="Challenges" title="Team competitions" />
         {isAdmin && <Button variant="ghost" size="sm" onClick={onCreate}>New challenge</Button>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
         {challenges.length === 0 ? (
           <Card padding={32}><p className="v3-caption" style={{ color: 'var(--text-3)' }}>No challenges yet.</p></Card>
         ) : challenges.map((c) => (
@@ -178,7 +178,7 @@ function ChallengesSection({ challenges, isAdmin, onCreate }: { challenges: OrgC
             <div className="v3-caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>Metric: {c.metric}</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Tag>{c.isActive ? 'Active' : 'Ended'}</Tag>
-              <Tag>{new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}</Tag>
+              <Tag>{new Date(c.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(c.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Tag>
             </div>
           </Card>
         ))}
@@ -304,7 +304,7 @@ function ModalShell({ onClose, children }: { onClose: () => void; children: Reac
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
     >
       <Card padding={32} style={{ width: '100%', maxWidth: 440 }}>{children}</Card>
     </div>
