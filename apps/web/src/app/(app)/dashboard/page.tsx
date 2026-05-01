@@ -13,21 +13,21 @@ import StatsStrip from '@/components/dashboard/v3/StatsStrip';
 import WeekStrip from '@/components/dashboard/v3/WeekStrip';
 import FitnessScore from '@/components/dashboard/v3/FitnessScore';
 import {
-  getMyStats, getInsights, getLessonOfTheWeek, getNutritionToday,
-  getWeeklyReview, getDailyBrief, getDailyMotivation, getMicroWorkout,
-  getTodayAction, getStreakFreezeStatus,
+  getMyStats, getInsights,
+  getWeeklyReview, getDailyBrief, getDailyMotivation,
+  getTodayAction,
   type StatsData, type Insights, type WeeklyReview, type DailyBrief, type TodayAction,
 } from '@/lib/api';
 
 function SectionError({ onRetry }: { onRetry: () => void }) {
   return (
     <Card padding={16} style={{ textAlign: 'center', marginBottom: 32 }}>
-      <p style={{ fontSize: 14, color: 'var(--text-3)', margin: '0 0 8px' }}>Nepodařilo se načíst</p>
+      <p style={{ fontSize: 14, color: 'var(--text-3)', margin: '0 0 8px' }}>Failed to load</p>
       <button
         onClick={onRetry}
         style={{ fontSize: 14, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}
       >
-        Zkusit znovu
+        Try again
       </button>
     </Card>
   );
@@ -76,11 +76,6 @@ export default function DashboardV3Page() {
     loadWeekly();
     getDailyMotivation().then((r) => setMotivation(r.message)).catch(() => {});
     getTodayAction().then(setTodayAction).catch(() => {});
-    // Pre-warm caches for sub-pages
-    getLessonOfTheWeek().catch(() => {});
-    getNutritionToday().catch(() => {});
-    getMicroWorkout().catch(() => {});
-    getStreakFreezeStatus().catch(() => {});
   }
 
   useEffect(() => { reload(); }, []);
@@ -93,11 +88,11 @@ export default function DashboardV3Page() {
 
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Dobre rano' : hour < 18 ? 'Dobre odpoledne' : 'Dobry vecer';
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const name = user?.name?.split(' ')[0] || 'Athlete';
-  const dateStr = now.toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const recovery = brief?.recoveryStatus;
-  const subtitle = `${dateStr}${recovery === 'fresh' ? ' \u00B7 Svezi' : recovery === 'fatigued' ? ' \u00B7 Unaveny' : ''}`;
+  const subtitle = `${dateStr}${recovery === 'fresh' ? ' \u00B7 Fresh' : recovery === 'fatigued' ? ' \u00B7 Fatigued' : ''}`;
 
   return (
     <>
@@ -147,7 +142,7 @@ export default function DashboardV3Page() {
             <Card padding={28} style={{ background: 'linear-gradient(160deg, rgba(26,10,5,0.6) 0%, var(--bg-card) 60%)', border: '1px solid rgba(255,75,18,0.12)' }}>
               <div className="v3-eyebrow" style={{ color: 'var(--accent)', marginBottom: 16 }}>AI COACH</div>
               <div className="v3-display-3" style={{ marginBottom: 12 }}>
-                {{ fresh: 'Jsi svezi. Dnes muzes zabratat.', normal: 'Normalni stav. Drzme tempo.', fatigued: 'Telo je unavene. Zlehka.', overreached: 'Prilis zateze. Dnes odpocinek.' }[insights.recovery.overallStatus]}
+                {{ fresh: 'You\'re fresh. Push hard today.', normal: 'Normal state. Keep the tempo.', fatigued: 'Body is tired. Take it easy.', overreached: 'Overtrained. Rest today.' }[insights.recovery.overallStatus]}
               </div>
               <p className="v3-body" style={{ color: 'var(--text-2)', margin: 0 }}>{insights.recovery.recommendation}</p>
             </Card>

@@ -1,5 +1,18 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { Logo } from '@/components/v3';
+
+export const metadata: Metadata = {
+  title: 'FitAI — AI Personal Trainer | Become Your Strongest Self',
+  description: 'World-class AI coaching that adapts to your body. Personalized workout plans, real-time form feedback, nutrition tracking, and a community that shows up.',
+  openGraph: {
+    title: 'FitAI — AI Personal Trainer',
+    description: 'World-class AI coaching that adapts to your body.',
+    url: 'https://fitai.bfevents.cz',
+    siteName: 'FitAI',
+    type: 'website',
+  },
+};
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1502904550040-7534597429ae?w=2400&q=85&auto=format&fit=crop';
 
@@ -10,18 +23,26 @@ const DISCIPLINES = [
 ];
 
 const METRICS: { value: string; label: string }[] = [
-  { value: '60+', label: 'Cviků v knihovně' },
-  { value: 'AI', label: 'Osobní trenér' },
-  { value: '100%', label: 'Kompletní výživa' },
-  { value: '∞', label: 'Reálný pokrok' },
+  { value: '60+', label: 'Exercises in library' },
+  { value: 'AI', label: 'Personal trainer' },
+  { value: '100%', label: 'Complete nutrition' },
+  { value: '24/7', label: 'Always available' },
 ];
 
 const NAV_LINKS = [
-  { label: 'Train', href: '/exercises' },
-  { label: 'Coaches', href: '/trainers' },
-  { label: 'Programs', href: '/courses' },
-  { label: 'Community', href: '/community' },
-  { label: 'Pricing', href: '/pricing' },
+  { label: 'Features', href: '#features' },
+  { label: 'Train', href: '/register' },
+  { label: 'Community', href: '/register' },
+  { label: 'Pricing', href: '/register' },
+];
+
+const FEATURES = [
+  { icon: '\u{1F3AF}', title: 'AI Form Coaching', desc: 'Real-time pose detection with Claude AI feedback. Your form is analyzed every rep, every set.' },
+  { icon: '\u{1F4CA}', title: 'Smart Plans', desc: 'AI-generated periodized training plans that adapt to your recovery, goals, and progress.' },
+  { icon: '\u{1F34E}', title: 'Nutrition Tracking', desc: 'Photo-based food recognition, macro tracking, and AI-generated meal plans with shopping lists.' },
+  { icon: '\u{1F3C6}', title: 'Gamification', desc: 'Leagues, skill trees, boss fights, achievements, and battle passes keep you motivated.' },
+  { icon: '\u{1F465}', title: 'Community', desc: 'Social feed, challenges, squads, gym buddy matching, and creator economy.' },
+  { icon: '\u{1F4F1}', title: 'Mobile + Web', desc: 'Train anywhere. Full-featured iOS app with camera workout mode and web dashboard.' },
 ];
 
 export default function LandingPage() {
@@ -41,13 +62,13 @@ export default function LandingPage() {
           padding: '18px 40px',
         }}>
           <Logo size={20} />
-          <div style={{ display: 'flex', gap: 36, fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
+          <div className="landing-nav-links" style={{ display: 'flex', gap: 36, fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
             {NAV_LINKS.map((l) => (
               <Link key={l.label} href={l.href} style={{ color: 'var(--text-2)', textDecoration: 'none' }}>{l.label}</Link>
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Link href="/login" style={{ fontSize: 13, color: 'var(--text-2)', textDecoration: 'none' }}>
+            <Link href="/login" className="landing-signin" style={{ fontSize: 13, color: 'var(--text-2)', textDecoration: 'none' }}>
               Sign in
             </Link>
             <Link href="/register" style={{
@@ -60,6 +81,12 @@ export default function LandingPage() {
             }}>
               Start free
             </Link>
+            <button className="landing-hamburger" aria-label="Menu" style={{
+              display: 'none', background: 'none', border: 'none',
+              color: 'var(--text-1)', fontSize: 24, cursor: 'pointer', padding: 4,
+            }}>
+              &#9776;
+            </button>
           </div>
         </div>
       </nav>
@@ -90,7 +117,7 @@ export default function LandingPage() {
         }}>
           <div style={{ maxWidth: 780 }}>
             <div className="v3-eyebrow" style={{ marginBottom: 24, color: 'var(--accent-hot)' }}>
-              Spring 2026 — Now in 142 countries
+              AI-powered fitness — Train smarter, not harder
             </div>
             <h1 className="v3-display-1" style={{ margin: '0 0 28px', color: 'var(--text-1)' }}>
               Become your<br />
@@ -120,16 +147,16 @@ export default function LandingPage() {
                 border: '1px solid rgba(245,237,224,0.22)',
                 color: 'var(--text-1)', textDecoration: 'none',
               }}>
-                Watch the film
+                Sign in
               </Link>
             </div>
-            {/* Social proof */}
+            {/* Platform highlights */}
             <div style={{ display: 'flex', gap: 32, marginTop: 64, alignItems: 'center' }}>
-              <SocialStat value="2.4M" label="Members training" />
+              <SocialStat value="60+" label="Guided exercises" />
               <Divider />
-              <SocialStat value="4.9" label="App Store rating" />
+              <SocialStat value="AI" label="Real-time coaching" />
               <Divider />
-              <SocialStat value="180" label="Coaches in residence" />
+              <SocialStat value="3" label="Coach personalities" />
             </div>
           </div>
         </div>
@@ -172,6 +199,34 @@ export default function LandingPage() {
         ))}
       </section>
 
+      {/* Features */}
+      <section id="features" style={{
+        padding: '96px 40px',
+        maxWidth: 1440, margin: '0 auto',
+      }}>
+        <div className="v3-eyebrow" style={{ textAlign: 'center', marginBottom: 16, color: 'var(--accent-hot)' }}>
+          Everything you need
+        </div>
+        <h2 className="v3-display-2" style={{ textAlign: 'center', marginBottom: 64 }}>
+          Built for real athletes.
+        </h2>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 24,
+        }}>
+          {FEATURES.map((f) => (
+            <div key={f.title} style={{
+              padding: 32, borderRadius: 'var(--r-md)',
+              border: '1px solid var(--stroke-1)', background: 'var(--bg-1, rgba(255,255,255,0.03))',
+            }}>
+              <div style={{ fontSize: 28, marginBottom: 16 }}>{f.icon}</div>
+              <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 8, color: 'var(--text-1)' }}>{f.title}</h3>
+              <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.6 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--stroke-1)',
@@ -191,6 +246,14 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <style>{`
+        @media(max-width:768px){
+          .landing-nav-links{display:none!important}
+          .landing-signin{display:none!important}
+          .landing-hamburger{display:block!important}
+        }
+      `}</style>
     </div>
   );
 }

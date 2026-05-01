@@ -18,11 +18,14 @@ export default function StatsStrip({ stats }: StatsStripProps) {
   const hours = Math.floor((stats.totalMinutes || 0) / 60);
   const weeklySpark = buildSparkFromWeekly(stats.weeklyActivity);
 
-  const items = [
+  const items: {
+    label: string; value: string; unit?: string;
+    delta?: string; deltaPositive?: boolean; sub?: string;
+    sparkData?: number[];
+  }[] = [
     {
       label: 'SESSIONS',
       value: String(stats.totalSessions),
-      delta: stats.totalSessions > 0 ? undefined : undefined,
       sparkData: weeklySpark,
     },
     {

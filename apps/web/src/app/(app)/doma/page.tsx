@@ -61,7 +61,7 @@ export default function DomaPage() {
                         {(i + 1).toString().padStart(2, '0')}
                       </span>
                       <div>
-                        <span className="v3-body" style={{ color: 'var(--text-1)', fontWeight: 600 }}>{ex.nameCs}</span>
+                        <span className="v3-body" style={{ color: 'var(--text-1)', fontWeight: 600 }}>{ex.name || ex.nameCs}</span>
                         <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 2 }}>
                           {ex.muscleGroups.slice(0, 3).join(', ')}
                         </div>

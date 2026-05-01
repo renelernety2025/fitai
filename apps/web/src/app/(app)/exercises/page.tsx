@@ -131,7 +131,7 @@ export default function ExercisesPage() {
       {/* Grid */}
       <div style={{
         padding: '24px 48px 64px',
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16,
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16,
       }}>
         {exercises.map((ex, i) => (
           <Link key={ex.id} href={`/exercises/${ex.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -167,7 +167,7 @@ export default function ExercisesPage() {
               </div>
               <div style={{ padding: 16 }}>
                 <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>
-                  {ex.nameCs}
+                  {ex.name || ex.nameCs}
                 </div>
                 <div className="v3-caption">
                   {ex.muscleGroups.slice(0, 3).join(' / ')}

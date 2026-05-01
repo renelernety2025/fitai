@@ -15,10 +15,10 @@ const planColor: Record<string, string> = {
 };
 
 const quickLinks = [
-  { href: '/doma', icon: 'home', label: 'Doma', sub: '15-35 min' },
-  { href: '/videos', icon: 'camera', label: 'Lekce', sub: 'Yoga, HIIT' },
-  { href: '/ai-coach', icon: 'brain', label: 'AI Plan', sub: 'Personalizace' },
-  { href: '/micro-workout', icon: 'flame', label: 'Micro', sub: '5 minut' },
+  { href: '/doma', icon: 'home', label: 'Home', sub: '15-35 min' },
+  { href: '/videos', icon: 'camera', label: 'Classes', sub: 'Yoga, HIIT' },
+  { href: '/ai-coach', icon: 'brain', label: 'AI Plan', sub: 'Personalized' },
+  { href: '/micro-workout', icon: 'flame', label: 'Micro', sub: '5 min' },
 ];
 
 export default function GymPage() {
@@ -27,7 +27,7 @@ export default function GymPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => { document.title = 'FitAI — Trenik'; }, []);
+  useEffect(() => { document.title = 'FitAI — Training'; }, []);
 
   useEffect(() => {
     Promise.all([
@@ -73,17 +73,17 @@ export default function GymPage() {
             {loading && (
               <>
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="animate-pulse" style={{ height: 80, borderRadius: 'var(--r-md)', background: 'var(--bg-2)', marginBottom: 2 }} />
+                  <div key={i} style={{ height: 80, borderRadius: 'var(--r-md)', background: 'var(--bg-2)', marginBottom: 2, opacity: 0.6 }} />
                 ))}
               </>
             )}
             {!loading && plans.length === 0 && (
               <Card padding={32} style={{ textAlign: 'center' }}>
                 <p style={{ color: 'var(--text-2)', marginBottom: 16, fontSize: 14 }}>
-                  Zatím nemáš žádný tréninkový plán.
+                  You don&apos;t have any training plans yet.
                 </p>
                 <Button variant="accent" onClick={() => router.push('/ai-coach')}>
-                  Vytvořit první plán
+                  Create your first plan
                 </Button>
               </Card>
             )}
@@ -96,7 +96,7 @@ export default function GymPage() {
                         {plan.type.replace(/_/g, ' ')} / {plan.daysPerWeek}x
                       </Tag>
                       <div className="v3-body" style={{ marginTop: 8, color: 'var(--text-1)', fontWeight: 600 }}>
-                        {plan.nameCs}
+                        {plan.name || plan.nameCs}
                       </div>
                       {plan.description && (
                         <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 4 }}>

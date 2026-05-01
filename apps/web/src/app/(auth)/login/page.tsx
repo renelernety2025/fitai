@@ -18,7 +18,6 @@ export default function LoginPage() {
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -113,15 +112,7 @@ function LoginForm() {
             )}
 
             <div className="login-meta-row">
-              <label className="login-checkbox">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                <span className="login-checkbox__box" />
-                Remember me
-              </label>
+              <span />
               <Link href="/forgot-password" style={{ color: 'var(--text-2)', fontSize: 12 }}>
                 Forgot password?
               </Link>
@@ -131,21 +122,6 @@ function LoginForm() {
               {loading ? 'Signing in...' : 'Sign in \u2192'}
             </Button>
           </form>
-
-          <div className="login-divider">
-            <div className="login-divider__line" />
-            <span className="login-divider__text">or</span>
-            <div className="login-divider__line" />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Button variant="ghost" size="lg" full icon={<AppleIcon />}>
-              Continue with Apple
-            </Button>
-            <Button variant="ghost" size="lg" full icon={<GoogleIcon />}>
-              Continue with Google
-            </Button>
-          </div>
 
           <p style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
             By signing in you agree to our{' '}
@@ -166,37 +142,36 @@ function FormInput({ label, type = 'text', placeholder, value, onChange }: {
   label: string; type?: string; placeholder: string;
   value: string; onChange: (v: string) => void;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
   return (
     <div>
       <label className="login-label">{label}</label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="login-input"
-        required
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          type={isPassword && showPassword ? 'text' : type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="login-input"
+          required
+        />
+        {isPassword && value && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', color: 'var(--text-3)',
+              cursor: 'pointer', fontSize: 13, padding: 4,
+            }}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        )}
+      </div>
     </div>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M12.15 12.32c-.36.8-.78 1.54-1.27 2.2-.67.9-1.21 1.53-1.64 1.87-.65.56-1.35.85-2.1.87-.54 0-1.18-.15-1.94-.46-.76-.31-1.46-.46-2.1-.46-.67 0-1.39.15-2.16.46C.18 17.12-.36 17.27-.72 17.27c-.7.02-1.42-.28-2.14-.92-.46-.37-1.04-1.02-1.73-1.94-.74-1-1.35-2.15-1.83-3.46C-6.94 9.55-7.2 8.2-7.2 6.9c0-1.5.32-2.8.97-3.87.51-.86 1.19-1.54 2.04-2.04A5.5 5.5 0 0 1-1.44.2c.57 0 1.32.18 2.25.52.93.34 1.52.52 1.79.52.2 0 .85-.2 1.94-.62 1.03-.38 1.9-.54 2.61-.48 1.93.16 3.38.92 4.34 2.3-1.73 1.05-2.58 2.51-2.56 4.4.02 1.47.55 2.69 1.58 3.67.47.45 1 .79 1.58 1.03-.13.37-.26.73-.4 1.08zM8.23.32C8.23.5 8.2.7 8.17.9a6.47 6.47 0 0 1-1.72 3.37C5.55 5.27 4.5 5.78 3.34 5.87c-.02-.18-.03-.38-.03-.58 0-1.13.41-2.34 1.24-3.37.41-.52.94-.96 1.58-1.3C6.77.28 7.38.07 7.95 0c.02.11.04.22.05.32z" transform="translate(3.5 -0.5) scale(0.75)" />
-    </svg>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 48 48">
-      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.9 33.2 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 5.7 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.2-2.7-.4-3.9z" />
-      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.2 15.5 18.8 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 5.7 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.2 26.7 36 24 36c-5.2 0-9.7-2.8-11.2-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
-      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.7 39.5 44 34 44 24c0-1.3-.2-2.7-.4-3.9z" />
-    </svg>
   );
 }
 
@@ -215,13 +190,6 @@ const loginStyles = `
 .login-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,93,44,.15)}
 .login-input::placeholder{color:var(--text-3)}
 .login-meta-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;font-size:12px}
-.login-checkbox{display:inline-flex;align-items:center;gap:8px;color:var(--text-2);cursor:pointer;font-size:12px}
-.login-checkbox input{position:absolute;opacity:0;width:0;height:0}
-.login-checkbox__box{width:16px;height:16px;border:1px solid var(--stroke-3);border-radius:4px;background:var(--bg-2);transition:background .15s,border-color .15s}
-.login-checkbox input:checked+.login-checkbox__box{background:var(--accent);border-color:var(--accent)}
-.login-divider{display:flex;align-items:center;gap:12px;margin:28px 0}
-.login-divider__line{flex:1;height:1px;background:var(--stroke-1)}
-.login-divider__text{font-size:11px;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase}
 @media(max-width:768px){
   .login-split{grid-template-columns:1fr}
   .login-hero{display:none}

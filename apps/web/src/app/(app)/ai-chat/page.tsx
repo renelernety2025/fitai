@@ -23,8 +23,8 @@ const QUICK_PROMPTS = [
   'I\'m sore today',
   'What should I eat?',
   'Show my progress',
-  'Jak zlepsit bench press?',
-  'Jsem unaveny, mam trenovat?',
+  'How to improve bench press?',
+  'I\'m tired, should I train?',
 ];
 
 const SLEEP_DATA = [7.5, 7, 6.5, 8, 6, 5.5, 6.5];

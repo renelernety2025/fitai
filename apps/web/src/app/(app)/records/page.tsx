@@ -117,8 +117,7 @@ function RecordCard({ pr, expanded, onToggle }: { pr: PersonalRecord; expanded: 
         <Tag color="var(--accent)">PR · {prLabel}</Tag>
       </div>
 
-      {/* Placeholder sparkline */}
-      <Sparkline data={[pr.bestWeight * 0.7, pr.bestWeight * 0.75, pr.bestWeight * 0.8, pr.bestWeight * 0.85, pr.bestWeight * 0.9, pr.bestWeight * 0.95, pr.bestWeight]} width={400} height={60} color="var(--accent)" />
+      {/* Progress sparkline — shown only when real history is available */}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
         <span className="v3-caption">{pr.category}</span>

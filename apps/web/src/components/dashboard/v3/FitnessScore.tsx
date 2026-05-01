@@ -5,11 +5,11 @@ import { Card, Ring, SectionHeader } from '@/components/v3';
 import { getFitnessScore, type FitnessScoreData } from '@/lib/api/progress';
 
 const DIMS: { key: keyof FitnessScoreData['breakdown']; label: string }[] = [
-  { key: 'consistency', label: 'Konzistence' },
-  { key: 'strength', label: 'Sila' },
-  { key: 'cardio', label: 'Kardio' },
-  { key: 'nutrition', label: 'Vyziva' },
-  { key: 'recovery', label: 'Regenerace' },
+  { key: 'consistency', label: 'Consistency' },
+  { key: 'strength', label: 'Strength' },
+  { key: 'cardio', label: 'Cardio' },
+  { key: 'nutrition', label: 'Nutrition' },
+  { key: 'recovery', label: 'Recovery' },
 ];
 
 function scoreColor(v: number): string {
@@ -31,13 +31,22 @@ export default function FitnessScore() {
     getFitnessScore().then(setData).catch(() => {});
   }, []);
 
-  if (!data) return null;
+  if (!data) return (
+    <section style={{ marginBottom: 32 }}>
+      <SectionHeader eyebrow="FITNESS SCORE" title="Your overall score." />
+      <Card padding={28}>
+        <div style={{ height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading score...</span>
+        </div>
+      </Card>
+    </section>
+  );
 
   const color = scoreColor(data.score);
 
   return (
     <section style={{ marginBottom: 32 }}>
-      <SectionHeader eyebrow="FITNESS SCORE" title="Tvoje celkove skore." />
+      <SectionHeader eyebrow="FITNESS SCORE" title="Your overall score." />
       <Card padding={28}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <Ring value={data.score} size={96} stroke={6} color={color} label={String(data.score)} sub="/ 100" />
@@ -45,11 +54,11 @@ export default function FitnessScore() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 20, color }}>{TREND_ICON[data.trend] || ''}</span>
               <span className="v3-body" style={{ color: 'var(--text-2)' }}>
-                {data.trend === 'improving' ? 'Zlepsujes se' : data.trend === 'declining' ? 'Klesajici' : 'Stabilni'}
+                {data.trend === 'improving' ? 'Improving' : data.trend === 'declining' ? 'Declining' : 'Stable'}
               </span>
               {data.previousScore !== null && (
                 <span className="v3-caption" style={{ color: 'var(--text-3)' }}>
-                  (predchozi {data.previousScore})
+                  (previous {data.previousScore})
                 </span>
               )}
             </div>
@@ -57,7 +66,7 @@ export default function FitnessScore() {
               background: 'var(--bg-2)', padding: '4px 10px',
               borderRadius: 12, color: 'var(--text-2)', fontSize: 11,
             }}>
-              Top {data.percentile}% uzivatelu
+              Top {data.percentile}% of users
             </span>
           </div>
         </div>

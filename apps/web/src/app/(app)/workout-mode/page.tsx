@@ -22,7 +22,7 @@ export default function WorkoutModePage() {
   if (active?.workout) {
     return (
       <FollowAlongWorkout
-        title={active.nameCs}
+        title={active.name || active.nameCs}
         steps={active.workout}
         onFinish={handleFinish}
       />
@@ -33,62 +33,88 @@ export default function WorkoutModePage() {
     <>
       <Link
         href="/sports"
-        className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
+        style={{
+          display: 'inline-block', marginTop: 32,
+          fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+          letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)',
+          textDecoration: 'none', transition: 'color .2s',
+        }}
       >
-        ← Sporty
+        &larr; Sports
       </Link>
 
-      <section className="pt-8 pb-12">
+      <section style={{ paddingTop: 32, paddingBottom: 48 }}>
         <p className="v3-eyebrow-serif">Follow-along</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Workout<br/>
           <em className="v3-clay" style={{ fontWeight: 300 }}>Mode.</em>
         </h1>
-        <p className="mt-4 max-w-xl text-base text-white/55">
-          Cvic spolecne s 3D modelem. Timer ti rekne kdy zacit, kdy odpocivat,
-          kdy prepnout. Staci sledovat a delat to same.
+        <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 16, maxWidth: 560 }}>
+          Train alongside a 3D model. Timer tells you when to start, rest,
+          and switch. Just follow along.
         </p>
       </section>
 
-      {/* Post-workout message */}
       {finished && (
-        <div className="mb-12 rounded-2xl border border-[var(--sage)]/20 bg-[var(--sage)]/5 p-8 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--sage)]">
-            Trenink dokoncen!
+        <div style={{
+          marginBottom: 48, borderRadius: 'var(--r-lg, 16px)',
+          border: '1px solid rgba(34,197,94,0.2)',
+          background: 'rgba(34,197,94,0.05)',
+          padding: 32, textAlign: 'center',
+        }}>
+          <p style={{
+            fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+            letterSpacing: '0.3em', color: 'var(--sage)',
+          }}>
+            Workout complete!
           </p>
-          <p className="mt-2 text-3xl font-bold text-white">
+          <p style={{ marginTop: 8, fontSize: 30, fontWeight: 700, color: 'var(--text-1)' }}>
             {Math.floor(totalSec / 60)}:{(totalSec % 60).toString().padStart(2, '0')}
           </p>
         </div>
       )}
 
-      {/* Workout cards */}
-      <section className="mb-24">
-        <p className="v3-eyebrow">Vyber trenink</p>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <section style={{ marginBottom: 96 }}>
+        <p className="v3-eyebrow">Choose a workout</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
           {workouts.map((seq) => (
             <button
               key={seq.id}
               onClick={() => { setFinished(false); setActive(seq); }}
-              className="group rounded-xl border border-white/8 p-6 text-left transition hover:border-white/20 hover:bg-white/3"
+              style={{
+                borderRadius: 'var(--r-md, 12px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                padding: 24, textAlign: 'left',
+                background: 'transparent', cursor: 'pointer',
+                transition: 'border-color .2s, background .2s',
+                color: 'var(--text-1)',
+              }}
             >
-              <div className="mb-2 flex items-center justify-between">
-                <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.2em]"
-                  style={{ color: getCategoryColor(seq.category) }}
-                >
+              <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 600, textTransform: 'uppercase',
+                  letterSpacing: '0.2em', color: getCategoryColor(seq.category),
+                }}>
                   {seq.category} · {seq.durationMin} min
                 </span>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold text-white/50 transition group-hover:bg-[var(--sage)] group-hover:text-black">
+                <span style={{
+                  borderRadius: 'var(--r-pill)', background: 'rgba(255,255,255,0.1)',
+                  padding: '4px 12px', fontSize: 10, fontWeight: 600,
+                  color: 'rgba(255,255,255,0.5)',
+                }}>
                   START
                 </span>
               </div>
-              <div className="text-lg font-bold text-white">{seq.nameCs}</div>
-              <p className="mt-2 text-sm text-white/40">{seq.description}</p>
-              <div className="mt-3 flex flex-wrap gap-1">
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{seq.name || seq.nameCs}</div>
+              <p style={{ marginTop: 8, fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{seq.description}</p>
+              <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                 {seq.workout!.map((s, i) => (
-                  <span key={i} className="rounded bg-white/8 px-2 py-0.5 text-[9px] tabular-nums text-white/40">
-                    {s.nameCs} {s.durationSec}s
+                  <span key={i} style={{
+                    borderRadius: 4, background: 'rgba(255,255,255,0.08)',
+                    padding: '2px 8px', fontSize: 9, color: 'rgba(255,255,255,0.4)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {s.name || s.nameCs} {s.durationSec}s
                   </span>
                 ))}
               </div>

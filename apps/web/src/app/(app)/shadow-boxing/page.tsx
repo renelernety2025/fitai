@@ -18,8 +18,8 @@ const SportViewer = dynamic(
 );
 
 const DIFFICULTIES = [
-  { v: 'beginner' as const, l: 'Zacatecnik', color: 'var(--sage)' },
-  { v: 'intermediate' as const, l: 'Pokrocily', color: '#FF9F0A' },
+  { v: 'beginner' as const, l: 'Beginner', color: 'var(--sage)' },
+  { v: 'intermediate' as const, l: 'Intermediate', color: '#FF9F0A' },
   { v: 'advanced' as const, l: 'Expert', color: 'var(--accent)' },
 ];
 

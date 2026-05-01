@@ -43,25 +43,40 @@ export default function TodayActionCard({ action }: TodayActionCardProps) {
   const accent = ACCENTS[action.type] || ACCENTS.default;
 
   return (
-    <div
-      className="relative rounded-2xl border border-white/10 p-5 mb-8"
-      style={{ background: gradient }}
-    >
+    <div style={{
+      position: 'relative', borderRadius: 'var(--r-lg, 16px)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      padding: 20, marginBottom: 32, background: gradient,
+    }}>
       <button
         onClick={dismiss}
-        className="absolute top-3 right-3 text-white/30 hover:text-white/60 transition text-lg leading-none"
-        aria-label="Zavrit"
+        aria-label="Close"
+        style={{
+          position: 'absolute', top: 12, right: 12,
+          color: 'rgba(255,255,255,0.3)', background: 'none',
+          border: 'none', fontSize: 18, lineHeight: 1,
+          cursor: 'pointer', transition: 'color .2s',
+        }}
       >
         &times;
       </button>
 
-      <h3 className="text-lg font-bold text-white pr-8">{action.headline}</h3>
-      <p className="text-sm text-white/50 mt-1">{action.rationale}</p>
+      <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)', paddingRight: 32 }}>
+        {action.headline}
+      </h3>
+      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+        {action.rationale}
+      </p>
 
       <Link
         href={action.ctaLink}
-        className="inline-block mt-4 rounded-full px-5 py-2 text-sm font-semibold text-black transition hover:opacity-90"
-        style={{ backgroundColor: accent }}
+        style={{
+          display: 'inline-block', marginTop: 16,
+          borderRadius: 'var(--r-pill)', padding: '8px 20px',
+          fontSize: 14, fontWeight: 600, color: '#000',
+          backgroundColor: accent, textDecoration: 'none',
+          transition: 'opacity .2s',
+        }}
       >
         {action.ctaLabel}
       </Link>

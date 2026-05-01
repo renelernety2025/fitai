@@ -10,9 +10,9 @@ interface GreetingHeroProps {
 
 function timeContext(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Rano';
-  if (hour < 18) return 'Odpoledne';
-  return 'Vecer';
+  if (hour < 12) return 'Morning';
+  if (hour < 18) return 'Afternoon';
+  return 'Evening';
 }
 
 export default function GreetingHero({
@@ -62,7 +62,7 @@ export default function GreetingHero({
             letterSpacing: '0.04em', textTransform: 'uppercase',
             fontSize: 10,
           }}>
-            {timeContext()} &middot; Tvuj AI Coach doporucuje
+            {timeContext()} &middot; Your AI Coach recommends
           </span>
           <p className="v3-body" style={{
             margin: '6px 0 0', color: 'var(--text-2)',

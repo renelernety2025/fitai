@@ -89,7 +89,7 @@ export default function CoachingNotesPage() {
                 <Card key={m.id} padding={20}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' as const }}>
                     <span className="v3-caption" style={{ color: 'var(--text-3)' }}>
-                      {new Date(m.createdAt).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(m.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                     <Tag color={color}>{m.category}</Tag>
                     {m.exerciseName && <span className="v3-caption" style={{ color: 'var(--text-2)' }}>{m.exerciseName}</span>}

@@ -4,7 +4,14 @@ interface WeekStripProps {
   weeklyActivity: { date: string; minutes: number }[];
 }
 
-const DAY_LABELS = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne'];
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function getWeekDays(): { label: string; dateStr: string; isToday: boolean }[] {
   const now = new Date();
@@ -12,12 +19,13 @@ function getWeekDays(): { label: string; dateStr: string; isToday: boolean }[] {
   const mondayOffset = day === 0 ? -6 : 1 - day;
   const monday = new Date(now);
   monday.setDate(now.getDate() + mondayOffset);
+  const todayStr = toLocalDateStr(now);
 
   return DAY_LABELS.map((label, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const dateStr = d.toISOString().slice(0, 10);
-    const isToday = dateStr === now.toISOString().slice(0, 10);
+    const dateStr = toLocalDateStr(d);
+    const isToday = dateStr === todayStr;
     return { label, dateStr, isToday };
   });
 }
@@ -38,7 +46,7 @@ export default function WeekStrip({ weeklyActivity }: WeekStripProps) {
       {days.map((day) => {
         const minutes = activityMap.get(day.dateStr) || 0;
         const trained = minutes > 0;
-        const isPast = day.dateStr < new Date().toISOString().slice(0, 10);
+        const isPast = day.dateStr < toLocalDateStr(new Date());
 
         return (
           <div

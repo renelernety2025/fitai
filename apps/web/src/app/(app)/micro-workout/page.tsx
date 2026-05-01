@@ -66,7 +66,7 @@ export default function MicroWorkoutPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                           <span className="v3-numeric" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-3)', width: 32, textAlign: 'center' as const }}>{i + 1}</span>
                           <div>
-                            <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{ex.nameCs}</span>
+                            <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{ex.name || ex.nameCs}</span>
                             <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                               {ex.muscleGroups.map((mg) => <Tag key={mg}>{mg}</Tag>)}
                             </div>

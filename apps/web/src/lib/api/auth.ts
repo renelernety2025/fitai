@@ -37,3 +37,17 @@ export function authRegister(data: {
 export function authMe() {
   return request<UserData>('/auth/me');
 }
+
+export function authForgotPassword(email: string) {
+  return request<{ message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function authResetPassword(token: string, newPassword: string) {
+  return request<{ message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}

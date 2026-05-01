@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [level, setLevel] = useState('BEGINNER');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,10 @@ export default function RegisterPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await authRegister({ name, email, password, level });
@@ -101,6 +106,14 @@ export default function RegisterPage() {
                 placeholder="Min. 8 characters"
                 value={password}
                 onChange={setPassword}
+                minLength={8}
+              />
+              <FormInput
+                label="Confirm password"
+                type="password"
+                placeholder="Repeat password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
                 minLength={8}
               />
             </div>

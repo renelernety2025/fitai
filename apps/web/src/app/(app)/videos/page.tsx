@@ -20,7 +20,7 @@ export default function VideosPage() {
   const [cat, setCat] = useState('ALL');
 
   useEffect(() => {
-    const f: any = {};
+    const f: Record<string, string> = {};
     if (cat !== 'ALL') f.category = cat;
     getVideos(f).then(setVideos).catch(console.error);
   }, [cat]);

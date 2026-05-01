@@ -78,7 +78,7 @@ function TopPicks({ items, description }: { items: any[]; description?: string }
           <Card key={ex.id || i} padding={28} hover>
             <div style={{ marginBottom: 12 }}><Tag color="var(--accent)">For you</Tag></div>
             <div className="v3-display-3" style={{ marginBottom: 8 }}>
-              {ex.nameCs || ex.name}
+              {ex.name || ex.nameCs}
             </div>
             {ex.muscleGroups && (
               <div className="v3-caption" style={{ marginBottom: 12 }}>
@@ -114,14 +114,14 @@ function MoreThisWeek({ items }: { items: any[] }) {
   return (
     <>
       <SectionHeader eyebrow="Also for you" title="More this week" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 48 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 48 }}>
         {items.map((ex: any, i: number) => (
           <Card key={ex.id || i} padding={20} hover>
             {ex.category && (
               <div style={{ marginBottom: 10 }}><Tag>{ex.category}</Tag></div>
             )}
             <div className="v3-title" style={{ marginBottom: 4 }}>
-              {ex.nameCs || ex.name}
+              {ex.name || ex.nameCs}
             </div>
             <div className="v3-caption">
               {ex.muscleGroups && Array.isArray(ex.muscleGroups)
