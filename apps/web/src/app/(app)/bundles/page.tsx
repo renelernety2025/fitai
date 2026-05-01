@@ -59,10 +59,7 @@ export default function BundlesPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
                       <span className="v3-numeric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>{b.priceXP} XP</span>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Button variant="accent" size="sm" onClick={() => handlePurchase(b.id)}>Buy</Button>
-                        {b.giftable && <Tag color="var(--clay-deep)">Giftable</Tag>}
-                      </div>
+                      <Button variant="accent" size="sm" onClick={() => handlePurchase(b.id)}>Buy</Button>
                     </div>
                   </Card>
                 ))}

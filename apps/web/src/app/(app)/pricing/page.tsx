@@ -40,7 +40,7 @@ export default function PricingPage() {
             window.location.href = res.url;
           }
         } catch {
-          window.location.href = res.url;
+          // Invalid URL — do not navigate (security: prevents open redirect)
         }
       }
     } finally {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Card, Chip, Tag, Button, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getMarketplace } from '@/lib/api';
@@ -42,7 +43,8 @@ export default function MarketplacePage() {
   useEffect(() => { document.title = 'FitAI — Marketplace'; }, []);
 
   useEffect(() => {
-    getMarketplace({ type: cat === 'All' ? undefined : cat })
+    const params = cat === 'All' ? undefined : `type=${encodeURIComponent(cat)}`;
+    getMarketplace(params)
       .then((data) => setApiListings(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [cat]);
@@ -110,18 +112,20 @@ export default function MarketplacePage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {/* Community listings from API */}
         {apiListings.map((item: any) => (
-          <Card key={item.id} padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{ height: 180, background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))' }} />
-            <div style={{ padding: 20 }}>
-              <div className="v3-title" style={{ marginBottom: 4, fontSize: 15 }}>{item.title}</div>
-              <div className="v3-caption" style={{ marginBottom: 12 }}>
-                {item.trainerName || 'Community'} &middot; {item.type}
+          <Link key={item.id} href={`/marketplace/${item.id}`} style={{ textDecoration: 'none' }}>
+            <Card padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
+              <div style={{ height: 180, background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))' }} />
+              <div style={{ padding: 20 }}>
+                <div className="v3-title" style={{ marginBottom: 4, fontSize: 15 }}>{item.title}</div>
+                <div className="v3-caption" style={{ marginBottom: 12 }}>
+                  {item.trainerName || 'Community'} &middot; {item.type}
+                </div>
+                <span className="v3-numeric" style={{ color: 'var(--accent)', fontSize: 18 }}>
+                  {(item.priceXP || 0).toLocaleString()} XP
+                </span>
               </div>
-              <span className="v3-numeric" style={{ color: 'var(--accent)', fontSize: 18 }}>
-                {item.priceXP || 0} XP
-              </span>
-            </div>
-          </Card>
+            </Card>
+          </Link>
         ))}
         {/* Curated programs */}
         {PROGRAMS.map((p) => (
