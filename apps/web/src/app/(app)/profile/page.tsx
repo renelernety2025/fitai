@@ -76,8 +76,8 @@ function ProfileIdentity({ name, email, stats }: { name: string; email?: string;
         {email && <div style={{ fontSize: 14, color: 'var(--text-2)', marginTop: 6 }}>{email}</div>}
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
-        <Button variant="ghost">
-          <FitIcon name="users" size={14} /><span>Share profile</span>
+        <Button variant="ghost" onClick={() => { navigator.clipboard.writeText(window.location.href).catch(() => {}); }}>
+          <FitIcon name="users" size={14} /><span>Copy link</span>
         </Button>
         <Link href="/settings">
           <Button variant="ghost">
@@ -101,7 +101,7 @@ function StatsStrip({ stats }: { stats: StatsData | null }) {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 32 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12, marginBottom: 32 }}>
       {items.map((s) => (
         <Card key={s.label} padding={18}>
           <div className="v3-eyebrow" style={{ marginBottom: 6 }}>{s.label}</div>
@@ -116,26 +116,47 @@ function StatsStrip({ stats }: { stats: StatsData | null }) {
 }
 
 function AchievementsRow() {
-  const placeholders = [
-    { icon: 'flame', label: '30-day streak' },
-    { icon: 'muscle', label: 'Bodyweight squat' },
-    { icon: 'run', label: 'First 5K' },
-    { icon: 'star', label: 'Goal crushed' },
-    { icon: 'bolt', label: 'Speed demon' },
-    { icon: 'trophy', label: 'Early bird' },
-  ];
+  const [unlocked, setUnlocked] = useState<{ title: string; icon: string }[]>([]);
+  useEffect(() => {
+    import('@/lib/api').then(({ getAchievements }) =>
+      getAchievements().then((data) =>
+        setUnlocked(
+          data.filter((a) => a.unlocked)
+            .slice(0, 6)
+            .map((a) => ({ title: a.title || a.titleCs || a.code, icon: a.icon || 'star' }))
+        )
+      ).catch(() => {})
+    );
+  }, []);
+
+  if (unlocked.length === 0) {
+    return (
+      <Card padding={24} style={{ marginBottom: 32, textAlign: 'center' }}>
+        <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Achievements</div>
+        <p className="v3-caption" style={{ color: 'var(--text-3)' }}>No achievements unlocked yet. Keep training!</p>
+        <Link href="/uspechy" style={{ textDecoration: 'none' }}>
+          <Button variant="ghost" size="sm" style={{ marginTop: 12 }}>View all achievements</Button>
+        </Link>
+      </Card>
+    );
+  }
 
   return (
     <Card padding={24} style={{ marginBottom: 32 }}>
-      <div className="v3-eyebrow" style={{ marginBottom: 14 }}>Recent achievements</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
-        {placeholders.map((a) => (
-          <div key={a.label} style={{
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div className="v3-eyebrow">Recent achievements</div>
+        <Link href="/uspechy" style={{ textDecoration: 'none' }}>
+          <span className="v3-caption" style={{ color: 'var(--accent)' }}>View all</span>
+        </Link>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10 }}>
+        {unlocked.map((a) => (
+          <div key={a.title} style={{
             padding: 16, background: 'var(--bg-2)', borderRadius: 12,
             border: '1px solid var(--stroke-1)', textAlign: 'center',
           }}>
-            <FitIcon name={a.icon} size={28} color="var(--accent)" style={{ marginBottom: 8 }} />
-            <div className="v3-caption">{a.label}</div>
+            <span style={{ fontSize: 24, display: 'block', marginBottom: 8 }}>{a.icon}</span>
+            <div className="v3-caption">{a.title}</div>
           </div>
         ))}
       </div>

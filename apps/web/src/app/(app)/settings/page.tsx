@@ -109,8 +109,8 @@ function PasswordChangeForm() {
       <div className="v3-eyebrow" style={{ marginBottom: 12 }}>Change password</div>
       <form onSubmit={onSubmit}>
         <input type="password" placeholder="Current password" value={cur} onChange={(e) => setCur(e.target.value)} required style={INPUT_STYLE} />
-        <input type="password" placeholder="New password (min 6)" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={6} style={INPUT_STYLE} />
-        <input type="password" placeholder="Confirm new" value={conf} onChange={(e) => setConf(e.target.value)} required minLength={6} style={INPUT_STYLE} />
+        <input type="password" placeholder="New password (min 8)" value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={8} style={INPUT_STYLE} />
+        <input type="password" placeholder="Confirm new" value={conf} onChange={(e) => setConf(e.target.value)} required minLength={8} style={INPUT_STYLE} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Button variant="accent" type="submit" disabled={loading}>{loading ? 'Changing...' : 'Change'}</Button>
           {msg && <span className="v3-caption" style={{ color: 'var(--sage)' }}>{msg}</span>}
@@ -164,23 +164,32 @@ function AccountSection({ name, onDeleted }: { name: string; onDeleted: () => vo
 }
 
 function NotifSection() {
+  const defaults = {
+    morning: true, evening: true, workout: true, coach: true, community: false,
+  };
+  const [prefs, setPrefs] = useState(defaults);
+
+  function toggle(key: keyof typeof defaults) {
+    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  }
+
   const items = [
-    { label: 'Morning brief', desc: "Today's session. 6:30 AM", on: true },
-    { label: 'Evening check-in', desc: 'Mood close-out. 9:00 PM', on: true },
-    { label: 'Workout reminder', desc: '15 min before scheduled.', on: true },
-    { label: 'AI Coach insights', desc: 'When coach has something to say.', on: true },
-    { label: 'Community activity', desc: 'Squad updates.', on: false },
+    { key: 'morning' as const, label: 'Morning brief', desc: "Today's session. 6:30 AM" },
+    { key: 'evening' as const, label: 'Evening check-in', desc: 'Mood close-out. 9:00 PM' },
+    { key: 'workout' as const, label: 'Workout reminder', desc: '15 min before scheduled.' },
+    { key: 'coach' as const, label: 'AI Coach insights', desc: 'When coach has something to say.' },
+    { key: 'community' as const, label: 'Community activity', desc: 'Squad updates.' },
   ];
   return (
     <SectionShell eyebrow="Notifications" title="What we tell you," accent="and when.">
       <Card padding={28}>
         {items.map((it, i) => (
-          <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '16px 0', borderBottom: i < items.length - 1 ? '1px solid var(--stroke-1)' : 'none' }}>
+          <div key={it.key} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '16px 0', borderBottom: i < items.length - 1 ? '1px solid var(--stroke-1)' : 'none' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, color: 'var(--text-1)', marginBottom: 2 }}>{it.label}</div>
               <div className="v3-caption">{it.desc}</div>
             </div>
-            <Toggle on={it.on} />
+            <Toggle on={prefs[it.key]} onChange={() => toggle(it.key)} />
           </div>
         ))}
       </Card>
@@ -215,10 +224,14 @@ function IntegSection() {
   );
 }
 
-function Toggle({ on }: { on: boolean }) {
+function Toggle({ on, onChange }: { on: boolean; onChange?: () => void }) {
   return (
-    <div style={{ width: 44, height: 24, borderRadius: 12, background: on ? 'var(--accent)' : 'var(--bg-3)', position: 'relative', cursor: 'pointer' }}>
+    <button
+      onClick={onChange}
+      aria-pressed={on}
+      style={{ width: 44, height: 24, borderRadius: 12, background: on ? 'var(--accent)' : 'var(--bg-3)', position: 'relative', cursor: 'pointer', border: 'none', padding: 0 }}
+    >
       <div style={{ position: 'absolute', top: 2, left: on ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
-    </div>
+    </button>
   );
 }

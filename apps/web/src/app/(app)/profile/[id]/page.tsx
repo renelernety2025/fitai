@@ -12,9 +12,13 @@ import {
 import { useAuth } from '@/lib/auth-context';
 
 const LEVEL_COLORS: Record<string, string> = {
+  Beginner: 'var(--sage)',
+  Intermediate: 'var(--sage)',
+  Expert: 'var(--clay-deep)',
+  Master: 'var(--warning)',
+  Legend: 'var(--accent)',
   Zacatecnik: 'var(--sage)',
   Pokrocily: 'var(--sage)',
-  Expert: 'var(--clay-deep)',
   Mistr: 'var(--warning)',
   Legenda: 'var(--accent)',
 };
@@ -32,6 +36,7 @@ interface PublicProfile {
   };
   achievements: {
     id: string;
+    title?: string;
     titleCs: string;
     icon: string;
     category: string;
@@ -49,7 +54,7 @@ export default function PublicProfilePage() {
   const [following, setFollowing] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => { document.title = 'FitAI — Profil'; }, []);
+  useEffect(() => { document.title = 'FitAI — Profile'; }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -58,7 +63,7 @@ export default function PublicProfilePage() {
         setProfile(p);
         setFollowing(p.isFollowing);
       })
-      .catch(() => setError('Profil nenalezen'))
+      .catch(() => setError('Profile not found'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -97,7 +102,7 @@ export default function PublicProfilePage() {
       <>
         <div className="flex min-h-[50vh] items-center justify-center">
           <div style={{ color: 'var(--accent)' }}>
-            {error || 'Profil nenalezen'}
+            {error || 'Profile not found'}
           </div>
         </div>
       </>
@@ -110,10 +115,10 @@ export default function PublicProfilePage() {
   return (
     <>
       <Link href="/community" className="mb-4 inline-flex items-center gap-1 text-sm text-white/40 transition hover:text-white">
-        &larr; Komunita
+        &larr; Community
       </Link>
       <section className="pt-12 pb-12">
-        <p className="v3-eyebrow">Profil</p>
+        <p className="v3-eyebrow">Profile</p>
 
         {/* Avatar + name */}
         <div className="mb-8 flex items-center gap-6">
@@ -165,7 +170,7 @@ export default function PublicProfilePage() {
                   : 'var(--text-secondary)',
               }}
             >
-              {following ? 'Sledujete' : 'Sledovat'}
+              {following ? 'Following' : 'Follow'}
             </button>
             <PropsButton
               toUserId={profile.id}
@@ -181,7 +186,7 @@ export default function PublicProfilePage() {
                   color: '#00E5FF',
                 }}
               >
-                Napsat zpravu
+                Message
               </button>
             )}
           </div>
@@ -192,7 +197,7 @@ export default function PublicProfilePage() {
       <section className="mb-12 grid grid-cols-2 gap-8 sm:grid-cols-4">
         <div>
           <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.totalSessions}</div>
-          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">treninku</div>
+          <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">sessions</div>
         </div>
         <div>
           <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.currentStreak}</div>
@@ -211,7 +216,7 @@ export default function PublicProfilePage() {
       {/* Top achievements */}
       {profile.achievements.length > 0 && (
         <section className="mb-12">
-          <p className="v3-eyebrow">Top uspechy</p>
+          <p className="v3-eyebrow">Top achievements</p>
           <div className="flex gap-4">
             {profile.achievements.slice(0, 3).map((a) => (
               <div
@@ -227,7 +232,7 @@ export default function PublicProfilePage() {
                   className="text-center text-[10px] font-semibold"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  {a.titleCs}
+                  {a.title || a.titleCs}
                 </span>
               </div>
             ))}
