@@ -66,8 +66,8 @@ function SquadsHeader({ onSearch, onCreate }: { onSearch: () => void; onCreate: 
   return (
     <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Squads</div>
-        <h1 className="display-2" style={{ margin: 0, maxWidth: 720 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Squads</div>
+        <h1 className="v3-display-2" style={{ margin: 0, maxWidth: 720 }}>
           Stronger,<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>together.</em>
         </h1>
       </div>
@@ -92,9 +92,9 @@ function YourSquads({ mySquad, onLeave }: { mySquad: Squad | null; onLeave: () =
       <SectionHeader eyebrow="Your squads" title="1 active" />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 64 }}>
         <Card padding={24} hover>
-          <div className="title" style={{ marginBottom: 6 }}>{mySquad.name}</div>
-          {mySquad.motto && <div className="caption" style={{ marginBottom: 12, fontStyle: 'italic' }}>{mySquad.motto}</div>}
-          <div className="caption" style={{ marginBottom: 16 }}>{mySquad.members.length} members</div>
+          <div className="v3-title" style={{ marginBottom: 6 }}>{mySquad.name}</div>
+          {mySquad.motto && <div className="v3-caption" style={{ marginBottom: 12, fontStyle: 'italic' }}>{mySquad.motto}</div>}
+          <div className="v3-caption" style={{ marginBottom: 16 }}>{mySquad.members.length} members</div>
           <AvatarStack avatars={mySquad.members.map(m => ({ name: m.name, src: m.avatarUrl ?? undefined }))} size={26} max={5} />
           <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)' }}>
@@ -117,8 +117,8 @@ function DiscoverSection({ board }: { board: LeaderboardRow[] }) {
         {board.map(s => (
           <Card key={s.id} padding={20} hover>
             <div style={{ marginBottom: 10 }}><Tag>{s.memberCount} members</Tag></div>
-            <div className="title" style={{ marginBottom: 6 }}>{s.name}</div>
-            <div className="caption">{s.weeklyXP.toLocaleString()} weekly XP</div>
+            <div className="v3-title" style={{ marginBottom: 6 }}>{s.name}</div>
+            <div className="v3-caption">{s.weeklyXP.toLocaleString()} weekly XP</div>
           </Card>
         ))}
       </div>
@@ -135,11 +135,11 @@ function CreateModal({ form, setForm, onCreate, onClose }: {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)' }}>
       <Card padding={32} style={{ width: '100%', maxWidth: 420 }}>
-        <h3 className="title" style={{ marginBottom: 16 }}>Create Squad</h3>
-        <div className="caption" style={{ marginBottom: 4 }}>Name</div>
+        <h3 className="v3-title" style={{ marginBottom: 16 }}>Create Squad</h3>
+        <div className="v3-caption" style={{ marginBottom: 4 }}>Name</div>
         <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Squad name"
           style={{ width: '100%', padding: '10px 14px', marginBottom: 16, background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 14 }} />
-        <div className="caption" style={{ marginBottom: 4 }}>Motto</div>
+        <div className="v3-caption" style={{ marginBottom: 4 }}>Motto</div>
         <input value={form.motto} onChange={e => setForm({ ...form, motto: e.target.value })} placeholder="Optional motto"
           style={{ width: '100%', padding: '10px 14px', marginBottom: 24, background: 'var(--bg-2)', border: '1px solid var(--stroke-1)', borderRadius: 8, color: 'var(--text-1)', fontSize: 14 }} />
         <div style={{ display: 'flex', gap: 12 }}>

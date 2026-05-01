@@ -90,8 +90,8 @@ function HeroHeader({ hasOrg, onCreate }: { hasOrg: boolean; onCreate: () => voi
   return (
     <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Enterprise</div>
-        <h1 className="display-2" style={{ margin: 0, maxWidth: 720 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Enterprise</div>
+        <h1 className="v3-display-2" style={{ margin: 0, maxWidth: 720 }}>
           FitAI for<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>Business.</em>
         </h1>
       </div>
@@ -112,7 +112,7 @@ function StatsGrid({ stats }: { stats: OrgDashboard | null }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }}>
       {items.map((s) => (
         <Card key={s.label} padding={24}>
-          <div className="caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>{s.label}</div>
+          <div className="v3-caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>{s.label}</div>
           <div className="display-3" style={{ color: 'var(--text-1)' }}>{s.value}</div>
         </Card>
       ))}
@@ -148,7 +148,7 @@ function MemberLeaderboard({ board, isAdmin, onInvite }: { board: OrgMember[]; i
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, color: 'var(--text-1)' }}>{m.name}</div>
-                <div className="caption" style={{ color: 'var(--text-3)' }}>{m.streak}d streak</div>
+                <div className="v3-caption" style={{ color: 'var(--text-3)' }}>{m.streak}d streak</div>
               </div>
               <Tag>{m.role}</Tag>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent)' }}>
@@ -171,11 +171,11 @@ function ChallengesSection({ challenges, isAdmin, onCreate }: { challenges: OrgC
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {challenges.length === 0 ? (
-          <Card padding={32}><p className="caption" style={{ color: 'var(--text-3)' }}>No challenges yet.</p></Card>
+          <Card padding={32}><p className="v3-caption" style={{ color: 'var(--text-3)' }}>No challenges yet.</p></Card>
         ) : challenges.map((c) => (
           <Card key={c.id} padding={20} hover>
-            <div className="title" style={{ marginBottom: 8 }}>{c.name}</div>
-            <div className="caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>Metric: {c.metric}</div>
+            <div className="v3-title" style={{ marginBottom: 8 }}>{c.name}</div>
+            <div className="v3-caption" style={{ marginBottom: 8, color: 'var(--text-3)' }}>Metric: {c.metric}</div>
             <div style={{ display: 'flex', gap: 8 }}>
               <Tag>{c.isActive ? 'Active' : 'Ended'}</Tag>
               <Tag>{new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}</Tag>
@@ -198,8 +198,8 @@ function LandingBenefits() {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 32 }}>
       {benefits.map((b) => (
         <Card key={b.title} padding={32} hover>
-          <div className="title" style={{ marginBottom: 8 }}>{b.title}</div>
-          <div className="caption" style={{ color: 'var(--text-3)' }}>{b.desc}</div>
+          <div className="v3-title" style={{ marginBottom: 8 }}>{b.title}</div>
+          <div className="v3-caption" style={{ color: 'var(--text-3)' }}>{b.desc}</div>
         </Card>
       ))}
     </div>
@@ -220,14 +220,14 @@ function CreateOrgModal({ onClose, onDone }: { onClose: () => void; onDone: () =
   }
   return (
     <ModalShell onClose={onClose}>
-      <h3 className="title" style={{ marginBottom: 16 }}>Create Organization</h3>
-      <div className="caption" style={{ marginBottom: 4 }}>Name</div>
+      <h3 className="v3-title" style={{ marginBottom: 16 }}>Create Organization</h3>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Name</div>
       <input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="Acme Corp" style={INPUT_STYLE} />
-      <div className="caption" style={{ marginBottom: 4 }}>Slug</div>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Slug</div>
       <input value={f.slug} onChange={e => setF({ ...f, slug: e.target.value })} placeholder="acme-corp" style={INPUT_STYLE} />
-      <div className="caption" style={{ marginBottom: 4 }}>Industry (optional)</div>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Industry (optional)</div>
       <input value={f.industry} onChange={e => setF({ ...f, industry: e.target.value })} placeholder="Technology" style={INPUT_STYLE} />
-      <div className="caption" style={{ marginBottom: 4 }}>Size</div>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Size</div>
       <select value={f.size} onChange={e => setF({ ...f, size: e.target.value })} style={INPUT_STYLE}>
         <option value="">Select</option>
         <option value="1-50">1-50</option>
@@ -251,8 +251,8 @@ function InviteModal({ orgId, onClose, onDone }: { orgId: string; onClose: () =>
   }
   return (
     <ModalShell onClose={onClose}>
-      <h3 className="title" style={{ marginBottom: 16 }}>Invite Member</h3>
-      <div className="caption" style={{ marginBottom: 4 }}>Email</div>
+      <h3 className="v3-title" style={{ marginBottom: 16 }}>Invite Member</h3>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Email</div>
       <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@company.com" style={INPUT_STYLE} />
       <div style={{ display: 'flex', gap: 12 }}>
         <Button variant="ghost" onClick={onClose} style={{ flex: 1 }}>Cancel</Button>
@@ -270,12 +270,12 @@ function ChallengeModal({ orgId, onClose, onDone }: { orgId: string; onClose: ()
   }
   return (
     <ModalShell onClose={onClose}>
-      <h3 className="title" style={{ marginBottom: 16 }}>New Challenge</h3>
-      <div className="caption" style={{ marginBottom: 4 }}>Name</div>
+      <h3 className="v3-title" style={{ marginBottom: 16 }}>New Challenge</h3>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Name</div>
       <input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="30-Day Step Challenge" style={INPUT_STYLE} />
-      <div className="caption" style={{ marginBottom: 4 }}>Description (optional)</div>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Description (optional)</div>
       <input value={f.description} onChange={e => setF({ ...f, description: e.target.value })} placeholder="Walk 10k steps daily" style={INPUT_STYLE} />
-      <div className="caption" style={{ marginBottom: 4 }}>Metric</div>
+      <div className="v3-caption" style={{ marginBottom: 4 }}>Metric</div>
       <select value={f.metric} onChange={e => setF({ ...f, metric: e.target.value })} style={INPUT_STYLE}>
         <option value="sessions">Sessions</option>
         <option value="minutes">Minutes</option>
@@ -284,11 +284,11 @@ function ChallengeModal({ orgId, onClose, onDone }: { orgId: string; onClose: ()
       </select>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <div className="caption" style={{ marginBottom: 4 }}>Start</div>
+          <div className="v3-caption" style={{ marginBottom: 4 }}>Start</div>
           <input type="date" value={f.startDate} onChange={e => setF({ ...f, startDate: e.target.value })} style={INPUT_STYLE} />
         </div>
         <div>
-          <div className="caption" style={{ marginBottom: 4 }}>End</div>
+          <div className="v3-caption" style={{ marginBottom: 4 }}>End</div>
           <input type="date" value={f.endDate} onChange={e => setF({ ...f, endDate: e.target.value })} style={INPUT_STYLE} />
         </div>
       </div>

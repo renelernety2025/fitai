@@ -22,6 +22,8 @@ export default function DuelsPage() {
   const [history, setHistory] = useState<Duel[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [scoreInput, setScoreInput] = useState<{ id: string; value: string } | null>(null);
+
   useEffect(() => { document.title = 'FitAI — Duels'; }, []);
   useEffect(() => {
     Promise.all([getActiveDuels(), getDuelHistory()])
@@ -29,6 +31,18 @@ export default function DuelsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  function handleScore(id: string) {
+    setScoreInput({ id, value: '' });
+  }
+
+  function submitScore() {
+    if (!scoreInput || !scoreInput.value) return;
+    submitDuelScore(scoreInput.id, Number(scoreInput.value))
+      .then(() => getActiveDuels())
+      .then(a => { setActive(a as Duel[]); setScoreInput(null); })
+      .catch(() => {});
+  }
 
   return (
     <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
@@ -38,28 +52,41 @@ export default function DuelsPage() {
       ) : (
         <>
           <ActiveDuels duels={active} onScore={handleScore} />
+
+          {scoreInput && (
+            <Card padding={24} style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span className="v3-body" style={{ color: 'var(--text-2)' }}>Enter score:</span>
+              <input
+                type="number"
+                value={scoreInput.value}
+                onChange={(e) => setScoreInput({ ...scoreInput, value: e.target.value })}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitScore(); }}
+                autoFocus
+                style={{
+                  width: 100, padding: '8px 12px', background: 'var(--bg-2)',
+                  border: '1px solid var(--stroke-2)', borderRadius: 'var(--r-sm)',
+                  color: 'var(--text-1)', fontSize: 16, outline: 'none',
+                }}
+              />
+              <Button variant="accent" size="sm" onClick={submitScore}>Submit</Button>
+              <Button variant="ghost" size="sm" onClick={() => setScoreInput(null)}>Cancel</Button>
+            </Card>
+          )}
+
           <HistorySection duels={history} />
         </>
       )}
     </div>
   );
 
-  function handleScore(id: string) {
-    const val = prompt('Enter score:');
-    if (!val) return;
-    submitDuelScore(id, Number(val))
-      .then(() => getActiveDuels())
-      .then(a => setActive(a as Duel[]))
-      .catch(() => {});
-  }
 }
 
 function DuelsHeader() {
   return (
     <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Duels</div>
-        <h1 className="display-2" style={{ margin: 0 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Duels</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
           Head to<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>head.</em>
         </h1>
       </div>
@@ -94,7 +121,7 @@ function DuelCard({ duel: d, onScore }: { duel: Duel; onScore: () => void }) {
     <Card padding={28}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Tag>{d.type} · {d.metric}</Tag>
-        <div className="caption" style={{ color: 'var(--accent)' }}>{daysLeft}d left</div>
+        <div className="v3-caption" style={{ color: 'var(--accent)' }}>{daysLeft}d left</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
         <VsColumn name="You" score={d.challengerScore} leading={winning} />
@@ -106,7 +133,7 @@ function DuelCard({ duel: d, onScore }: { duel: Duel; onScore: () => void }) {
         <div style={{ flex: d.challengedScore ?? 1, background: 'var(--clay)' }} />
       </div>
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span className="caption">{d.xpBet} XP bet</span>
+        <span className="v3-caption">{d.xpBet} XP bet</span>
         <Button variant="ghost" size="sm" onClick={onScore}>Log Score</Button>
       </div>
     </Card>
@@ -118,7 +145,7 @@ function VsColumn({ name, score, leading }: { name: string; score: number | null
     <div style={{ flex: 1, textAlign: 'center' }}>
       <Avatar size={48} name={name} ring={leading ? 'var(--accent)' : 'var(--stroke-2)'} />
       <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 8, marginBottom: 6 }}>{name}</div>
-      <div className="numeric-display" style={{ fontSize: 36, color: leading ? 'var(--accent)' : 'var(--text-1)' }}>
+      <div className="v3-numeric" style={{ fontSize: 36, color: leading ? 'var(--accent)' : 'var(--text-1)' }}>
         {score ?? '--'}
       </div>
     </div>
@@ -133,7 +160,7 @@ function HistorySection({ duels }: { duels: Duel[] }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {duels.map(d => (
           <Card key={d.id} padding={20} style={{ opacity: 0.75 }}>
-            <div className="caption" style={{ marginBottom: 8 }}>{d.type} · {d.metric}</div>
+            <div className="v3-caption" style={{ marginBottom: 8 }}>{d.type} · {d.metric}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
               <span style={{ color: 'var(--text-1)' }}>{d.challengerName}</span>
               <span style={{ color: 'var(--text-3)' }}>vs</span>

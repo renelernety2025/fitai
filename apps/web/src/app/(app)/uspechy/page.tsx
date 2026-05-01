@@ -52,15 +52,15 @@ function PageHeader({ earned, total }: { earned: number; total: number }) {
   return (
     <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Achievements</div>
-        <h1 className="display-2" style={{ margin: 0 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Achievements</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
           Every milestone<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>counts.</em>
         </h1>
       </div>
       <div style={{ display: 'flex', gap: 32 }}>
         <div>
           <div className="eyebrow">Earned</div>
-          <div className="numeric-display" style={{ fontSize: 40 }}>
+          <div className="v3-numeric" style={{ fontSize: 40 }}>
             {earned}<span style={{ fontSize: 18, color: 'var(--text-3)' }}>/{total}</span>
           </div>
         </div>
@@ -110,8 +110,8 @@ function BadgeCard({ achievement: a }: { achievement: Achievement }) {
           <FitIcon name="lock" size={16} color="var(--text-3)" />
         </div>
       )}
-      <div className="title" style={{ marginBottom: 4 }}>{a.title || a.titleCs}</div>
-      <div className="caption" style={{ marginBottom: 12, minHeight: 32 }}>{a.description || a.descriptionCs}</div>
+      <div className="v3-title" style={{ marginBottom: 4 }}>{a.title || a.titleCs}</div>
+      <div className="v3-caption" style={{ marginBottom: 12, minHeight: 32 }}>{a.description || a.descriptionCs}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
         <span style={{ color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{rarity}</span>
         <span style={{ color: 'var(--text-3)' }}>

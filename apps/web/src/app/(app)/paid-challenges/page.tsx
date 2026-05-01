@@ -101,8 +101,8 @@ function PageHeader({ onCreateClick }: { onCreateClick: () => void }) {
   return (
     <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Compete</div>
-        <h1 className="display-2" style={{ margin: 0 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Compete</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
           Compete for<br />
           <em style={{ color: 'var(--clay)', fontWeight: 300 }}>real stakes.</em>
         </h1>
@@ -172,7 +172,7 @@ function ChallengeCard({
     <Card padding={28}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Tag>{metricLabel[c.metric] || c.metric}</Tag>
-        <div className="caption" style={{ color: 'var(--accent)' }}>
+        <div className="v3-caption" style={{ color: 'var(--accent)' }}>
           {daysLeft}d left
         </div>
       </div>
@@ -184,7 +184,7 @@ function ChallengeCard({
         <StatBlock label="Players" value={`${c._count.participants}/${c.maxParticipants}`} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span className="caption" style={{ color: 'var(--text-3)' }}>by {c.createdBy.name}</span>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>by {c.createdBy.name}</span>
         <Button variant="primary" size="sm" onClick={onJoin} disabled={joining}>
           {joining ? 'Joining...' : 'Join'}
         </Button>
@@ -196,7 +196,7 @@ function ChallengeCard({
 function StatBlock({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
-      <div className="caption" style={{ color: 'var(--text-3)', marginBottom: 4 }}>{label}</div>
+      <div className="v3-caption" style={{ color: 'var(--text-3)', marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 16, fontWeight: 700, color: accent ? 'var(--accent)' : 'var(--text-1)' }}>{value}</div>
     </div>
   );

@@ -72,8 +72,8 @@ export default function LeaguesPage() {
 function LeagueHeader({ tier }: { tier: string }) {
   return (
     <div style={{ marginBottom: 32 }}>
-      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Leagues</div>
-      <h1 className="display-2" style={{ margin: 0 }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Leagues</div>
+      <h1 className="v3-display-2" style={{ margin: 0 }}>
         Climb the<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>ranks.</em>
       </h1>
     </div>
@@ -101,7 +101,7 @@ function TierLadder({ currentTier }: { currentTier: string }) {
                 <FitIcon name="trophy" size={24} color={c} />
               </div>
               <div style={{ fontSize: 13, fontWeight: 500, color: isCurrent ? 'var(--text-1)' : 'var(--text-3)' }}>{t.name}</div>
-              <div className="caption" style={{ fontFamily: 'var(--font-mono)' }}>{t.xp} XP</div>
+              <div className="v3-caption" style={{ fontFamily: 'var(--font-mono)' }}>{t.xp} XP</div>
               {isCurrent && <div style={{ marginTop: 8 }}><Tag color="var(--accent)">You are here</Tag></div>}
             </div>
           );
@@ -127,7 +127,7 @@ function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: s
                 background: isMe ? 'rgba(232,93,44,0.06)' : 'transparent',
                 borderBottom: i < lb.length - 1 ? '1px solid var(--stroke-1)' : 'none',
               }}>
-                <div className="numeric-display" style={{
+                <div className="v3-numeric" style={{
                   fontSize: 22,
                   color: p.rank <= 3 ? 'var(--accent)' : p.rank <= 10 ? 'var(--sage, #A8B89A)' : 'var(--text-3)',
                 }}>
@@ -138,7 +138,7 @@ function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: s
                   {p.name}
                   {isMe && <span style={{ color: 'var(--accent)', fontSize: 10, marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>You</span>}
                 </div>
-                <div className="numeric-display" style={{ fontSize: 16 }}>{p.weeklyXP.toLocaleString()}</div>
+                <div className="v3-numeric" style={{ fontSize: 16 }}>{p.weeklyXP.toLocaleString()}</div>
               </div>
             );
           })}
@@ -158,11 +158,11 @@ function PromotionSidebar({ data }: { data: LeagueData }) {
     <div>
       <SectionHeader eyebrow="Promotion bar" title="What you need" />
       <Card padding={28} style={{ marginBottom: 16 }}>
-        <div className="caption" style={{ marginBottom: 8 }}>Days remaining</div>
-        <div className="numeric-display" style={{ fontSize: 56, color: 'var(--accent)' }}>{daysLeft}</div>
+        <div className="v3-caption" style={{ marginBottom: 8 }}>Days remaining</div>
+        <div className="v3-numeric" style={{ fontSize: 56, color: 'var(--accent)' }}>{daysLeft}</div>
         <div style={{ height: 1, background: 'var(--stroke-1)', margin: '20px 0' }} />
-        <div className="caption" style={{ marginBottom: 8 }}>Your weekly XP</div>
-        <div className="numeric-display" style={{ fontSize: 32 }}>{data.weeklyXP.toLocaleString()}</div>
+        <div className="v3-caption" style={{ marginBottom: 8 }}>Your weekly XP</div>
+        <div className="v3-numeric" style={{ fontSize: 32 }}>{data.weeklyXP.toLocaleString()}</div>
       </Card>
     </div>
   );

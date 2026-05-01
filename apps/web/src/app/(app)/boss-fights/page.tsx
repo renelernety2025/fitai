@@ -85,8 +85,8 @@ export default function BossFightsPage() {
 function BossHeader() {
   return (
     <div style={{ marginBottom: 32 }}>
-      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Boss Fights · Skill Tree</div>
-      <h1 className="display-2" style={{ margin: 0 }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Boss Fights · Skill Tree</div>
+      <h1 className="v3-display-2" style={{ margin: 0 }}>
         The long<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>game.</em>
       </h1>
     </div>
@@ -98,7 +98,7 @@ function SkillTreeCard({ defeatedSet }: { defeatedSet: Set<string> }) {
   return (
     <Card padding={32}>
       <div className="eyebrow" style={{ marginBottom: 8 }}>Skill tree · {earnedCount} of {SKILLS.length} unlocked</div>
-      <div className="title" style={{ marginBottom: 24 }}>Where you have grown</div>
+      <div className="v3-title" style={{ marginBottom: 24 }}>Where you have grown</div>
       <div style={{ position: 'relative', aspectRatio: '4/5', borderRadius: 12 }}>
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} viewBox="0 0 100 110" preserveAspectRatio="none">
           {EDGES.map(([a, b], i) => {
@@ -149,8 +149,8 @@ function QuestsSection({ bosses, defeatedSet, activeBoss, onStart, running, time
                   label={isActive ? formatTime(timer) : undefined} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ marginBottom: 6 }}><Tag color="var(--accent)">+{b.xpReward || 0} XP</Tag></div>
-                  <div className="title" style={{ marginBottom: 2 }}>{b.name || b.nameCs}</div>
-                  <div className="caption">{b.description}</div>
+                  <div className="v3-title" style={{ marginBottom: 2 }}>{b.name || b.nameCs}</div>
+                  <div className="v3-caption">{b.description}</div>
                 </div>
                 {!isActive && !isDefeated && (
                   <Button variant="ghost" size="sm" onClick={() => onStart(b)} disabled={!!activeBoss}>Start</Button>
@@ -175,11 +175,11 @@ function XPBar({ xp, level, nextXP }: { xp: number; level: number; nextXP: numbe
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
         <div>
           <div className="eyebrow">Level</div>
-          <div className="numeric-display" style={{ fontSize: 48, lineHeight: 1, color: 'var(--accent)' }}>{level}</div>
+          <div className="v3-numeric" style={{ fontSize: 48, lineHeight: 1, color: 'var(--accent)' }}>{level}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="caption">{xp.toLocaleString()} / {nextXP.toLocaleString()} XP</div>
-          <div className="caption" style={{ marginTop: 4, color: 'var(--accent)' }}>{(nextXP - xp).toLocaleString()} to next</div>
+          <div className="v3-caption">{xp.toLocaleString()} / {nextXP.toLocaleString()} XP</div>
+          <div className="v3-caption" style={{ marginTop: 4, color: 'var(--accent)' }}>{(nextXP - xp).toLocaleString()} to next</div>
         </div>
       </div>
       <div style={{ height: 6, background: 'var(--bg-3)', borderRadius: 3, overflow: 'hidden' }}>

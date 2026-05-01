@@ -57,14 +57,14 @@ function useHeatmapGrid(history: DailyCheckIn[]): number[] {
 function StreakHero({ streak }: { streak: number }) {
   return (
     <div style={{ marginBottom: 56 }}>
-      <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Streaks</div>
-      <h1 className="display-2" style={{ margin: 0, maxWidth: 980 }}>
+      <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Streaks</div>
+      <h1 className="v3-display-2" style={{ margin: 0, maxWidth: 980 }}>
         Show up.<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>Every day.</em>
       </h1>
-      <div className="numeric-display" style={{ fontSize: 96, color: 'var(--accent)', marginTop: 24, lineHeight: 1 }}>
+      <div className="v3-numeric" style={{ fontSize: 96, color: 'var(--accent)', marginTop: 24, lineHeight: 1 }}>
         {streak}
       </div>
-      <div className="caption" style={{ marginTop: 8 }}>consecutive days</div>
+      <div className="v3-caption" style={{ marginTop: 8 }}>consecutive days</div>
     </div>
   );
 }
@@ -81,8 +81,8 @@ function StatCards({ streak, stats }: { streak: number; stats: HabitsStats | nul
       {items.map(([label, value, sub]) => (
         <Card key={label} padding={24}>
           <div className="eyebrow" style={{ marginBottom: 12 }}>{label}</div>
-          <div className="numeric-display" style={{ fontSize: 56, lineHeight: 1 }}>{value}</div>
-          <div className="caption" style={{ marginTop: 8 }}>{sub}</div>
+          <div className="v3-numeric" style={{ fontSize: 56, lineHeight: 1 }}>{value}</div>
+          <div className="v3-caption" style={{ marginTop: 8 }}>{sub}</div>
         </Card>
       ))}
     </div>
@@ -101,11 +101,11 @@ function HeatmapSection({ grid }: { grid: number[] }) {
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24, fontSize: 11, color: 'var(--text-3)' }}>
-          <span className="caption">Less</span>
+          <span className="v3-caption">Less</span>
           {[0, 1, 2, 3, 4].map(v => (
             <div key={v} style={{ width: 14, height: 14, borderRadius: 2, background: colors[v] }} />
           ))}
-          <span className="caption">More</span>
+          <span className="v3-caption">More</span>
         </div>
       </Card>
     </>
@@ -124,9 +124,9 @@ function MilestonesSection({ streak }: { streak: number }) {
               opacity: earned ? 1 : 0.55,
               background: earned ? 'linear-gradient(180deg, var(--bg-card), rgba(232,93,44,0.04))' : 'var(--bg-card)',
             }}>
-              <div className="numeric-display" style={{ fontSize: 56, color: earned ? 'var(--accent)' : 'var(--text-3)', lineHeight: 1 }}>{m.day}</div>
-              <div className="title" style={{ marginTop: 12 }}>{m.label}</div>
-              <div className="caption" style={{ marginTop: 6 }}>
+              <div className="v3-numeric" style={{ fontSize: 56, color: earned ? 'var(--accent)' : 'var(--text-3)', lineHeight: 1 }}>{m.day}</div>
+              <div className="v3-title" style={{ marginTop: 12 }}>{m.label}</div>
+              <div className="v3-caption" style={{ marginTop: 6 }}>
                 {earned ? 'earned' : `${m.day - streak} days away`}
               </div>
             </Card>
@@ -144,9 +144,9 @@ function FreezesSection({ freezes }: { freezes: { available: number; max: number
     <Card padding={32}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
         <div style={{ flex: 1 }}>
-          <div className="eyebrow-serif" style={{ marginBottom: 8 }}>Safety net</div>
+          <div className="v3-eyebrow-serif" style={{ marginBottom: 8 }}>Safety net</div>
           <div className="display-3" style={{ marginBottom: 8 }}>Streak freezes</div>
-          <div className="body" style={{ maxWidth: 560 }}>
+          <div className="v3-body" style={{ maxWidth: 560 }}>
             Life happens. Use a freeze to skip a day without losing your streak.
           </div>
         </div>

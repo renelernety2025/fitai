@@ -65,8 +65,8 @@ function CreatorsHeader({ onApplyClick }: { onApplyClick: () => void }) {
   return (
     <div style={{ marginBottom: 48, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Create</div>
-        <h1 className="display-2" style={{ margin: 0 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Create</div>
+        <h1 className="v3-display-2" style={{ margin: 0 }}>
           Creator<br />
           <em style={{ color: 'var(--clay)', fontWeight: 300 }}>program.</em>
         </h1>
@@ -92,7 +92,7 @@ function CreatorCard({ creator: c }: { creator: Creator }) {
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-1)' }}>{c.displayName}</div>
-          <div className="caption" style={{ color: 'var(--text-3)' }}>
+          <div className="v3-caption" style={{ color: 'var(--text-3)' }}>
             {c.subscriberCount} subscribers
           </div>
         </div>

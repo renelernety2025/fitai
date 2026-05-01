@@ -91,12 +91,12 @@ function SummaryStrip({ done, total, stats }: { done: number; total: number; sta
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, 1fr)`, gap: 16, marginBottom: 48 }}>
       {items.map(i => (
         <Card key={i.eyebrow} padding={24}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>{i.eyebrow}</div>
+          <div className="v3-eyebrow" style={{ marginBottom: 12 }}>{i.eyebrow}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span className="numeric-display" style={{ fontSize: 56 }}>{i.value}</span>
+            <span className="v3-numeric" style={{ fontSize: 56 }}>{i.value}</span>
             {i.sub && <span style={{ fontSize: 18, color: 'var(--text-3)' }}>{i.sub}</span>}
           </div>
-          <div className="caption" style={{ marginTop: 8 }}>{i.caption}</div>
+          <div className="v3-caption" style={{ marginTop: 8 }}>{i.caption}</div>
         </Card>
       ))}
     </div>
@@ -133,8 +133,8 @@ function HabitRow({ field, done, value, onToggle }: {
         <FitIcon name={field.icon} size={20} />
       </div>
       <div>
-        <div className="title" style={{ marginBottom: 2 }}>{field.label}</div>
-        <div className="caption" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="v3-title" style={{ marginBottom: 2 }}>{field.label}</div>
+        <div className="v3-caption" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <FitIcon name="flame" size={12} color="var(--accent)" />
           {typeof value === 'number' ? `${value}${field.unit ?? ''}` : 'not set'}
         </div>
@@ -160,9 +160,9 @@ function EveningCTA() {
     <Card padding={32} style={{ marginTop: 48, background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(232,93,44,0.08) 100%)', border: '1px solid var(--stroke-2)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div className="eyebrow-serif" style={{ marginBottom: 8 }}>Evening ritual</div>
-          <div className="display-3" style={{ marginBottom: 4 }}>How did today feel?</div>
-          <div className="body">2-minute check-in: mood, energy, sleep readiness</div>
+          <div className="v3-eyebrow-serif" style={{ marginBottom: 8 }}>Evening ritual</div>
+          <div className="v3-display-3" style={{ marginBottom: 4 }}>How did today feel?</div>
+          <div className="v3-body">2-minute check-in: mood, energy, sleep readiness</div>
         </div>
         <Button variant="accent" iconRight={<FitIcon name="arrow" size={14} />} size="lg">Begin ritual</Button>
       </div>
