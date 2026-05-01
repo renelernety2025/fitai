@@ -67,8 +67,8 @@ function HabitHeader({ date }: { date: string }) {
   return (
     <div style={{ marginBottom: 56, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
-        <div className="eyebrow-serif" style={{ marginBottom: 12 }}>Habits · {date}</div>
-        <h1 className="display-2" style={{ margin: 0, maxWidth: 720 }}>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Habits · {date}</div>
+        <h1 className="v3-display-2" style={{ margin: 0, maxWidth: 720 }}>
           The small things,<br />
           <em style={{ color: 'var(--clay)', fontWeight: 300 }}>done daily.</em>
         </h1>

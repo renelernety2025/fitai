@@ -6,13 +6,13 @@ import { FitIcon } from '@/components/icons/FitIcons';
 import { getBloodwork, addBloodwork, deleteBloodwork, getBloodworkAnalysis } from '@/lib/api';
 
 const TEST_TYPES = [
-  { value: 'testosterone', label: 'Testosteron', unit: 'nmol/L', min: 10, max: 35 },
+  { value: 'testosterone', label: 'Testosterone', unit: 'nmol/L', min: 10, max: 35 },
   { value: 'hemoglobin', label: 'Hemoglobin', unit: 'g/L', min: 120, max: 170 },
   { value: 'ferritin', label: 'Ferritin', unit: 'ug/L', min: 30, max: 300 },
   { value: 'vitD', label: 'Vitamin D', unit: 'nmol/L', min: 75, max: 150 },
   { value: 'crp', label: 'CRP', unit: 'mg/L', min: 0, max: 5 },
   { value: 'tsh', label: 'TSH', unit: 'mIU/L', min: 0.4, max: 4 },
-  { value: 'glucose', label: 'Glukoza', unit: 'mmol/L', min: 3.9, max: 5.6 },
+  { value: 'glucose', label: 'Glucose', unit: 'mmol/L', min: 3.9, max: 5.6 },
   { value: 'cholesterol', label: 'Cholesterol', unit: 'mmol/L', min: 0, max: 5.2 },
 ];
 

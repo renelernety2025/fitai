@@ -151,7 +151,7 @@ function HydrationCard({ count, onAdd }: { count: number; onAdd: () => void }) {
         <span className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)' }}>{(count * 0.25).toFixed(1)}</span>
         <span className="v3-caption">of 2.5 L</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, marginBottom: 14 }}>
         {Array.from({ length: 10 }).map((_, i) => (
           <div key={i} style={{ aspectRatio: '1', borderRadius: 4, background: i < count ? 'var(--sage)' : 'var(--bg-3)', opacity: i < count ? 1 : 0.4 }} />
         ))}

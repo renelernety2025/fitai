@@ -6,7 +6,7 @@ import { FitIcon } from '@/components/icons/FitIcons';
 import { getRehabPlans, createRehabPlan, logRehabSession, getRehabSessions } from '@/lib/api';
 
 const STATUS_COLOR: Record<string, string> = { active: 'var(--sage, #34d399)', completed: '#00E5FF', paused: '#FF9F0A' };
-const BODY_PARTS = ['Koleno', 'Rameno', 'Zada', 'Kotnik', 'Zapesti', 'Krk', 'Kycel', 'Loket'];
+const BODY_PARTS = ['Knee', 'Shoulder', 'Back', 'Ankle', 'Wrist', 'Neck', 'Hip', 'Elbow'];
 const SEVERITIES = [{ value: 'mild', label: 'Mild' }, { value: 'moderate', label: 'Moderate' }, { value: 'severe', label: 'Severe' }];
 
 export default function RehabPage() {
@@ -17,7 +17,7 @@ export default function RehabPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const [form, setForm] = useState({ injuryType: '', bodyPart: 'Koleno', severity: 'mild' });
+  const [form, setForm] = useState({ injuryType: '', bodyPart: 'Knee', severity: 'mild' });
   const [logForm, setLogForm] = useState({ painLevel: 5, notes: '' });
 
   useEffect(() => { document.title = 'FitAI — Rehab'; }, []);
@@ -28,7 +28,7 @@ export default function RehabPage() {
     const plan = await createRehabPlan(form);
     setPlans((p) => [...p, plan]);
     setShowCreate(false);
-    setForm({ injuryType: '', bodyPart: 'Koleno', severity: 'mild' });
+    setForm({ injuryType: '', bodyPart: 'Knee', severity: 'mild' });
   }
 
   async function selectPlan(plan: any) {
