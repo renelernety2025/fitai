@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { CacheService } from '../cache/cache.service';
 import { determineTodayAction, type TodayAction } from './today-action';
 import {
   getRotatingSplits,
@@ -14,9 +15,7 @@ import {
   type RecoveryStatus,
   type DailyBriefMood,
   type DailyBrief,
-  type CachedItem,
   localDateKey,
-  endOfTodayMs,
   todayDateUtc,
   yesterdayDateUtc,
   greeting,
@@ -48,26 +47,21 @@ export type {
 @Injectable()
 export class AiInsightsService {
   private readonly logger = new Logger(AiInsightsService.name);
-  private tipsCache = new Map<string, CachedItem<RecoveryTip[]>>();
-  private reviewCache = new Map<string, CachedItem<WeeklyReview>>();
-  private nutritionCache = new Map<string, CachedItem<NutritionTip[]>>();
-  private dailyBriefCache = new Map<string, CachedItem<DailyBrief>>();
-  private motivationCache = new Map<string, CachedItem<string>>();
-  private todayActionCache = new Map<string, CachedItem<TodayAction>>();
-  private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+  private readonly TTL_1H = 3600;
+  private readonly TTL_24H = 86400;
 
   constructor(
     private prisma: PrismaService,
     private metrics: MetricsService,
+    private cache: CacheService,
   ) {}
 
   async getRecoveryTips(
     userId: string,
   ): Promise<{ tips: RecoveryTip[]; cached: boolean }> {
-    const cached = this.tipsCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return { tips: cached.data, cached: true };
-    }
+    const cacheKey = `ai-insights:tips:${userId}`;
+    const hit = await this.cache.get<RecoveryTip[]>(cacheKey);
+    if (hit) return { tips: hit, cached: true };
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
@@ -112,10 +106,7 @@ export class AiInsightsService {
         avgStress,
         apiKey,
       );
-      this.tipsCache.set(userId, {
-        data: tips,
-        expiresAt: Date.now() + this.CACHE_TTL_MS,
-      });
+      await this.cache.set(cacheKey, tips, this.TTL_1H);
       return { tips, cached: false };
     } catch (e: any) {
       this.logger.warn(`Claude tips failed: ${e.message}`);
@@ -129,10 +120,9 @@ export class AiInsightsService {
   async getNutritionTips(
     userId: string,
   ): Promise<{ tips: NutritionTip[]; cached: boolean }> {
-    const cached = this.nutritionCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return { tips: cached.data, cached: true };
-    }
+    const cacheKey = `ai-insights:nutrition:${userId}`;
+    const hit = await this.cache.get<NutritionTip[]>(cacheKey);
+    if (hit) return { tips: hit, cached: true };
 
     const [profile, recentLogs] = await Promise.all([
       this.prisma.fitnessProfile.findUnique({ where: { userId } }),
@@ -192,10 +182,7 @@ export class AiInsightsService {
         dailyAvg,
         apiKey,
       );
-      this.nutritionCache.set(userId, {
-        data: tips,
-        expiresAt: Date.now() + this.CACHE_TTL_MS,
-      });
+      await this.cache.set(cacheKey, tips, this.TTL_1H);
       return { tips, cached: false };
     } catch (e: any) {
       this.logger.warn(`Claude nutrition tips failed: ${e.message}`);
@@ -212,10 +199,9 @@ export class AiInsightsService {
   async getWeeklyReview(
     userId: string,
   ): Promise<{ review: WeeklyReview; cached: boolean }> {
-    const cached = this.reviewCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) {
-      return { review: cached.data, cached: true };
-    }
+    const cacheKey = `ai-insights:review:${userId}`;
+    const hit = await this.cache.get<WeeklyReview>(cacheKey);
+    if (hit) return { review: hit, cached: true };
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
@@ -281,10 +267,7 @@ export class AiInsightsService {
         avgSleep,
         apiKey,
       );
-      this.reviewCache.set(userId, {
-        data: review,
-        expiresAt: Date.now() + this.CACHE_TTL_MS,
-      });
+      await this.cache.set(cacheKey, review, this.TTL_1H);
       return { review, cached: false };
     } catch (e: any) {
       this.logger.warn(`Claude review failed: ${e.message}`);
@@ -307,11 +290,9 @@ export class AiInsightsService {
     userId: string,
   ): Promise<{ brief: DailyBrief; cached: boolean }> {
     const todayKey = localDateKey();
-    const cacheKey = `${userId}:${todayKey}`;
-    const cached = this.dailyBriefCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return { brief: cached.data, cached: true };
-    }
+    const cacheKey = `ai-insights:brief:${userId}:${todayKey}`;
+    const hit = await this.cache.get<DailyBrief>(cacheKey);
+    if (hit) return { brief: hit, cached: true };
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
@@ -370,10 +351,7 @@ export class AiInsightsService {
           weeklyVolumes,
           apiKey,
         });
-        this.dailyBriefCache.set(cacheKey, {
-          data: brief,
-          expiresAt: endOfTodayMs(),
-        });
+        await this.cache.set(cacheKey, brief, this.TTL_24H);
         return { brief, cached: false };
       } catch (e: any) {
         this.logger.warn(`Claude daily brief failed: ${e.message}`);
@@ -388,19 +366,14 @@ export class AiInsightsService {
       profile,
       recentSessions,
     });
-    this.dailyBriefCache.set(cacheKey, {
-      data: brief,
-      expiresAt: endOfTodayMs(),
-    });
+    await this.cache.set(cacheKey, brief, this.TTL_24H);
     return { brief, cached: false };
   }
 
   async getMotivation(userId: string) {
-    const cacheKey = `motivation:${userId}`;
-    const cached = this.motivationCache.get(cacheKey);
-    if (cached && cached.expiresAt > Date.now()) {
-      return { message: cached.data, source: 'cache' };
-    }
+    const cacheKey = `ai-insights:motivation:${userId}`;
+    const hit = await this.cache.get<string>(cacheKey);
+    if (hit) return { message: hit, source: 'cache' };
 
     const [user, progress, profile] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
@@ -441,10 +414,7 @@ export class AiInsightsService {
           ? response.content[0].text.trim()
           : fallbackMotivation(name, streak);
 
-      this.motivationCache.set(cacheKey, {
-        data: text,
-        expiresAt: Date.now() + 12 * 3600 * 1000,
-      });
+      await this.cache.set(cacheKey, text, 12 * 3600);
       return { message: text, source: 'claude' };
     } catch {
       return {
@@ -457,8 +427,9 @@ export class AiInsightsService {
   // ── Today Action (smart widget) ──
 
   async getTodayAction(userId: string): Promise<TodayAction> {
-    const cached = this.todayActionCache.get(userId);
-    if (cached && cached.expiresAt > Date.now()) return cached.data;
+    const cacheKey = `ai-insights:today-action:${userId}`;
+    const hit = await this.cache.get<TodayAction>(cacheKey);
+    if (hit) return hit;
 
     const todayStart = todayDateUtc();
     const yesterdayStart = yesterdayDateUtc();
@@ -513,10 +484,7 @@ export class AiInsightsService {
       firstName: user?.name?.split(' ')[0] || 'Athlete',
     });
 
-    this.todayActionCache.set(userId, {
-      data: action,
-      expiresAt: Date.now() + this.CACHE_TTL_MS,
-    });
+    await this.cache.set(cacheKey, action, this.TTL_1H);
     return action;
   }
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card, SectionHeader, Tag } from '@/components/v3';
+import { useRouter } from 'next/navigation';
+import { Card, SectionHeader, Tag, Button } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getWorkoutPlans, getMyStats, type WorkoutPlanData, type StatsData } from '@/lib/api';
 
@@ -23,12 +24,16 @@ const quickLinks = [
 export default function GymPage() {
   const [plans, setPlans] = useState<WorkoutPlanData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => { document.title = 'FitAI — Trenik'; }, []);
 
   useEffect(() => {
-    getWorkoutPlans().then(setPlans).catch(console.error);
-    getMyStats().then(setStats).catch(console.error);
+    Promise.all([
+      getWorkoutPlans().then(setPlans).catch(console.error),
+      getMyStats().then(setStats).catch(console.error),
+    ]).finally(() => setLoading(false));
   }, []);
 
   return (
@@ -65,7 +70,24 @@ export default function GymPage() {
         <div style={{ marginTop: 48 }}>
           <SectionHeader title="Plans" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {plans.map((plan) => (
+            {loading && (
+              <>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="animate-pulse" style={{ height: 80, borderRadius: 'var(--r-md)', background: 'var(--bg-2)', marginBottom: 2 }} />
+                ))}
+              </>
+            )}
+            {!loading && plans.length === 0 && (
+              <Card padding={32} style={{ textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-2)', marginBottom: 16, fontSize: 14 }}>
+                  Zatím nemáš žádný tréninkový plán.
+                </p>
+                <Button variant="accent" onClick={() => router.push('/ai-coach')}>
+                  Vytvořit první plán
+                </Button>
+              </Card>
+            )}
+            {!loading && plans.map((plan) => (
               <Link key={plan.id} href={`/plans/${plan.id}`} style={{ textDecoration: 'none' }}>
                 <Card hover padding="24px 20px">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -40,9 +40,19 @@ export default function NutritionPage() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMeal, setCameraMeal] = useState('breakfast');
   const [meal, setMeal] = useState('breakfast');
-  const [hydration, setHydration] = useState(6);
+  const [hydration, setHydration] = useState(() => {
+    if (typeof window === 'undefined') return 0;
+    const today = new Date().toISOString().slice(0, 10);
+    const saved = localStorage.getItem(`fitai_hydration_${today}`);
+    return saved ? parseFloat(saved) : 0;
+  });
 
   useEffect(() => { document.title = 'FitAI — Nutrition'; }, []);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`fitai_hydration_${today}`, String(hydration));
+  }, [hydration]);
 
   const reload = () => {
     getNutritionToday().then(setData).catch(console.error);

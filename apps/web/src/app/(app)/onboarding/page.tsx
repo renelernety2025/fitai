@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<OnboardingData>({
     name: '', age: '', weightKg: '', heightCm: '',
     goal: null, experience: null,
@@ -43,6 +44,7 @@ export default function OnboardingPage() {
 
   async function handleFinish() {
     setSaving(true);
+    setError(null);
     try {
       const age = parseInt(data.age) || 25;
       const weightKg = parseFloat(data.weightKg) || 75;
@@ -51,6 +53,7 @@ export default function OnboardingPage() {
       await completeOnboarding();
       router.push('/dashboard');
     } catch {
+      setError('Nepodařilo se uložit profil. Zkuste to znovu.');
       setSaving(false);
     }
   }
@@ -109,17 +112,22 @@ export default function OnboardingPage() {
 
       {/* ── Footer nav ── */}
       <footer style={{
-        padding: '20px 40px', display: 'flex', justifyContent: 'center', gap: 12,
+        padding: '20px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
         borderTop: '1px solid var(--stroke-1)',
       }}>
-        {step > 1 && (
-          <Button variant="ghost" size="lg" onClick={() => setStep(step - 1)}>
-            &larr; Zpět
-          </Button>
+        {error && (
+          <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center', margin: 0 }}>{error}</p>
         )}
-        <Button variant="accent" size="lg" disabled={!canContinue() || saving} onClick={handleNext}>
-          {step === TOTAL ? (saving ? 'Ukládám...' : 'Začít trénovat \u2192') : 'Pokračovat \u2192'}
-        </Button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {step > 1 && (
+            <Button variant="ghost" size="lg" onClick={() => setStep(step - 1)}>
+              &larr; Zpět
+            </Button>
+          )}
+          <Button variant="accent" size="lg" disabled={!canContinue() || saving} onClick={handleNext}>
+            {step === TOTAL ? (saving ? 'Ukládám...' : 'Začít trénovat \u2192') : 'Pokračovat \u2192'}
+          </Button>
+        </div>
       </footer>
     </div>
   );
