@@ -19,10 +19,10 @@ function StatusBadge({ status }: { status: string }) {
     FAILED: 'bg-red-600 text-red-100',
   };
   const labels: Record<string, string> = {
-    PENDING: 'Čeká',
-    PROCESSING: 'AI zpracovává...',
-    COMPLETED: 'Hotovo',
-    FAILED: 'Chyba',
+    PENDING: 'Pending',
+    PROCESSING: 'AI processing...',
+    COMPLETED: 'Done',
+    FAILED: 'Failed',
   };
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status] || styles.PENDING}`}>

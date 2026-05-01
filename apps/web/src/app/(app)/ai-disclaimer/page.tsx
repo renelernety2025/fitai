@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'AI Disclaimer — FitAI',
-  description: 'Informace o AI technologiích používaných v platformě FitAI.',
+  description: 'Information about AI technologies used in the FitAI platform.',
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {

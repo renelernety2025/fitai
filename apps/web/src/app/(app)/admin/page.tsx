@@ -50,7 +50,7 @@ export default function AdminPage() {
         return r.json();
       })
       .then(setStats)
-      .catch(() => setError('Nelze nacist data'));
+      .catch(() => setError('Failed to load data'));
 
     fetch(`${API_BASE}/api/admin/analytics`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -68,15 +68,15 @@ export default function AdminPage() {
       <>
         <section className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <h1 className="v3-display-2">Pristup odepren</h1>
+            <h1 className="v3-display-2">Access denied</h1>
             <p className="mt-4 text-white/40">
-              Tato stranka je dostupna pouze pro administratory.
+              This page is available only to administrators.
             </p>
             <Link
               href="/dashboard"
               className="mt-8 inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-black"
             >
-              Zpet na dashboard
+              Back to dashboard
             </Link>
           </div>
         </section>
@@ -94,7 +94,7 @@ export default function AdminPage() {
       </Link>
 
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Administrace</p>
+        <p className="v3-eyebrow-serif">Administration</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Admin<br/>
           <em className="v3-clay" style={{ fontWeight: 300 }}>panel.</em>
@@ -106,23 +106,23 @@ export default function AdminPage() {
       {stats && (
         <FadeIn delay={0.1}>
           <section className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            <StatCard value={stats.totalUsers} label="Uzivatelu celkem" />
+            <StatCard value={stats.totalUsers} label="Total users" />
             <StatCard
               value={stats.registrationsToday}
-              label="Registrace dnes"
+              label="Registrations today"
               accent="var(--sage)"
             />
             <StatCard
               value={stats.activeToday}
-              label="Aktivnich dnes"
+              label="Active today"
               accent="var(--sage)"
             />
-            <StatCard value={stats.totalSessions} label="Treninku celkem" />
-            <StatCard value={stats.totalFoodLogs} label="Zaznamu jidla" />
-            <StatCard value={stats.totalCheckIns} label="Check-inu" />
+            <StatCard value={stats.totalSessions} label="Total sessions" />
+            <StatCard value={stats.totalFoodLogs} label="Food logs" />
+            <StatCard value={stats.totalCheckIns} label="Check-ins" />
             <StatCard
               value={stats.aiCallsToday}
-              label="AI volani dnes"
+              label="AI calls today"
               accent="var(--clay-deep)"
             />
           </section>
@@ -133,27 +133,27 @@ export default function AdminPage() {
         <FadeIn delay={0.3}>
           <section className="mt-12">
             <div className="mb-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/40">
-              Analyticke metriky
+              Analytics
             </div>
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard
                 value={analytics.dauToday}
-                label="DAU (dnes)"
+                label="DAU (today)"
                 accent="var(--sage)"
               />
               <StatCard
                 value={analytics.wauWeek}
-                label="WAU (7 dni)"
+                label="WAU (7 days)"
                 accent="var(--sage)"
               />
               <StatCard
                 value={analytics.newUsersMonth}
-                label="MAU (30 dni)"
+                label="MAU (30 days)"
                 accent="var(--sage)"
               />
               <StatCard
                 value={analytics.retentionRate}
-                label="Retence %"
+                label="Retention %"
                 accent={
                   analytics.retentionRate > 30
                     ? 'var(--sage)'
@@ -173,19 +173,19 @@ export default function AdminPage() {
                 </div>
                 <div className="space-y-3">
                   <BarMetric
-                    label="Dnes"
+                    label="Today"
                     value={analytics.newUsersToday}
                     max={Math.max(analytics.newUsersMonth, 1)}
                     color="var(--sage)"
                   />
                   <BarMetric
-                    label="7 dni"
+                    label="7 days"
                     value={analytics.newUsersWeek}
                     max={Math.max(analytics.newUsersMonth, 1)}
                     color="var(--sage)"
                   />
                   <BarMetric
-                    label="30 dni"
+                    label="30 days"
                     value={analytics.newUsersMonth}
                     max={Math.max(analytics.newUsersMonth, 1)}
                     color="var(--clay-deep)"
@@ -195,17 +195,17 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border border-white/8 p-6">
                 <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                  Treninky
+                  Sessions
                 </div>
                 <div className="space-y-3">
                   <BarMetric
-                    label="Dnes"
+                    label="Today"
                     value={analytics.sessionsToday}
                     max={Math.max(analytics.sessionsWeek, 1)}
                     color="var(--accent)"
                   />
                   <BarMetric
-                    label="7 dni"
+                    label="7 days"
                     value={analytics.sessionsWeek}
                     max={Math.max(analytics.sessionsWeek, 1)}
                     color="var(--warning)"
@@ -233,7 +233,7 @@ export default function AdminPage() {
                     {analytics.retentionRate}%
                   </div>
                   <div className="mt-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-                    7-day retence
+                    7-day retention
                   </div>
                 </div>
               </div>

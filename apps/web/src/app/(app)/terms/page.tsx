@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Podmínky používání — FitAI',
-  description: 'Obchodní podmínky a pravidla používání platformy FitAI.',
+  title: 'Terms of Service — FitAI',
+  description: 'Terms of service and usage rules for the FitAI platform.',
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {

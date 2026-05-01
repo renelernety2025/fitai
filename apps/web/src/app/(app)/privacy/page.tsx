@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Ochrana soukromí — FitAI',
-  description: 'Zásady ochrany osobních údajů platformy FitAI.',
+  title: 'Privacy Policy — FitAI',
+  description: 'Privacy policy for the FitAI platform.',
 };
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
