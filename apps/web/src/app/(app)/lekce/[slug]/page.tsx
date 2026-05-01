@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Card, Button } from '@/components/v3';
 import { getLesson, type Lesson } from '@/lib/api';
 
 const accent: Record<string, string> = {
@@ -11,72 +12,95 @@ const accent: Record<string, string> = {
   mindset: '#A8FF00',
 };
 
-export default function LessonV2DetailPage({ params }: { params: { slug: string } }) {
+export default function LessonDetailPage({ params }: { params: { slug: string } }) {
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getLesson(params.slug).then(setLesson).catch(console.error);
+    getLesson(params.slug)
+      .then(setLesson)
+      .catch(() => setError(true));
   }, [params.slug]);
+
+  if (error) {
+    return (
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '120px 16px', textAlign: 'center' }}>
+        <p className="v3-display-3" style={{ marginBottom: 12 }}>Lesson not found</p>
+        <p className="v3-body" style={{ color: 'var(--text-3)', marginBottom: 24 }}>
+          This lesson may have been removed or the link is incorrect.
+        </p>
+        <Link href="/lekce" style={{ textDecoration: 'none' }}>
+          <Button variant="ghost">Back to lessons</Button>
+        </Link>
+      </div>
+    );
+  }
 
   if (!lesson) {
     return (
-      <>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </>
+      <div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span>
+      </div>
     );
   }
 
   const color = accent[lesson.category] || '#FFF';
+  const title = lesson.titleCs;
+  const body = lesson.bodyCs;
 
   return (
-    <>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 16px 128px' }}>
       <Link
         href="/lekce"
-        className="mt-8 inline-block text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40 transition hover:text-white"
+        style={{
+          display: 'inline-block', marginTop: 32,
+          fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+          letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)',
+          textDecoration: 'none',
+        }}
       >
-        ← Lekce
+        &larr; Lessons
       </Link>
 
-      <article className="mx-auto max-w-2xl pt-12 pb-32">
-        <div
-          className="mb-6 text-[10px] font-semibold uppercase tracking-[0.3em]"
-          style={{ color }}
-        >
-          {lesson.category} · {lesson.durationMin} min čtení
+      <article style={{ paddingTop: 48 }}>
+        <div style={{
+          marginBottom: 24, fontSize: 10, fontWeight: 600,
+          textTransform: 'uppercase', letterSpacing: '0.3em', color,
+        }}>
+          {lesson.category} &middot; {lesson.durationMin} min read
         </div>
-        <h1
-          className="mb-12 font-bold tracking-tight text-white"
-          style={{
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            letterSpacing: '-0.04em',
-            lineHeight: 0.95,
-          }}
-        >
-          {lesson.titleCs}
+
+        <h1 style={{
+          fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+          fontWeight: 700, letterSpacing: '-0.04em',
+          lineHeight: 0.95, color: 'var(--text-1)',
+          marginBottom: 48,
+        }}>
+          {title}
         </h1>
 
-        <div
-          className="text-lg leading-relaxed text-white/75"
-          style={{ fontSize: '1.125rem', lineHeight: 1.8 }}
-        >
-          {lesson.bodyCs.split('\n').map((p, i) => (
-            <p key={i} className="mb-6">
-              {p}
-            </p>
+        <div style={{ fontSize: '1.125rem', lineHeight: 1.8, color: 'rgba(255,255,255,0.75)' }}>
+          {body.split('\n').map((p, i) => (
+            <p key={i} style={{ marginBottom: 24 }}>{p}</p>
           ))}
         </div>
 
-        <div className="mt-16 border-t border-white/10 pt-8">
+        <div style={{
+          marginTop: 64, borderTop: '1px solid rgba(255,255,255,0.1)',
+          paddingTop: 32,
+        }}>
           <Link
             href="/lekce"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              fontSize: 14, fontWeight: 600, color: 'var(--text-1)',
+              textDecoration: 'none',
+            }}
           >
-            ← Více lekcí
+            &larr; More lessons
           </Link>
         </div>
       </article>
-    </>
+    </div>
   );
 }

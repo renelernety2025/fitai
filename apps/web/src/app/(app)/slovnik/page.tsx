@@ -17,10 +17,10 @@ export default function GlossaryV2Page() {
   return (
     <>
       <section style={{ padding: '48px 0 32px' }}>
-        <p className="v3-eyebrow-serif">Knihovna</p>
+        <p className="v3-eyebrow-serif">Library</p>
         <h1 className="v3-display-2" style={{ marginTop: 8 }}>
           Fitness<br/>
-          <em className="v3-clay" style={{ fontWeight: 300 }}>slovnik.</em>
+          <em className="v3-clay" style={{ fontWeight: 300 }}>glossary.</em>
         </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
           Fitness terms explained simply. {terms.length} terms.

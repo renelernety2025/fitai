@@ -21,9 +21,18 @@ const accent: Record<string, string> = {
 export default function LessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [cat, setCat] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Lessons'; }, []);
-  useEffect(() => { getLessons(cat === 'all' ? undefined : cat).then(setLessons).catch(console.error); }, [cat]);
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    getLessons(cat === 'all' ? undefined : cat)
+      .then(setLessons)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [cat]);
 
   return (
     <>
@@ -45,25 +54,46 @@ export default function LessonsPage() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {lessons.map((lesson) => (
-            <Link key={lesson.id} href={`/lekce/${lesson.slug}`} style={{ textDecoration: 'none' }}>
-              <Card hover padding="20px">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ flex: 1, paddingRight: 16 }}>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                      <Tag color={accent[lesson.category]}>{lesson.category}</Tag>
-                      <Tag>{lesson.durationMin} min</Tag>
+        {loading && (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}>
+            <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading lessons...</span>
+          </div>
+        )}
+
+        {error && !loading && (
+          <Card padding={32} style={{ textAlign: 'center' }}>
+            <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>Failed to load lessons.</p>
+            <button onClick={() => setCat(cat)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+          </Card>
+        )}
+
+        {!loading && !error && lessons.length === 0 && (
+          <Card padding={48} style={{ textAlign: 'center' }}>
+            <p className="v3-body" style={{ color: 'var(--text-3)' }}>No lessons in this category.</p>
+          </Card>
+        )}
+
+        {!loading && !error && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {lessons.map((lesson) => (
+              <Link key={lesson.id} href={`/lekce/${lesson.slug}`} style={{ textDecoration: 'none' }}>
+                <Card hover padding="20px">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ flex: 1, paddingRight: 16 }}>
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                        <Tag color={accent[lesson.category]}>{lesson.category}</Tag>
+                        <Tag>{lesson.durationMin} min</Tag>
+                      </div>
+                      <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 16 }}>{lesson.titleCs}</div>
+                      <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>{lesson.bodyCs}</p>
                     </div>
-                    <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 16 }}>{lesson.title || lesson.titleCs}</div>
-                    <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>{lesson.body || lesson.bodyCs}</p>
+                    <FitIcon name="arrow" size={18} color="var(--text-3)" />
                   </div>
-                  <FitIcon name="arrow" size={18} color="var(--text-3)" />
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
