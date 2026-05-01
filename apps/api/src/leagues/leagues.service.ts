@@ -114,7 +114,9 @@ export class LeaguesService {
       'BRONZE',
       'SILVER',
       'GOLD',
+      'PLATINUM',
       'DIAMOND',
+      'MASTER',
       'LEGEND',
     ];
 
@@ -148,9 +150,11 @@ export class LeaguesService {
     });
     const xp = progress?.totalXP || 0;
 
-    if (xp >= 5000) return 'LEGEND';
-    if (xp >= 2000) return 'DIAMOND';
-    if (xp >= 1000) return 'GOLD';
+    if (xp >= 100000) return 'LEGEND';
+    if (xp >= 40000) return 'MASTER';
+    if (xp >= 10000) return 'DIAMOND';
+    if (xp >= 6000) return 'PLATINUM';
+    if (xp >= 2000) return 'GOLD';
     if (xp >= 500) return 'SILVER';
     return 'BRONZE';
   }

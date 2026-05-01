@@ -34,6 +34,11 @@ export class PostsController {
     return this.postsService.create(req.user.id, dto);
   }
 
+  @Delete('comments/:commentId')
+  async deleteComment(@Param('commentId') commentId: string, @Request() req) {
+    return this.postsService.deleteComment(commentId, req.user.id);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req) {
     return this.postsService.findById(id, req.user.id);
@@ -56,10 +61,5 @@ export class PostsController {
     @Body() dto: CreateCommentDto,
   ) {
     return this.postsService.addComment(id, req.user.id, dto);
-  }
-
-  @Delete('comments/:commentId')
-  async deleteComment(@Param('commentId') commentId: string, @Request() req) {
-    return this.postsService.deleteComment(commentId, req.user.id);
   }
 }

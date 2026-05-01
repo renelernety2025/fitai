@@ -90,8 +90,8 @@ export class FeedService {
       where: {
         userId: { in: [userId, ...followedIds] },
         isScheduled: false,
-        ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -179,8 +179,8 @@ export class FeedService {
       where: {
         isPublic: true,
         isScheduled: false,
-        ...(cursor && !isNaN(new Date(cursor).getTime()) ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       take: limit,
       orderBy: { createdAt: 'desc' },
       include: {
