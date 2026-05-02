@@ -182,9 +182,9 @@ function BestMonthCard({ data }: { data: WrappedData }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16 }}>
       <Card padding={48} style={{ background: 'rgba(20,17,13,0.6)', backdropFilter: 'blur(20px)' }}>
-        <div className="v3-eyebrow-serif" style={{ marginBottom: 16 }}>Your best month</div>
+        <div className="v3-eyebrow-serif" style={{ marginBottom: 16 }}>Most active day</div>
         <div className="v3-display-1" style={{ margin: 0, fontSize: 'clamp(3rem, 6vw, 5rem)', color: 'var(--clay)' }}>
-          {data.mostActiveDay || 'October'}
+          {data.mostActiveDay || 'Monday'}
         </div>
         <div className="v3-body" style={{ marginTop: 16, maxWidth: 480, color: 'var(--text-2)' }}>
           {data.totalWorkouts} sessions, longest streak of {data.longestStreak} days,

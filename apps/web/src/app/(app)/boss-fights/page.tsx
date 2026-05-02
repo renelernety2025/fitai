@@ -52,7 +52,7 @@ export default function BossFightsPage() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     setRunning(false);
     try {
-      await completeBoss(activeBoss.code, { timeSeconds: timer, score: scoreInput ? parseInt(scoreInput) : undefined });
+      await completeBoss(activeBoss.code, { score: scoreInput ? parseInt(scoreInput) : 0, defeated: true });
       getBossFights().then(setData).catch(() => {});
     } catch { /* noop */ }
     setActiveBoss(null);

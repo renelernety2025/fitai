@@ -72,7 +72,7 @@ function StreakHero({ streak }: { streak: number }) {
 function StatCards({ streak, stats }: { streak: number; stats: HabitsStats | null }) {
   const items = [
     ['Current', String(streak), 'days'],
-    ['Longest ever', String(streak), 'days'],
+    ['Recovery score', stats?.recoveryScore != null ? String(stats.recoveryScore) : '--', '/ 100'],
     ['Total check-ins', String(stats?.totalCheckIns ?? 0), 'this year'],
     ['Avg sleep 7d', stats?.avgSleep ? `${stats.avgSleep}` : '--', 'hours'],
   ];

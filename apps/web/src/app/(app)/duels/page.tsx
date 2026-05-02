@@ -90,7 +90,7 @@ function DuelsHeader() {
           Head to<br /><em style={{ color: 'var(--clay)', fontWeight: 300 }}>head.</em>
         </h1>
       </div>
-      <Button variant="primary" icon={<FitIcon name="plus" size={14} />}>Challenge a friend</Button>
+      <Button variant="primary" icon={<FitIcon name="plus" size={14} />} disabled>Challenge (coming soon)</Button>
     </div>
   );
 }
