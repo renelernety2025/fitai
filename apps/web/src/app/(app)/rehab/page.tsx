@@ -94,9 +94,9 @@ export default function RehabPage() {
         {selected && (
           <section>
             <SectionHeader title={`Plan: ${selected.injuryType}`} />
-            {selected.phases && (
+            {(selected.phases || selected.aiPlan?.phases) && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' as const }}>
-                {selected.phases.map((phase: any, i: number) => (
+                {(selected.phases || selected.aiPlan?.phases || []).map((phase: any, i: number) => (
                   <Card key={i} padding={14} style={{ flex: '1 1 180px', border: phase.current ? '1px solid var(--accent)' : undefined }}>
                     <Tag>Phase {i + 1}</Tag>
                     <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', marginTop: 6 }}>{phase.name}</div>

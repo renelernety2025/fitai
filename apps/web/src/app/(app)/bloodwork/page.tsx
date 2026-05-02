@@ -6,14 +6,13 @@ import { FitIcon } from '@/components/icons/FitIcons';
 import { getBloodwork, addBloodwork, deleteBloodwork, getBloodworkAnalysis } from '@/lib/api';
 
 const TEST_TYPES = [
-  { value: 'testosterone', label: 'Testosterone', unit: 'nmol/L', min: 10, max: 35 },
-  { value: 'hemoglobin', label: 'Hemoglobin', unit: 'g/L', min: 120, max: 170 },
-  { value: 'ferritin', label: 'Ferritin', unit: 'ug/L', min: 30, max: 300 },
-  { value: 'vitD', label: 'Vitamin D', unit: 'nmol/L', min: 75, max: 150 },
-  { value: 'crp', label: 'CRP', unit: 'mg/L', min: 0, max: 5 },
-  { value: 'tsh', label: 'TSH', unit: 'mIU/L', min: 0.4, max: 4 },
-  { value: 'glucose', label: 'Glucose', unit: 'mmol/L', min: 3.9, max: 5.6 },
-  { value: 'cholesterol', label: 'Cholesterol', unit: 'mmol/L', min: 0, max: 5.2 },
+  { value: 'testosterone', label: 'Testosterone', unit: 'ng/dL', min: 300, max: 1000 },
+  { value: 'iron', label: 'Iron', unit: 'ug/dL', min: 60, max: 170 },
+  { value: 'vitaminD', label: 'Vitamin D', unit: 'ng/mL', min: 30, max: 80 },
+  { value: 'crp', label: 'CRP', unit: 'mg/L', min: 0, max: 3 },
+  { value: 'cholesterol', label: 'Cholesterol', unit: 'mg/dL', min: 0, max: 200 },
+  { value: 'glucose', label: 'Glucose', unit: 'mg/dL', min: 70, max: 100 },
+  { value: 'hba1c', label: 'HbA1c', unit: '%', min: 4, max: 5.7 },
 ];
 
 function DotChart({ entries, type }: { entries: any[]; type: typeof TEST_TYPES[number] }) {

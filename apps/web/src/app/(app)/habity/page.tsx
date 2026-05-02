@@ -34,23 +34,36 @@ export default function HabityPage() {
     getHabitsStats().then(setStats).catch(console.error);
   }, []);
 
+  const TOGGLE_VALUES: Record<string, { on: number; off: number; threshold: number }> = {
+    sleepHours: { on: 8, off: 0, threshold: 7 },
+    energy: { on: 4, off: 1, threshold: 3 },
+    hydrationL: { on: 2.5, off: 0, threshold: 2 },
+    steps: { on: 8000, off: 0, threshold: 5000 },
+    mood: { on: 4, off: 1, threshold: 3 },
+    soreness: { on: 1, off: 1, threshold: 3 },
+    stress: { on: 1, off: 1, threshold: 3 },
+  };
+
   async function toggle(key: keyof DailyCheckIn) {
     if (!today) return;
     const current = (today as unknown as Record<string, unknown>)[key as string];
-    const next = typeof current === 'number' ? (current >= 3 ? 0 : 5) : 5;
+    const cfg = TOGGLE_VALUES[key as string] || { on: 5, off: 1, threshold: 3 };
+    const isDone = typeof current === 'number' && current >= cfg.threshold;
+    const next = isDone ? cfg.off : cfg.on;
     setSaving(true);
     try {
       const updated = await updateHabitsToday({ [key]: next } as Partial<DailyCheckIn>);
       setToday(updated);
       setStats(await getHabitsStats());
-    } catch { /* noop */ }
+    } catch { /* silent — backend may reject partial updates */ }
     setSaving(false);
   }
 
   const todayDate = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const done = today ? FIELDS.filter(f => {
     const v = (today as unknown as Record<string, unknown>)[f.key as string];
-    return typeof v === 'number' && v >= 3;
+    const cfg = TOGGLE_VALUES[f.key as string];
+    return typeof v === 'number' && v >= (cfg?.threshold ?? 3);
   }).length : 0;
 
   return (
@@ -74,8 +87,9 @@ function HabitHeader({ date }: { date: string }) {
         </h1>
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
-        <Button variant="ghost" icon={<FitIcon name="plus" size={14} />}>Add habit</Button>
-        <Button variant="primary" icon={<FitIcon name="check" size={14} />}>Check in</Button>
+        <Button variant="ghost" icon={<FitIcon name="check" size={14} />} onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+          Check in
+        </Button>
       </div>
     </div>
   );
