@@ -6,7 +6,6 @@ import {
   getInsights,
   getLessonOfTheWeek,
   getNutritionToday,
-  getWeeklyReview,
   getDailyBrief,
 } from '../lib/api';
 import {
@@ -20,22 +19,22 @@ import {
 } from '../components/v2/V2';
 
 export function DashboardScreen({ navigation }: any) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [stats, setStats] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
   const [lesson, setLesson] = useState<any>(null);
   const [nutrition, setNutrition] = useState<any>(null);
-  const [weekly, setWeekly] = useState<any>(null);
   const [brief, setBrief] = useState<any>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getMyStats().then(setStats).catch(console.error);
-    getInsights().then(setInsights).catch(console.error);
-    getLessonOfTheWeek().then(setLesson).catch(console.error);
-    getNutritionToday().then(setNutrition).catch(console.error);
-    getWeeklyReview().then((r: any) => setWeekly(r.review)).catch(console.error);
-    getDailyBrief().then((r: any) => setBrief(r.brief)).catch(console.error);
-  }, []);
+    if (isLoading || !user) return;
+    getMyStats().then(setStats).catch(() => setError(true));
+    getInsights().then(setInsights).catch(() => {});
+    getLessonOfTheWeek().then(setLesson).catch(() => {});
+    getNutritionToday().then(setNutrition).catch(() => {});
+    getDailyBrief().then((r: any) => setBrief(r.brief)).catch(() => {});
+  }, [isLoading, user]);
 
   const moodColor: Record<string, string> = {
     push: v2.red,
@@ -53,14 +52,14 @@ export function DashboardScreen({ navigation }: any) {
   const stand = stats ? Math.min(1, ((stats.totalXP || 0) % 1000) / 1000) : 0.5;
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Dobré ráno' : hour < 18 ? 'Dobré odpoledne' : 'Dobrý večer';
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <V2Screen>
       {/* Top bar with Profile link */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 16 }}>
         <Pressable onPress={() => navigation.navigate('Profile')}>
-          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>VÍCE →</Text>
+          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>MORE →</Text>
         </Pressable>
       </View>
 
@@ -69,6 +68,16 @@ export function DashboardScreen({ navigation }: any) {
         <V2SectionLabel>{greeting}</V2SectionLabel>
         <V2Display size="lg">{(user?.name || 'Athlete').split(' ')[0]}.</V2Display>
       </View>
+
+      {/* Error state */}
+      {error && !stats && (
+        <View style={{ alignItems: 'center', padding: 32 }}>
+          <Text style={{ color: v2.red, fontSize: 14, marginBottom: 12 }}>Failed to load data.</Text>
+          <Pressable onPress={() => { setError(false); getMyStats().then(setStats).catch(() => setError(true)); }}>
+            <Text style={{ color: v2.text, fontSize: 14, fontWeight: '600' }}>Try again</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Triple Ring */}
       <View style={{ alignItems: 'center', marginVertical: 32 }}>
@@ -88,7 +97,7 @@ export function DashboardScreen({ navigation }: any) {
             {stats?.currentStreak || 0}
           </Text>
           <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-            DNÍ V ŘADĚ
+            DAY STREAK
           </Text>
         </View>
       </View>
@@ -112,8 +121,8 @@ export function DashboardScreen({ navigation }: any) {
       {/* Stats */}
       {stats && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderBottomWidth: 1, borderColor: v2.border, paddingVertical: 32, marginBottom: 48 }}>
-          <V2Stat value={stats.totalSessions || 0} label="Cvičení" />
-          <V2Stat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hodin" />
+          <V2Stat value={stats.totalSessions || 0} label="Sessions" />
+          <V2Stat value={Math.floor((stats.totalMinutes || 0) / 60)} label="Hours" />
           <V2Stat value={stats.totalXP || 0} label="XP" />
         </View>
       )}
@@ -138,11 +147,11 @@ export function DashboardScreen({ navigation }: any) {
                 paddingVertical: 6,
                 borderRadius: 999,
                 borderWidth: 1,
-                borderColor: moodColor[brief.mood] + '55',
-                backgroundColor: moodColor[brief.mood] + '22',
+                borderColor: (moodColor[brief.mood] || v2.text) + '55',
+                backgroundColor: (moodColor[brief.mood] || v2.text) + '22',
               }}
             >
-              <Text style={{ color: moodColor[brief.mood], fontSize: 9, fontWeight: '700', letterSpacing: 2 }}>
+              <Text style={{ color: moodColor[brief.mood] || v2.text, fontSize: 9, fontWeight: '700', letterSpacing: 2 }}>
                 {moodLabelMap[brief.mood] || 'TODAY'}
               </Text>
             </View>
@@ -171,7 +180,7 @@ export function DashboardScreen({ navigation }: any) {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
             <Text style={{ color: v2.text, fontSize: 13, fontWeight: '600' }}>{brief.workout.title}</Text>
             <Text style={{ color: v2.muted, fontSize: 13 }}>· {brief.workout.estimatedMinutes} min</Text>
-            <Text style={{ color: v2.muted, fontSize: 13 }}>· {brief.workout.exercises.length} cviků</Text>
+            <Text style={{ color: v2.muted, fontSize: 13 }}>· {brief.workout.exercises.length} exercises</Text>
           </View>
 
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 22, marginBottom: 16 }}>
@@ -188,7 +197,7 @@ export function DashboardScreen({ navigation }: any) {
               alignSelf: 'flex-start',
             }}
           >
-            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>Začít trénink →</Text>
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>Start training →</Text>
           </Pressable>
         </View>
       )}
@@ -196,7 +205,7 @@ export function DashboardScreen({ navigation }: any) {
       {/* Daily Brief — exercises */}
       {brief && brief.workout.exercises.length > 0 && (
         <View style={{ marginBottom: 48 }}>
-          <V2SectionLabel>Plán cviků</V2SectionLabel>
+          <V2SectionLabel>Workout plan</V2SectionLabel>
           {brief.workout.exercises.map((ex: any, i: number) => (
             <View
               key={i}
@@ -211,7 +220,7 @@ export function DashboardScreen({ navigation }: any) {
                 {String(i + 1).padStart(2, '0')}
               </Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: v2.text, fontSize: 15, fontWeight: '600' }}>{ex.nameCs}</Text>
+                <Text style={{ color: v2.text, fontSize: 15, fontWeight: '600' }}>{ex.name || ex.nameCs}</Text>
                 {ex.rationale ? (
                   <Text style={{ color: v2.muted, fontSize: 11, marginTop: 2 }}>{ex.rationale}</Text>
                 ) : null}
@@ -227,69 +236,35 @@ export function DashboardScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Weekly Review (AI) */}
-      {weekly && (
-        <View style={{ marginBottom: 48 }}>
-          <V2SectionLabel>AI Týdenní review</V2SectionLabel>
-          <V2Display size="md">{weekly.summary}</V2Display>
-          {weekly.highlights?.length > 0 && (
-            <View style={{ marginTop: 16 }}>
-              <Text style={{ color: v2.green, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
-                ✓ POVEDLO SE
-              </Text>
-              {weekly.highlights.map((h: string, i: number) => (
-                <Text key={i} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginTop: 4 }}>{h}</Text>
-              ))}
-            </View>
-          )}
-          {weekly.improvements?.length > 0 && (
-            <View style={{ marginTop: 16 }}>
-              <Text style={{ color: v2.yellow, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
-                → ZLEPŠIT
-              </Text>
-              {weekly.improvements.map((h: string, i: number) => (
-                <Text key={i} style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, marginTop: 4 }}>{h}</Text>
-              ))}
-            </View>
-          )}
-          <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderColor: v2.border }}>
-            <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>
-              CÍL PŘÍŠTÍHO TÝDNE
-            </Text>
-            <Text style={{ color: '#FFF', fontSize: 16, marginTop: 6 }}>{weekly.nextWeekFocus}</Text>
-          </View>
-        </View>
-      )}
-
       {/* Lesson of the week */}
       {lesson && (
         <Pressable
           onPress={() => navigation.navigate('LessonDetail', { slug: lesson.slug })}
           style={{ marginBottom: 48 }}
         >
-          <V2SectionLabel>Lekce týdne</V2SectionLabel>
-          <V2Display size="md">{lesson.titleCs}</V2Display>
+          <V2SectionLabel>Lesson of the week</V2SectionLabel>
+          <V2Display size="md">{lesson.title || lesson.titleCs}</V2Display>
           <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14, lineHeight: 22 }} numberOfLines={3}>
-            {lesson.bodyCs}
+            {lesson.body || lesson.bodyCs}
           </Text>
-          <Text style={{ color: v2.text, marginTop: 12, fontSize: 12, fontWeight: '600' }}>Číst →</Text>
+          <Text style={{ color: v2.text, marginTop: 12, fontSize: 12, fontWeight: '600' }}>Read →</Text>
         </Pressable>
       )}
 
       {/* Nutrition */}
       {nutrition && (
         <Pressable onPress={() => navigation.navigate('Vyziva')} style={{ marginBottom: 48 }}>
-          <V2SectionLabel>Výživa</V2SectionLabel>
+          <V2SectionLabel>Nutrition</V2SectionLabel>
           <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
             <Text style={{ color: v2.text, fontSize: 44, fontWeight: '700', letterSpacing: -2 }}>
-              {nutrition.totals.kcal.toLocaleString('cs-CZ')}
+              {nutrition.totals.kcal.toLocaleString()}
             </Text>
             <Text style={{ color: v2.ghost, fontSize: 20, marginLeft: 6 }}>
-              / {nutrition.goals.dailyKcal.toLocaleString('cs-CZ')} kcal
+              / {nutrition.goals.dailyKcal.toLocaleString()} kcal
             </Text>
           </View>
           <Text style={{ color: v2.muted, marginTop: 4, fontSize: 13 }}>
-            P {nutrition.totals.proteinG}g · S {nutrition.totals.carbsG}g · T {nutrition.totals.fatG}g
+            P {nutrition.totals.proteinG}g · C {nutrition.totals.carbsG}g · F {nutrition.totals.fatG}g
           </Text>
         </Pressable>
       )}
@@ -297,12 +272,12 @@ export function DashboardScreen({ navigation }: any) {
       {/* AI Insight */}
       {insights?.recovery && (
         <View style={{ marginBottom: 48 }}>
-          <V2SectionLabel>AI · Stav regenerace</V2SectionLabel>
+          <V2SectionLabel>AI · Recovery status</V2SectionLabel>
           <V2Display size="md">
-            {insights.recovery.overallStatus === 'fresh' && 'Svěží.'}
-            {insights.recovery.overallStatus === 'normal' && 'Normální.'}
-            {insights.recovery.overallStatus === 'fatigued' && 'Unavený.'}
-            {insights.recovery.overallStatus === 'overreached' && 'Přetrénovaný.'}
+            {insights.recovery.overallStatus === 'fresh' && 'Fresh.'}
+            {insights.recovery.overallStatus === 'normal' && 'Normal.'}
+            {insights.recovery.overallStatus === 'fatigued' && 'Fatigued.'}
+            {insights.recovery.overallStatus === 'overreached' && 'Overtrained.'}
           </V2Display>
           <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14, lineHeight: 22 }}>
             {insights.recovery.recommendation}
