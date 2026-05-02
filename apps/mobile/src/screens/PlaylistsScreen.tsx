@@ -1,36 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Linking } from 'react-native';
 import { getPlaylists } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+
+const ALLOWED_DOMAINS = ['open.spotify.com', 'music.apple.com', 'spotify.com', 'itunes.apple.com'];
 
 export function PlaylistsScreen() {
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[] | null>(null);
 
   useEffect(() => {
     getPlaylists().then(setPlaylists).catch(() => setPlaylists([]));
   }, []);
 
   function openLink(url?: string) {
-    if (url) Linking.openURL(url).catch(() => {});
+    if (!url) return;
+    try {
+      const domain = new URL(url).hostname;
+      if (!ALLOWED_DOMAINS.some(d => domain.endsWith(d))) return;
+      Linking.openURL(url).catch(() => {});
+    } catch { /* invalid URL — ignore */ }
   }
+
+  const items = playlists ?? [];
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Hudba</V2SectionLabel>
-        <V2Display size="xl">Playlisty.</V2Display>
+        <V2SectionLabel>Music</V2SectionLabel>
+        <V2Display size="xl">Playlists.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 13, marginTop: 8 }}>
-          Hudba k treninku od komunity
+          Workout music from the community
         </Text>
       </View>
 
-      {playlists.length === 0 && (
+      {playlists === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zatim zadne playlisty
+          No playlists yet
         </Text>
-      )}
+      ) : null}
 
-      {playlists.map((p) => (
+      {items.map((p) => (
         <View
           key={p.id}
           style={{
@@ -47,7 +58,7 @@ export function PlaylistsScreen() {
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ color: v2.faint, fontSize: 11 }}>
-              {p.user?.name || 'Uzivatel'}
+              {p.user?.name || 'User'}
             </Text>
             {p.bpm && (
               <Text style={{ color: v2.orange, fontSize: 11, fontWeight: '600' }}>
