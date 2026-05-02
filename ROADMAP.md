@@ -30,6 +30,15 @@
 - Legal: GDPR sections, age restriction, governing law
 - Security: S3 AdminGuard, 401 race fix, open redirect fix
 
+### Mobile QA Audit ✅
+- 43 screens audited one-by-one against production API
+- 120+ bugs found and fixed (critical crashes, data shape mismatches, security)
+- Critical: VIP false status, Calendar crash, Leagues crash, Journal mood broken, Maintenance deload hidden
+- 15+ frontend↔backend field name mismatches resolved
+- Security: api.ts 204/401 fix, auth-context logout fix, URL validation, input length
+- Code review agent + security audit agent confirmed clean
+- AWS cost optimization: $136→$90/month (ECS min 2→1, Redis deleted)
+
 ---
 
 ## Aktuální priorita
@@ -153,13 +162,13 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ---
 
-## Stats (2026-04-22)
+## Stats (2026-05-02)
 
-- **76 NestJS modules** (canonical list: `apps/api/src/app.module.ts`)
-- **99 DB models** (+ enums: CoachPersonality, JournalMood, LeagueTier, WorkoutPlanType, etc.)
-- **86 web pages** (v2 design, dark/light mode, CSS animations)
-- **47 mobile screens** (v2 design, +AI Chat, +Journal, +Calendar, +Leagues)
-- **340+ API endpoints**
+- **88+ NestJS modules** (canonical list: `apps/api/src/app.module.ts`)
+- **120+ DB models** (+ enums)
+- **96+ web pages** (v3 design, dark/light mode, EN)
+- **47 mobile screens** (v2 design, all audited + EN, all tested against prod API)
+- **400+ API endpoints**
 - **17 achievements**
 - **60 exercises** with 3D animated viewer
 - **3 coach personality modes** (Drill/Chill/Motivational)
@@ -169,3 +178,5 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 - **Backend SSE streaming** deployed (Claude + ElevenLabs PCM pipeline)
 - **Three.js 3D viewer** with phase animation, controls, angle overlay
 - **5 cron jobs** (streak reminders, league week-end, flash challenges, weekly digest, season check)
+- **QA complete**: 96 web pages + 43 mobile screens audited, 180+ total bugs fixed
+- **AWS cost optimized**: $136→$90/month (úsporný režim, autoscale ready)
