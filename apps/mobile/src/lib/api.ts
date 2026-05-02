@@ -48,7 +48,7 @@ export function authMe() {
 }
 
 // ── Videos ────────────────────────────────────────
-export function getVideos() { return request<any[]>('/videos'); }
+export function getVideos(query = '') { return request<any[]>(`/videos${query}`); }
 export function getVideo(id: string) { return request<any>(`/videos/${id}`); }
 
 // ── Exercises ─────────────────────────────────────
