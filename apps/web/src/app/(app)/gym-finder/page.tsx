@@ -69,12 +69,21 @@ export default function GymFinderPage() {
     return result;
   }, [gyms, equipFilter, sortBy]);
 
+  const [submitting, setSubmitting] = useState(false);
+
   async function handleAdd() {
-    if (!form.name) return;
-    const review = await addGymReview(form);
-    setGyms((prev) => [...prev, review]);
-    setShowForm(false);
-    setForm({ name: '', address: '', rating: 4, equipment: [], notes: '' });
+    if (!form.name || submitting) return;
+    setSubmitting(true);
+    try {
+      const review = await addGymReview(form);
+      setGyms((prev) => [...prev, review]);
+      setShowForm(false);
+      setForm({ name: '', address: '', rating: 4, equipment: [], notes: '' });
+    } catch {
+      setError('Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -178,10 +187,10 @@ export default function GymFinderPage() {
             className="mt-4 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none"
             rows={2}
           />
-          <button onClick={handleAdd}
-            className="mt-4 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+          <button onClick={handleAdd} disabled={submitting}
+            className="mt-4 rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-white/90 disabled:opacity-40"
           >
-            Submit review
+            {submitting ? 'Submitting...' : 'Submit review'}
           </button>
         </div>
       )}

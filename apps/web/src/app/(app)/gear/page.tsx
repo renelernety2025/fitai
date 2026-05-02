@@ -103,7 +103,7 @@ export default function GearPage() {
                 <input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="Model" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
               </div>
               <div className="v3-eyebrow" style={{ marginBottom: 6 }}>MAX SESSIONS</div>
-              <input type="number" value={form.maxSessions} onChange={(e) => setForm({ ...form, maxSessions: Number(e.target.value) })} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }} />
+              <input type="number" min="1" value={form.maxSessions} onChange={(e) => setForm({ ...form, maxSessions: Math.max(1, Number(e.target.value)) })} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }} />
               <div style={{ display: 'flex', gap: 10 }}>
                 <Button variant="ghost" full onClick={() => setShowAdd(false)}>Cancel</Button>
                 <Button variant="accent" full onClick={handleAdd}>Add</Button>
