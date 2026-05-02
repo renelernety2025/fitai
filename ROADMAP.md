@@ -21,6 +21,17 @@
 
 ---
 
+## Hotovo (2026-05-02)
+
+### Expert QA Audit ✅
+- 96 pages audited across 17 domains (each 2 passes)
+- 60+ bugs found and fixed (4 security, 15+ critical, 20+ important)
+- Language standardized CZ→EN, v3 CSS prefixes restored, missing states added
+- Legal: GDPR sections, age restriction, governing law
+- Security: S3 AdminGuard, 401 race fix, open redirect fix
+
+---
+
 ## Aktuální priorita
 
 ### 1. VoiceEngine debug + hardware AEC (~4h, potřeba Xcode)

@@ -8,6 +8,86 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Expert QA Audit — 60+ fixes across 96 pages, 17 domains] 2026-05-02
+
+### Security Fixes
+- **S3 upload-url endpoint** was missing AdminGuard — any authenticated user could upload to S3 bucket. Fixed
+- **base.ts 401 handler** race condition — redirect and throw ran simultaneously, causing React state updates on unmounting component. Fixed with immediate throw
+- **Pricing open redirect** — catch block was navigating to unvalidated URL on parse failure. Now blocks invalid URLs
+- **Promo card ctaUrl** — external URLs now open in new tab with noopener,noreferrer
+
+### Critical Functional Fixes
+- **Exercise filter chips** were completely non-functional — FILTERS (Strength/Hypertrophy/Cardio) didn't match actual muscleGroups (CHEST/BACK/LEGS). Replaced with real muscle group categories + FILTER_GROUPS mapping
+- **Onboarding goal IDs** ('move','strength','run') didn't match backend enum ('STRENGTH','HYPERTROPHY','ENDURANCE'). Every onboarding got 400 error. Added GOAL_MAP
+- **Onboarding experience IDs** ('new','returning','experienced') didn't match comparison values. Every user got experienceMonths: 48. Added EXP_MAP
+- **Bloodwork 4/8 test types** (hemoglobin, ferritin, vitD, tsh) didn't exist in backend whitelist. Aligned with backend VALID_TESTS
+- **Boss-fights completeBoss** sent wrong DTO ({timeSeconds,score} vs backend {score,defeated}). Always 400 error
+- **Habits toggle logic** broken for all field types — steps=5 meant 5 steps, sleep=5 meant 5 hours. Added per-field TOGGLE_VALUES with proper thresholds
+- **Follow/unfollow** used same API call (POST) for both directions. Now correctly uses DELETE for unfollow
+- **Public profile stats** used `profile.stats.X` but backend returns `profile.progress.X`. Added fallback chain
+- **Form-check** initial state was 'analysis' showing hardcoded fake data. Changed to 'upload'
+- **Marketplace category filter** passed object instead of string to API. URL was `/marketplace?[object Object]`
+
+### Dead Features / Misleading UI Fixed
+- 3 dead detail page links (marketplace/[id], experiences/[id], courses/[id]) → 404. Fixed or disabled
+- FEATURED/PROGRAMS cards on marketplace were not clickable. Wrapped in Links
+- AI chat context panel was 100% hardcoded (recovery 62, fake sleep data). Replaced with real API calls
+- Body-report page 100% hardcoded data. Added PREVIEW banner
+- Calendar "Add session" button had no onClick. Disabled with "coming soon"
+- Live page Join buttons now disabled with "Coming soon" banner
+- Progress page body photos were fake 6-week placeholder. Replaced with honest empty state
+- Settings notification toggles were local state only. Wired to real API
+- Duels "Challenge a friend" button disabled (needs modal — future feature)
+- Bundles Gift button removed (not implemented)
+- Clips empty state said "Upload first!" with no upload mechanism. Changed to "coming soon"
+
+### UX Improvements
+- 20+ pages got missing loading/error/empty states (videos, doma, exercises, glossary, FitnessScore, etc.)
+- Auth: forgot-password + reset-password rewritten from V2 to v3 split-screen design
+- Register: added password confirm field + password visibility toggle
+- AI coach: save() debounced (was firing API call per keystroke), added error on generate
+- Meal plan: preferences panel was unreachable (no toggle button). Fixed
+- Nutrition: AI tips were fetched but never rendered. Now displayed above meals
+- Supplements: add modal now has dosage + timing input fields (was sending empty strings)
+- Experiences: booking now has confirm dialog + success/error feedback banner
+- Bundles: purchase now has loading state + confirm (prevents double-click)
+- Gear: form resets on modal close (was retaining stale data)
+- Gym-finder: error banner now clears on retry
+- Export print: added res.ok check (was downloading error HTML as file)
+- Maintenance: deload/dismiss now have error handling
+- Enterprise: email validation on invite (regex check, not just HTML type)
+- Shadow-boxing: Expert filter now includes all difficulty tiers (was skipping intermediate)
+- Records + multiple pages: fixed grids to responsive auto-fill
+
+### Language & Design Consistency
+- 50+ pages translated CZ→EN (all UI text, labels, buttons, error messages)
+- 41+ missing v3- CSS class prefixes restored across 10 files (headings/captions had zero styling)
+- v3 design system applied to forgot/reset password, sports hub, workout-mode
+- Landing page: removed fake social proof (2.4M members), added features section, responsive nav
+
+### Legal & Compliance
+- Privacy policy: added account deletion section + data retention section (GDPR)
+- Terms: added governing law (Czech Republic) + age restriction clause (16+, Apple review)
+- AI disclaimer: fixed typo, confirmed "not medical advice" prominently displayed
+- Admin MAU metric was actually newUsersMonth — relabeled to "New users (30d)"
+
+### Code Quality
+- base.ts: handles HTTP 204 empty body responses (was crashing on res.json())
+- auth-context: distinguishes auth failures from network errors (was logging out on offline)
+- Dashboard: gated API calls on auth state (was firing 6 calls before auth resolved)
+- Removed dead code: weekly review fetch never rendered, journal milestones/summary unused
+- Lesson detail: error state resets on slug change (was permanent)
+- Glossary: loading state moved inside debounce (was flickering on every keystroke)
+- Trainers: data shape fallback for nested user object (name, avatar, rating, reviewCount)
+
+### Stats
+- 45+ commits, 100+ files changed
+- 96 pages audited across 17 domains (each domain 2 passes)
+- 60+ bugs found and fixed (including 4 security, 15+ critical, 20+ important)
+- 0 TypeScript errors introduced
+
+---
+
 ## [Fitness Instagram Wave 2 — Creator Economy, Smart Notifications, Creator Dashboard] 2026-04-30
 
 ### Creator XP Economy
