@@ -1,37 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getMyRoutines, getPublicRoutines } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
 
 export function RoutineBuilderScreen() {
   const [tab, setTab] = useState<'mine' | 'public'>('mine');
-  const [mine, setMine] = useState<any[]>([]);
-  const [pub, setPub] = useState<any[]>([]);
+  const [mine, setMine] = useState<any[] | null>(null);
+  const [pub, setPub] = useState<any[] | null>(null);
 
   useEffect(() => {
     getMyRoutines().then(setMine).catch(() => setMine([]));
     getPublicRoutines().then(setPub).catch(() => setPub([]));
   }, []);
 
-  const items = tab === 'mine' ? mine : pub;
+  const current = tab === 'mine' ? mine : pub;
+  const items = current ?? [];
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Organizace</V2SectionLabel>
-        <V2Display size="xl">Rutina.</V2Display>
+        <V2SectionLabel>Organization</V2SectionLabel>
+        <V2Display size="xl">Routines.</V2Display>
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="Moje" selected={tab === 'mine'} onPress={() => setTab('mine')} />
-        <V2Chip label="Verejne" selected={tab === 'public'} onPress={() => setTab('public')} />
+        <V2Chip label="Mine" selected={tab === 'mine'} onPress={() => setTab('mine')} />
+        <V2Chip label="Public" selected={tab === 'public'} onPress={() => setTab('public')} />
       </View>
 
-      {items.length === 0 && (
+      {current === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          {tab === 'mine' ? 'Zatim zadne rutiny' : 'Zadne verejne rutiny'}
+          {tab === 'mine' ? 'No routines yet' : 'No public routines'}
         </Text>
-      )}
+      ) : null}
 
       {items.map((r) => (
         <View
@@ -49,7 +52,7 @@ export function RoutineBuilderScreen() {
             {r.name}
           </Text>
           <Text style={{ color: v2.faint, fontSize: 12 }}>
-            {r.items?.length || 0} polozek
+            {r.items?.length || 0} items
           </Text>
           {r.items?.map((item: any, i: number) => (
             <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: v2.border, marginTop: i === 0 ? 12 : 0 }}>
