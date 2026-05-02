@@ -4,10 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Card, Chip, Tag, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
-import { getExercises, getRecommendations, type ExerciseData } from '@/lib/api';
+import { getExercises, type ExerciseData } from '@/lib/api';
 import { isFavorite, toggleFavorite, getFavoriteIds } from '@/lib/favorites';
 
-const FILTERS = ['All', 'Strength', 'Hypertrophy', 'Cardio', 'Mobility', 'Yoga'];
+const FILTERS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
+const FILTER_GROUPS: Record<string, string[]> = {
+  Chest: ['CHEST'],
+  Back: ['BACK'],
+  Shoulders: ['SHOULDERS'],
+  Arms: ['BICEPS', 'TRICEPS'],
+  Legs: ['QUADRICEPS', 'GLUTES', 'HAMSTRINGS', 'CALVES'],
+  Core: ['CORE'],
+};
 
 const DIFF_COLOR: Record<string, string> = {
   BEGINNER: 'var(--sage)',
@@ -30,6 +38,7 @@ const PLACEHOLDER_IMGS = [
 export default function ExercisesPage() {
   const [allExercises, setAllExercises] = useState<ExerciseData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
@@ -40,7 +49,7 @@ export default function ExercisesPage() {
   useEffect(() => {
     getExercises()
       .then(setAllExercises)
-      .catch(console.error)
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
     setFavIds(new Set(getFavoriteIds()));
   }, []);
@@ -57,8 +66,8 @@ export default function ExercisesPage() {
     return allExercises.filter((ex) => {
       if (showFavs && !favIds.has(ex.id)) return false;
       if (filter !== 'All') {
-        const f = filter.toUpperCase();
-        const match = ex.muscleGroups.some((g) => g.toUpperCase().includes(f));
+        const allowed = FILTER_GROUPS[filter] || [];
+        const match = ex.muscleGroups.some((g) => allowed.includes(g.toUpperCase()));
         if (!match) return false;
       }
       if (q && !ex.nameCs.toLowerCase().includes(q)
@@ -121,10 +130,18 @@ export default function ExercisesPage() {
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding: '32px 48px', textAlign: 'center' }}>
+          <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>Failed to load exercises.</p>
+          <button onClick={() => { setError(false); setLoading(true); getExercises().then(setAllExercises).catch(() => setError(true)).finally(() => setLoading(false)); }}
+            style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+        </div>
+      )}
+
       {/* Count */}
       <div style={{ padding: '16px 48px 0' }}>
         <span className="v3-caption">
-          {loading ? 'Loading...' : `${exercises.length} exercises`}
+          {loading ? 'Loading...' : error ? '' : `${exercises.length} exercises`}
         </span>
       </div>
 

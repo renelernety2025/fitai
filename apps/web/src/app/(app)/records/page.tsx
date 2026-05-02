@@ -71,7 +71,7 @@ export default function RecordsPage() {
         </Card>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
         {filtered.map((pr) => (
           <RecordCard key={pr.exerciseId} pr={pr} expanded={expanded === pr.exerciseId} onToggle={() => setExpanded(expanded === pr.exerciseId ? null : pr.exerciseId)} />
         ))}
@@ -80,7 +80,7 @@ export default function RecordsPage() {
       {predictions.length > 0 && (
         <div style={{ marginTop: 56 }}>
           <SectionHeader eyebrow="Predictions" title="What's next for you." />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
             {predictions.map((p) => (
               <PredictionCard key={p.exerciseId} prediction={p} />
             ))}
