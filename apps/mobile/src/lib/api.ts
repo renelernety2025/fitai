@@ -23,9 +23,13 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!res.ok) {
-    if (res.status === 401) await removeToken();
+    if (res.status === 401) removeToken(); // fire-and-forget, no await (prevents race with parallel 401s)
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || `Request failed: ${res.status}`);
+  }
+  // HTTP 204 No Content — return empty (DELETE endpoints)
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
   }
   return res.json();
 }
@@ -53,7 +57,7 @@ export function getVideo(id: string) { return request<any>(`/videos/${id}`); }
 
 // ── Exercises ─────────────────────────────────────
 export function getExercises(params?: { muscleGroup?: string }) {
-  const q = params?.muscleGroup ? `?muscleGroup=${params.muscleGroup}` : '';
+  const q = params?.muscleGroup ? `?muscleGroup=${encodeURIComponent(params.muscleGroup)}` : '';
   return request<any[]>(`/exercises${q}`);
 }
 export function getExercise(id: string) { return request<any>(`/exercises/${id}`); }

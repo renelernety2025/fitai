@@ -35,7 +35,7 @@ export function FormCheckScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ['videos'],
       quality: 0.8,
       allowsEditing: false,
     });
@@ -67,7 +67,7 @@ export function FormCheckScreen() {
     }
   }
 
-  const selectedEx = exercises.find((e) => e.id === selected);
+  const selectedEx = (exercises ?? []).find((e: any) => e.id === selected);
 
   return (
     <V2Screen>

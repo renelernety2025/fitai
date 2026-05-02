@@ -50,7 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (pushToken) registerExpoPushToken(pushToken).catch(() => {});
           });
         })
-        .catch(() => removeToken())
+        .catch((e: any) => {
+          // Only logout on auth failure (401), not on network/server errors
+          if (e?.message?.includes('401') || e?.message?.includes('Unauthorized')) {
+            removeToken();
+          }
+        })
         .finally(() => setIsLoading(false));
     });
   }, []);

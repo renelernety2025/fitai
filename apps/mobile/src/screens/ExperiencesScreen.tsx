@@ -39,7 +39,7 @@ export function ExperiencesScreen() {
             bookExperience(exp.id)
               .then(() => {
                 setExperiences((prev) =>
-                  prev.map((e) => (e.id === exp.id ? { ...e, booked: true } : e)),
+                  (prev ?? []).map((e) => (e.id === exp.id ? { ...e, booked: true } : e)),
                 );
               })
               .catch((e: any) => Alert.alert('Error', e.message || 'Could not book'));
