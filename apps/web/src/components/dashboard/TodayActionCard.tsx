@@ -24,18 +24,21 @@ interface TodayActionCardProps {
   action: TodayAction;
 }
 
+function localDateStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function TodayActionCard({ action }: TodayActionCardProps) {
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const today = new Date().toISOString().slice(0, 10);
-    return localStorage.getItem(`fitai_today_action_dismissed_${today}`) === '1';
+    return localStorage.getItem(`fitai_today_action_dismissed_${localDateStr()}`) === '1';
   });
 
   if (dismissed) return null;
 
   function dismiss() {
-    const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem(`fitai_today_action_dismissed_${today}`, '1');
+    localStorage.setItem(`fitai_today_action_dismissed_${localDateStr()}`, '1');
     setDismissed(true);
   }
 

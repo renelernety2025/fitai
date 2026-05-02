@@ -14,9 +14,9 @@ import WeekStrip from '@/components/dashboard/v3/WeekStrip';
 import FitnessScore from '@/components/dashboard/v3/FitnessScore';
 import {
   getMyStats, getInsights,
-  getWeeklyReview, getDailyBrief, getDailyMotivation,
+  getDailyBrief, getDailyMotivation,
   getTodayAction,
-  type StatsData, type Insights, type WeeklyReview, type DailyBrief, type TodayAction,
+  type StatsData, type Insights, type DailyBrief, type TodayAction,
 } from '@/lib/api';
 
 function SectionError({ onRetry }: { onRetry: () => void }) {
@@ -37,7 +37,6 @@ export default function DashboardV3Page() {
   const { user, isLoading } = useAuth();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [insights, setInsights] = useState<Insights | null>(null);
-  const [weekly, setWeekly] = useState<WeeklyReview | null>(null);
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [motivation, setMotivation] = useState<string | null>(null);
   const [todayAction, setTodayAction] = useState<TodayAction | null>(null);
@@ -45,7 +44,6 @@ export default function DashboardV3Page() {
   const [statsError, setStatsError] = useState(false);
   const [insightsError, setInsightsError] = useState(false);
   const [briefError, setBriefError] = useState(false);
-  const [weeklyError, setWeeklyError] = useState(false);
 
   useEffect(() => { document.title = 'FitAI - Dashboard'; }, []);
 
@@ -64,21 +62,15 @@ export default function DashboardV3Page() {
     getDailyBrief().then((r) => setBrief(r.brief)).catch(() => setBriefError(true));
   }
 
-  function loadWeekly() {
-    setWeeklyError(false);
-    getWeeklyReview().then((r) => setWeekly(r.review)).catch(() => setWeeklyError(true));
-  }
-
   function reload() {
     loadStats();
     loadInsights();
     loadBrief();
-    loadWeekly();
     getDailyMotivation().then((r) => setMotivation(r.message)).catch(() => {});
     getTodayAction().then(setTodayAction).catch(() => {});
   }
 
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { if (!isLoading && user) reload(); }, [isLoading, user]);
 
   if (isLoading) return (
     <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-0)' }}>
@@ -151,8 +143,6 @@ export default function DashboardV3Page() {
         {insightsError && <SectionError onRetry={loadInsights} />}
 
         {brief && <section style={{ marginBottom: 40 }}><V2DailyBrief brief={brief} /></section>}
-
-        {weeklyError && <SectionError onRetry={loadWeekly} />}
 
         <OnboardingTour />
       </div>

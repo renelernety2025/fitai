@@ -26,10 +26,24 @@ const TREND_ICON: Record<string, string> = {
 
 export default function FitnessScore() {
   const [data, setData] = useState<FitnessScoreData | null>(null);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    getFitnessScore().then(setData).catch(() => {});
-  }, []);
+  function load() {
+    setError(false);
+    getFitnessScore().then(setData).catch(() => setError(true));
+  }
+
+  useEffect(() => { load(); }, []);
+
+  if (error) return (
+    <section style={{ marginBottom: 32 }}>
+      <SectionHeader eyebrow="FITNESS SCORE" title="Your overall score." />
+      <Card padding={28} style={{ textAlign: 'center' }}>
+        <p className="v3-caption" style={{ color: 'var(--text-3)', marginBottom: 8 }}>Failed to load</p>
+        <button onClick={load} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+      </Card>
+    </section>
+  );
 
   if (!data) return (
     <section style={{ marginBottom: 32 }}>
