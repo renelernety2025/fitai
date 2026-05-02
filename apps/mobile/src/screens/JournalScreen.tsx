@@ -20,15 +20,16 @@ import {
   generateJournalInsight,
 } from '../lib/api';
 
-const MOODS = ['1', '2', '3', '4', '5'];
-const MOOD_LABELS = ['Hrozne', 'Spatne', 'Ok', 'Dobre', 'Super'];
+// Backend enum: GREAT, GOOD, NEUTRAL, TIRED, BAD
+const MOOD_VALUES = ['BAD', 'TIRED', 'NEUTRAL', 'GOOD', 'GREAT'];
+const MOOD_LABELS = ['Bad', 'Tired', 'Ok', 'Good', 'Great'];
 
 const MONTH_NAMES = [
-  'Leden','Unor','Brezen','Duben','Kveten','Cerven',
-  'Cervenec','Srpen','Zari','Rijen','Listopad','Prosinec',
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
 ];
 
-const TAGS = ['sila', 'kardio', 'flexibilita', 'regenerace', 'technika'];
+const TAGS = ['strength', 'cardio', 'flexibility', 'recovery', 'technique'];
 
 function getCurrentMonth(): string {
   const d = new Date();
@@ -49,8 +50,8 @@ function formatMonth(m: string): string {
 function formatDay(date: string): string {
   const d = new Date(date + 'T00:00:00');
   const day = d.getDate();
-  const weekdays = ['Ne','Po','Ut','St','Ct','Pa','So'];
-  return `${weekdays[d.getDay()]} ${day}.`;
+  const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return `${weekdays[d.getDay()]} ${day}`;
 }
 
 interface JournalDay {
@@ -69,7 +70,7 @@ function DayCard({
 }: {
   day: JournalDay;
   onSaveNotes: (date: string, notes: string) => void;
-  onSaveMood: (date: string, mood: number) => void;
+  onSaveMood: (date: string, mood: string) => void;
   onSaveRating: (date: string, rating: number) => void;
   onToggleTag: (date: string, tag: string) => void;
   onRequestInsight: (date: string) => void;
@@ -109,21 +110,21 @@ function DayCard({
             value={notes}
             onChangeText={setNotes}
             onBlur={() => { if (notes !== (day.entry?.notes || '')) onSaveNotes(day.date, notes); }}
-            placeholder="Poznamky..."
+            placeholder="Notes..."
             placeholderTextColor={v2.ghost}
             multiline
           />
 
           {/* Mood */}
-          <V2SectionLabel>Nalada</V2SectionLabel>
+          <V2SectionLabel>Mood</V2SectionLabel>
           <View style={s.moodRow}>
-            {MOODS.map((m, i) => (
+            {MOOD_VALUES.map((moodVal, i) => (
               <Pressable
-                key={m}
-                onPress={() => onSaveMood(day.date, i + 1)}
-                style={[s.moodBtn, day.entry?.mood === i + 1 && s.moodBtnActive]}
+                key={moodVal}
+                onPress={() => onSaveMood(day.date, moodVal as any)}
+                style={[s.moodBtn, day.entry?.mood === moodVal && s.moodBtnActive]}
               >
-                <Text style={[s.moodLabel, day.entry?.mood === i + 1 && s.moodLabelActive]}>
+                <Text style={[s.moodLabel, day.entry?.mood === moodVal && s.moodLabelActive]}>
                   {MOOD_LABELS[i]}
                 </Text>
               </Pressable>
@@ -131,7 +132,7 @@ function DayCard({
           </View>
 
           {/* Rating */}
-          <V2SectionLabel>Hodnoceni</V2SectionLabel>
+          <V2SectionLabel>Rating</V2SectionLabel>
           <View style={s.starsRow}>
             {[1,2,3,4,5].map(star => (
               <Pressable key={star} onPress={() => onSaveRating(day.date, star)}>
@@ -143,7 +144,7 @@ function DayCard({
           </View>
 
           {/* Tags */}
-          <V2SectionLabel>Tagy</V2SectionLabel>
+          <V2SectionLabel>Tags</V2SectionLabel>
           <View style={s.tagsRow}>
             {TAGS.map(tag => {
               const active = day.entry?.tags?.includes(tag);
@@ -169,7 +170,7 @@ function DayCard({
             </View>
           ) : (
             <Pressable onPress={() => onRequestInsight(day.date)} style={s.insightBtn}>
-              <Text style={s.insightBtnText}>Vygenerovat AI insight</Text>
+              <Text style={s.insightBtnText}>Generate AI insight</Text>
             </Pressable>
           )}
         </View>
@@ -191,7 +192,7 @@ export function JournalScreen({ navigation }: any) {
       const res = await getJournalMonth(m);
       setDays(res.days || []);
     } catch {
-      setError('Nepodarilo se nacist zaznamy');
+      setError('Failed to load entries');
     } finally {
       setLoading(false);
     }
@@ -203,7 +204,7 @@ export function JournalScreen({ navigation }: any) {
     try { await upsertJournalEntry(date, { notes }); } catch { /* silent */ }
   }
 
-  async function handleSaveMood(date: string, mood: number) {
+  async function handleSaveMood(date: string, mood: string) {
     try {
       await upsertJournalEntry(date, { mood });
       load(month);
@@ -233,7 +234,7 @@ export function JournalScreen({ navigation }: any) {
     try {
       await generateJournalInsight(date);
       load(month);
-    } catch { setError('Nepodarilo se vygenerovat insight'); }
+    } catch { setError('Failed to generate insight'); }
   }
 
   const sortedDays = [...days].sort((a, b) => b.date.localeCompare(a.date));
@@ -244,15 +245,15 @@ export function JournalScreen({ navigation }: any) {
     <V2Screen>
       {/* Back */}
       <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Zpet</Text>
+        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
       </Pressable>
 
       {/* Hero */}
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2Display size="lg">Muj denik</V2Display>
+        <V2Display size="lg">My journal</V2Display>
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
-          <Text style={s.statMini}>{entriesCount} zaznamu</Text>
-          <Text style={s.statMini}>{workoutsCount} treninku</Text>
+          <Text style={s.statMini}>{entriesCount} entries</Text>
+          <Text style={s.statMini}>{workoutsCount} workouts</Text>
         </View>
       </View>
 
@@ -274,10 +275,10 @@ export function JournalScreen({ navigation }: any) {
       {loading ? (
         <V2Loading />
       ) : sortedDays.length === 0 ? (
-        <Text style={s.emptyText}>Zadne zaznamy pro tento mesic</Text>
+        <Text style={s.emptyText}>No entries for this month</Text>
       ) : (
         <>
-          <V2SectionLabel>Zaznamy</V2SectionLabel>
+          <V2SectionLabel>Entries</V2SectionLabel>
           {sortedDays.map(day => (
             <DayCard
               key={day.date}
