@@ -1,32 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { getTrainers } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
 
 export function TrainersScreen() {
-  const [trainers, setTrainers] = useState<any[]>([]);
+  const [trainers, setTrainers] = useState<any[] | null>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    loadTrainers();
-  }, []);
+    const t = setTimeout(() => {
+      getTrainers(search || undefined).then(setTrainers).catch(() => setTrainers([]));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  function loadTrainers() {
-    getTrainers(search || undefined).then(setTrainers).catch(() => setTrainers([]));
-  }
+  const items = trainers ?? [];
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Komunita</V2SectionLabel>
-        <V2Display size="xl">Treneri.</V2Display>
+        <V2SectionLabel>Community</V2SectionLabel>
+        <V2Display size="xl">Trainers.</V2Display>
       </View>
 
       <TextInput
         value={search}
         onChangeText={setSearch}
-        onSubmitEditing={loadTrainers}
-        placeholder="Hledat trenera..."
+        placeholder="Search trainer..."
         placeholderTextColor={v2.ghost}
         returnKeyType="search"
         style={{
@@ -41,13 +41,15 @@ export function TrainersScreen() {
         }}
       />
 
-      {trainers.length === 0 && (
+      {trainers === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zadni treneri
+          No trainers found
         </Text>
-      )}
+      ) : null}
 
-      {trainers.map((t) => (
+      {items.map((t) => (
         <View
           key={t.id}
           style={{
@@ -61,7 +63,7 @@ export function TrainersScreen() {
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>
-              {t.user?.name || 'Trener'}
+              {t.user?.name || 'Trainer'}
             </Text>
             {t.isVerified && (
               <Text style={{ color: v2.green, fontSize: 10, fontWeight: '700' }}>VERIFIED</Text>
@@ -69,7 +71,7 @@ export function TrainersScreen() {
           </View>
 
           <Text style={{ color: v2.muted, fontSize: 13, marginBottom: 8 }} numberOfLines={2}>
-            {t.bio || 'Bez popisu'}
+            {t.bio || 'No bio'}
           </Text>
 
           <View style={{ flexDirection: 'row', gap: 16 }}>
