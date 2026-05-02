@@ -28,10 +28,10 @@ import {
 } from '../components/v2/V2';
 
 const MEALS = [
-  { v: 'breakfast', l: 'Snídaně' },
-  { v: 'lunch', l: 'Oběd' },
-  { v: 'dinner', l: 'Večeře' },
-  { v: 'snack', l: 'Svačina' },
+  { v: 'breakfast', l: 'Breakfast' },
+  { v: 'lunch', l: 'Lunch' },
+  { v: 'dinner', l: 'Dinner' },
+  { v: 'snack', l: 'Snack' },
 ];
 
 export function VyzivaScreen() {
@@ -56,7 +56,7 @@ export function VyzivaScreen() {
       if (!perm.granted) {
         const libPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!libPerm.granted) {
-          Alert.alert('Potřebuji přístup', 'Povol přístup ke kameře nebo galerii.');
+          Alert.alert('Permission needed', 'Allow access to camera or gallery.');
           return;
         }
       }
@@ -80,8 +80,8 @@ export function VyzivaScreen() {
       const analysis = await analyzeFoodPhoto(s3Key);
       if (analysis.confidence < 30) {
         Alert.alert(
-          'Nerozpoznáno',
-          'Jídlo se nepodařilo spolehlivě rozpoznat. Zkus lepší fotku nebo přidej ručně.',
+          'Not recognized',
+          'Could not reliably recognize the food. Try a better photo or add manually.',
         );
         return;
       }
@@ -94,7 +94,7 @@ export function VyzivaScreen() {
         mealType: 'lunch',
       });
     } catch (e: any) {
-      Alert.alert('Chyba', e.message || 'Analýza selhala');
+      Alert.alert('Error', e.message || 'Analysis failed');
     } finally {
       setPhotoAnalyzing(false);
     }
@@ -118,25 +118,25 @@ export function VyzivaScreen() {
     <V2Screen>
       {/* Hero */}
       <View style={{ paddingTop: 24, alignItems: 'center', marginBottom: 32 }}>
-        <V2SectionLabel>Dnes</V2SectionLabel>
+        <V2SectionLabel>Today</V2SectionLabel>
         <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
           <Text style={{ color: '#FFF', fontSize: 64, fontWeight: '700', letterSpacing: -2 }}>
-            {data.totals.kcal.toLocaleString('cs-CZ')}
+            {data.totals.kcal.toLocaleString()}
           </Text>
           <Text style={{ color: v2.ghost, fontSize: 24, marginLeft: 6 }}>
-            / {data.goals.dailyKcal.toLocaleString('cs-CZ')}
+            / {data.goals.dailyKcal.toLocaleString()}
           </Text>
         </View>
         <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginTop: 8 }}>
-          KALORIE
+          CALORIES
         </Text>
       </View>
 
       {/* Macro rings */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 48 }}>
         <V2Ring value={data.totals.proteinG} total={data.goals.dailyProteinG} size={100} color={v2.red} label="Protein" />
-        <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} size={100} color={v2.green} label="Sacharidy" />
-        <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} size={100} color={v2.blue} label="Tuky" />
+        <V2Ring value={data.totals.carbsG} total={data.goals.dailyCarbsG} size={100} color={v2.green} label="Carbs" />
+        <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} size={100} color={v2.blue} label="Fat" />
       </View>
 
       {/* Food photo button */}
@@ -160,12 +160,12 @@ export function VyzivaScreen() {
         {photoAnalyzing ? (
           <>
             <ActivityIndicator color="#6c63ff" size="small" />
-            <Text style={{ color: '#6c63ff', fontSize: 16, fontWeight: '700' }}>Analyzuji jídlo...</Text>
+            <Text style={{ color: '#6c63ff', fontSize: 16, fontWeight: '700' }}>Analyzing food...</Text>
           </>
         ) : (
           <>
             <Text style={{ fontSize: 24 }}>📸</Text>
-            <Text style={{ color: '#6c63ff', fontSize: 16, fontWeight: '700' }}>Vyfoť jídlo</Text>
+            <Text style={{ color: '#6c63ff', fontSize: 16, fontWeight: '700' }}>Snap a meal</Text>
           </>
         )}
       </Pressable>
@@ -173,7 +173,7 @@ export function VyzivaScreen() {
       {/* AI tips */}
       {tips.length > 0 && (
         <View style={{ marginBottom: 32 }}>
-          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          <V2SectionLabel>AI recommendations</V2SectionLabel>
           {tips.map((t, i) => (
             <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 14 }}>
               <Text style={{ color: tipColors[t.category] || '#FFF', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
@@ -193,12 +193,12 @@ export function VyzivaScreen() {
             <V2Display size="md">{m.l}</V2Display>
             <Pressable onPress={() => { setMeal(m.v); setShowAdd(true); }}>
               <Text style={{ color: v2.muted, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>
-                + PŘIDAT
+                + ADD
               </Text>
             </Pressable>
           </View>
           {m.items.length === 0 ? (
-            <Text style={{ color: v2.ghost, fontSize: 14 }}>Žádné jídlo</Text>
+            <Text style={{ color: v2.ghost, fontSize: 14 }}>No food logged</Text>
           ) : (
             m.items.map((item: any) => (
               <View key={item.id} style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 12 }}>
@@ -208,7 +208,7 @@ export function VyzivaScreen() {
                     {item.kcal} kcal · P {item.proteinG}g · S {item.carbsG}g · T {item.fatG}g
                   </Text>
                 </View>
-                <Pressable onPress={async () => { await deleteFoodLog(item.id); reload(); }}>
+                <Pressable onPress={async () => { try { await deleteFoodLog(item.id); reload(); } catch {} }}>
                   <Text style={{ color: v2.ghost, fontSize: 16, paddingHorizontal: 8 }}>✕</Text>
                 </Pressable>
               </View>
@@ -233,7 +233,7 @@ export function VyzivaScreen() {
             }}
           >
             <V2SectionLabel>{MEALS.find((x) => x.v === meal)?.l}</V2SectionLabel>
-            <V2Display size="md">Přidat jídlo</V2Display>
+            <V2Display size="md">Add food</V2Display>
             <View style={{ marginTop: 16 }}>
               {foods.map((f) => (
                 <Pressable
@@ -269,16 +269,16 @@ export function VyzivaScreen() {
       <Modal visible={!!photoResult} animationType="slide" transparent onRequestClose={() => setPhotoResult(null)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }} onPress={() => setPhotoResult(null)}>
           <Pressable onPress={() => {}} style={{ backgroundColor: '#000', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: v2.border, padding: 24 }}>
-            <V2SectionLabel>AI rozpoznalo</V2SectionLabel>
+            <V2SectionLabel>AI recognized</V2SectionLabel>
             <V2Display size="md">{photoResult?.name}</V2Display>
 
             <View style={{ marginTop: 20, gap: 14 }}>
               {[
-                { label: 'Název', key: 'name' as const, suffix: '' },
-                { label: 'Kalorie', key: 'kcal' as const, suffix: ' kcal' },
+                { label: 'Name', key: 'name' as const, suffix: '' },
+                { label: 'Calories', key: 'kcal' as const, suffix: ' kcal' },
                 { label: 'Protein', key: 'proteinG' as const, suffix: ' g' },
-                { label: 'Sacharidy', key: 'carbsG' as const, suffix: ' g' },
-                { label: 'Tuky', key: 'fatG' as const, suffix: ' g' },
+                { label: 'Carbs', key: 'carbsG' as const, suffix: ' g' },
+                { label: 'Fat', key: 'fatG' as const, suffix: ' g' },
               ].map((field) => (
                 <View key={field.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ color: v2.muted, fontSize: 14, width: 80 }}>{field.label}</Text>
@@ -343,7 +343,7 @@ export function VyzivaScreen() {
                 marginTop: 24,
               }}
             >
-              <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Uložit do logu</Text>
+              <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Save to log</Text>
             </Pressable>
           </Pressable>
         </Pressable>
