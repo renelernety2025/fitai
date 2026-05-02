@@ -74,6 +74,7 @@ export default function GymFinderPage() {
   async function handleAdd() {
     if (!form.name || submitting) return;
     setSubmitting(true);
+    setError(null);
     try {
       const review = await addGymReview(form);
       setGyms((prev) => [...prev, review]);

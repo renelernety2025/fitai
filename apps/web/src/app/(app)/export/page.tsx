@@ -91,6 +91,7 @@ export default function ExportPage() {
               const res = await fetch(`${base}/api/export/workouts?format=pdf`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
               });
+              if (!res.ok) throw new Error(`Export failed: ${res.status}`);
               const html = await res.text();
               const blob = new Blob([html], { type: 'text/html' });
               const url = URL.createObjectURL(blob);

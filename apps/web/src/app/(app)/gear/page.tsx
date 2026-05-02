@@ -90,7 +90,7 @@ export default function GearPage() {
             <Card padding={32} style={{ width: '100%', maxWidth: 420 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span className="v3-display-3">Add Gear</span>
-                <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><FitIcon name="x" size={20} color="var(--text-3)" /></button>
+                <button onClick={() => { setShowAdd(false); setForm({ category: 'SHOES', brand: '', model: '', maxSessions: 300 }); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><FitIcon name="x" size={20} color="var(--text-3)" /></button>
               </div>
               <div className="v3-eyebrow" style={{ marginBottom: 8 }}>CATEGORY</div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 16 }}>
@@ -105,7 +105,7 @@ export default function GearPage() {
               <div className="v3-eyebrow" style={{ marginBottom: 6 }}>MAX SESSIONS</div>
               <input type="number" min="1" value={form.maxSessions} onChange={(e) => setForm({ ...form, maxSessions: Math.max(1, Number(e.target.value)) })} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }} />
               <div style={{ display: 'flex', gap: 10 }}>
-                <Button variant="ghost" full onClick={() => setShowAdd(false)}>Cancel</Button>
+                <Button variant="ghost" full onClick={() => { setShowAdd(false); setForm({ category: 'SHOES', brand: '', model: '', maxSessions: 300 }); }}>Cancel</Button>
                 <Button variant="accent" full onClick={handleAdd}>Add</Button>
               </div>
             </Card>

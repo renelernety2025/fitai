@@ -83,7 +83,7 @@ export default function MaintenancePage() {
               )}
               {(m.status === 'DUE' || m.status === 'OVERDUE') && (
                 <div style={{ marginTop: 12 }}>
-                  <Button variant="ghost" size="sm" onClick={() => markDeload(m.muscleGroup).then(refresh)}>Mark Deload</Button>
+                  <Button variant="ghost" size="sm" onClick={() => markDeload(m.muscleGroup).then(refresh).catch(() => setError(true))}>Mark Deload</Button>
                 </div>
               )}
             </Card>
@@ -103,7 +103,7 @@ export default function MaintenancePage() {
                       </Tag>
                       <p className="v3-body" style={{ color: 'var(--text-2)', marginTop: 8 }}>{a.message}</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id).then(refresh)}>Dismiss</Button>
+                    <Button variant="ghost" size="sm" onClick={() => dismissAlert(a.id).then(refresh).catch(() => setError(true))}>Dismiss</Button>
                   </div>
                 </Card>
               ))}
