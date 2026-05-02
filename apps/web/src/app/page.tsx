@@ -1,18 +1,8 @@
-import Link from 'next/link';
-import type { Metadata } from 'next';
-import { Logo } from '@/components/v3';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'FitAI — AI Personal Trainer | Become Your Strongest Self',
-  description: 'World-class AI coaching that adapts to your body. Personalized workout plans, real-time form feedback, nutrition tracking, and a community that shows up.',
-  openGraph: {
-    title: 'FitAI — AI Personal Trainer',
-    description: 'World-class AI coaching that adapts to your body.',
-    url: 'https://fitai.bfevents.cz',
-    siteName: 'FitAI',
-    type: 'website',
-  },
-};
+import Link from 'next/link';
+import { useEffect } from 'react';
+import { Logo } from '@/components/v3';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1502904550040-7534597429ae?w=2400&q=85&auto=format&fit=crop';
 
@@ -46,6 +36,8 @@ const FEATURES = [
 ];
 
 export default function LandingPage() {
+  useEffect(() => { document.title = 'FitAI — AI Personal Trainer'; }, []);
+
   return (
     <div style={{ background: 'var(--bg-0)', color: 'var(--text-1)', minHeight: '100vh' }}>
       {/* Sticky nav */}
