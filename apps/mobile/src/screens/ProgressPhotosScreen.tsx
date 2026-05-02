@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, Pressable, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -6,6 +6,7 @@ import {
   V2Display,
   V2SectionLabel,
   V2Stat,
+  V2Loading,
   v2,
 } from '../components/v2/V2';
 import {
@@ -19,29 +20,35 @@ import {
 type Side = 'FRONT' | 'SIDE' | 'BACK';
 
 const SIDES: { value: Side; label: string }[] = [
-  { value: 'FRONT', label: 'Zepředu' },
-  { value: 'SIDE', label: 'Z boku' },
-  { value: 'BACK', label: 'Zezadu' },
+  { value: 'FRONT', label: 'Front' },
+  { value: 'SIDE', label: 'Side' },
+  { value: 'BACK', label: 'Back' },
 ];
 
 export function ProgressPhotosScreen({ navigation }: any) {
-  const [photos, setPhotos] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<any[] | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [filter, setFilter] = useState<Side | 'ALL'>('ALL');
   const [busy, setBusy] = useState(false);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
+  const filterRef = useRef(filter);
+  filterRef.current = filter;
 
-  const reload = () => {
-    getProgressPhotos(filter === 'ALL' ? undefined : filter).then(setPhotos).catch(console.error);
-    getProgressPhotoStats().then(setStats).catch(console.error);
-  };
+  const reload = useCallback(() => {
+    const currentFilter = filterRef.current;
+    getProgressPhotos(currentFilter === 'ALL' ? undefined : currentFilter).then(setPhotos).catch(() => setPhotos([]));
+    getProgressPhotoStats().then(setStats).catch(() => {});
+  }, []);
 
-  useEffect(reload, [filter]);
+  useEffect(() => {
+    setPhotos(null);
+    reload();
+  }, [filter, reload]);
 
   async function pickAndUpload(side: Side) {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Potřebuji přístup', 'Pro výběr fotky povol přístup k galerii.');
+      Alert.alert('Permission needed', 'Allow access to your photo library to upload progress photos.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -81,21 +88,25 @@ export function ProgressPhotosScreen({ navigation }: any) {
       await analyzeProgressPhoto(id);
       reload();
     } catch (e: any) {
-      Alert.alert('Analýza selhala', e.message);
+      Alert.alert('Analysis failed', e.message || 'Please try again');
     } finally {
       setAnalyzing(null);
     }
   }
 
   function onDelete(id: string) {
-    Alert.alert('Smazat fotku?', 'Nelze vrátit zpět.', [
-      { text: 'Zrušit', style: 'cancel' },
+    Alert.alert('Delete photo?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Smazat',
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await deleteProgressPhoto(id);
-          reload();
+          try {
+            await deleteProgressPhoto(id);
+            reload();
+          } catch {
+            Alert.alert('Error', 'Failed to delete photo');
+          }
         },
       },
     ]);
@@ -123,14 +134,14 @@ export function ProgressPhotosScreen({ navigation }: any) {
             marginVertical: 32,
           }}
         >
-          <V2Stat value={stats.total} label="Fotek" />
-          <V2Stat value={stats.daysTracked} label="Dní" />
-          <V2Stat value={stats.byAngle.front} label="Zepředu" />
+          <V2Stat value={stats.total} label="Photos" />
+          <V2Stat value={stats.daysTracked} label="Days" />
+          <V2Stat value={stats.byAngle?.front ?? 0} label="Front" />
         </View>
       )}
 
       {/* Upload buttons */}
-      <V2SectionLabel>Nová fotka</V2SectionLabel>
+      <V2SectionLabel>New photo</V2SectionLabel>
       <View style={{ gap: 12, marginBottom: 32 }}>
         {SIDES.map((s) => (
           <Pressable
@@ -150,7 +161,7 @@ export function ProgressPhotosScreen({ navigation }: any) {
             <Text style={{ color: v2.text, fontSize: 16, fontWeight: '600' }}>+ {s.label}</Text>
           </Pressable>
         ))}
-        {busy && <Text style={{ color: v2.muted, fontSize: 12 }}>Nahrávání…</Text>}
+        {busy && <Text style={{ color: v2.muted, fontSize: 12 }}>Uploading...</Text>}
       </View>
 
       {/* Filter chips */}
@@ -179,15 +190,17 @@ export function ProgressPhotosScreen({ navigation }: any) {
                 fontWeight: '600',
               }}
             >
-              {f === 'ALL' ? 'Vše' : SIDES.find((s) => s.value === f)?.label}
+              {f === 'ALL' ? 'All' : SIDES.find((s) => s.value === f)?.label}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
 
       {/* Gallery */}
-      <V2SectionLabel>Galerie ({photos.length})</V2SectionLabel>
-      {photos.length === 0 ? (
+      <V2SectionLabel>Gallery ({photos?.length ?? 0})</V2SectionLabel>
+      {photos === null ? (
+        <V2Loading />
+      ) : photos.length === 0 ? (
         <View
           style={{
             borderWidth: 1,
@@ -198,7 +211,7 @@ export function ProgressPhotosScreen({ navigation }: any) {
             marginTop: 12,
           }}
         >
-          <Text style={{ color: v2.muted }}>Žádné fotky.</Text>
+          <Text style={{ color: v2.muted }}>No photos yet.</Text>
         </View>
       ) : (
         <View style={{ gap: 16, marginTop: 12, marginBottom: 32 }}>
@@ -222,10 +235,10 @@ export function ProgressPhotosScreen({ navigation }: any) {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ color: v2.text, fontSize: 13, fontWeight: '600' }}>
                     {SIDES.find((s) => s.value === p.side)?.label} ·{' '}
-                    {new Date(p.takenAt).toLocaleDateString('cs-CZ')}
+                    {new Date(p.takenAt).toLocaleDateString('en-US')}
                   </Text>
                   <Pressable onPress={() => onDelete(p.id)}>
-                    <Text style={{ color: '#ff6464', fontSize: 12 }}>Smazat</Text>
+                    <Text style={{ color: '#ff6464', fontSize: 12 }}>Delete</Text>
                   </Pressable>
                 </View>
                 {p.analysis ? (
@@ -233,17 +246,17 @@ export function ProgressPhotosScreen({ navigation }: any) {
                     {p.analysis.estimatedBodyFatPct != null ? (
                       <>
                         <Text style={{ color: '#A8FF00', fontSize: 13, fontWeight: '600' }}>
-                          ~{p.analysis.estimatedBodyFatPct.toFixed(1)}% tělesný tuk
+                          ~{p.analysis.estimatedBodyFatPct.toFixed(1)}% body fat
                         </Text>
                         {p.analysis.estimatedMuscleMass && (
                           <Text style={{ color: v2.muted, fontSize: 11 }}>
-                            Svalová hmota: {p.analysis.estimatedMuscleMass}
+                            Muscle mass: {p.analysis.estimatedMuscleMass}
                           </Text>
                         )}
                       </>
                     ) : (
                       <Text style={{ color: '#FF9F0A', fontSize: 12 }}>
-                        ⚠ AI nemohla analyzovat — {p.analysis.postureNotes || 'nevhodný snímek'}
+                        ⚠ AI could not analyze — {p.analysis.postureNotes || 'unsuitable image'}
                       </Text>
                     )}
                     {p.analysis.estimatedBodyFatPct != null && p.analysis.postureNotes && (
@@ -265,7 +278,7 @@ export function ProgressPhotosScreen({ navigation }: any) {
                     }}
                   >
                     <Text style={{ color: '#000', fontSize: 12, fontWeight: '600' }}>
-                      {analyzing === p.id ? 'Analyzuju…' : '✦ AI analýza'}
+                      {analyzing === p.id ? 'Analyzing...' : '✦ AI analysis'}
                     </Text>
                   </Pressable>
                 )}
