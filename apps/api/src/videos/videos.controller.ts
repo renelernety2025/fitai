@@ -37,7 +37,7 @@ export class VideosController {
   }
 
   @Get('upload-url')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   getUploadUrl(
     @Query('filename') filename: string,
     @Query('contentType') contentType: string,

@@ -35,7 +35,7 @@ export default function AiDisclaimerPage() {
         <SectionTitle>Nejsou to lékařské rady</SectionTitle>
         <Paragraph>
           Veškerá doporučení generovaná AI slouží pouze jako fitness orientace a informační
-          podpora. Nejedná se o lékařské, fyzterapeutické ani nutriční rady od certifikovaného
+          podpora. Nejedná se o lékařské, fyzioterapeutické ani nutriční rady od certifikovaného
           odborníka. AI výstupy nenahrazují konzultaci s lékařem.
         </Paragraph>
 

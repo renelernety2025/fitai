@@ -135,19 +135,16 @@ export default function AdminUploadPage() {
   }
 
   async function handlePublish(id: string) {
-    await publishVideo(id);
-    loadVideos();
+    try { await publishVideo(id); loadVideos(); } catch { setStatus('Publish failed'); }
   }
 
   async function handleReprocess(id: string) {
-    await reprocessVideo(id);
-    loadVideos();
+    try { await reprocessVideo(id); loadVideos(); } catch { setStatus('Reprocess failed'); }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Opravdu smazat video?')) return;
-    await deleteVideo(id);
-    loadVideos();
+    if (!confirm('Delete this video?')) return;
+    try { await deleteVideo(id); loadVideos(); } catch { setStatus('Delete failed'); }
   }
 
   return (

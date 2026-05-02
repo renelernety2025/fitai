@@ -38,6 +38,13 @@ export default function TermsPage() {
           smazat — všechna vaše data budou trvale odstraněna.
         </Paragraph>
 
+        <SectionTitle>Věkové omezení</SectionTitle>
+        <Paragraph>
+          Služba FitAI je určena osobám starším 16 let. Osoby mladší 16 let mohou službu
+          používat pouze se souhlasem zákonného zástupce v souladu s článkem 8 GDPR.
+          Registrací potvrzujete, že splňujete tuto podmínku.
+        </Paragraph>
+
         <SectionTitle>AI disclaimer</SectionTitle>
         <Paragraph>
           Doporučení generovaná umělou inteligencí (Claude AI) nejsou lékařské rady.

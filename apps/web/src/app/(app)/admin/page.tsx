@@ -130,7 +130,7 @@ export default function AdminPage() {
               />
               <StatCard
                 value={analytics.newUsersMonth}
-                label="MAU (30 days)"
+                label="New users (30d)"
                 accent="var(--sage)"
               />
               <StatCard
