@@ -54,12 +54,24 @@ export default function NutritionPage() {
     localStorage.setItem(`fitai_hydration_${today}`, String(hydration));
   }, [hydration]);
 
+  const [loadError, setLoadError] = useState(false);
+
   const reload = () => {
-    getNutritionToday().then(setData).catch(console.error);
-    getQuickFoods().then(setFoods).catch(console.error);
-    getNutritionTips().then((r) => setTips(r.tips)).catch(console.error);
+    setLoadError(false);
+    getNutritionToday().then(setData).catch(() => setLoadError(true));
+    getQuickFoods().then(setFoods).catch(() => {});
+    getNutritionTips().then((r) => setTips(r.tips)).catch(() => {});
   };
   useEffect(reload, []);
+
+  if (loadError && !data) {
+    return (
+      <div style={{ background: 'var(--bg-0)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        <p className="v3-body" style={{ color: 'var(--danger, #ef4444)' }}>Failed to load nutrition data.</p>
+        <button onClick={reload} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+      </div>
+    );
+  }
 
   if (!data) {
     return (
@@ -97,6 +109,23 @@ export default function NutritionPage() {
       <NutritionHero data={data} kcalPct={kcalPct} remaining={remaining} />
 
       <HydrationCard count={hydration} onAdd={() => setHydration((h) => h + 1)} />
+
+      {tips.length > 0 && (
+        <Card padding={24} style={{ marginBottom: 24 }}>
+          <SectionHeader eyebrow="AI Coach" title="Nutrition tips" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {tips.map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <FitIcon name="bolt" size={14} color="var(--accent)" style={{ marginTop: 3, flexShrink: 0 }} />
+                <div>
+                  <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)', marginBottom: 2 }}>{tip.title}</div>
+                  <div className="v3-caption" style={{ color: 'var(--text-2)' }}>{tip.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <MealsList grouped={grouped} onAdd={(v) => { setMeal(v); setShowAdd(true); }} onReload={reload} />
 

@@ -18,6 +18,8 @@ export default function SupplementsPage() {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [selectedId, setSelectedId] = useState('');
+  const [addDosage, setAddDosage] = useState('');
+  const [addTiming, setAddTiming] = useState('MORNING');
 
   useEffect(() => { document.title = 'FitAI — Supplements'; }, []);
 
@@ -37,8 +39,8 @@ export default function SupplementsPage() {
 
   function handleAdd() {
     if (!selectedId) return;
-    addToStack({ supplementId: selectedId, dosage: '', timing: '' })
-      .then(() => { setShowModal(false); setSelectedId(''); refresh(); })
+    addToStack({ supplementId: selectedId, dosage: addDosage || catalog.find(c => c.id === selectedId)?.defaultDosage || '', timing: addTiming })
+      .then(() => { setShowModal(false); setSelectedId(''); setAddDosage(''); setAddTiming('MORNING'); refresh(); })
       .catch(console.error);
   }
 
@@ -109,9 +111,19 @@ export default function SupplementsPage() {
               </div>
               {catalogLoading ? <p className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</p> : (
                 <>
-                  <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }}>
+                  <div className="v3-caption" style={{ marginBottom: 4 }}>Supplement</div>
+                  <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 12 }}>
                     <option value="">Select...</option>
-                    {catalog.map((c) => <option key={c.id} value={c.id}>{c.name} -- {c.defaultDosage}</option>)}
+                    {catalog.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.defaultDosage}</option>)}
+                  </select>
+                  <div className="v3-caption" style={{ marginBottom: 4 }}>Dosage</div>
+                  <input type="text" value={addDosage} onChange={(e) => setAddDosage(e.target.value)} placeholder={catalog.find(c => c.id === selectedId)?.defaultDosage || 'e.g. 5g'} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 12 }} />
+                  <div className="v3-caption" style={{ marginBottom: 4 }}>Timing</div>
+                  <select value={addTiming} onChange={(e) => setAddTiming(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14, marginBottom: 16 }}>
+                    <option value="MORNING">Morning</option>
+                    <option value="PRE_WORKOUT">Pre-workout</option>
+                    <option value="POST_WORKOUT">Post-workout</option>
+                    <option value="EVENING">Evening</option>
                   </select>
                   <Button variant="accent" full onClick={handleAdd} disabled={!selectedId}>Add to stack</Button>
                 </>

@@ -57,7 +57,7 @@ export default function MealPlanPage() {
 
   return (
     <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '40px 56px' }}>
-      <MealPlanHeader generating={generating} onRegenerate={regenerate} onGrocery={() => setShowShopping((s) => !s)} />
+      <MealPlanHeader generating={generating} onRegenerate={regenerate} onGrocery={() => setShowShopping((s) => !s)} onPrefs={() => setShowPrefs((s) => !s)} showPrefs={showPrefs} />
 
       {!plan && <EmptyState generating={generating} onGenerate={regenerate} />}
 
@@ -74,7 +74,7 @@ export default function MealPlanPage() {
   );
 }
 
-function MealPlanHeader({ generating, onRegenerate, onGrocery }: { generating: boolean; onRegenerate: () => void; onGrocery: () => void }) {
+function MealPlanHeader({ generating, onRegenerate, onGrocery, onPrefs, showPrefs }: { generating: boolean; onRegenerate: () => void; onGrocery: () => void; onPrefs: () => void; showPrefs: boolean }) {
   return (
     <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
       <div>
@@ -84,6 +84,9 @@ function MealPlanHeader({ generating, onRegenerate, onGrocery }: { generating: b
         </h1>
       </div>
       <div style={{ display: 'flex', gap: 12 }}>
+        <Button variant="ghost" onClick={onPrefs}>
+          <FitIcon name="settings" size={14} /><span>{showPrefs ? 'Hide prefs' : 'Preferences'}</span>
+        </Button>
         <Button variant="ghost" onClick={onRegenerate} disabled={generating}>
           <FitIcon name="bolt" size={14} /><span>{generating ? 'Generating...' : 'Regenerate'}</span>
         </Button>
