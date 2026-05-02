@@ -17,7 +17,6 @@ import {
   StyleSheet,
   Modal,
   Alert,
-  AppState,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
@@ -27,10 +26,10 @@ import { v2, V2Button, V2SectionLabel, V2Display } from '../components/v2/V2';
 
 const RPE_VALUES = [6, 7, 8, 9, 10];
 const RPE_LABELS: Record<number, string> = {
-  6: 'Lehké',
-  7: 'Středně',
-  8: 'Těžké',
-  9: 'Skoro max',
+  6: 'Easy',
+  7: 'Moderate',
+  8: 'Hard',
+  9: 'Very hard',
   10: 'Max',
 };
 
@@ -56,7 +55,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
     if (!sessionId) return;
     getGymSession(sessionId).then(setSession).catch((e) => {
       console.error(e);
-      Alert.alert('Chyba', 'Nepodařilo se načíst trénink');
+      Alert.alert('Error', 'Failed to load workout');
       navigation.goBack();
     });
   }, [sessionId]);
@@ -124,9 +123,9 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
     );
     if (next === -1) {
       // No more exercises — end workout
-      Alert.alert('Konec tréninku', 'Tohle byl poslední cvik. Ukončit?', [
-        { text: 'Ne', style: 'cancel' },
-        { text: 'Ano', onPress: handleEnd },
+      Alert.alert('Last exercise', 'This was the last exercise. End workout?', [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', onPress: handleEnd },
       ]);
       return;
     }
@@ -137,11 +136,11 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
 
   const confirmFinish = () => {
     Alert.alert(
-      'Dokončit trénink?',
-      'Nedokončené sety budou označeny jako přeskočené.',
+      'Finish workout?',
+      'Incomplete sets will be marked as skipped.',
       [
-        { text: 'Pokračovat', style: 'cancel' },
-        { text: 'Dokončit', style: 'destructive', onPress: handleEnd },
+        { text: 'Continue', style: 'cancel' },
+        { text: 'Finish', style: 'destructive', onPress: handleEnd },
       ],
     );
   };
@@ -206,14 +205,14 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
   if (!permission.granted) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', padding: 32 }}>
-        <V2SectionLabel>Kamera</V2SectionLabel>
-        <V2Display size="lg">Potřebujeme{'\n'}tvé povolení.</V2Display>
+        <V2SectionLabel>Camera</V2SectionLabel>
+        <V2Display size="lg">We need{'\n'}your permission.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 15, lineHeight: 24, marginTop: 16 }}>
-          FitAI používá kameru jako zrcadlo pro self-check během cvičení. Video nikdy neopustí tvůj telefon.
+          FitAI uses the camera as a mirror for self-check during exercise. Video never leaves your phone.
         </Text>
         <View style={{ marginTop: 32 }}>
           <V2Button onPress={requestPermission} full>
-            Povolit kameru →
+            Allow camera →
           </V2Button>
         </View>
       </SafeAreaView>
@@ -224,7 +223,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-          NAČÍTÁNÍ TRÉNINKU
+          LOADING WORKOUT
         </Text>
       </View>
     );
@@ -233,17 +232,17 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
   if (finished) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000', padding: 32, justifyContent: 'center' }}>
-        <V2SectionLabel>Hotovo</V2SectionLabel>
-        <V2Display size="xl">Trénink{'\n'}dokončen.</V2Display>
+        <V2SectionLabel>Done</V2SectionLabel>
+        <V2Display size="xl">Workout{'\n'}complete.</V2Display>
         <View style={{ marginTop: 32, borderTopWidth: 1, borderColor: v2.border, paddingTop: 24 }}>
-          <V2SectionLabel>Doba</V2SectionLabel>
+          <V2SectionLabel>Duration</V2SectionLabel>
           <Text style={{ color: '#FFF', fontSize: 44, fontWeight: '700', letterSpacing: -2 }}>
             {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
           </Text>
         </View>
         <View style={{ marginTop: 32 }}>
           <V2Button onPress={() => navigation.navigate('Main')} full>
-            Zpět na dashboard →
+            Back to dashboard →
           </V2Button>
         </View>
       </SafeAreaView>
@@ -281,9 +280,9 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         >
           <Pressable
             onPress={() => {
-              Alert.alert('Ukončit trénink?', 'Tvůj pokrok bude uložen.', [
-                { text: 'Pokračovat', style: 'cancel' },
-                { text: 'Ukončit', style: 'destructive', onPress: handleEnd },
+              Alert.alert('End workout?', 'Your progress will be saved.', [
+                { text: 'Continue', style: 'cancel' },
+                { text: 'End', style: 'destructive', onPress: handleEnd },
               ]);
             }}
             style={{
@@ -296,7 +295,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
             }}
           >
             <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>
-              ✕ UKONČIT
+              ✕ EXIT
             </Text>
           </Pressable>
           <View
@@ -318,14 +317,14 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         {/* Exercise name + set tracker */}
         <View style={{ paddingHorizontal: 24, marginTop: 24 }}>
           <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-            CVIK {currentExerciseNum} / {totalExercises}  ·  CELKEM SET {currentSetIdx + 1} / {totalSets}
+            EX {currentExerciseNum} / {totalExercises}  ·  SET {currentSetIdx + 1} / {totalSets}
           </Text>
           <Text style={{ color: '#FFF', fontSize: 38, fontWeight: '700', letterSpacing: -1.2, marginTop: 4 }}>
             {currentSet.exercise.nameCs}
           </Text>
           <Text style={{ color: v2.muted, fontSize: 14, marginTop: 4 }}>
-            Set {exerciseSetIdx + 1} / {exerciseSets.length}{currentSet.isWarmup ? ' · zahřívací' : ''}
-            {' · '}Cíl: {currentSet.targetReps} repů
+            Set {exerciseSetIdx + 1} / {exerciseSets.length}{currentSet.isWarmup ? ' · warmup' : ''}
+            {' · '}Target: {currentSet.targetReps} reps
             {currentSet.targetWeight ? ` · ${currentSet.targetWeight}kg` : ''}
           </Text>
         </View>
@@ -336,7 +335,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         {/* Rep counter — massive */}
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-            OPAKOVÁNÍ
+            REPS
           </Text>
           <Text
             style={{
@@ -397,7 +396,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
             }}
           >
             <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '700', letterSpacing: 1.5 }}>
-              SET HOTOVÝ →
+              SET DONE →
             </Text>
           </Pressable>
 
@@ -416,7 +415,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
               }}
             >
               <Text style={{ color: v2.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
-                PŘESKOČIT CVIK →
+                SKIP EXERCISE →
               </Text>
             </Pressable>
             <Pressable
@@ -432,7 +431,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
               }}
             >
               <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
-                ✓ DOKONČIT TRÉNINK
+                ✓ FINISH WORKOUT
               </Text>
             </Pressable>
           </View>
@@ -452,10 +451,10 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
               padding: 28,
             }}
           >
-            <V2SectionLabel>Jak to bylo?</V2SectionLabel>
+            <V2SectionLabel>How was it?</V2SectionLabel>
             <V2Display size="lg">RPE</V2Display>
             <Text style={{ color: v2.muted, fontSize: 13, marginTop: 8, marginBottom: 24 }}>
-              Rate of Perceived Exertion — jak náročný byl tento set?
+              Rate of Perceived Exertion — how hard was this set?
             </Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {RPE_VALUES.map((r) => (
@@ -478,7 +477,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
             </View>
             <Pressable onPress={() => submitSet(null)} style={{ marginTop: 16, alignItems: 'center' }}>
               <Text style={{ color: v2.faint, fontSize: 12, fontWeight: '600', letterSpacing: 1.5 }}>
-                PŘESKOČIT
+                SKIP
               </Text>
             </Pressable>
           </View>
@@ -489,7 +488,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
       {isResting && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2 }}>
-            PAUZA
+            REST
           </Text>
           <Text
             style={{
@@ -503,7 +502,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
             {restRemaining}
           </Text>
           <Text style={{ color: v2.muted, fontSize: 14, marginBottom: 32 }}>
-            Další: set {exerciseSetIdx + 2} / {exerciseSets.length}
+            Next: set {exerciseSetIdx + 2} / {exerciseSets.length}
           </Text>
           <Pressable
             onPress={skipRest}
@@ -516,7 +515,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
             }}
           >
             <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 }}>
-              PŘESKOČIT PAUZU →
+              SKIP REST →
             </Text>
           </Pressable>
         </View>
