@@ -18,11 +18,15 @@ const catColor: Record<string, string> = {
 export default function VideosPage() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [cat, setCat] = useState('ALL');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
     const f: Record<string, string> = {};
     if (cat !== 'ALL') f.category = cat;
-    getVideos(f).then(setVideos).catch(console.error);
+    getVideos(f).then(setVideos).catch(() => setError(true)).finally(() => setLoading(false));
   }, [cat]);
 
   return (
@@ -43,6 +47,22 @@ export default function VideosPage() {
           {CATS.map((c) => <Chip key={c.v} active={cat === c.v} onClick={() => setCat(c.v)}>{c.l}</Chip>)}
         </div>
 
+        {loading && (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}>
+            <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading videos...</span>
+          </div>
+        )}
+        {error && !loading && (
+          <Card padding={32} style={{ textAlign: 'center' }}>
+            <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>Failed to load videos.</p>
+            <button onClick={() => setCat(cat)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+          </Card>
+        )}
+        {!loading && !error && videos.length === 0 && (
+          <Card padding={48} style={{ textAlign: 'center' }}>
+            <p className="v3-body" style={{ color: 'var(--text-3)' }}>No videos in this category.</p>
+          </Card>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {videos.map((v) => (
             <Link key={v.id} href={`/videos/${v.id}`} style={{ textDecoration: 'none' }}>

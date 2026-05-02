@@ -16,10 +16,15 @@ const MODES: { value: Mode; label: string; minutes: string; desc: string; icon: 
 export default function DomaPage() {
   const [mode, setMode] = useState<Mode>('quick');
   const [workout, setWorkout] = useState<HomeWorkoutData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
+    setWorkout(null);
     const fn = mode === 'quick' ? getQuickWorkout : mode === 'home' ? getHomeWorkout : getTravelWorkout;
-    fn().then(setWorkout).catch(console.error);
+    fn().then(setWorkout).catch(() => setError(true)).finally(() => setLoading(false));
   }, [mode]);
 
   return (
@@ -45,7 +50,17 @@ export default function DomaPage() {
           ))}
         </div>
 
-        {workout && (
+        {loading && (
+          <div style={{ display: 'flex', height: 200, alignItems: 'center', justifyContent: 'center' }}>
+            <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading workout...</span>
+          </div>
+        )}
+        {error && !loading && (
+          <div style={{ textAlign: 'center', padding: 32 }}>
+            <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>Failed to load workout.</p>
+          </div>
+        )}
+        {workout && !loading && (
           <>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
               <span className="v3-display-3">{workout.title}</span>

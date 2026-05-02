@@ -14,18 +14,26 @@ const catAccent: Record<string, string> = {
 
 export default function VideoV2DetailPage({ params }: { params: { id: string } }) {
   const [video, setVideo] = useState<VideoData | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getVideo(params.id).then(setVideo).catch(console.error);
+    getVideo(params.id).then(setVideo).catch(() => setError(true));
   }, [params.id]);
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '60vh', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <p className="v3-display-3">Video not found</p>
+        <Link href="/videos" style={{ color: 'var(--accent)', fontSize: 14, textDecoration: 'none' }}>Back to videos</Link>
+      </div>
+    );
+  }
 
   if (!video) {
     return (
-      <>
-        <div className="flex h-[60vh] items-center justify-center">
-          <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40" />
-        </div>
-      </>
+      <div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span>
+      </div>
     );
   }
 

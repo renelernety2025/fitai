@@ -135,9 +135,11 @@ export default function ShadowBoxingPage() {
       <section className="mb-16">
         <p className="v3-eyebrow">Kombinace</p>
         <div className="space-y-3">
-          {BOXING_COMBOS.filter(
-            (c) => c.difficulty === difficulty || c.difficulty === 'beginner',
-          ).map((combo) => (
+          {BOXING_COMBOS.filter((c) => {
+            if (difficulty === 'beginner') return c.difficulty === 'beginner';
+            if (difficulty === 'intermediate') return c.difficulty === 'beginner' || c.difficulty === 'intermediate';
+            return true;
+          }).map((combo) => (
             <button
               key={combo.name}
               onClick={() => startCombo(combo)}
