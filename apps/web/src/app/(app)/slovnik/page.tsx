@@ -10,9 +10,9 @@ export default function GlossaryV2Page() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
     setError(false);
     const t = setTimeout(() => {
+      setLoading(true);
       getGlossary(query || undefined)
         .then(setTerms)
         .catch(() => setError(true))
@@ -30,7 +30,7 @@ export default function GlossaryV2Page() {
           <em className="v3-clay" style={{ fontWeight: 300 }}>glossary.</em>
         </h1>
         <p className="mt-4 max-w-xl text-base text-white/55">
-          Fitness terms explained simply. {terms.length} terms.
+          Fitness terms explained simply.{!loading && terms.length > 0 ? ` ${terms.length} terms.` : ''}
         </p>
       </section>
 

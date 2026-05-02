@@ -17,6 +17,8 @@ export default function LessonDetailPage({ params }: { params: { slug: string } 
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    setError(false);
+    setLesson(null);
     getLesson(params.slug)
       .then(setLesson)
       .catch(() => setError(true));
