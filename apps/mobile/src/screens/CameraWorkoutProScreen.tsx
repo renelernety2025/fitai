@@ -68,9 +68,11 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
 
   const voiceInput = useVoiceInput(selectedKey, formScore, reps);
 
-  // Stop any in-flight TTS playback when the screen unmounts so audio
-  // doesn't leak past navigation away from the workout.
-  useEffect(() => () => stopVoice(), []);
+  // Cleanup on unmount: stop TTS + clear rest timer
+  useEffect(() => () => {
+    stopVoice();
+    if (restTimerRef.current) clearInterval(restTimerRef.current);
+  }, []);
 
   const repCounterRef = useRef(
     exercise ? createRepCounter(exercise.phases) : null,
@@ -81,6 +83,10 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   const lastRepCount = useRef(0);
   const frameCount = useRef(0);
   const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Track phaseName in ref to avoid stale closure in handlePose
+  const phaseNameRef = useRef(phaseName);
+  phaseNameRef.current = phaseName;
 
   const handlePose = useCallback(
     (pose: MlkitPose) => {
@@ -112,8 +118,8 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
           : result.feedback.errors[0] ?? '',
       );
 
-      // Coaching: phase change hint
-      if (result.currentPhase.nameCs !== phaseName) {
+      // Coaching: phase change hint (use ref to avoid stale closure)
+      if (result.currentPhase.nameCs !== phaseNameRef.current) {
         coachRef.current?.onPhaseChange(
           result.currentPhase.nameCs,
           result.currentPhase.coachingHint,
@@ -172,7 +178,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
           const avgForm = avg.length > 0
             ? Math.round(avg.reduce((a: number, b: number) => a + b, 0) / avg.length)
             : 0;
-          setLastSetSummary(`Set ${currentSet}: ${reps + targetReps} repů, forma ${avgForm}%`);
+          setLastSetSummary(`Set ${currentSet}: ${targetReps} reps, form ${avgForm}%`);
           setCurrentSet((s) => s + 1);
           startRest();
         }, 2000); // 2s delay to let voice finish
@@ -190,7 +196,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
     if (restTimerRef.current) clearInterval(restTimerRef.current);
     setRunning(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    coachRef.current.startSet(currentSet, targetReps);
+    coachRef.current?.startSet(currentSet, targetReps);
   }, [exercise, selectedKey, currentSet, targetReps]);
 
   const startRest = useCallback(() => {
@@ -218,7 +224,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
     const avgForm = avg.length > 0
       ? Math.round(avg.reduce((a: number, b: number) => a + b, 0) / avg.length)
       : 0;
-    setLastSetSummary(`Set ${currentSet}: ${reps} repů, forma ${avgForm}%`);
+    setLastSetSummary(`Set ${currentSet}: ${reps} reps, form ${avgForm}%`);
     setCurrentSet((s) => s + 1);
     startRest();
   }, [currentSet, reps, startRest]);
@@ -229,13 +235,13 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       <View style={styles.pickerContainer}>
         <View style={styles.pickerHeader}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={16}>
-            <Text style={styles.pickerBack}>← Zpět</Text>
+            <Text style={styles.pickerBack}>← Back</Text>
           </Pressable>
-          <Text style={styles.pickerTitle}>Vyber cvik</Text>
+          <Text style={styles.pickerTitle}>Select exercise</Text>
           <View style={{ width: 50 }} />
         </View>
         <Text style={styles.pickerSubtitle}>
-          Pose detection automaticky počítá repy a hodnotí formu
+          Pose detection auto-counts reps and scores your form
         </Text>
         <ScrollView style={styles.pickerList} contentContainerStyle={{ paddingBottom: 40 }}>
           {EXERCISE_LIST.map((ex) => (
@@ -262,12 +268,12 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   if (!hasPermission) {
     return (
       <View style={styles.overlay}>
-        <Text style={styles.overlayTitle}>Kamera — povolení</Text>
+        <Text style={styles.overlayTitle}>Camera permission</Text>
         <Text style={styles.overlayText}>
-          FitAI potřebuje přístup ke kameře pro real-time pose detection.
+          FitAI needs camera access for real-time pose detection.
         </Text>
         <Pressable style={styles.permButton} onPress={requestPermission}>
-          <Text style={styles.permButtonText}>Povolit kameru</Text>
+          <Text style={styles.permButtonText}>Allow camera</Text>
         </Pressable>
       </View>
     );
@@ -276,8 +282,8 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
   if (!device) {
     return (
       <View style={styles.overlay}>
-        <Text style={styles.overlayTitle}>Kamera nedostupná</Text>
-        <Text style={styles.overlayText}>Přední kamera nebyla nalezena.</Text>
+        <Text style={styles.overlayTitle}>Camera unavailable</Text>
+        <Text style={styles.overlayText}>Front camera not found.</Text>
       </View>
     );
   }
@@ -338,7 +344,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       {running && !poseVisible && (
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>
-            Namiř kameru na cvičící část těla
+            Point camera at your body
           </Text>
         </View>
       )}
@@ -351,7 +357,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       <View style={styles.infoBox}>
         <Text style={styles.phaseName}>{phaseName}</Text>
         <Text style={[styles.phaseHint, { color: scoreColor }]}>
-          {running ? `Form: ${formScore}%` : 'Připraven'}
+          {running ? `Form: ${formScore}%` : 'Ready'}
         </Text>
         {currentPhaseObj?.coachingHint && (
           <Text style={styles.coachingHint}>{currentPhaseObj.coachingHint}</Text>
@@ -381,12 +387,12 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       {/* Rest overlay */}
       {resting && (
         <View style={styles.restOverlay}>
-          <Text style={styles.restTitle}>Odpočinek</Text>
+          <Text style={styles.restTitle}>Rest</Text>
           <Text style={styles.restTimer}>{restSeconds}s</Text>
           {lastSetSummary !== '' && (
             <Text style={styles.restSummary}>{lastSetSummary}</Text>
           )}
-          <Text style={styles.restHint}>Set {currentSet} za chvíli</Text>
+          <Text style={styles.restHint}>Set {currentSet} coming up</Text>
           <Pressable
             style={styles.skipRestBtn}
             onPress={() => {
@@ -395,7 +401,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
               setRestSeconds(0);
             }}
           >
-            <Text style={styles.skipRestText}>Přeskočit</Text>
+            <Text style={styles.skipRestText}>Skip rest</Text>
           </Pressable>
         </View>
       )}
@@ -408,7 +414,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
             <Pressable onPress={() => setTargetReps((r) => Math.max(1, r - 1))}>
               <Text style={styles.repAdjust}>-</Text>
             </Pressable>
-            <Text style={styles.targetRepsText}>{targetReps} repů</Text>
+            <Text style={styles.targetRepsText}>{targetReps} reps</Text>
             <Pressable onPress={() => setTargetReps((r) => r + 1)}>
               <Text style={styles.repAdjust}>+</Text>
             </Pressable>
@@ -419,7 +425,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       {/* Voice input indicator */}
       {voiceInput.listening && (
         <View style={styles.voiceIndicator}>
-          <Text style={styles.voiceIndicatorText}>Poslouchám...</Text>
+          <Text style={styles.voiceIndicatorText}>Listening...</Text>
           {voiceInput.transcript !== '' && (
             <Text style={styles.voiceTranscript}>{voiceInput.transcript}</Text>
           )}
@@ -427,7 +433,7 @@ export function CameraWorkoutProScreen({ route, navigation }: any) {
       )}
       {voiceInput.answering && (
         <View style={styles.voiceIndicator}>
-          <Text style={styles.voiceIndicatorText}>Přemýšlím...</Text>
+          <Text style={styles.voiceIndicatorText}>Thinking...</Text>
         </View>
       )}
 
