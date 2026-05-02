@@ -1,33 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getPersonalRecords } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
 
 export function RecordsScreen() {
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<any[] | null>(null);
 
   useEffect(() => {
     getPersonalRecords().then(setRecords).catch(() => setRecords([]));
   }, []);
 
+  const items = records ?? [];
+
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Osobni maxima</V2SectionLabel>
-        <V2Display size="xl">Rekordy.</V2Display>
+        <V2SectionLabel>Personal bests</V2SectionLabel>
+        <V2Display size="xl">Records.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, marginTop: 12 }}>
-          {records.length} cviku
+          {items.length} exercises
         </Text>
       </View>
 
-      {records.length === 0 && (
+      {records === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zatim zadne rekordy
+          No records yet. Complete workouts to track PRs.
         </Text>
-      )}
+      ) : null}
 
-      {records.map((r) => {
-        const delta = r.deltaKg ?? 0;
+      {items.map((r) => {
+        // Backend uses deltaWeight (not deltaKg) and date (not achievedAt)
+        const delta = r.deltaKg ?? r.deltaWeight ?? 0;
         const deltaColor = delta > 0 ? v2.green : delta < 0 ? v2.red : v2.muted;
         const deltaSign = delta > 0 ? '+' : '';
 
@@ -41,13 +46,13 @@ export function RecordsScreen() {
             }}
           >
             <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '600', marginBottom: 8 }}>
-              {r.exerciseName || r.name}
+              {r.exerciseNameCs || r.exerciseName || r.name}
             </Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
-                  NEJLEPSI VAHA
+                  BEST WEIGHT
                 </Text>
                 <Text style={{ color: '#FFF', fontSize: 28, fontWeight: '700', letterSpacing: -1 }}>
                   {r.bestWeight ?? '-'} kg
@@ -56,7 +61,7 @@ export function RecordsScreen() {
 
               <View style={{ flex: 1 }}>
                 <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
-                  NEJLEPSI OPAK.
+                  BEST REPS
                 </Text>
                 <Text style={{ color: '#FFF', fontSize: 28, fontWeight: '700', letterSpacing: -1 }}>
                   {r.bestReps ?? '-'}
@@ -75,9 +80,9 @@ export function RecordsScreen() {
               )}
             </View>
 
-            {r.achievedAt && (
+            {(r.achievedAt || r.date) && (
               <Text style={{ color: v2.ghost, fontSize: 10, marginTop: 8 }}>
-                {new Date(r.achievedAt).toLocaleDateString('cs-CZ')}
+                {new Date(r.achievedAt || r.date).toLocaleDateString('en-US')}
               </Text>
             )}
           </View>
