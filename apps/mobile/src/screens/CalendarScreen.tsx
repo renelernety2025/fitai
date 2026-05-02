@@ -34,12 +34,23 @@ interface CalendarDay {
   workouts: ScheduledWorkout[];
 }
 
-const DAY_NAMES = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne'];
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const MONTH_NAMES = [
-  'Leden','Unor','Brezen','Duben','Kveten','Cerven',
-  'Cervenec','Srpen','Zari','Rijen','Listopad','Prosinec',
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
 ];
+
+/** Backend returns flat ScheduledWorkout[]. Group by date into CalendarDay[]. */
+function groupByDate(workouts: any[]): CalendarDay[] {
+  const map = new Map<string, ScheduledWorkout[]>();
+  for (const w of workouts) {
+    const dateKey = (w.date || '').slice(0, 10); // "2026-05-10T00:00:00.000Z" → "2026-05-10"
+    if (!map.has(dateKey)) map.set(dateKey, []);
+    map.get(dateKey)!.push({ ...w, date: dateKey });
+  }
+  return Array.from(map.entries()).map(([date, wks]) => ({ date, workouts: wks }));
+}
 
 function currentMonth(): string {
   const d = new Date();
@@ -98,8 +109,15 @@ export function CalendarScreen({ navigation }: any) {
     setLoading(true);
     setError(null);
     getCalendarMonth(month)
-      .then(d => setDays(d.days || d || []))
-      .catch(() => { setDays([]); setError('Nepodarilo se nacist kalendar'); })
+      .then(d => {
+        // Backend returns flat ScheduledWorkout[] — group into CalendarDay[]
+        const raw = d.days || d || [];
+        const grouped = Array.isArray(raw) && raw.length > 0 && !raw[0]?.workouts
+          ? groupByDate(raw)
+          : raw;
+        setDays(grouped);
+      })
+      .catch(() => { setDays([]); setError('Failed to load calendar'); })
       .finally(() => setLoading(false));
   }, [month]);
 
@@ -117,7 +135,7 @@ export function CalendarScreen({ navigation }: any) {
       setFormNotes('');
       load();
     } catch {
-      setError('Nepodarilo se ulozit');
+      setError('Failed to save workout');
     }
     setSaving(false);
   }
@@ -127,7 +145,7 @@ export function CalendarScreen({ navigation }: any) {
       await deleteScheduledWorkout(id);
       load();
     } catch {
-      setError('Nepodarilo se smazat');
+      setError('Failed to delete');
     }
   }
 
@@ -137,10 +155,10 @@ export function CalendarScreen({ navigation }: any) {
     <V2Screen>
       {/* Back */}
       <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Zpet</Text>
+        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
       </Pressable>
 
-      <V2SectionLabel>Kalendar treninku</V2SectionLabel>
+      <V2SectionLabel>Workout calendar</V2SectionLabel>
 
       {/* Month navigation */}
       <View style={s.monthNav}>
@@ -208,15 +226,15 @@ export function CalendarScreen({ navigation }: any) {
           <View style={s.legend}>
             <View style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: '#60a5fa' }]} />
-              <Text style={s.legendText}>Planovane</Text>
+              <Text style={s.legendText}>Planned</Text>
             </View>
             <View style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: '#4ade80' }]} />
-              <Text style={s.legendText}>Splneno</Text>
+              <Text style={s.legendText}>Completed</Text>
             </View>
             <View style={s.legendItem}>
               <View style={[s.legendDot, { backgroundColor: v2.red }]} />
-              <Text style={s.legendText}>Zmeskane</Text>
+              <Text style={s.legendText}>Missed</Text>
             </View>
           </View>
 
@@ -232,7 +250,7 @@ export function CalendarScreen({ navigation }: any) {
                     <Text style={s.workoutTitle}>{w.title}</Text>
                   </View>
                   <Pressable onPress={() => handleDelete(w.id)}>
-                    <Text style={s.deleteText}>Smazat</Text>
+                    <Text style={s.deleteText}>Delete</Text>
                   </Pressable>
                 </View>
               ))}
@@ -242,14 +260,14 @@ export function CalendarScreen({ navigation }: any) {
                 style={s.input}
                 value={formTitle}
                 onChangeText={setFormTitle}
-                placeholder="Nazev treninku"
+                placeholder="Workout title"
                 placeholderTextColor={v2.ghost}
               />
               <TextInput
                 style={[s.input, { marginTop: 8 }]}
                 value={formNotes}
                 onChangeText={setFormNotes}
-                placeholder="Poznamky..."
+                placeholder="Notes..."
                 placeholderTextColor={v2.ghost}
               />
               <View style={{ marginTop: 12 }}>
@@ -258,7 +276,7 @@ export function CalendarScreen({ navigation }: any) {
                   disabled={saving || !formTitle.trim()}
                   full
                 >
-                  {saving ? 'Ukladam...' : 'Pridat trenink'}
+                  {saving ? 'Saving...' : 'Add workout'}
                 </V2Button>
               </View>
             </View>
