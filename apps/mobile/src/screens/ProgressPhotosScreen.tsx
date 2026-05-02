@@ -104,10 +104,10 @@ export function ProgressPhotosScreen({ navigation }: any) {
   return (
     <V2Screen>
       <View style={{ paddingTop: 16 }}>
-        <V2SectionLabel>Section K · Body Progress</V2SectionLabel>
-        <V2Display size="lg">Tvoje cesta.</V2Display>
+        <V2SectionLabel>Body Progress</V2SectionLabel>
+        <V2Display size="lg">Your journey.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, marginTop: 12, lineHeight: 20 }}>
-          Soukromá galerie progress fotek + AI body composition analýza.
+          Private progress photo gallery + AI body composition analysis.
         </Text>
       </View>
 

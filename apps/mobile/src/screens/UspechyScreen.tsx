@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getAchievements, checkAchievements } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
 
 const categoryColors: Record<string, string> = {
   training: v2.red,
@@ -14,42 +14,63 @@ const categoryColors: Record<string, string> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  training: 'Trénink',
-  streak: 'Série',
-  milestone: 'Milníky',
-  habits: 'Habity',
-  exploration: 'Objevy',
-  nutrition: 'Výživa',
-  social: 'Komunita',
+  training: 'Training',
+  streak: 'Streak',
+  milestone: 'Milestones',
+  habits: 'Habits',
+  exploration: 'Exploration',
+  nutrition: 'Nutrition',
+  social: 'Community',
 };
 
 export function UspechyScreen() {
   const [achievements, setAchievements] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(false);
+    setLoading(true);
     checkAchievements()
       .then(() => getAchievements())
       .then(setAchievements)
-      .catch(console.error);
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, []);
+  useEffect(load, [load]);
 
   const unlocked = achievements.filter((a) => a.unlocked);
   const filtered = filter === 'all' ? achievements : achievements.filter((a) => a.category === filter);
   const categories = Array.from(new Set(achievements.map((a) => a.category)));
 
+  if (error) {
+    return (
+      <V2Screen>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
+          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load achievements</Text>
+          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
+            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
+          </Pressable>
+        </View>
+      </V2Screen>
+    );
+  }
+
+  if (loading) return <V2Screen><V2Loading /></V2Screen>;
+
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Sbírka</V2SectionLabel>
-        <V2Display size="xl">Úspěchy.</V2Display>
+        <V2SectionLabel>Collection</V2SectionLabel>
+        <V2Display size="xl">Achievements.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, marginTop: 12 }}>
-          {unlocked.length} z {achievements.length} odemknutých
+          {unlocked.length} of {achievements.length} unlocked
         </Text>
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-        <V2Chip label="Vše" selected={filter === 'all'} onPress={() => setFilter('all')} />
+        <V2Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
         {categories.map((c) => (
           <V2Chip
             key={c}
@@ -88,7 +109,7 @@ export function UspechyScreen() {
               <Text style={{ color: v2.ghost, fontSize: 10, fontWeight: '600', marginTop: 8 }}>+{a.xpReward} XP</Text>
               {a.unlocked && (
                 <Text style={{ color: v2.green, fontSize: 9, marginTop: 2 }}>
-                  ✓ {new Date(a.unlockedAt).toLocaleDateString('cs-CZ')}
+                  ✓ {new Date(a.unlockedAt).toLocaleDateString('en-US')}
                 </Text>
               )}
             </View>
