@@ -29,7 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(stored);
     authMe()
       .then((u) => setUser(u))
-      .catch(() => localStorage.removeItem('fitai_token'))
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg === 'Session expired' || msg.includes('401')) {
+          localStorage.removeItem('fitai_token');
+          setToken(null);
+        }
+      })
       .finally(() => setIsLoading(false));
   }, []);
 

@@ -31,6 +31,7 @@ export async function request<T>(
     ) {
       window.location.href = '/login';
     }
+    throw new Error('Session expired');
   }
 
   if (!res.ok) {
@@ -38,5 +39,7 @@ export async function request<T>(
     throw new Error(body.message || `Request failed: ${res.status}`);
   }
 
-  return res.json();
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text);
 }

@@ -172,18 +172,36 @@ function FormInput({ label, type = 'text', placeholder, value, onChange, minLeng
   label: string; type?: string; placeholder: string;
   value: string; onChange: (v: string) => void; minLength?: number;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
   return (
     <div>
       <label className="login-label">{label}</label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="login-input"
-        minLength={minLength}
-        required
-      />
+      <div style={{ position: 'relative' }}>
+        <input
+          type={isPassword && showPassword ? 'text' : type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="login-input"
+          minLength={minLength}
+          required
+        />
+        {isPassword && value && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', color: 'var(--text-3)',
+              cursor: 'pointer', fontSize: 13, padding: 4,
+            }}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
