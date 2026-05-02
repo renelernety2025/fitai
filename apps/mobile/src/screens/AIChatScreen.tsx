@@ -21,15 +21,17 @@ interface Msg {
 }
 
 const SUGGESTED = [
-  'Jak spravne delat mrtvou tah?',
-  'Mam bolesti kolen, co upravit?',
-  'Sestav mi plan na 4 dny',
-  'Kolik bilkovin potrebuji?',
-  'Jak zlepsit bench press?',
-  'Doporuc cviky na zada',
-  'Jsem unaveny, mam trenovat?',
-  'Jak se zahrat pred drepy?',
+  'How to deadlift properly?',
+  'My knees hurt, what to adjust?',
+  'Build me a 4-day plan',
+  'How much protein do I need?',
+  'How to improve bench press?',
+  'Suggest back exercises',
+  'I\'m tired, should I train?',
+  'How to warm up before squats?',
 ];
+
+const MAX_MESSAGE_LENGTH = 1000;
 
 function AvatarBadge() {
   return (
@@ -78,6 +80,10 @@ export function AIChatScreen({ navigation }: any) {
 
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
+    if (text.trim().length > MAX_MESSAGE_LENGTH) {
+      setError(`Message too long (${text.trim().length}/${MAX_MESSAGE_LENGTH} chars)`);
+      return;
+    }
     setError(null);
     setInput('');
 
@@ -113,13 +119,13 @@ export function AIChatScreen({ navigation }: any) {
         return updated;
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Chyba';
+      const msg = err instanceof Error ? err.message : 'Something went wrong';
       setError(msg);
       setMessages(prev => {
         const updated = [...prev];
         const last = updated[updated.length - 1];
         if (last.role === 'assistant' && last.isStreaming) {
-          updated[updated.length - 1] = { role: 'assistant', content: `Chyba: ${msg}`, isStreaming: false };
+          updated[updated.length - 1] = { role: 'assistant', content: `Error: ${msg}`, isStreaming: false };
         }
         return updated;
       });
@@ -141,7 +147,7 @@ export function AIChatScreen({ navigation }: any) {
           {/* Header */}
           <View style={s.header}>
             <Pressable onPress={() => navigation.goBack()}>
-              <Text style={s.backBtn}>Zpet</Text>
+              <Text style={s.backBtn}>Back</Text>
             </Pressable>
             <Text style={s.headerTitle}>Alex</Text>
             <View style={{ width: 48 }} />
@@ -156,11 +162,11 @@ export function AIChatScreen({ navigation }: any) {
               <AvatarBadge />
               <Text style={s.heroTitle}>Alex</Text>
               <Text style={s.heroSub}>
-                Tvuj AI fitness coach. Ptej se na trenink, vyzivu, regeneraci.
+                Your AI fitness coach. Ask about training, nutrition, recovery.
               </Text>
 
               <View style={s.suggestedWrap}>
-                <V2SectionLabel>Zkus se zeptat</V2SectionLabel>
+                <V2SectionLabel>Try asking</V2SectionLabel>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   {SUGGESTED.map(p => (
                     <Pressable key={p} onPress={() => handleSend(p)} style={s.suggestChip}>
@@ -197,7 +203,8 @@ export function AIChatScreen({ navigation }: any) {
               style={s.textInput}
               value={input}
               onChangeText={setInput}
-              placeholder="Napis zpravu..."
+              placeholder="Type a message..."
+              maxLength={MAX_MESSAGE_LENGTH}
               placeholderTextColor={v2.ghost}
               returnKeyType="send"
               onSubmitEditing={() => handleSend(input)}
@@ -208,7 +215,7 @@ export function AIChatScreen({ navigation }: any) {
               disabled={loading || !input.trim()}
               style={[s.sendBtn, (!input.trim() || loading) && { opacity: 0.3 }]}
             >
-              <Text style={s.sendText}>Odeslat</Text>
+              <Text style={s.sendText}>Send</Text>
             </Pressable>
           </View>
         </KeyboardAvoidingView>
