@@ -87,6 +87,14 @@ export default function BodyReportPage() {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 16px 80px', opacity: loaded ? 1 : 0, transition: 'opacity .6s ease' }}>
+      {/* Preview banner */}
+      <Card padding={16} style={{ marginBottom: 24, border: '1px solid rgba(232,93,44,0.2)', background: 'rgba(232,93,44,0.05)', textAlign: 'center' }}>
+        <span className="v3-eyebrow" style={{ color: 'var(--accent)' }}>PREVIEW</span>
+        <p className="v3-caption" style={{ color: 'var(--text-2)', marginTop: 4 }}>
+          This is a design preview with sample data. Personalized reports coming soon.
+        </p>
+      </Card>
+
       {/* Hero */}
       <section style={{ padding: '48px 0 32px' }}>
         <p className="v3-eyebrow-serif">{'\u2666'} Weekly Intelligence W{weekNum}</p>

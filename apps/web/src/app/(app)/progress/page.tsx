@@ -118,34 +118,27 @@ function StatStrip({ stats, sessions, volume }: { stats: StatsData; sessions: Gy
 }
 
 function BodyPhotos() {
-  const placeholders = [
-    { date: 'Wk 1' }, { date: 'Wk 3' }, { date: 'Wk 5' },
-    { date: 'Wk 8' }, { date: 'Wk 10' }, { date: 'Wk 12', current: true },
-  ];
-
   return (
     <Card padding={28} style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
         <div>
-          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Body photos · last 12 weeks</div>
-          <div className="v3-title">You can see the work.</div>
+          <div className="v3-eyebrow" style={{ marginBottom: 8 }}>Body photos</div>
+          <div className="v3-title">Track your transformation.</div>
         </div>
         <Link href="/progres-fotky">
-          <Button variant="ghost">+ Add photo</Button>
+          <Button variant="accent" size="sm">View photos</Button>
         </Link>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
-        {placeholders.map((p, i) => (
-          <div key={i} style={{
-            position: 'relative', aspectRatio: '3/4', borderRadius: 10, overflow: 'hidden',
-            background: 'var(--bg-3)',
-            border: p.current ? '2px solid var(--accent)' : '1px solid var(--stroke-1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <FitIcon name="camera" size={20} color="var(--text-3)" />
-            <div style={{ position: 'absolute', bottom: 8, left: 8, padding: '3px 8px', borderRadius: 6, background: 'rgba(0,0,0,0.7)', fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-1)' }}>{p.date}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <div style={{ textAlign: 'center' }}>
+          <FitIcon name="camera" size={32} color="var(--text-3)" />
+          <p className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 12 }}>
+            Upload progress photos to see your journey over time.
+          </p>
+          <Link href="/progres-fotky" style={{ textDecoration: 'none' }}>
+            <Button variant="ghost" size="sm" style={{ marginTop: 12 }}>+ Upload first photo</Button>
+          </Link>
+        </div>
       </div>
     </Card>
   );

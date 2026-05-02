@@ -39,6 +39,10 @@ export default function ProgresFotkyPage() {
 
   async function onPickFile(file: File) {
     if (!uploadingSide) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum size is 10 MB.');
+      return;
+    }
     setBusy(true);
     try {
       const { uploadUrl } = await getProgressPhotoUploadUrl({

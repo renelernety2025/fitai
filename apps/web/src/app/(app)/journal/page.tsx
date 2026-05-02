@@ -4,15 +4,11 @@ import { Card, Button, Chip, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import {
   getJournalMonth,
-  getJournalMilestones,
-  getJournalMonthlySummary,
   upsertJournalEntry,
   generateJournalInsight,
   deleteJournalPhoto,
   downloadExport,
   type JournalDay,
-  type MonthlySummary,
-  type Milestone,
 } from '@/lib/api';
 
 const MOODS = ['terrible', 'bad', 'neutral', 'good', 'great'] as const;
@@ -32,8 +28,6 @@ function shiftMonth(month: string, delta: number): string {
 export default function JournalPage() {
   const [currentMonth, setCurrentMonth] = useState(getCurrentMonth);
   const [days, setDays] = useState<JournalDay[]>([]);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [summary, setSummary] = useState<MonthlySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [todayMood, setTodayMood] = useState(3);
@@ -46,11 +40,8 @@ export default function JournalPage() {
     setLoading(true);
     setError(null);
     try {
-      const [journalRes, milestonesRes] = await Promise.all([
-        getJournalMonth(month), getJournalMilestones(),
-      ]);
+      const journalRes = await getJournalMonth(month);
       setDays(journalRes.days);
-      setMilestones(milestonesRes.milestones);
     } catch { setError('Failed to load entries'); }
     finally { setLoading(false); }
   }, []);

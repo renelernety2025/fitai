@@ -100,7 +100,7 @@ export default function CalendarPage() {
           <div style={{ width: 1, height: 24, background: 'var(--stroke-2)', margin: '0 4px' }} />
           <Button size="sm" variant="ghost" onClick={() => setMonth(shiftMonth(month, -1))}>&larr;</Button>
           <Button size="sm" variant="ghost" onClick={() => setMonth(shiftMonth(month, 1))}>&rarr;</Button>
-          <Button size="sm" variant="accent">Add session</Button>
+          <Button size="sm" variant="accent" disabled>Add session (coming soon)</Button>
         </div>
       </div>
 
