@@ -1,29 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getMySquad, getSquadLeaderboard } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
 
 export function SquadsScreen() {
   const [tab, setTab] = useState<'squad' | 'leaderboard'>('squad');
-  const [squad, setSquad] = useState<any>(null);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [squad, setSquad] = useState<any>(undefined); // undefined = loading, null = no squad
+  const [leaderboard, setLeaderboard] = useState<any[] | null>(null);
 
   useEffect(() => {
-    getMySquad().then(setSquad).catch(() => setSquad(null));
+    getMySquad().then(s => setSquad(s || null)).catch(() => setSquad(null));
     getSquadLeaderboard().then(setLeaderboard).catch(() => setLeaderboard([]));
   }, []);
+
+  const loading = (tab === 'squad' && squad === undefined) || (tab === 'leaderboard' && leaderboard === null);
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Tym</V2SectionLabel>
+        <V2SectionLabel>Team</V2SectionLabel>
         <V2Display size="xl">Squad.</V2Display>
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="Muj squad" selected={tab === 'squad'} onPress={() => setTab('squad')} />
-        <V2Chip label="Zebricek" selected={tab === 'leaderboard'} onPress={() => setTab('leaderboard')} />
+        <V2Chip label="My squad" selected={tab === 'squad'} onPress={() => setTab('squad')} />
+        <V2Chip label="Leaderboard" selected={tab === 'leaderboard'} onPress={() => setTab('leaderboard')} />
       </View>
+
+      {loading && <V2Loading />}
 
       {tab === 'squad' && (
         squad ? (
@@ -37,29 +41,29 @@ export function SquadsScreen() {
               </Text>
             )}
             <Text style={{ color: v2.faint, fontSize: 11, marginBottom: 12 }}>
-              {squad.members?.length || 0} clenu
+              {squad.members?.length || 0} members
             </Text>
             {squad.members?.map((m: any, i: number) => (
               <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: v2.border }}>
-                <Text style={{ color: '#FFF', fontSize: 14 }}>{m.user?.name || 'Clen'}</Text>
+                <Text style={{ color: '#FFF', fontSize: 14 }}>{m.user?.name || 'Member'}</Text>
                 <Text style={{ color: v2.green, fontSize: 14, fontWeight: '700' }}>{m.weeklyXP || 0} XP</Text>
               </View>
             ))}
           </View>
         ) : (
           <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-            Nejste v zadnem squadu
+            You are not in a squad yet
           </Text>
         )
       )}
 
-      {tab === 'leaderboard' && (
-        leaderboard.length === 0 ? (
+      {tab === 'leaderboard' && !loading && (
+        (leaderboard ?? []).length === 0 ? (
           <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-            Zadny zebricek
+            No squads yet
           </Text>
         ) : (
-          leaderboard.map((s, i) => (
+          (leaderboard ?? []).map((s, i) => (
             <View
               key={s.id || i}
               style={{
@@ -74,7 +78,7 @@ export function SquadsScreen() {
                 #{i + 1}
               </Text>
               <Text style={{ color: '#FFF', fontSize: 14, flex: 1 }}>{s.name}</Text>
-              <Text style={{ color: v2.green, fontSize: 14, fontWeight: '700' }}>{s.totalXP || 0}</Text>
+              <Text style={{ color: v2.green, fontSize: 14, fontWeight: '700' }}>{s.totalXP ?? s.weeklyXP ?? 0} XP</Text>
             </View>
           ))
         )
