@@ -8,6 +8,62 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Mobile QA Audit — 43 screens, 120+ bugs fixed, security hardened] 2026-05-02
+
+### Critical Fixes (app-breaking)
+- **VIPScreen** — every user shown "You are VIP member" (truthy `{isVip:false}` object check)
+- **CalendarScreen** — CRASH on any scheduled workout (flat array vs grouped `{date,workouts[]}` mismatch)
+- **LeaguesScreen** — CRASH on `null.toLowerCase()` when user not in league
+- **JournalScreen** — mood NEVER saved (frontend sent number 1-5, backend expected enum GREAT/GOOD/NEUTRAL/TIRED/BAD)
+- **MaintenanceScreen** — deload button NEVER appeared (wrong enum values: `overloaded` vs `OVERDUE`)
+- **ProgressScreen** — 2x crash on `insights.plateaus.length` without optional chaining
+
+### Data Shape Mismatches Fixed (15+ screens)
+- DuelsScreen: `challengerName` → `challenger.name`, `opponentScore` → `challengedScore`
+- DropsScreen: `price` → `priceXP`, `remaining` → `remainingEditions`, `endsAt` → `endDate`
+- ExperiencesScreen: `name` → `title`, `location` → `locationAddress`, `price` → `priceKc`
+- GearScreen: `name` field doesn't exist (backend has `brand`+`model`), category icons UPPERCASE
+- SupplementsScreen: `item.name` → `item.supplement.name`, timing colors lowercase→UPPERCASE
+- RecordsScreen: `deltaKg` → `deltaWeight`, `achievedAt` → `date`
+- VIPScreen: 4 nested field mismatches (`eligibility.stats.xpRank` not `eligibility.xpRank`)
+- SquadsScreen: `totalXP` → `weeklyXP`
+
+### Security Fixes
+- **api.ts**: HTTP 204 No Content crash fix (DELETE endpoints), 401 race condition (parallel requests), query param encoding
+- **auth-context**: Only logout on 401, not on network/500 errors (was logging out on transient issues)
+- **PlaylistsScreen**: URL domain whitelist on Linking.openURL (open redirect prevention)
+- **AIChatScreen**: Input length validation (backend max 1000 chars)
+- **DuelsScreen**: Replaced iOS-only Alert.prompt with Alert.alert (Android crash fix)
+
+### Functional Fixes
+- ExercisesScreen: 3 missing muscle group filters (HAMSTRINGS, CALVES, FULL_BODY)
+- VideosScreen: Client-side filtering → server-side `?category=X`, missing MOBILITY filter
+- FormCheckScreen: Upload flow was completely non-functional (no file picker). Added expo-image-picker + S3 upload. Added history display + exercise search.
+- ClipsScreen: Like action destroyed paginated data. Fixed with local state update + server response sync.
+- StreaksScreen: Freeze button clickable at 0 remaining. Freeze status shape lost after use.
+- CameraWorkoutProScreen: Stale phaseName closure, set summary wrong math, rest timer leak on unmount
+
+### Loading/Error States Added (30+ screens)
+- Every screen now has V2Loading spinner during fetch
+- Error states with retry buttons on primary data loads
+- Empty states distinguish "loading" from "no data"
+
+### CZ→EN Translation (all 43 screens)
+- All UI text, labels, buttons, alerts, empty states, section headers translated
+
+### Code Review + Security Audit
+- Code review agent: confirmed consistent patterns across all 47 screen files
+- Security agent: confirmed JWT in expo-secure-store, no Alert.prompt, proper permissions
+- Deprecated MediaTypeOptions replaced with SDK 54 string arrays
+
+### Stats
+- 41 commits, 44 files changed, 1549 insertions, 884 deletions
+- 43 screens audited (each: read → API test → backend verify → fix → commit)
+- 120+ bugs found and fixed
+- 0 TypeScript errors introduced
+
+---
+
 ## [Expert QA Audit — 60+ fixes across 96 pages, 17 domains] 2026-05-02
 
 ### Security Fixes
