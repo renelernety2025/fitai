@@ -28,7 +28,7 @@ export default function FormCheckPage() {
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [selectedExercise, setSelectedExercise] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [step, setStep] = useState<'analysis' | 'upload' | 'analyzing'>('analysis');
+  const [step, setStep] = useState<'analysis' | 'upload' | 'analyzing'>('upload');
   const [result, setResult] = useState<FormCheckAnalysis | null>(null);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);

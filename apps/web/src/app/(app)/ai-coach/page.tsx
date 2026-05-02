@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   getFitnessProfile,
@@ -57,17 +57,28 @@ export default function AICoachV2Page() {
     getBreakRecovery().then(setBreakRecovery).catch(console.error);
   }, []);
 
-  async function save(field: string, value: any) {
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function save(field: string, value: unknown) {
     if (!profile) return;
-    const updated = await updateFitnessProfile({ [field]: value });
-    setProfile(updated);
+    updateFitnessProfile({ [field]: value } as any).then(setProfile).catch(() => {});
   }
+
+  function saveDebounced(field: string, value: unknown) {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => save(field, value), 500);
+  }
+
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   async function handleGenerate() {
     setGenerating(true);
+    setGenerateError(null);
     try {
       const plan = await generateAIPlan();
       router.push(`/plans/${plan.id}`);
+    } catch (err: unknown) {
+      setGenerateError(err instanceof Error ? err.message : 'Failed to generate plan');
     } finally {
       setGenerating(false);
     }
@@ -136,7 +147,7 @@ export default function AICoachV2Page() {
             type="number"
             min={0}
             value={profile.experienceMonths ?? 0}
-            onChange={(e) => save('experienceMonths', parseInt(e.target.value) || 0)}
+            onChange={(e) => saveDebounced('experienceMonths', parseInt(e.target.value) || 0)}
             className="w-full border-b border-white/15 bg-transparent py-3 text-3xl font-bold text-white tabular-nums focus:border-white focus:outline-none"
           />
           <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>months</div>
@@ -225,6 +236,9 @@ export default function AICoachV2Page() {
 
       {/* Generate */}
       <section className="mb-16">
+        {generateError && (
+          <p style={{ color: 'var(--danger, #ef4444)', fontSize: 14, marginBottom: 12 }}>{generateError}</p>
+        )}
         <button
           onClick={handleGenerate}
           disabled={generating}

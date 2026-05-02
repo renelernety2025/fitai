@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Card, Avatar, Sparkline, SectionHeader } from '@/components/v3';
+import { Card, Avatar } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { sendChatMessage } from '@/lib/api';
@@ -26,8 +26,6 @@ const QUICK_PROMPTS = [
   'How to improve bench press?',
   'I\'m tired, should I train?',
 ];
-
-const SLEEP_DATA = [7.5, 7, 6.5, 8, 6, 5.5, 6.5];
 
 export default function AiChatPage() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -244,6 +242,22 @@ function EmptyState({ onPrompt }: { onPrompt: (t: string) => void }) {
 /* ── Context Panel ───────────────────────────────────── */
 
 function ContextPanel() {
+  const [stats, setStats] = useState<{ totalSessions?: number; totalMinutes?: number; currentStreak?: number } | null>(null);
+  const [brief, setBrief] = useState<{ recoveryScore?: number; recoveryStatus?: string } | null>(null);
+
+  useEffect(() => {
+    import('@/lib/api').then(({ getMyStats, getDailyBrief }) => {
+      getMyStats().then((s: any) => setStats(s)).catch(() => {});
+      getDailyBrief().then((r: any) => setBrief(r?.brief || r)).catch(() => {});
+    });
+  }, []);
+
+  const score = brief?.recoveryScore ?? '--';
+  const status = brief?.recoveryStatus ?? '';
+  const sessions = stats?.totalSessions ?? '--';
+  const hours = stats?.totalMinutes ? Math.floor(stats.totalMinutes / 60) : '--';
+  const streak = stats?.currentStreak ?? 0;
+
   return (
     <div style={{ borderLeft: '1px solid var(--stroke-1)', padding: 24, overflow: 'auto' }}>
       <div className="v3-eyebrow" style={{ marginBottom: 16 }}>What Alex sees</div>
@@ -251,27 +265,21 @@ function ContextPanel() {
       <Card padding={16} style={{ marginBottom: 12 }}>
         <div className="v3-caption" style={{ marginBottom: 4 }}>Recovery score</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span className="v3-numeric" style={{ fontSize: 32, color: 'var(--accent-hot)' }}>62</span>
-          <span className="v3-caption">down 18 from yesterday</span>
+          <span className="v3-numeric" style={{ fontSize: 32, color: 'var(--accent-hot)' }}>{score}</span>
+          {status && <span className="v3-caption">{status}</span>}
         </div>
-      </Card>
-
-      <Card padding={16} style={{ marginBottom: 12 }}>
-        <div className="v3-caption" style={{ marginBottom: 8 }}>Sleep — last 7 nights</div>
-        <Sparkline data={SLEEP_DATA} width={240} height={40} />
-        <div className="v3-caption" style={{ marginTop: 6 }}>Avg 6h 42m</div>
       </Card>
 
       <Card padding={16} style={{ marginBottom: 12 }}>
         <div className="v3-caption" style={{ marginBottom: 8 }}>This week</div>
         <div style={{ fontSize: 13, color: 'var(--text-1)', lineHeight: 1.5 }}>
-          3 sessions completed<br />Total: 4h 12min
+          {sessions} sessions<br />
+          {hours}h total · {streak}d streak
         </div>
       </Card>
 
       <div className="v3-caption" style={{ lineHeight: 1.5, padding: '12px 4px' }}>
-        Alex only sees data you share.{' '}
-        <span style={{ color: 'var(--accent-hot)', fontWeight: 600, cursor: 'pointer' }}>Manage privacy</span>
+        Alex sees your training data, habits, and nutrition to give personalized advice.
       </div>
     </div>
   );
