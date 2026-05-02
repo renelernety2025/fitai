@@ -25,7 +25,7 @@ export function PlanDetailScreen({ route, navigation }: any) {
       const session = await startGymSession({ workoutPlanId: plan.id, workoutDayIndex: dayIndex });
       navigation.navigate('CameraWorkout', { sessionId: session.id });
     } catch (e: any) {
-      Alert.alert('Chyba', e.message || 'Nepodařilo se spustit trénink');
+      Alert.alert('Error', e.message || 'Failed to start workout');
     } finally {
       setStarting(false);
     }
@@ -52,11 +52,11 @@ export function PlanDetailScreen({ route, navigation }: any) {
   return (
     <V2Screen>
       <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
-        <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← PLÁNY</Text>
+        <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← PLANS</Text>
       </Pressable>
 
       <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 8 }}>
-        {(plan.type || '').replace(/_/g, ' ')} · {plan.daysPerWeek}× TÝDNĚ
+        {(plan.type || '').replace(/_/g, ' ')} · {plan.daysPerWeek}× / WEEK
       </Text>
       <V2Display size="xl">{plan.nameCs}</V2Display>
       <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14 }}>{plan.description}</Text>
@@ -66,7 +66,7 @@ export function PlanDetailScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
-                DEN {day.dayIndex + 1}
+                DAY {day.dayIndex + 1}
               </Text>
               <V2Display size="md">{day.nameCs}</V2Display>
             </View>
@@ -82,7 +82,7 @@ export function PlanDetailScreen({ route, navigation }: any) {
               }}
             >
               <Text style={{ color: '#000', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
-                ZAČÍT →
+                START →
               </Text>
             </Pressable>
           </View>
