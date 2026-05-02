@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View, Text, StyleSheet } from 'react-native';
+import { FlatList, RefreshControl, View, Text, Image, StyleSheet } from 'react-native';
 import { useAuth } from '../lib/auth-context';
 import {
   getChallenges, joinChallenge, getFollowCounts,
   getForYouFeed, getFollowingFeed, getTrendingFeed,
 } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, V2Loading, v2 } from '../components/v2/V2';
 
 type FeedTab = 'forYou' | 'following' | 'trending' | 'challenges';
 
@@ -41,11 +41,12 @@ function timeAgo(date: string) {
 
 export function CommunityScreen() {
   const { user } = useAuth();
-  const [feed, setFeed] = useState<any[]>([]);
+  const [feed, setFeed] = useState<any[] | null>(null);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [counts, setCounts] = useState({ following: 0, followers: 0 });
   const [tab, setTab] = useState<FeedTab>('forYou');
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const fetchFeed = useCallback(async (activeTab: FeedTab) => {
     if (activeTab === 'forYou') {
@@ -58,13 +59,16 @@ export function CommunityScreen() {
       const res = await getTrendingFeed().catch(() => ({ items: [] }));
       setFeed(Array.isArray(res) ? res : (res as any).items ?? []);
     } else {
-      getChallenges().then(setChallenges).catch(console.error);
+      getChallenges().then(setChallenges).catch(() => setChallenges([]));
     }
+    setInitialLoading(false);
   }, []);
 
   useEffect(() => {
+    setFeed(null);
+    setInitialLoading(true);
     fetchFeed(tab);
-    getFollowCounts().then(setCounts).catch(console.error);
+    getFollowCounts().then(setCounts).catch(() => {});
   }, [tab, fetchFeed]);
 
   const onRefresh = useCallback(async () => {
@@ -83,6 +87,25 @@ export function CommunityScreen() {
       </View>
       <Text style={{ color: '#FFF', fontSize: 15, marginTop: 4 }}>{item.title ?? item.caption}</Text>
       {item.body ? <Text style={{ color: v2.muted, fontSize: 13 }}>{item.body}</Text> : null}
+      {/* Post photos */}
+      {item.photos?.length > 0 && (
+        <View style={{ flexDirection: 'row', gap: 4, marginTop: 8 }}>
+          {item.photos.slice(0, 4).map((url: string, i: number) => (
+            <Image key={i} source={{ uri: url }} style={{ flex: 1, aspectRatio: 1, borderRadius: 8 }} />
+          ))}
+        </View>
+      )}
+      {/* Engagement */}
+      {(item.likeCount > 0 || item.commentCount > 0) && (
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+          {item.likeCount > 0 && (
+            <Text style={{ color: v2.faint, fontSize: 12 }}>{item.likeCount} likes</Text>
+          )}
+          {item.commentCount > 0 && (
+            <Text style={{ color: v2.faint, fontSize: 12 }}>{item.commentCount} comments</Text>
+          )}
+        </View>
+      )}
       {item.isBlurred ? (
         <View style={styles.blurOverlay}>
           <Text style={styles.blurLabel}>Subscriber Only</Text>
@@ -127,7 +150,7 @@ export function CommunityScreen() {
   };
 
   const isFeedTab = tab !== 'challenges';
-  const data = isFeedTab ? feed : challenges;
+  const data = isFeedTab ? (feed ?? []) : challenges;
   const emptyText = tab === 'following'
     ? 'Follow people to see their activity here.'
     : tab === 'trending'
@@ -161,7 +184,9 @@ export function CommunityScreen() {
           </View>
         }
         ListEmptyComponent={
-          <Text style={{ color: v2.faint, textAlign: 'center', marginTop: 24 }}>{emptyText}</Text>
+          initialLoading
+            ? <V2Loading />
+            : <Text style={{ color: v2.faint, textAlign: 'center', marginTop: 24 }}>{emptyText}</Text>
         }
         contentContainerStyle={{ paddingHorizontal: 0 }}
       />
