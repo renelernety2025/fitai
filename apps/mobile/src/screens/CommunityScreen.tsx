@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
 
 function timeAgo(date: string) {
   const m = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-  if (m < 1) return 'právě teď';
+  if (m < 1) return 'now';
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
@@ -97,24 +97,28 @@ export function CommunityScreen() {
     return (
       <View style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 24 }}>
         <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 6 }}>
-          {days} DNÍ ZBÝVÁ · {ch._count?.participants || 0} ÚČASTNÍKŮ
+          {days} DAYS LEFT · {ch._count?.participants || 0} PARTICIPANTS
         </Text>
-        <V2Display size="md">{ch.nameCs}</V2Display>
+        <V2Display size="md">{ch.nameCs || ch.name}</V2Display>
         <Text style={{ color: v2.muted, marginTop: 6, fontSize: 14 }}>{ch.description}</Text>
-        <Text style={{ color: v2.faint, fontSize: 12, marginTop: 4 }}>Cíl: {ch.targetValue}</Text>
+        <Text style={{ color: v2.faint, fontSize: 12, marginTop: 4 }}>Target: {ch.targetValue}</Text>
         <View style={{ marginTop: 16 }}>
           {joined ? (
             <Text style={{ color: v2.green, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>
-              ✓ ÚČASTNÍŠ SE
+              ✓ JOINED
             </Text>
           ) : (
             <V2Button
               onPress={async () => {
-                await joinChallenge(ch.id);
-                setChallenges(await getChallenges());
+                try {
+                  await joinChallenge(ch.id);
+                  setChallenges(await getChallenges());
+                } catch {
+                  // Silently fail — user can retry
+                }
               }}
             >
-              Připojit se →
+              Join →
             </V2Button>
           )}
         </View>
@@ -125,12 +129,12 @@ export function CommunityScreen() {
   const isFeedTab = tab !== 'challenges';
   const data = isFeedTab ? feed : challenges;
   const emptyText = tab === 'following'
-    ? 'Začni sledovat cvičence a uvidíš jejich aktivitu.'
+    ? 'Follow people to see their activity here.'
     : tab === 'trending'
-    ? 'Zatím žádný trending obsah.'
+    ? 'No trending content yet.'
     : tab === 'challenges'
-    ? 'Žádné aktivní výzvy.'
-    : 'Feed je prázdný. Sleduj cvičence nebo začni cvičit.';
+    ? 'No active challenges.'
+    : 'Feed is empty. Follow people or start training.';
 
   return (
     <V2Screen>
@@ -142,17 +146,17 @@ export function CommunityScreen() {
         ListHeaderComponent={
           <View>
             <View style={{ paddingTop: 24, marginBottom: 24 }}>
-              <V2SectionLabel>Komunita</V2SectionLabel>
-              <V2Display size="xl">Lidé.</V2Display>
+              <V2SectionLabel>Community</V2SectionLabel>
+              <V2Display size="xl">People.</V2Display>
               <Text style={{ color: v2.muted, marginTop: 8, fontSize: 14 }}>
-                {counts.following} sleduji · {counts.followers} sledujících
+                {counts.following} following · {counts.followers} followers
               </Text>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-              <V2Chip label="Pro tebe" selected={tab === 'forYou'} onPress={() => setTab('forYou')} />
-              <V2Chip label="Sledovaní" selected={tab === 'following'} onPress={() => setTab('following')} />
+              <V2Chip label="For You" selected={tab === 'forYou'} onPress={() => setTab('forYou')} />
+              <V2Chip label="Following" selected={tab === 'following'} onPress={() => setTab('following')} />
               <V2Chip label="Trending" selected={tab === 'trending'} onPress={() => setTab('trending')} />
-              <V2Chip label="Výzvy" selected={tab === 'challenges'} onPress={() => setTab('challenges')} />
+              <V2Chip label="Challenges" selected={tab === 'challenges'} onPress={() => setTab('challenges')} />
             </View>
           </View>
         }
