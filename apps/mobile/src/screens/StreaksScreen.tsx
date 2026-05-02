@@ -72,8 +72,13 @@ export function StreaksScreen() {
               {freeze.remaining ?? freeze.available ?? 0}
             </Text>
           </View>
-          <V2Button onPress={handleFreeze} variant="secondary" full>
-            Pouzit freeze
+          <V2Button
+            onPress={handleFreeze}
+            variant="secondary"
+            full
+            disabled={(freeze.remaining ?? freeze.available ?? 0) === 0}
+          >
+            {(freeze.remaining ?? freeze.available ?? 0) === 0 ? 'No freezes left' : 'Use freeze'}
           </V2Button>
         </View>
       )}

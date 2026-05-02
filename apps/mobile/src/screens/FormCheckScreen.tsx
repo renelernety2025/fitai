@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { getExercises, getFormCheckUploadUrl, analyzeForm, getFormCheckHistory } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, v2 } from '../components/v2/V2';
 
@@ -17,22 +18,45 @@ export function FormCheckScreen() {
 
   async function handleAnalyze() {
     if (!selected) {
-      Alert.alert('Chyba', 'Vyberte cvik');
+      Alert.alert('Error', 'Select an exercise first');
       return;
     }
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow access to your media library to upload a video.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      quality: 0.8,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
     setStep('analyzing');
     try {
-      // In a real app, use expo-image-picker for video
-      const { s3Key } = await getFormCheckUploadUrl({
+      const asset = result.assets[0];
+      const { uploadUrl, s3Key } = await getFormCheckUploadUrl({
         fileName: 'form-check.mp4',
         contentType: 'video/mp4',
       });
-      // Normally: upload video to uploadUrl, then analyze
+
+      const fileRes = await fetch(asset.uri);
+      const blob = await fileRes.blob();
+      const upload = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': 'video/mp4' },
+      });
+      if (!upload.ok) throw new Error(`Upload failed: ${upload.status}`);
+
       const analysis = await analyzeForm({ s3Key, exerciseId: selected });
       setResult(analysis);
       setStep('result');
     } catch (e: any) {
-      Alert.alert('Chyba', e.message || 'Analyza selhala');
+      Alert.alert('Error', e.message || 'Analysis failed');
       setStep('select');
     }
   }

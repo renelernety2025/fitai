@@ -8,15 +8,16 @@ export function ClipsScreen() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    loadClips();
+    getClipsFeed(1).then(setClips).catch(() => setClips([]));
   }, []);
 
-  function loadClips() {
-    getClipsFeed(page).then(setClips).catch(() => setClips([]));
-  }
-
   function handleLike(id: string) {
-    toggleClipLike(id).then(loadClips).catch(() => {});
+    toggleClipLike(id).then(() => {
+      // Update like state locally instead of re-fetching (which destroys pagination)
+      setClips(prev => prev.map(c =>
+        c.id === id ? { ...c, likeCount: (c.likeCount || 0) + (c.liked ? -1 : 1), liked: !c.liked } : c
+      ));
+    }).catch(() => {});
   }
 
   return (
@@ -79,7 +80,7 @@ export function ClipsScreen() {
           onPress={() => {
             const next = page + 1;
             setPage(next);
-            getClipsFeed(next).then((more) => setClips([...clips, ...more])).catch(() => {});
+            getClipsFeed(next).then((more) => setClips(prev => [...prev, ...more])).catch(() => {});
           }}
           style={{ alignItems: 'center', paddingVertical: 20 }}
         >
