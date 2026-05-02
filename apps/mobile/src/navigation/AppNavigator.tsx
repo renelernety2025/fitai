@@ -108,32 +108,32 @@ function MainTabs() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Dnes" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Today" focused={focused} /> }}
       />
       <Tab.Screen
         name="Plans"
         component={PlansScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Trénink" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Train" focused={focused} /> }}
       />
       <Tab.Screen
         name="Vyziva"
         component={VyzivaScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Výživa" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Nutrition" focused={focused} /> }}
       />
       <Tab.Screen
         name="Habity"
         component={HabityScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Habity" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Habits" focused={focused} /> }}
       />
       <Tab.Screen
         name="Lekce"
         component={LekceScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Lekce" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Lessons" focused={focused} /> }}
       />
       <Tab.Screen
         name="Progress"
         component={ProgressScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Pokrok" focused={focused} /> }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon label="Progress" focused={focused} /> }}
       />
     </Tab.Navigator>
   );
