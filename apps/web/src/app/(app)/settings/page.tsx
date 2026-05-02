@@ -164,26 +164,43 @@ function AccountSection({ name, onDeleted }: { name: string; onDeleted: () => vo
 }
 
 function NotifSection() {
-  const defaults = {
-    morning: true, evening: true, workout: true, coach: true, community: false,
-  };
-  const [prefs, setPrefs] = useState(defaults);
+  const [prefs, setPrefs] = useState<Record<string, boolean> | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function toggle(key: keyof typeof defaults) {
-    setPrefs((p) => ({ ...p, [key]: !p[key] }));
+  useEffect(() => {
+    import('@/lib/api').then(({ getNotificationPrefs }) =>
+      getNotificationPrefs().then((p: any) => setPrefs({
+        workoutReminder: p?.workoutReminder ?? true,
+        streakWarning: p?.streakWarning ?? true,
+        achievements: p?.achievements ?? true,
+      })).catch(() => setPrefs({ workoutReminder: true, streakWarning: true, achievements: true }))
+    );
+  }, []);
+
+  async function toggle(key: string) {
+    if (!prefs) return;
+    const updated = { ...prefs, [key]: !prefs[key] };
+    setPrefs(updated);
+    setSaving(true);
+    try {
+      const { updateNotificationPrefs } = await import('@/lib/api');
+      await updateNotificationPrefs(updated);
+    } catch { /* revert on error */ setPrefs(prefs); }
+    finally { setSaving(false); }
   }
 
   const items = [
-    { key: 'morning' as const, label: 'Morning brief', desc: "Today's session. 6:30 AM" },
-    { key: 'evening' as const, label: 'Evening check-in', desc: 'Mood close-out. 9:00 PM' },
-    { key: 'workout' as const, label: 'Workout reminder', desc: '15 min before scheduled.' },
-    { key: 'coach' as const, label: 'AI Coach insights', desc: 'When coach has something to say.' },
-    { key: 'community' as const, label: 'Community activity', desc: 'Squad updates.' },
+    { key: 'workoutReminder', label: 'Workout reminders', desc: 'Daily reminder when you haven\'t trained yet.' },
+    { key: 'streakWarning', label: 'Streak warnings', desc: 'Evening alert before losing your streak.' },
+    { key: 'achievements', label: 'Achievements', desc: 'Notification when you unlock a new badge.' },
   ];
+
   return (
     <SectionShell eyebrow="Notifications" title="What we tell you," accent="and when.">
       <Card padding={28}>
-        {items.map((it, i) => (
+        {!prefs ? (
+          <div style={{ textAlign: 'center', padding: 24 }}><span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading...</span></div>
+        ) : items.map((it, i) => (
           <div key={it.key} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '16px 0', borderBottom: i < items.length - 1 ? '1px solid var(--stroke-1)' : 'none' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, color: 'var(--text-1)', marginBottom: 2 }}>{it.label}</div>
@@ -192,6 +209,7 @@ function NotifSection() {
             <Toggle on={prefs[it.key]} onChange={() => toggle(it.key)} />
           </div>
         ))}
+        {saving && <div className="v3-caption" style={{ color: 'var(--text-3)', textAlign: 'center', marginTop: 8 }}>Saving...</div>}
       </Card>
     </SectionShell>
   );

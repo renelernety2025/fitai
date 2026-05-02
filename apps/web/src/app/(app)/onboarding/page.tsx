@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Logo, Button } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
-import { completeOnboarding, saveOnboardingMeasurements } from '@/lib/api';
+import { completeOnboarding, saveOnboardingMeasurements, updateFitnessProfile } from '@/lib/api';
 import {
   StepWelcome, StepGoal, StepExperience, StepSchedule, StepReady,
   type OnboardingData,
@@ -50,6 +50,14 @@ export default function OnboardingPage() {
       const weightKg = parseFloat(data.weightKg) || 75;
       const heightCm = parseFloat(data.heightCm) || 175;
       await saveOnboardingMeasurements({ age, weightKg, heightCm });
+      const profileUpdate: Record<string, unknown> = {};
+      if (data.goal) profileUpdate.goal = data.goal;
+      if (data.experience) profileUpdate.experienceMonths = data.experience === 'beginner' ? 3 : data.experience === 'intermediate' ? 18 : 48;
+      const daysCount = data.days.filter(Boolean).length;
+      if (daysCount > 0) profileUpdate.daysPerWeek = daysCount;
+      if (Object.keys(profileUpdate).length > 0) {
+        await updateFitnessProfile(profileUpdate as any);
+      }
       await completeOnboarding();
       router.push('/dashboard');
     } catch {

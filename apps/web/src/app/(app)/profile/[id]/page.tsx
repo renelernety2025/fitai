@@ -7,6 +7,7 @@ import PropsButton from '@/components/social/PropsButton';
 import {
   getPublicProfile,
   followUser,
+  unfollowUser,
   startConversation,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -70,7 +71,11 @@ export default function PublicProfilePage() {
   async function handleFollow() {
     if (!profile) return;
     try {
-      await followUser(profile.id);
+      if (following) {
+        await unfollowUser(profile.id);
+      } else {
+        await followUser(profile.id);
+      }
       setFollowing(!following);
     } catch {
       // silent
