@@ -5,10 +5,15 @@ import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../component
 
 export function PlanDetailScreen({ route, navigation }: any) {
   const [plan, setPlan] = useState<any>(null);
+  const [loadError, setLoadError] = useState(false);
   const id = route?.params?.id;
 
   useEffect(() => {
-    if (id) getWorkoutPlan(id).then(setPlan).catch(console.error);
+    if (!id) return;
+    setLoadError(false);
+    getWorkoutPlan(id)
+      .then(setPlan)
+      .catch(() => setLoadError(true));
   }, [id]);
 
   const [starting, setStarting] = useState(false);
@@ -24,6 +29,22 @@ export function PlanDetailScreen({ route, navigation }: any) {
     } finally {
       setStarting(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <V2Screen>
+        <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
+          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← PLANS</Text>
+        </Pressable>
+        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load plan</Text>
+          <Pressable onPress={() => { setLoadError(false); getWorkoutPlan(id).then(setPlan).catch(() => setLoadError(true)); }} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
+            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
+          </Pressable>
+        </View>
+      </V2Screen>
+    );
   }
 
   if (!plan) return <V2Screen><V2Loading /></V2Screen>;

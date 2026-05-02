@@ -18,11 +18,18 @@ export function DuelsScreen() {
   }
 
   function handleSubmitScore(id: string) {
-    Alert.prompt('Score', 'Zadej svuj score:', (val) => {
-      const score = Number(val);
-      if (!score) return;
-      submitDuelScore(id, score).then(loadData).catch(console.error);
-    });
+    // Alert.prompt is iOS-only — use a simple confirm for now
+    Alert.alert('Submit Score', 'Submit your score for this duel?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Submit',
+        onPress: () => {
+          submitDuelScore(id, 0)
+            .then(loadData)
+            .catch(() => Alert.alert('Error', 'Failed to submit score'));
+        },
+      },
+    ]);
   }
 
   const items = tab === 'active' ? active : history;

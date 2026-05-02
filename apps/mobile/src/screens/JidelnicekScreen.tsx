@@ -56,8 +56,8 @@ export function JidelnicekScreen() {
   return (
     <V2Screen>
       <View style={{ paddingTop: 16 }}>
-        <V2SectionLabel>Section L · AI Coach</V2SectionLabel>
-        <V2Display size="lg">Tvůj jídelníček.</V2Display>
+        <V2SectionLabel>AI Meal Plan</V2SectionLabel>
+        <V2Display size="lg">Your meal plan.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, marginTop: 12, lineHeight: 20 }}>
           Personalizovaný 7denní plán generovaný Claude Haiku z tvých makro cílů a preferencí.
         </Text>
