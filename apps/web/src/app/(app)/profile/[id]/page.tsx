@@ -29,11 +29,17 @@ interface PublicProfile {
   name: string;
   bio?: string;
   level: string;
-  stats: {
+  propsReceived?: number;
+  stats?: {
     totalSessions: number;
     currentStreak: number;
     totalXP: number;
     propsCount: number;
+  };
+  progress?: {
+    totalSessions: number;
+    currentStreak: number;
+    totalXP: number;
   };
   achievements: {
     id: string;
@@ -179,7 +185,7 @@ export default function PublicProfilePage() {
             </button>
             <PropsButton
               toUserId={profile.id}
-              initialCount={profile.stats.propsCount}
+              initialCount={profile.stats?.propsCount ?? profile.propsReceived ?? 0}
             />
             {(profile.isMutual || following) && (
               <button
@@ -201,19 +207,19 @@ export default function PublicProfilePage() {
       {/* Stats */}
       <section className="mb-12 grid grid-cols-2 gap-8 sm:grid-cols-4">
         <div>
-          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.totalSessions}</div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats?.totalSessions ?? profile.progress?.totalSessions ?? 0}</div>
           <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">sessions</div>
         </div>
         <div>
-          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.currentStreak}</div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats?.currentStreak ?? profile.progress?.currentStreak ?? 0}</div>
           <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">streak</div>
         </div>
         <div>
-          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.totalXP}</div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats?.totalXP ?? profile.progress?.totalXP ?? 0}</div>
           <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">XP</div>
         </div>
         <div>
-          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats.propsCount}</div>
+          <div className="text-3xl font-bold tabular-nums text-white">{profile.stats?.propsCount ?? profile.propsReceived ?? 0}</div>
           <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">props</div>
         </div>
       </section>

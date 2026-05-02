@@ -54,9 +54,10 @@ function Sidebar({ active, onSelect }: { active: string; onSelect: (id: string) 
         <button key={s.id} onClick={() => onSelect(s.id)} style={{
           display: 'flex', alignItems: 'center', gap: 14, padding: '12px 32px', width: '100%',
           background: active === s.id ? 'var(--bg-3)' : 'transparent',
+          borderTop: 'none', borderRight: 'none', borderBottom: 'none',
           borderLeft: active === s.id ? '2px solid var(--accent)' : '2px solid transparent',
           color: active === s.id ? 'var(--text-1)' : 'var(--text-2)',
-          cursor: 'pointer', fontSize: 14, border: 'none', textAlign: 'left',
+          cursor: 'pointer', fontSize: 14, textAlign: 'left',
         }}>
           <FitIcon name={s.icon} size={16} /><span>{s.label}</span>
         </button>

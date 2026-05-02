@@ -50,9 +50,16 @@ export default function OnboardingPage() {
       const weightKg = parseFloat(data.weightKg) || 75;
       const heightCm = parseFloat(data.heightCm) || 175;
       await saveOnboardingMeasurements({ age, weightKg, heightCm });
+      const GOAL_MAP: Record<string, string> = {
+        move: 'GENERAL_FITNESS', strength: 'STRENGTH', run: 'ENDURANCE',
+        mind: 'MOBILITY', weight: 'WEIGHT_LOSS', event: 'ENDURANCE',
+      };
+      const EXP_MAP: Record<string, number> = {
+        'new': 0, returning: 12, experienced: 36,
+      };
       const profileUpdate: Record<string, unknown> = {};
-      if (data.goal) profileUpdate.goal = data.goal;
-      if (data.experience) profileUpdate.experienceMonths = data.experience === 'beginner' ? 3 : data.experience === 'intermediate' ? 18 : 48;
+      if (data.goal) profileUpdate.goal = GOAL_MAP[data.goal] || 'GENERAL_FITNESS';
+      if (data.experience) profileUpdate.experienceMonths = EXP_MAP[data.experience] ?? 12;
       const daysCount = data.days.filter(Boolean).length;
       if (daysCount > 0) profileUpdate.daysPerWeek = daysCount;
       if (Object.keys(profileUpdate).length > 0) {
