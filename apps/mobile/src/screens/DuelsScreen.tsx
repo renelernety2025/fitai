@@ -1,12 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { getActiveDuels, getDuelHistory, submitDuelScore } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, V2Loading, v2 } from '../components/v2/V2';
+
+/** Resolve names from nested backend shape (challenger/challenged objects) */
+function getChallengerName(d: any): string {
+  return d.challengerName || d.challenger?.name || 'You';
+}
+function getOpponentName(d: any): string {
+  return d.opponentName || d.challenged?.name || 'Opponent';
+}
+function getOpponentScore(d: any): number | null {
+  return d.opponentScore ?? d.challengedScore ?? null;
+}
+function getWinnerName(d: any): string {
+  if (d.winnerName) return d.winnerName;
+  if (d.winnerId === d.challengerId) return getChallengerName(d);
+  if (d.winnerId === d.challengedId) return getOpponentName(d);
+  return d.challenger?.id === d.winnerId ? getChallengerName(d) : getOpponentName(d);
+}
 
 export function DuelsScreen() {
   const [tab, setTab] = useState<'active' | 'history'>('active');
-  const [active, setActive] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+  const [active, setActive] = useState<any[] | null>(null);
+  const [history, setHistory] = useState<any[] | null>(null);
 
   useEffect(() => {
     loadData();
@@ -18,8 +35,7 @@ export function DuelsScreen() {
   }
 
   function handleSubmitScore(id: string) {
-    // Alert.prompt is iOS-only — use a simple confirm for now
-    Alert.alert('Submit Score', 'Submit your score for this duel?', [
+    Alert.alert('Submit Score', 'Mark this duel as completed with your current workout data?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Submit',
@@ -32,25 +48,28 @@ export function DuelsScreen() {
     ]);
   }
 
-  const items = tab === 'active' ? active : history;
+  const items = tab === 'active' ? (active ?? []) : (history ?? []);
+  const loading = (tab === 'active' && active === null) || (tab === 'history' && history === null);
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Souper</V2SectionLabel>
-        <V2Display size="xl">Duely.</V2Display>
+        <V2SectionLabel>Competition</V2SectionLabel>
+        <V2Display size="xl">Duels.</V2Display>
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="Aktivni" selected={tab === 'active'} onPress={() => setTab('active')} />
-        <V2Chip label="Historie" selected={tab === 'history'} onPress={() => setTab('history')} />
+        <V2Chip label="Active" selected={tab === 'active'} onPress={() => setTab('active')} />
+        <V2Chip label="History" selected={tab === 'history'} onPress={() => setTab('history')} />
       </View>
 
-      {items.length === 0 && (
+      {loading ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          {tab === 'active' ? 'Zadne aktivni duely' : 'Zatim zadna historie'}
+          {tab === 'active' ? 'No active duels' : 'No history yet'}
         </Text>
-      )}
+      ) : null}
 
       {items.map((d) => (
         <View
@@ -70,7 +89,7 @@ export function DuelsScreen() {
             </Text>
             {d.endsAt && (
               <Text style={{ color: v2.orange, fontSize: 10, fontWeight: '600' }}>
-                {new Date(d.endsAt).toLocaleDateString('cs-CZ')}
+                {new Date(d.endsAt).toLocaleDateString('en-US')}
               </Text>
             )}
           </View>
@@ -78,7 +97,7 @@ export function DuelsScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <View style={{ alignItems: 'center', flex: 1 }}>
               <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
-                {d.challengerName || 'Ty'}
+                {getChallengerName(d)}
               </Text>
               <Text style={{ color: v2.green, fontSize: 32, fontWeight: '700' }}>
                 {d.challengerScore ?? '-'}
@@ -89,23 +108,23 @@ export function DuelsScreen() {
 
             <View style={{ alignItems: 'center', flex: 1 }}>
               <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '600', marginBottom: 4 }}>
-                {d.opponentName || 'Souper'}
+                {getOpponentName(d)}
               </Text>
               <Text style={{ color: v2.red, fontSize: 32, fontWeight: '700' }}>
-                {d.opponentScore ?? '-'}
+                {getOpponentScore(d) ?? '-'}
               </Text>
             </View>
           </View>
 
           {tab === 'active' && (
             <V2Button onPress={() => handleSubmitScore(d.id)} variant="secondary" full>
-              Zadat score
+              Submit score
             </V2Button>
           )}
 
           {tab === 'history' && d.winnerId && (
             <Text style={{ color: v2.green, fontSize: 11, fontWeight: '600', textAlign: 'center' }}>
-              Vitez: {d.winnerName || 'N/A'}
+              Winner: {getWinnerName(d)}
             </Text>
           )}
         </View>
