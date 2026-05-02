@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { getDrops, purchaseDrop } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
 
-function formatCountdown(endsAt: string): string {
-  const diff = new Date(endsAt).getTime() - Date.now();
-  if (diff <= 0) return 'Vyprodano';
+/** Resolve field names — backend uses priceXP/endDate/remainingEditions/totalEditions */
+function getPrice(d: any): number { return d.price ?? d.priceXP ?? 0; }
+function getRemaining(d: any): number | null { return d.remaining ?? d.remainingEditions ?? null; }
+function getTotal(d: any): number | null { return d.total ?? d.totalEditions ?? null; }
+function getEndDate(d: any): string | null { return d.endsAt || d.endDate || null; }
+
+function formatCountdown(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const diff = new Date(dateStr).getTime() - Date.now();
+  if (isNaN(diff) || diff <= 0) return 'Ended';
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
   if (h > 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
@@ -13,52 +20,62 @@ function formatCountdown(endsAt: string): string {
 }
 
 export function DropsScreen() {
-  const [drops, setDrops] = useState<any[]>([]);
+  const [drops, setDrops] = useState<any[] | null>(null);
 
   useEffect(() => {
     getDrops().then(setDrops).catch(() => setDrops([]));
   }, []);
 
   function handlePurchase(drop: any) {
+    const price = getPrice(drop);
     Alert.alert(
-      'Potvrdit',
-      `Chces ziskat "${drop.name}" za ${drop.price ?? 0} XP?`,
+      'Confirm',
+      `Get "${drop.name}" for ${price} XP?`,
       [
-        { text: 'Zrusit', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Ziskat',
+          text: 'Get it',
           onPress: () => {
             purchaseDrop(drop.id)
               .then(() => {
                 setDrops((prev) =>
-                  prev.map((d) =>
-                    d.id === drop.id
-                      ? { ...d, remaining: Math.max(0, (d.remaining ?? 1) - 1), purchased: true }
-                      : d,
-                  ),
+                  (prev ?? []).map((d) => {
+                    if (d.id !== drop.id) return d;
+                    const rem = getRemaining(d);
+                    return {
+                      ...d,
+                      remainingEditions: rem != null ? Math.max(0, rem - 1) : d.remainingEditions,
+                      remaining: rem != null ? Math.max(0, rem - 1) : d.remaining,
+                      purchased: true,
+                    };
+                  }),
                 );
               })
-              .catch((e: any) => Alert.alert('Chyba', e.message || 'Nelze zakoupit'));
+              .catch((e: any) => Alert.alert('Error', e.message || 'Could not purchase'));
           },
         },
       ],
     );
   }
 
+  const items = drops ?? [];
+
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Limitovane edice</V2SectionLabel>
+        <V2SectionLabel>Limited editions</V2SectionLabel>
         <V2Display size="xl">Drops.</V2Display>
       </View>
 
-      {drops.length === 0 && (
+      {drops === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zadne aktivni dropy
+          No active drops
         </Text>
-      )}
+      ) : null}
 
-      {drops.map((drop) => (
+      {items.map((drop) => (
         <View
           key={drop.id}
           style={{
@@ -74,9 +91,9 @@ export function DropsScreen() {
             <Text style={{ color: v2.yellow, fontSize: 10, fontWeight: '700', letterSpacing: 2 }}>
               LIMITED EDITION
             </Text>
-            {drop.endsAt && (
+            {getEndDate(drop) && (
               <Text style={{ color: v2.red, fontSize: 10, fontWeight: '600' }}>
-                {formatCountdown(drop.endsAt)}
+                {formatCountdown(getEndDate(drop))}
               </Text>
             )}
           </View>
@@ -93,16 +110,16 @@ export function DropsScreen() {
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 }}>
             <View>
-              <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>EDICE</Text>
+              <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>EDITION</Text>
               <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>
-                {drop.remaining ?? '?'} / {drop.total ?? '?'}
+                {getRemaining(drop) ?? '?'} / {getTotal(drop) ?? '?'}
               </Text>
             </View>
-            {drop.price != null && (
+            {getPrice(drop) > 0 && (
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>CENA</Text>
+                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>PRICE</Text>
                 <Text style={{ color: v2.yellow, fontSize: 16, fontWeight: '700' }}>
-                  {drop.price} XP
+                  {getPrice(drop)} XP
                 </Text>
               </View>
             )}
@@ -112,9 +129,9 @@ export function DropsScreen() {
             onPress={() => handlePurchase(drop)}
             variant="primary"
             full
-            disabled={drop.purchased || (drop.remaining != null && drop.remaining <= 0)}
+            disabled={drop.purchased || (getRemaining(drop) != null && (getRemaining(drop) as number) <= 0)}
           >
-            {drop.purchased ? 'Ziskano' : 'Secure Edition'}
+            {drop.purchased ? 'Secured' : 'Secure Edition'}
           </V2Button>
         </View>
       ))}
