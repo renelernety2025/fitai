@@ -1,41 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { getBundles, purchaseBundle } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
 
 export function BundlesScreen() {
-  const [bundles, setBundles] = useState<any[]>([]);
+  const [bundles, setBundles] = useState<any[] | null>(null);
 
   useEffect(() => {
     getBundles().then(setBundles).catch(() => setBundles([]));
   }, []);
 
   function handlePurchase(id: string) {
-    Alert.alert('Koupit balicek', 'Opravdu chcete koupit tento balicek?', [
-      { text: 'Zrusit', style: 'cancel' },
+    Alert.alert('Purchase bundle', 'Buy this bundle with XP?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Koupit',
+        text: 'Buy',
         onPress: () => purchaseBundle(id).then(() => {
-          Alert.alert('Hotovo', 'Balicek zakoupen!');
-        }).catch((e) => Alert.alert('Chyba', e.message)),
+          Alert.alert('Done', 'Bundle purchased!');
+        }).catch((e: any) => Alert.alert('Error', e?.message || 'Purchase failed')),
       },
     ]);
   }
 
+  const items = bundles ?? [];
+
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Obchod</V2SectionLabel>
-        <V2Display size="xl">Balicky.</V2Display>
+        <V2SectionLabel>Store</V2SectionLabel>
+        <V2Display size="xl">Bundles.</V2Display>
       </View>
 
-      {bundles.length === 0 && (
+      {bundles === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zadne balicky k dispozici
+          No bundles available
         </Text>
-      )}
+      ) : null}
 
-      {bundles.map((b) => (
+      {items.map((b) => (
         <View
           key={b.id}
           style={{
@@ -60,11 +64,11 @@ export function BundlesScreen() {
               {b.priceXP} XP
             </Text>
             <Text style={{ color: v2.faint, fontSize: 11 }}>
-              {b.items?.length || 0} polozek
+              {b.items?.length || 0} items
             </Text>
           </View>
           <V2Button onPress={() => handlePurchase(b.id)} variant="secondary" full>
-            Koupit
+            Buy
           </V2Button>
         </View>
       ))}
