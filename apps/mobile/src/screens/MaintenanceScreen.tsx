@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { getMaintenanceStatus, getMaintenanceAlerts, markDeload } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+
+// Backend enum: FRESH, DUE, OVERDUE
+const STATUS_COLOR: Record<string, string> = {
+  FRESH: v2.green,
+  DUE: v2.orange,
+  OVERDUE: v2.red,
+};
 
 export function MaintenanceScreen() {
-  const [status, setStatus] = useState<any[]>([]);
+  const [status, setStatus] = useState<any[] | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
@@ -17,25 +24,27 @@ export function MaintenanceScreen() {
   }
 
   function handleDeload(muscle: string) {
-    Alert.alert('Deload', `Oznacit ${muscle} pro deload?`, [
-      { text: 'Zrusit', style: 'cancel' },
+    Alert.alert('Deload', `Mark ${muscle.replace(/_/g, ' ')} for deload?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Ano',
-        onPress: () => markDeload(muscle).then(loadData).catch((e) => Alert.alert('Chyba', e.message)),
+        text: 'Confirm',
+        onPress: () => markDeload(muscle).then(loadData).catch((e: any) => Alert.alert('Error', e?.message || 'Failed')),
       },
     ]);
   }
 
+  const items = status ?? [];
+
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Body Servis</V2SectionLabel>
-        <V2Display size="xl">Servis.</V2Display>
+        <V2SectionLabel>Body Service</V2SectionLabel>
+        <V2Display size="xl">Maintenance.</V2Display>
       </View>
 
       {alerts.length > 0 && (
         <View style={{ marginBottom: 24 }}>
-          <V2SectionLabel>UPOZORNENI</V2SectionLabel>
+          <V2SectionLabel>ALERTS</V2SectionLabel>
           {alerts.map((a, i) => (
             <View
               key={a.id || i}
@@ -56,15 +65,17 @@ export function MaintenanceScreen() {
         </View>
       )}
 
-      <V2SectionLabel>STAV SVALOVE SKUPINY</V2SectionLabel>
+      <V2SectionLabel>MUSCLE GROUP STATUS</V2SectionLabel>
 
-      {status.length === 0 && (
+      {status === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 32 }}>
-          Zatim zadna data
+          No maintenance data yet
         </Text>
-      )}
+      ) : null}
 
-      {status.map((s, i) => (
+      {items.map((s, i) => (
         <View
           key={i}
           style={{
@@ -82,24 +93,24 @@ export function MaintenanceScreen() {
             </Text>
             <Text
               style={{
-                color: s.status === 'overloaded' ? v2.red : s.status === 'optimal' ? v2.green : v2.faint,
+                color: STATUS_COLOR[s.status] || v2.faint,
                 fontSize: 11,
                 fontWeight: '700',
               }}
             >
-              {(s.status || 'OK').toUpperCase()}
+              {(s.status || 'FRESH').toUpperCase()}
             </Text>
           </View>
 
-          {s.weeklyLoad != null && (
+          {s.sessionsSinceDeload != null && (
             <Text style={{ color: v2.muted, fontSize: 12, marginBottom: 8 }}>
-              Zatez: {s.weeklyLoad} setu/tyden
+              {s.sessionsSinceDeload} sessions since last deload
             </Text>
           )}
 
-          {s.status === 'overloaded' && (
+          {(s.status === 'DUE' || s.status === 'OVERDUE') && (
             <V2Button onPress={() => handleDeload(s.muscleGroup)} variant="secondary" full>
-              Oznacit deload
+              Mark deload
             </V2Button>
           )}
         </View>
