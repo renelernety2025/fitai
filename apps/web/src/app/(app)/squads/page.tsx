@@ -39,6 +39,7 @@ export default function SquadsPage() {
 
   function handleLeave() {
     if (!mySquad) return;
+    if (!confirm('Leave this squad? You will need a new invite to rejoin.')) return;
     leaveSquad(mySquad.id).then(() => load()).catch(() => {});
   }
 
@@ -90,7 +91,7 @@ function YourSquads({ mySquad, onLeave }: { mySquad: Squad | null; onLeave: () =
   return (
     <>
       <SectionHeader eyebrow="Your squads" title="1 active" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 64 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 64 }}>
         <Card padding={24} hover>
           <div className="v3-title" style={{ marginBottom: 6 }}>{mySquad.name}</div>
           {mySquad.motto && <div className="v3-caption" style={{ marginBottom: 12, fontStyle: 'italic' }}>{mySquad.motto}</div>}
@@ -113,12 +114,13 @@ function DiscoverSection({ board }: { board: LeaderboardRow[] }) {
   return (
     <>
       <SectionHeader eyebrow="Discover" title="Find your people" />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
         {board.map(s => (
           <Card key={s.id} padding={20} hover>
             <div style={{ marginBottom: 10 }}><Tag>{s.memberCount} members</Tag></div>
             <div className="v3-title" style={{ marginBottom: 6 }}>{s.name}</div>
-            <div className="v3-caption">{s.weeklyXP.toLocaleString()} weekly XP</div>
+            <div className="v3-caption" style={{ marginBottom: 12 }}>{s.weeklyXP.toLocaleString()} weekly XP</div>
+            <Button variant="ghost" size="sm" disabled>Join (invite only)</Button>
           </Card>
         ))}
       </div>

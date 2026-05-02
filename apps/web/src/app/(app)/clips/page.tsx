@@ -45,7 +45,7 @@ export default function ClipsPage() {
     <>
       <div style={{ display: 'flex', height: '80vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <FitIcon name="camera" size={32} color="var(--text-3)" />
-        <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No clips yet. Upload first!</p>
+        <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No clips yet. Video upload coming soon.</p>
       </div>
     </>
   );
