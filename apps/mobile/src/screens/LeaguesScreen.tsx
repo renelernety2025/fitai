@@ -42,12 +42,24 @@ interface LeagueData {
   relegationLine: number;
 }
 
-function formatCountdown(endsAt: string): string {
+function formatCountdown(endsAt: string | undefined): string {
+  if (!endsAt) return '';
   const diff = new Date(endsAt).getTime() - Date.now();
-  if (diff <= 0) return 'Skonceno';
+  if (isNaN(diff) || diff <= 0) return 'Ended';
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
   return `${days}d ${hours}h`;
+}
+
+/** Compute week end from current Monday */
+function getWeekEndDate(): string {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const daysUntilSunday = day === 0 ? 0 : 7 - day;
+  const end = new Date(now);
+  end.setUTCDate(end.getUTCDate() + daysUntilSunday);
+  end.setUTCHours(23, 59, 59, 999);
+  return end.toISOString();
 }
 
 export function LeaguesScreen({ navigation }: any) {
@@ -57,44 +69,50 @@ export function LeaguesScreen({ navigation }: any) {
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const reload = () => {
+    setLoading(true);
     getLeagueCurrent()
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, []);
+  };
+  useEffect(reload, []);
 
   async function handleJoin() {
     setJoining(true);
     setError(null);
     try {
-      const d = await joinLeague();
-      setData(d);
+      await joinLeague();
+      // Re-fetch to get full league data (join returns raw membership, not LeagueData)
+      reload();
     } catch {
-      setError('Nepodarilo se pripojit k lige');
+      setError('Failed to join league');
     }
     setJoining(false);
   }
 
-  const tierColor = data
+  const tierColor = data?.tier
     ? TIER_COLORS[data.tier.toLowerCase()] || '#C0C0C0'
     : '#C0C0C0';
+
+  // Show league data only when actually joined with tier
+  const showLeague = !loading && data?.joined && data?.tier;
 
   return (
     <V2Screen>
       {/* Back */}
       <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Zpet</Text>
+        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
       </Pressable>
 
-      <V2SectionLabel>Ligy</V2SectionLabel>
-      <V2Display size="lg">Tydeni soutez</V2Display>
+      <V2SectionLabel>Leagues</V2SectionLabel>
+      <V2Display size="lg">Weekly competition</V2Display>
 
       {error && <Text style={s.error}>{error}</Text>}
 
       {loading && <V2Loading />}
 
-      {!loading && data && (
+      {showLeague && data && (
         <>
           {/* Hero: tier badge */}
           <View style={s.heroCenter}>
@@ -117,7 +135,7 @@ export function LeaguesScreen({ navigation }: any) {
             </Text>
             <Text style={s.rankBig}>#{data.rank}</Text>
             <Text style={s.xpSub}>
-              {data.weeklyXP.toLocaleString('cs-CZ')} XP tento tyden
+              {data.weeklyXP.toLocaleString('en-US')} XP this week
             </Text>
           </View>
 
@@ -125,7 +143,7 @@ export function LeaguesScreen({ navigation }: any) {
           {data.nextTierXP > 0 && (
             <View style={s.progressWrap}>
               <View style={s.progressLabels}>
-                <Text style={s.progressLabel}>Dalsi tier</Text>
+                <Text style={s.progressLabel}>Next tier</Text>
                 <Text style={s.progressLabel}>
                   {data.weeklyXP} / {data.nextTierXP} XP
                 </Text>
@@ -146,9 +164,9 @@ export function LeaguesScreen({ navigation }: any) {
 
           {/* Countdown */}
           <Text style={s.countdown}>
-            Tyden konci za{' '}
+            Week ends in{' '}
             <Text style={{ color: v2.text, fontWeight: '600' }}>
-              {formatCountdown(data.endsAt)}
+              {formatCountdown(data.endsAt || getWeekEndDate())}
             </Text>
           </Text>
 
@@ -156,24 +174,25 @@ export function LeaguesScreen({ navigation }: any) {
           {!data.joined && (
             <View style={{ marginBottom: 24, alignItems: 'center' }}>
               <V2Button onPress={handleJoin} disabled={joining}>
-                {joining ? 'Pripojuji...' : 'Pripojit se'}
+                {joining ? 'Joining...' : 'Join'}
               </V2Button>
             </View>
           )}
 
           {/* Leaderboard */}
-          <V2SectionLabel>Zebricek</V2SectionLabel>
+          <V2SectionLabel>Leaderboard</V2SectionLabel>
 
-          {data.leaderboard.length === 0 ? (
+          {(data.leaderboard ?? []).length === 0 ? (
             <Text style={s.emptyText}>
-              Zatim zadni soutezici. Bud prvni!
+              No competitors yet. Be the first!
             </Text>
           ) : (
-            data.leaderboard.map(entry => {
+            (data.leaderboard ?? []).map(entry => {
               const isMe = entry.userId === user?.id;
-              const promoted = entry.rank <= data.promotionLine;
-              const relegated =
-                entry.rank > data.leaderboard.length - data.relegationLine;
+              const promoted = data.promotionLine ? entry.rank <= data.promotionLine : false;
+              const relegated = data.relegationLine
+                ? entry.rank > (data.leaderboard?.length ?? 0) - data.relegationLine
+                : false;
 
               return (
                 <View
@@ -191,10 +210,10 @@ export function LeaguesScreen({ navigation }: any) {
                     numberOfLines={1}
                   >
                     {entry.name}
-                    {isMe ? ' (ty)' : ''}
+                    {isMe ? ' (you)' : ''}
                   </Text>
                   <Text style={s.leaderXP}>
-                    {entry.weeklyXP.toLocaleString('cs-CZ')} XP
+                    {entry.weeklyXP.toLocaleString('en-US')} XP
                   </Text>
                 </View>
               );
@@ -203,13 +222,15 @@ export function LeaguesScreen({ navigation }: any) {
         </>
       )}
 
-      {/* No data state */}
-      {!loading && !data && (
+      {/* Not joined / no data state */}
+      {!loading && !showLeague && (
         <View style={s.noDataWrap}>
-          <Text style={s.emptyText}>Ligy nejsou aktivni.</Text>
+          <Text style={s.emptyText}>
+            {data?.joined === false ? 'Join the weekly league to compete!' : 'Leagues are not active.'}
+          </Text>
           <View style={{ marginTop: 16 }}>
             <V2Button onPress={handleJoin} disabled={joining}>
-              {joining ? 'Pripojuji...' : 'Pripojit se k lige'}
+              {joining ? 'Joining...' : 'Join league'}
             </V2Button>
           </View>
         </View>
