@@ -195,7 +195,7 @@ function LandingBenefits() {
     { title: 'Member Management', desc: 'Invite employees by email. Manage roles and access easily.' },
   ];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginTop: 32 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 32 }}>
       {benefits.map((b) => (
         <Card key={b.title} padding={32} hover>
           <div className="v3-title" style={{ marginBottom: 8 }}>{b.title}</div>
@@ -246,8 +246,9 @@ function CreateOrgModal({ onClose, onDone }: { onClose: () => void; onDone: () =
 function InviteModal({ orgId, onClose, onDone }: { orgId: string; onClose: () => void; onDone: () => void }) {
   const [email, setEmail] = useState('');
   function handle() {
-    if (!email.trim()) return;
-    inviteOrgMember(orgId, email).then(() => { onClose(); onDone(); }).catch(() => {});
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return;
+    inviteOrgMember(orgId, trimmed).then(() => { onClose(); onDone(); }).catch(() => {});
   }
   return (
     <ModalShell onClose={onClose}>
