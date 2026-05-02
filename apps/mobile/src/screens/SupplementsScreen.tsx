@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Alert } from 'react-native';
 import { getMyStack, logSupplement } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
 
+// Backend enum is UPPERCASE — match both for safety
 const timingColors: Record<string, string> = {
-  morning: v2.orange,
-  'pre-workout': v2.red,
-  'post-workout': v2.green,
-  evening: v2.purple,
-  anytime: v2.blue,
+  MORNING: v2.orange,
+  PRE_WORKOUT: v2.red,
+  DURING: v2.yellow,
+  POST_WORKOUT: v2.green,
+  EVENING: v2.purple,
+  WITH_MEAL: v2.blue,
 };
 
+/** Resolve supplement name from nested or flat shape */
+function getItemName(item: any): string {
+  return item.supplement?.name || item.name || 'Supplement';
+}
+
 export function SupplementsScreen() {
-  const [stack, setStack] = useState<any[]>([]);
+  const [stack, setStack] = useState<any[] | null>(null);
 
   useEffect(() => {
     getMyStack().then(setStack).catch(() => setStack([]));
@@ -23,31 +30,34 @@ export function SupplementsScreen() {
     logSupplement(item.id)
       .then(() => {
         setStack((prev) =>
-          prev.map((s) => (s.id === item.id ? { ...s, takenToday: true } : s)),
+          (prev ?? []).map((s) => (s.id === item.id ? { ...s, takenToday: true } : s)),
         );
       })
-      .catch(console.error);
+      .catch(() => Alert.alert('Error', 'Failed to log supplement'));
   }
 
-  const taken = stack.filter((s) => s.takenToday).length;
+  const items = stack ?? [];
+  const taken = items.filter((s) => s.takenToday).length;
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Denni davka</V2SectionLabel>
-        <V2Display size="xl">Suplementy.</V2Display>
+        <V2SectionLabel>Daily dose</V2SectionLabel>
+        <V2Display size="xl">Supplements.</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, marginTop: 12 }}>
-          {taken} z {stack.length} dnes uzito
+          {taken} of {items.length} taken today
         </Text>
       </View>
 
-      {stack.length === 0 && (
+      {stack === null ? (
+        <V2Loading />
+      ) : items.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zadne suplementy v zasobniku
+          No supplements in your stack. Add them on the web app.
         </Text>
-      )}
+      ) : null}
 
-      {stack.map((item) => (
+      {items.map((item) => (
         <Pressable
           key={item.id}
           onPress={() => handleToggle(item)}
@@ -82,7 +92,7 @@ export function SupplementsScreen() {
 
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '600' }}>
-              {item.name}
+              {getItemName(item)}
             </Text>
             <Text style={{ color: v2.faint, fontSize: 12, marginTop: 2 }}>
               {item.dosage || 'N/A'}
