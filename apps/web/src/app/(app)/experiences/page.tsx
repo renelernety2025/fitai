@@ -66,8 +66,12 @@ export default function ExperiencesPage() {
       .finally(() => setLoading(false));
   }, [filter]);
 
+  const [bookMsg, setBookMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
   function handleBook(id: string) {
+    if (!confirm('Book this experience?')) return;
     setBooking(id);
+    setBookMsg(null);
     bookExperience(id)
       .then(() => {
         setItems((prev) =>
@@ -75,8 +79,11 @@ export default function ExperiencesPage() {
             e.id === id ? { ...e, spotsLeft: Math.max(0, e.spotsLeft - 1) } : e,
           ),
         );
+        setBookMsg({ type: 'ok', text: 'Booked successfully!' });
       })
-      .catch(() => {})
+      .catch((err) => {
+        setBookMsg({ type: 'err', text: err instanceof Error ? err.message : 'Booking failed' });
+      })
       .finally(() => setBooking(null));
   }
 
@@ -139,6 +146,19 @@ export default function ExperiencesPage() {
           </button>
         ))}
       </div>
+
+      {bookMsg && (
+        <div style={{
+          marginBottom: 16, padding: '12px 20px', borderRadius: 12,
+          background: bookMsg.type === 'ok' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+          border: `1px solid ${bookMsg.type === 'ok' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          color: bookMsg.type === 'ok' ? 'var(--sage)' : 'var(--danger, #ef4444)',
+          fontSize: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <span>{bookMsg.text}</span>
+          <button onClick={() => setBookMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 16 }}>&times;</button>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

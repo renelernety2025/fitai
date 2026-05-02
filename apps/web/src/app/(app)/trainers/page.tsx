@@ -49,6 +49,12 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
 }
 
 function TrainerCard({ trainer }: { trainer: Trainer }) {
+  const name = trainer.name || trainer.user?.name || 'Trainer';
+  const avatar = trainer.avatarUrl || trainer.user?.avatarUrl;
+  const rating = trainer.rating ?? trainer.avgRating ?? 0;
+  const reviewCount = trainer.reviewCount ?? trainer._count?.reviews ?? 0;
+  const isSupertrainer = trainer.isSupertrainer ?? trainer.supertrainer;
+
   return (
     <Link href={`/trainers/${trainer.id}`}>
       <GlassCard className="p-5 h-full">
@@ -57,33 +63,33 @@ function TrainerCard({ trainer }: { trainer: Trainer }) {
             className="flex-shrink-0 flex items-center justify-center rounded-full bg-white/10 text-lg font-bold"
             style={{ width: 56, height: 56 }}
           >
-            {trainer.avatarUrl ? (
+            {avatar ? (
               <img
-                src={trainer.avatarUrl}
-                alt={trainer.name}
+                src={avatar}
+                alt={name}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
               <span className="text-white/60">
-                {trainer.name.charAt(0)}
+                {name.charAt(0)}
               </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold tracking-tight text-white truncate">
-                {trainer.name}
+                {name}
               </h3>
-              {trainer.isSupertrainer && (
+              {isSupertrainer && (
                 <span className="flex-shrink-0 rounded-full bg-[var(--clay-deep)]/20 px-2 py-0.5 text-[10px] font-semibold text-[var(--clay-deep)] border border-[var(--clay-deep)]/30">
                   SUPERTRAINER
                 </span>
               )}
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <Stars rating={trainer.rating} size={12} />
+              <Stars rating={rating} size={12} />
               <span className="text-[11px] text-white/40">
-                ({trainer.reviewCount})
+                ({reviewCount})
               </span>
             </div>
           </div>

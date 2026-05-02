@@ -68,7 +68,8 @@ export default function MarketplacePage() {
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 64,
       }}>
         {FEATURED.map((p, i) => (
-          <Card key={p.title} padding={0} hover style={{ overflow: 'hidden', minHeight: i === 0 ? 420 : 'auto' }}>
+          <Link key={p.title} href="/trainers" style={{ textDecoration: 'none' }}>
+          <Card padding={0} hover style={{ overflow: 'hidden', minHeight: i === 0 ? 420 : 'auto' }}>
             <div style={{
               height: i === 0 ? 280 : 200, position: 'relative',
               backgroundImage: `url(${p.cover})`, backgroundSize: 'cover', backgroundPosition: 'center',
@@ -98,6 +99,7 @@ export default function MarketplacePage() {
               </div>
             </div>
           </Card>
+          </Link>
         ))}
       </div>
 
@@ -112,7 +114,7 @@ export default function MarketplacePage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
         {/* Community listings from API */}
         {apiListings.map((item: any) => (
-          <Link key={item.id} href={`/marketplace/${item.id}`} style={{ textDecoration: 'none' }}>
+          <Link key={item.id} href="/trainers" style={{ textDecoration: 'none' }}>
             <Card padding={0} hover style={{ overflow: 'hidden', cursor: 'pointer' }}>
               <div style={{ height: 180, background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))' }} />
               <div style={{ padding: 20 }}>

@@ -17,8 +17,17 @@ export default function BundlesPage() {
   useEffect(() => { document.title = 'FitAI — Bundles'; }, []);
   useEffect(() => { getBundles().then(setBundles).catch(() => setError(true)).finally(() => setLoading(false)); }, []);
 
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+
   async function handlePurchase(id: string) {
-    try { await purchaseBundle(id); setBundles((prev) => prev.map((b) => b.id === id ? { ...b, purchased: true } : b)); } catch { /* noop */ }
+    if (purchasing) return;
+    if (!confirm('Purchase this bundle with XP?')) return;
+    setPurchasing(id);
+    try {
+      await purchaseBundle(id);
+      setBundles((prev) => prev.map((b) => b.id === id ? { ...b, purchased: true } : b));
+    } catch { /* noop */ }
+    finally { setPurchasing(null); }
   }
 
   const available = useMemo(() => bundles.filter((b) => !b.purchased), [bundles]);
@@ -59,7 +68,7 @@ export default function BundlesPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
                       <span className="v3-numeric" style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>{b.priceXP} XP</span>
-                      <Button variant="accent" size="sm" onClick={() => handlePurchase(b.id)}>Buy</Button>
+                      <Button variant="accent" size="sm" onClick={() => handlePurchase(b.id)} disabled={purchasing === b.id}>{purchasing === b.id ? '...' : 'Buy'}</Button>
                     </div>
                   </Card>
                 ))}

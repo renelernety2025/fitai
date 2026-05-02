@@ -148,7 +148,7 @@ function FeaturedCard({ course }: { course: CourseData }) {
     CATEGORY_GRADIENTS[course.category] || CATEGORY_GRADIENTS.strength;
 
   return (
-    <Link href={`/courses/${course.id}`}>
+    <div style={{ cursor: 'default' }}>
       <div
         className="group overflow-hidden rounded-2xl border border-white/8 transition hover:border-white/15"
         style={{ background: gradient }}
@@ -189,7 +189,7 @@ function FeaturedCard({ course }: { course: CourseData }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -199,7 +199,7 @@ function CourseCard({ course }: { course: CourseData }) {
     CATEGORY_GRADIENTS[course.category] || CATEGORY_GRADIENTS.strength;
 
   return (
-    <Link href={`/courses/${course.id}`}>
+    <div style={{ cursor: 'default' }}>
       <div className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] transition hover:border-white/15">
         {/* Cover */}
         <div
@@ -236,7 +236,7 @@ function CourseCard({ course }: { course: CourseData }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
