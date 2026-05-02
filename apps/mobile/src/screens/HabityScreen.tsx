@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { getHabitsToday, updateHabitsToday, getHabitsStats, getRecoveryTips } from '../lib/api';
+import { V2Screen, V2Display, V2SectionLabel, V2Ring, V2Loading, v2 } from '../components/v2/V2';
 
 const tipColors: Record<string, string> = {
   sleep: '#0A84FF',
@@ -9,7 +10,6 @@ const tipColors: Record<string, string> = {
   stress: '#BF5AF2',
   training: '#FF375F',
 };
-import { V2Screen, V2Display, V2SectionLabel, V2Ring, V2Loading, v2 } from '../components/v2/V2';
 
 function Scale1to5({
   label,
@@ -98,65 +98,93 @@ function NumberField({
   );
 }
 
+function recoveryColor(score: number): string {
+  if (score >= 70) return v2.green;
+  if (score >= 40) return '#FF9500';
+  return '#FF375F';
+}
+
 export function HabityScreen() {
   const [today, setToday] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [tips, setTips] = useState<any[]>([]);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [loadError, setLoadError] = useState(false);
 
-  const reload = () => {
-    getHabitsToday().then(setToday).catch(console.error);
-    getHabitsStats().then(setStats).catch(console.error);
-    getRecoveryTips().then((r: any) => setTips(r.tips || [])).catch(console.error);
-  };
-  useEffect(reload, []);
+  const reload = useCallback(() => {
+    setLoadError(false);
+    getHabitsToday()
+      .then(setToday)
+      .catch(() => setLoadError(true));
+    getHabitsStats().then(setStats).catch(() => {});
+    getRecoveryTips()
+      .then((r: any) => setTips(r.tips || []))
+      .catch(() => {});
+  }, []);
+  useEffect(reload, [reload]);
 
   const update = async (patch: any) => {
     if (!today) return;
+    const prev = today;
     setToday({ ...today, ...patch });
+    setSaveStatus('idle');
     try {
       const updated = await updateHabitsToday(patch);
       setToday(updated);
-      setSavedAt(new Date());
+      setSaveStatus('saved');
       const s = await getHabitsStats();
       setStats(s);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setToday(prev);
+      setSaveStatus('error');
     }
   };
+
+  if (loadError) {
+    return (
+      <V2Screen>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
+          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load check-in</Text>
+          <Pressable onPress={reload} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
+            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
+          </Pressable>
+        </View>
+      </V2Screen>
+    );
+  }
 
   if (!today) return <V2Screen><V2Loading /></V2Screen>;
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Dnes</V2SectionLabel>
-        <V2Display size="xl">Jak ti je?</V2Display>
+        <V2SectionLabel>Today</V2SectionLabel>
+        <V2Display size="xl">How are you?</V2Display>
         <Text style={{ color: v2.muted, fontSize: 14, lineHeight: 22, marginTop: 12 }}>
-          Krátký denní check-in. Pomáhá AI nastavit intenzitu a odhalit přetrénování dřív.
+          Quick daily check-in. Helps AI adjust intensity and detect overtraining early.
         </Text>
       </View>
 
       {/* Recovery score ring */}
-      {stats?.recoveryScore != null && (
+      {stats?.recoveryScore != null ? (
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <V2Ring
             value={stats.recoveryScore}
             total={100}
             size={180}
-            color={v2.green}
+            color={recoveryColor(stats.recoveryScore)}
             label="Recovery score"
-            unit="bodů"
+            unit="pts"
           />
           <View style={{ flexDirection: 'row', gap: 32, marginTop: 20 }}>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>SPÁNEK 7D</Text>
+              <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>SLEEP 7D</Text>
               <Text style={{ color: '#FFF', fontSize: 22, fontWeight: '700', marginTop: 4 }}>
                 {stats.avgSleep ?? '—'}<Text style={{ color: v2.ghost, fontSize: 13 }}> h</Text>
               </Text>
             </View>
             <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>ENERGIE 7D</Text>
+              <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>ENERGY 7D</Text>
               <Text style={{ color: '#FFF', fontSize: 22, fontWeight: '700', marginTop: 4 }}>
                 {stats.avgEnergy ?? '—'}<Text style={{ color: v2.ghost, fontSize: 13 }}>/5</Text>
               </Text>
@@ -164,17 +192,23 @@ export function HabityScreen() {
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>STREAK</Text>
               <Text style={{ color: '#FFF', fontSize: 22, fontWeight: '700', marginTop: 4 }}>
-                {stats.streakDays}<Text style={{ color: v2.ghost, fontSize: 13 }}> dní</Text>
+                {stats.streakDays}<Text style={{ color: v2.ghost, fontSize: 13 }}> days</Text>
               </Text>
             </View>
           </View>
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center', marginBottom: 32, paddingVertical: 24 }}>
+          <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center' }}>
+            Complete your first check-in to see your recovery score.
+          </Text>
         </View>
       )}
 
       {/* AI tips */}
       {tips.length > 0 && (
         <View style={{ marginBottom: 32 }}>
-          <V2SectionLabel>AI doporučení</V2SectionLabel>
+          <V2SectionLabel>AI Recommendations</V2SectionLabel>
           {tips.map((t, i) => (
             <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 16 }}>
               <Text style={{ color: tipColors[t.category] || '#FFF', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
@@ -190,25 +224,28 @@ export function HabityScreen() {
       {/* Form */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
         <V2Display size="md">Check-in</V2Display>
-        {savedAt && (
-          <Text style={{ color: v2.green, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>✓ ULOŽENO</Text>
+        {saveStatus === 'saved' && (
+          <Text style={{ color: v2.green, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>✓ SAVED</Text>
+        )}
+        {saveStatus === 'error' && (
+          <Text style={{ color: '#FF375F', fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>SAVE FAILED</Text>
         )}
       </View>
 
       <NumberField
-        label="Spánek"
-        unit="hodin"
+        label="Sleep"
+        unit="hours"
         value={today.sleepHours}
         onChange={(v) => update({ sleepHours: v })}
         placeholder="8"
       />
-      <Scale1to5 label="Kvalita spánku" value={today.sleepQuality} onChange={(v) => update({ sleepQuality: v })} hint="1 = hrozný · 5 = vynikající" />
-      <Scale1to5 label="Energie" value={today.energy} onChange={(v) => update({ energy: v })} hint="Jak se cítíš fyzicky" />
-      <Scale1to5 label="Bolest svalů" value={today.soreness} onChange={(v) => update({ soreness: v })} hint="1 = žádná · 5 = silná" />
-      <Scale1to5 label="Stres" value={today.stress} onChange={(v) => update({ stress: v })} hint="1 = klid · 5 = vysoký" />
-      <Scale1to5 label="Nálada" value={today.mood} onChange={(v) => update({ mood: v })} />
-      <NumberField label="Voda" unit="litrů" value={today.hydrationL} onChange={(v) => update({ hydrationL: v })} placeholder="2.5" />
-      <NumberField label="Kroky" value={today.steps} onChange={(v) => update({ steps: v })} placeholder="8000" />
+      <Scale1to5 label="Sleep quality" value={today.sleepQuality} onChange={(v) => update({ sleepQuality: v })} hint="1 = terrible · 5 = excellent" />
+      <Scale1to5 label="Energy" value={today.energy} onChange={(v) => update({ energy: v })} hint="How you feel physically" />
+      <Scale1to5 label="Muscle soreness" value={today.soreness} onChange={(v) => update({ soreness: v })} hint="1 = none · 5 = severe" />
+      <Scale1to5 label="Stress" value={today.stress} onChange={(v) => update({ stress: v })} hint="1 = calm · 5 = high" />
+      <Scale1to5 label="Mood" value={today.mood} onChange={(v) => update({ mood: v })} />
+      <NumberField label="Water" unit="liters" value={today.hydrationL} onChange={(v) => update({ hydrationL: v })} placeholder="2.5" />
+      <NumberField label="Steps" value={today.steps} onChange={(v) => update({ steps: v })} placeholder="8000" />
     </V2Screen>
   );
 }
