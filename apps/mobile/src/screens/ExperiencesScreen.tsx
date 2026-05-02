@@ -1,18 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { getExperiences, bookExperience } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, V2Loading, v2 } from '../components/v2/V2';
 
+// Backend enum: GROUP, OUTDOOR, WELLNESS, COMBAT, ADVENTURE, NUTRITION_WORKSHOP
 const categoryColors: Record<string, string> = {
-  workshop: v2.blue,
-  outdoor: v2.green,
-  retreat: v2.purple,
-  competition: v2.red,
-  masterclass: v2.orange,
+  GROUP: v2.blue,
+  OUTDOOR: v2.green,
+  WELLNESS: v2.purple,
+  COMBAT: v2.red,
+  ADVENTURE: v2.orange,
+  NUTRITION_WORKSHOP: v2.yellow,
 };
 
+/** Resolve fields from backend shape */
+function getName(e: any): string { return e.name || e.title || 'Experience'; }
+function getLocation(e: any): string | null { return e.location || e.locationAddress || null; }
+function getTrainerName(e: any): string | null { return e.trainerName || e.trainer?.user?.name || null; }
+function getPrice(e: any): number | null { return e.price ?? e.priceKc ?? null; }
+
 export function ExperiencesScreen() {
-  const [experiences, setExperiences] = useState<any[]>([]);
+  const [experiences, setExperiences] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
@@ -21,12 +29,12 @@ export function ExperiencesScreen() {
 
   function handleBook(exp: any) {
     Alert.alert(
-      'Rezervace',
-      `Chces rezervovat "${exp.name}"?`,
+      'Book',
+      `Book "${getName(exp)}"?`,
       [
-        { text: 'Zrusit', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Rezervovat',
+          text: 'Book',
           onPress: () => {
             bookExperience(exp.id)
               .then(() => {
@@ -34,37 +42,40 @@ export function ExperiencesScreen() {
                   prev.map((e) => (e.id === exp.id ? { ...e, booked: true } : e)),
                 );
               })
-              .catch((e: any) => Alert.alert('Chyba', e.message || 'Nelze rezervovat'));
+              .catch((e: any) => Alert.alert('Error', e.message || 'Could not book'));
           },
         },
       ],
     );
   }
 
-  const categories = Array.from(new Set(experiences.map((e) => e.category).filter(Boolean)));
-  const filtered = filter === 'all' ? experiences : experiences.filter((e) => e.category === filter);
+  const items = experiences ?? [];
+  const categories = Array.from(new Set(items.map((e) => e.category).filter(Boolean)));
+  const filtered = filter === 'all' ? items : items.filter((e) => e.category === filter);
 
   return (
     <V2Screen>
       <View style={{ paddingTop: 16, marginBottom: 24 }}>
-        <V2SectionLabel>Zazitky</V2SectionLabel>
+        <V2SectionLabel>Events</V2SectionLabel>
         <V2Display size="xl">Experiences.</V2Display>
       </View>
 
       {categories.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-          <V2Chip label="Vse" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          <V2Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
           {categories.map((c) => (
-            <V2Chip key={c} label={c} selected={filter === c} onPress={() => setFilter(c)} />
+            <V2Chip key={c} label={c.replace(/_/g, ' ')} selected={filter === c} onPress={() => setFilter(c)} />
           ))}
         </View>
       )}
 
-      {filtered.length === 0 && (
+      {experiences === null ? (
+        <V2Loading />
+      ) : filtered.length === 0 ? (
         <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Zadne zazitky k dispozici
+          No experiences available
         </Text>
-      )}
+      ) : null}
 
       {filtered.map((exp) => (
         <View
@@ -93,7 +104,7 @@ export function ExperiencesScreen() {
           )}
 
           <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '700', letterSpacing: -0.5, marginBottom: 8 }}>
-            {exp.name}
+            {getName(exp)}
           </Text>
 
           {exp.description && (
@@ -103,22 +114,22 @@ export function ExperiencesScreen() {
           )}
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
-            {exp.location && (
+            {getLocation(exp) && (
               <View style={{ marginRight: 24, marginBottom: 8 }}>
-                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>LOKACE</Text>
-                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>{exp.location}</Text>
+                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>LOCATION</Text>
+                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>{getLocation(exp)}</Text>
               </View>
             )}
-            {exp.trainerName && (
+            {getTrainerName(exp) && (
               <View style={{ marginRight: 24, marginBottom: 8 }}>
-                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>TRENER</Text>
-                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>{exp.trainerName}</Text>
+                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>TRAINER</Text>
+                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>{getTrainerName(exp)}</Text>
               </View>
             )}
-            {exp.price != null && (
+            {getPrice(exp) != null && (
               <View style={{ marginBottom: 8 }}>
-                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>CENA</Text>
-                <Text style={{ color: v2.green, fontSize: 14, fontWeight: '600' }}>{exp.price} CZK</Text>
+                <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>PRICE</Text>
+                <Text style={{ color: v2.green, fontSize: 14, fontWeight: '600' }}>{getPrice(exp)} CZK</Text>
               </View>
             )}
           </View>
@@ -129,7 +140,7 @@ export function ExperiencesScreen() {
             full
             disabled={exp.booked}
           >
-            {exp.booked ? 'Rezervovano' : 'Rezervovat'}
+            {exp.booked ? 'Booked' : 'Book'}
           </V2Button>
         </View>
       ))}
