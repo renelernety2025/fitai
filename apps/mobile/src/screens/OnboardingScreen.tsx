@@ -78,11 +78,11 @@ export function OnboardingScreen({ navigation }: any) {
   return (
     <V2Screen>
       <View style={{ paddingTop: 24, marginBottom: 24 }}>
-        <V2SectionLabel>Krok {stepIdx + 1} ze 3</V2SectionLabel>
+        <V2SectionLabel>Step {stepIdx + 1} of 3</V2SectionLabel>
         <V2Display size="xl">
-          {step === 'measurements' && 'O tobě.'}
-          {step === 'test' && 'Tvůj výkon.'}
-          {step === 'review' && 'Tvůj plán.'}
+          {step === 'measurements' && 'About you.'}
+          {step === 'test' && 'Your strength.'}
+          {step === 'review' && 'Your plan.'}
         </V2Display>
       </View>
 
@@ -103,13 +103,13 @@ export function OnboardingScreen({ navigation }: any) {
       {step === 'measurements' && (
         <View>
           <Text style={{ color: v2.muted, marginBottom: 32, fontSize: 14 }}>
-            Tyto údaje pomohou personalizovat tvůj plán a spočítat denní příjem kalorií.
+            This data will help personalize your plan and calculate daily calorie intake.
           </Text>
-          <V2Input label="Věk" value={age} onChangeText={setAge} placeholder="25" keyboardType="numeric" />
-          <V2Input label="Váha (kg)" value={weight} onChangeText={setWeight} placeholder="75" keyboardType="numeric" />
-          <V2Input label="Výška (cm)" value={height} onChangeText={setHeight} placeholder="180" keyboardType="numeric" />
+          <V2Input label="Age" value={age} onChangeText={setAge} placeholder="25" keyboardType="numeric" />
+          <V2Input label="Weight (kg)" value={weight} onChangeText={setWeight} placeholder="75" keyboardType="numeric" />
+          <V2Input label="Height (cm)" value={height} onChangeText={setHeight} placeholder="180" keyboardType="numeric" />
           <V2Button onPress={handleMeasurementsNext} disabled={!age || !weight || !height} full>
-            Pokračovat →
+            Continue →
           </V2Button>
         </View>
       )}
@@ -117,17 +117,17 @@ export function OnboardingScreen({ navigation }: any) {
       {step === 'test' && (
         <View>
           <Text style={{ color: v2.muted, marginBottom: 24, fontSize: 14 }}>
-            U každého cviku zadej váhu a počet opakování s perfektní formou.
+            For each exercise, enter the weight and reps you can do with perfect form.
           </Text>
           {exs.map((ex) => (
             <View key={ex.id} style={{ marginBottom: 24, borderBottomWidth: 1, borderBottomColor: v2.border, paddingBottom: 16 }}>
-              <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>{ex.nameCs}</Text>
+              <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>{ex.name || ex.nameCs}</Text>
               <View style={{ flexDirection: 'row', gap: 16 }}>
                 <View style={{ flex: 1 }}>
                   <V2Input
-                    label="Váha (kg)"
+                    label="Weight (kg)"
                     value={results[ex.id]?.weight || ''}
-                    onChangeText={(v) =>
+                    onChangeText={(v: string) =>
                       setResults({ ...results, [ex.id]: { ...(results[ex.id] || { reps: '' }), weight: v } })
                     }
                     keyboardType="numeric"
@@ -135,9 +135,9 @@ export function OnboardingScreen({ navigation }: any) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <V2Input
-                    label="Opakování"
+                    label="Reps"
                     value={results[ex.id]?.reps || ''}
-                    onChangeText={(v) =>
+                    onChangeText={(v: string) =>
                       setResults({ ...results, [ex.id]: { ...(results[ex.id] || { weight: '' }), reps: v } })
                     }
                     keyboardType="numeric"
@@ -146,14 +146,14 @@ export function OnboardingScreen({ navigation }: any) {
               </View>
             </View>
           ))}
-          <V2Button onPress={handleTestNext} full>Spočítat 1RM →</V2Button>
+          <V2Button onPress={handleTestNext} full>Calculate 1RM →</V2Button>
         </View>
       )}
 
       {step === 'review' && (
         <View>
           <Text style={{ color: v2.muted, marginBottom: 24, fontSize: 14 }}>
-            Spočítáno na základě tvého 1RM. První týden začneme jemně na 60 % — tělo si zvykne.
+            Calculated from your 1RM. First week starts gentle at 60% — your body will adapt.
           </Text>
           {suggested.map((s) => (
             <View key={s.exerciseId} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 20 }}>
@@ -165,13 +165,13 @@ export function OnboardingScreen({ navigation }: any) {
               </Text>
               <View style={{ flexDirection: 'row', gap: 24, marginTop: 12 }}>
                 <View>
-                  <Text style={{ color: v2.yellow, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>PRVNÍ TÝDEN</Text>
+                  <Text style={{ color: v2.yellow, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>FIRST WEEK</Text>
                   <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>
                     {s.firstWeekWeight}<Text style={{ color: v2.faint }}>kg × {s.recommendedReps}</Text>
                   </Text>
                 </View>
                 <View>
-                  <Text style={{ color: v2.green, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>CÍL</Text>
+                  <Text style={{ color: v2.green, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>TARGET</Text>
                   <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>
                     {s.recommendedWorkingWeight}<Text style={{ color: v2.faint }}>kg × {s.recommendedReps}</Text>
                   </Text>
@@ -180,7 +180,7 @@ export function OnboardingScreen({ navigation }: any) {
             </View>
           ))}
           <View style={{ marginTop: 24 }}>
-            <V2Button onPress={handleFinish} full>Začít cvičit →</V2Button>
+            <V2Button onPress={handleFinish} full>Start training →</V2Button>
           </View>
         </View>
       )}

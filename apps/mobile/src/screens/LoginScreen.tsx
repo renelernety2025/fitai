@@ -18,7 +18,7 @@ export function LoginScreen({ navigation }: any) {
       const res = await authLogin(email, password);
       await login(res.accessToken, res.user);
     } catch (e: any) {
-      setError(e.message || 'Přihlášení selhalo');
+      setError(e.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -28,22 +28,22 @@ export function LoginScreen({ navigation }: any) {
     <V2Screen>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={{ paddingTop: 80, alignItems: 'center', marginBottom: 48 }}>
-          <V2SectionLabel>Vítej zpět</V2SectionLabel>
-          <V2Display size="lg">Přihlas se.</V2Display>
+          <V2SectionLabel>Welcome back</V2SectionLabel>
+          <V2Display size="lg">Sign in.</V2Display>
         </View>
 
-        <V2Input label="Email" value={email} onChangeText={setEmail} placeholder="tvuj@email.cz" keyboardType="email-address" />
-        <V2Input label="Heslo" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
+        <V2Input label="Email" value={email} onChangeText={setEmail} placeholder="your@email.com" keyboardType="email-address" />
+        <V2Input label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
 
         {error ? <Text style={{ color: v2.red, marginBottom: 16 }}>{error}</Text> : null}
 
         <V2Button onPress={handleLogin} disabled={loading} full>
-          {loading ? 'Přihlašování…' : 'Pokračovat →'}
+          {loading ? 'Signing in...' : 'Continue →'}
         </V2Button>
 
         <Pressable onPress={() => navigation.navigate('Register')} style={{ marginTop: 32, alignItems: 'center' }}>
           <Text style={{ color: v2.faint, fontSize: 14 }}>
-            Nemáš účet? <Text style={{ color: v2.text }}>Vytvoř si ho</Text>
+            No account? <Text style={{ color: v2.text }}>Sign up</Text>
           </Text>
         </Pressable>
       </KeyboardAvoidingView>
