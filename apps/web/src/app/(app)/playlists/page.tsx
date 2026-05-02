@@ -66,7 +66,7 @@ export default function PlaylistsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
               <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Playlist name" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
               <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="Spotify / Apple Music URL" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
-              <input type="number" value={form.bpm} onChange={(e) => setForm({ ...form, bpm: e.target.value })} placeholder="BPM" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
+              <input type="number" min="1" max="300" value={form.bpm} onChange={(e) => setForm({ ...form, bpm: e.target.value })} placeholder="BPM" style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }} />
               <select value={form.workoutType} onChange={(e) => setForm({ ...form, workoutType: e.target.value })} style={{ padding: '10px 14px', borderRadius: 'var(--r-lg)', border: '1px solid var(--stroke-1)', background: 'var(--bg-card)', color: 'var(--text-1)', fontSize: 14 }}>
                 {TYPES.filter((t) => t !== 'All').map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -101,9 +101,13 @@ export default function PlaylistsPage() {
                     <span className="v3-caption" style={{ color: 'var(--text-3)' }}>{p.bpm} BPM</span>
                     <span className="v3-caption" style={{ color: 'var(--text-3)' }}>by {p.user?.name || 'Unknown'}</span>
                   </div>
-                  <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
-                    Open &#8599;
-                  </a>
+                  {url !== '#' ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                      Open &#8599;
+                    </a>
+                  ) : (
+                    <span className="v3-caption" style={{ color: 'var(--text-3)' }}>No link</span>
+                  )}
                 </Card>
               );
             })}

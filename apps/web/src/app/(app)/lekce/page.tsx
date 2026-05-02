@@ -23,6 +23,7 @@ export default function LessonsPage() {
   const [cat, setCat] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => { document.title = 'FitAI — Lessons'; }, []);
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function LessonsPage() {
       .then(setLessons)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [cat]);
+  }, [cat, retryKey]);
 
   return (
     <>
@@ -63,7 +64,7 @@ export default function LessonsPage() {
         {error && !loading && (
           <Card padding={32} style={{ textAlign: 'center' }}>
             <p className="v3-body" style={{ color: 'var(--danger, #ef4444)', marginBottom: 12 }}>Failed to load lessons.</p>
-            <button onClick={() => setCat(cat)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
+            <button onClick={() => setRetryKey((k) => k + 1)} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Try again</button>
           </Card>
         )}
 
