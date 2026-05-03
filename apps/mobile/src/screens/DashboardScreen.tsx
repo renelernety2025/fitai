@@ -14,9 +14,9 @@ import {
   V2SectionLabel,
   V2Stat,
   V2TripleRing,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { useHaptic, ErrorState } from '../components/native';
 
 export function DashboardScreen({ navigation }: any) {
   const { user, isLoading } = useAuth();
@@ -26,6 +26,7 @@ export function DashboardScreen({ navigation }: any) {
   const [nutrition, setNutrition] = useState<any>(null);
   const [brief, setBrief] = useState<any>(null);
   const [error, setError] = useState(false);
+  const haptic = useHaptic();
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -58,8 +59,12 @@ export function DashboardScreen({ navigation }: any) {
     <V2Screen>
       {/* Top bar with Profile link */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 16 }}>
-        <Pressable onPress={() => navigation.navigate('Profile')}>
-          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>MORE →</Text>
+        <Pressable
+          onPress={() => { haptic.tap(); navigation.navigate('Profile'); }}
+          hitSlop={8}
+          style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+        >
+          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>MORE ›</Text>
         </Pressable>
       </View>
 
@@ -71,12 +76,10 @@ export function DashboardScreen({ navigation }: any) {
 
       {/* Error state */}
       {error && !stats && (
-        <View style={{ alignItems: 'center', padding: 32 }}>
-          <Text style={{ color: v2.red, fontSize: 14, marginBottom: 12 }}>Failed to load data.</Text>
-          <Pressable onPress={() => { setError(false); getMyStats().then(setStats).catch(() => setError(true)); }}>
-            <Text style={{ color: v2.text, fontSize: 14, fontWeight: '600' }}>Try again</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          message="Failed to load dashboard data."
+          onRetry={() => { setError(false); getMyStats().then(setStats).catch(() => setError(true)); }}
+        />
       )}
 
       {/* Triple Ring */}
@@ -188,14 +191,15 @@ export function DashboardScreen({ navigation }: any) {
           </Text>
 
           <Pressable
-            onPress={() => navigation.navigate('Plans')}
-            style={{
+            onPress={() => { haptic.tap(); navigation.navigate('Plans'); }}
+            style={({ pressed }) => ({
               backgroundColor: '#FFF',
               paddingVertical: 14,
               paddingHorizontal: 24,
               borderRadius: 999,
               alignSelf: 'flex-start',
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>Start training →</Text>
           </Pressable>
@@ -239,8 +243,8 @@ export function DashboardScreen({ navigation }: any) {
       {/* Lesson of the week */}
       {lesson && (
         <Pressable
-          onPress={() => navigation.navigate('LessonDetail', { slug: lesson.slug })}
-          style={{ marginBottom: 48 }}
+          onPress={() => { haptic.tap(); navigation.navigate('LessonDetail', { slug: lesson.slug }); }}
+          style={({ pressed }) => [{ marginBottom: 48 }, pressed && { opacity: 0.6 }]}
         >
           <V2SectionLabel>Lesson of the week</V2SectionLabel>
           <V2Display size="md">{lesson.title || lesson.titleCs}</V2Display>
@@ -253,7 +257,10 @@ export function DashboardScreen({ navigation }: any) {
 
       {/* Nutrition */}
       {nutrition && (
-        <Pressable onPress={() => navigation.navigate('Vyziva')} style={{ marginBottom: 48 }}>
+        <Pressable
+          onPress={() => { haptic.tap(); navigation.navigate('Vyziva'); }}
+          style={({ pressed }) => [{ marginBottom: 48 }, pressed && { opacity: 0.6 }]}
+        >
           <V2SectionLabel>Nutrition</V2SectionLabel>
           <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
             <Text style={{ color: v2.text, fontSize: 44, fontWeight: '700', letterSpacing: -2 }}>
