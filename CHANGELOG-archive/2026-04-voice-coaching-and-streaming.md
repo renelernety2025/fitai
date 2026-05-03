@@ -2,7 +2,7 @@
 
 > Archived: 2026-04-22
 > Covers: 2026-04-11 to 2026-04-19 (Voice Coaching v2, Phase E streaming, VoiceEngine, 60 exercises, doc infrastructure)
-> Back-pointer: See @CHANGELOG.md for active/recent entries
+> Back-pointer: See CHANGELOG.md (active/recent entries)
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Archived: 2026-04-19
 > Covers: 2026-04-07 to 2026-04-09 (Phases 1-10, Sections A-L, Infrastructure, Mobile v2, Scaling)
-> Back-pointer: See @CHANGELOG.md for active/recent entries
+> Back-pointer: See CHANGELOG.md (active/recent entries)
 
 ---
 

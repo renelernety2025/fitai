@@ -16,8 +16,8 @@
 
 ## Hotovo
 
-> Detail: @ROADMAP-archive/2026-04-completed-phases.md (Phases 1-10, Sections A-L, Infrastructure)
-> Recent: see @CHANGELOG.md for 2026-04-20+ entries
+> Detail: `ROADMAP-archive/2026-04-completed-phases.md` (čti přímo — není auto-load)
+> Recent: see `CHANGELOG.md` for 2026-04-20+ entries
 
 ---
 

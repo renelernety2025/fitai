@@ -2,7 +2,7 @@
 
 > Archived: 2026-04-19
 > Covers: Phases 1-10, Sections A-L, Infrastructure & DevOps, Web, Mobile, Backend stats
-> Back-pointer: See @ROADMAP.md for active/pending priorities
+> Back-pointer: See ROADMAP.md (active/pending priorities)
 
 ---
 

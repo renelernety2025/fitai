@@ -2,9 +2,56 @@
 
 Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
-> **Archive:** Starší entries viz:
-> - @CHANGELOG-archive/2026-04-voice-coaching-and-streaming.md (2026-04-11 to 2026-04-19)
-> - @CHANGELOG-archive/2026-04-foundation-and-infra.md (2026-04-07 to 2026-04-09)
+> **Archive (čti přímo, NEJSOU auto-load):**
+> - `CHANGELOG-archive/2026-04-voice-coaching-and-streaming.md` (2026-04-11 to 2026-04-19)
+> - `CHANGELOG-archive/2026-04-foundation-and-infra.md` (2026-04-07 to 2026-04-09)
+
+---
+
+## [Mobile iOS native pass — 47 screens + foundation + creator-dashboard fix] 2026-05-03
+
+### Foundation (Phase 0)
+- Installed `@gorhom/bottom-sheet`, `expo-blur`, `react-native-gesture-handler`, `expo-linear-gradient`
+- App.tsx: wrapped GestureHandlerRootView + SafeAreaProvider + BottomSheetModalProvider
+- AppNavigator: native iOS slide_from_right transitions, fullScreenGestureEnabled, dynamic tab bar height via useSafeAreaInsets
+- 10 new native primitives in `apps/mobile/src/components/native/`: useHaptic, usePullToRefresh, LoadingState, EmptyState, ErrorState, NativeBlurOverlay, showActionSheet helper, NativeBottomSheet, NativeConfirm, NativeListItem
+
+### Wave 1 — Tier A (9 screens)
+AIChatScreen, CalendarScreen, CameraWorkoutScreen, FormCheckScreen, JidelnicekScreen, JournalScreen, LeaguesScreen, ProgressPhotosScreen, VyzivaScreen
+
+### Wave 2 — Tier B (16 screens)
+AICoachScreen, BundlesScreen, ClipsScreen, CommunityScreen, DropsScreen, DuelsScreen, ExperiencesScreen, MaintenanceScreen, OnboardingScreen, PlanDetailScreen, ProfileScreen, RoutineBuilderScreen, SquadsScreen, StreaksScreen, SupplementsScreen, VIPScreen
+
+### Wave 3 — Tier C polish (22 screens)
+CoachingNotesScreen, DashboardScreen, DomaScreen, ExerciseDetailScreen, ExercisesScreen, GearScreen, HabityScreen, LekceScreen, LessonDetailScreen, LoginScreen, PlansScreen, PlaylistsScreen, ProgressScreen, RecordsScreen, RegisterScreen, SlovnikScreen, TrainersScreen, UspechyScreen, VideoDetailScreen, VideosScreen, WishlistScreen, CameraWorkoutProScreen (verified already-native, no changes needed)
+
+### Anti-iOS patterns eliminated
+- 38 instancí `Alert.alert` (non-error confirms) → `NativeConfirm` bottom sheet nebo inline error banner
+- 6 `<Modal>` (RN built-in) → `NativeBottomSheet` (`@gorhom/bottom-sheet`)
+- ~15 plain "Back" / "← LIST" text → native iOS chevron (‹) s 12pt hit slop
+- 0 → semantic `useHaptic` napříč všemi screens (tap/press/heavy/selection/success/warning/error)
+- 5 → 30+ screens používají `useSafeAreaInsets()` přes manual SafeAreaView
+- 1 → 5+ screens mají RefreshControl pull-to-refresh
+- V2Loading generic spinner → `LoadingState` s explicit label
+- Plain "no items" texty → `EmptyState` s ikonou + body
+- Custom inline retry UI → standardizovaný `ErrorState`
+- Pre-existing TS errors v JournalScreen mood (number → string enum)
+
+### Web fix — creator-dashboard
+`apps/web/src/app/(app)/creator-dashboard/{page.tsx,ContentTools.tsx}` — opraveno 5 frontend↔backend shape mismatches: stats endpoint (subscriberCount→subscribers, monthlyXP→monthlyXPEarned, totalXP→totalXPEarned, postCount→posts, topPostTitle→topPost), subscriber-growth ({date,newSubs,churn}), earnings ({week,tips,subscriptions}), post-performance (caption→title, likeCount→likes), top-hashtags ({name,count} objekty místo "[object Object]"). Plus přidán "Creator status pending" empty state pro non-creator účty.
+
+### Code + Security review fixes
+- **P0** NativeConfirm double-call onCancel (resolvingRef guard)
+- **M** VyzivaScreen S3 upload `upload.ok` check before analyzeFoodPhoto
+- **L** PlaylistsScreen domain whitelist tightening (`endsWith('.' + d)` místo `endsWith(d)`)
+- **L** NativeListItem dead `align` parameter removed
+
+### Stats
+- 41 commits, 35 atomic per-screen + foundation + creator-dashboard fix + review fixes
+- Files changed: ~50 files, +3000 insertions, -1500 deletions
+- TypeScript clean, all native deps audited (no CVEs)
+- 4 review findings applied
+- Mobile binary requires `eas build --profile development --platform ios` to ship to devices (web auto-deploys via GHA)
 
 ---
 
