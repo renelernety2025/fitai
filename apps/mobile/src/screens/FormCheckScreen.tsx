@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Alert } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getExercises, getFormCheckUploadUrl, analyzeForm, getFormCheckHistory } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState } from '../components/native';
 
 export function FormCheckScreen() {
   const [exercises, setExercises] = useState<any[] | null>(null);
@@ -11,6 +12,8 @@ export function FormCheckScreen() {
   const [step, setStep] = useState<'select' | 'analyzing' | 'result'>('select');
   const [result, setResult] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getExercises().then(setExercises).catch(() => setExercises([]));
@@ -23,14 +26,18 @@ export function FormCheckScreen() {
     : allExercises;
 
   async function handleAnalyze() {
+    setError(null);
     if (!selected) {
-      Alert.alert('Error', 'Select an exercise first');
+      haptic.warning();
+      setError('Vyber nejdřív cvik.');
       return;
     }
+    haptic.tap();
 
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow access to your media library to upload a video.');
+      haptic.warning();
+      setError('Pro upload videa povol přístup k médiím v Nastavení.');
       return;
     }
 
@@ -59,10 +66,12 @@ export function FormCheckScreen() {
       if (!upload.ok) throw new Error(`Upload failed: ${upload.status}`);
 
       const analysis = await analyzeForm({ s3Key, exerciseId: selected });
+      haptic.success();
       setResult(analysis);
       setStep('result');
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Analysis failed');
+      haptic.error();
+      setError(e.message || 'Analysis failed');
       setStep('select');
     }
   }
@@ -90,7 +99,7 @@ export function FormCheckScreen() {
             style={{ color: '#FFF', fontSize: 14, borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 10, marginBottom: 12 }}
           />
           {exercises === null ? (
-            <V2Loading />
+            <LoadingState label="Loading exercises" inline />
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 24 }}>
               {filtered.slice(0, 30).map((ex) => (
@@ -98,7 +107,7 @@ export function FormCheckScreen() {
                   key={ex.id}
                   label={ex.nameCs || ex.name}
                   selected={selected === ex.id}
-                  onPress={() => setSelected(ex.id)}
+                  onPress={() => { haptic.selection(); setSelected(ex.id); }}
                 />
               ))}
               {filtered.length > 30 && (
@@ -106,6 +115,12 @@ export function FormCheckScreen() {
                   {filtered.length - 30} more — use search to narrow
                 </Text>
               )}
+            </View>
+          )}
+
+          {error && (
+            <View style={{ backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+              <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
             </View>
           )}
 
@@ -136,10 +151,7 @@ export function FormCheckScreen() {
       )}
 
       {step === 'analyzing' && (
-        <View style={{ alignItems: 'center', paddingTop: 48 }}>
-          <V2Loading />
-          <Text style={{ color: v2.muted, fontSize: 14, marginTop: 16 }}>AI analyzing your form...</Text>
-        </View>
+        <LoadingState label="AI analyzing your form" />
       )}
 
       {step === 'result' && result && (
@@ -192,7 +204,7 @@ export function FormCheckScreen() {
             </View>
           )}
 
-          <V2Button onPress={() => { setStep('select'); setResult(null); }} variant="secondary" full>
+          <V2Button onPress={() => { haptic.tap(); setStep('select'); setResult(null); setError(null); }} variant="secondary" full>
             New form check
           </V2Button>
         </View>
