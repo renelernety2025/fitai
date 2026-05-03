@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import {
   getFitnessProfile,
   updateFitnessProfile,
   generateAIPlan,
 } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 const GOALS = [
   { v: 'STRENGTH', l: 'Strength' },
@@ -31,6 +32,8 @@ export function AICoachScreen({ navigation }: any) {
   const [profile, setProfile] = useState<any>(null);
   const [loadError, setLoadError] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   const reload = useCallback(() => {
     setLoadError(false);
@@ -42,23 +45,29 @@ export function AICoachScreen({ navigation }: any) {
 
   async function save(field: string, value: any) {
     if (!profile) return;
+    haptic.selection();
     const prev = profile;
     setProfile({ ...profile, [field]: value });
     try {
       const updated = await updateFitnessProfile({ [field]: value });
       setProfile(updated);
     } catch {
+      haptic.error();
       setProfile(prev);
     }
   }
 
   async function handleGenerate() {
+    haptic.tap();
+    setGenerateError(null);
     setGenerating(true);
     try {
       const plan = await generateAIPlan();
+      haptic.success();
       navigation.navigate('PlanDetail', { id: plan.id });
     } catch {
-      Alert.alert('Generation failed', 'Could not generate plan. Please try again.');
+      haptic.error();
+      setGenerateError('Could not generate plan. Please try again.');
     } finally {
       setGenerating(false);
     }
@@ -67,17 +76,12 @@ export function AICoachScreen({ navigation }: any) {
   if (loadError) {
     return (
       <V2Screen>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
-          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load profile</Text>
-          <Pressable onPress={reload} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load profile." onRetry={reload} />
       </V2Screen>
     );
   }
 
-  if (!profile) return <V2Screen><V2Loading /></V2Screen>;
+  if (!profile) return <V2Screen><LoadingState label="Loading profile" /></V2Screen>;
 
   return (
     <V2Screen>
@@ -119,6 +123,12 @@ export function AICoachScreen({ navigation }: any) {
           })}
         </View>
       </View>
+
+      {generateError && (
+        <View style={{ marginBottom: 12, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{generateError}</Text>
+        </View>
+      )}
 
       <V2Button onPress={handleGenerate} disabled={generating} full>
         {generating ? 'AI generating plan...' : 'Generate plan →'}
