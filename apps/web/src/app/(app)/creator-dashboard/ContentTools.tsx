@@ -4,8 +4,14 @@ import { useState } from 'react';
 import { Card, Button } from '@/components/v3';
 import { setSubscriptionPrice, schedulePost, cancelScheduledPost, publishNow, bulkSubscriberOnly } from '@/lib/api';
 
-interface PostRow { id: string; title: string; isSubscriberOnly: boolean }
+interface PostRow { id: string; caption: string | null; isSubscriberOnly: boolean }
 interface ScheduledPost { id: string; caption: string; publishAt: string }
+
+function postTitle(p: { caption: string | null }, fallback = '(bez textu)'): string {
+  const text = (p.caption || '').trim();
+  if (!text) return fallback;
+  return text.length > 60 ? text.slice(0, 60) + '…' : text;
+}
 
 const INPUT_STYLE: React.CSSProperties = {
   background: 'var(--bg-3)', border: '1px solid var(--stroke-2)', borderRadius: 8,
@@ -120,7 +126,7 @@ export function ContentTools({ posts, onRefresh }: { posts: PostRow[]; onRefresh
           : posts.map((p) => (
             <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
               <input type="checkbox" checked={selected.has(p.id)} onChange={(e) => toggleSelect(p.id, e.target.checked)} />
-              <span style={{ flex: 1, fontSize: 13, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+              <span style={{ flex: 1, fontSize: 13, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{postTitle(p)}</span>
               <span style={{ fontSize: 11, color: p.isSubscriberOnly ? 'var(--accent)' : 'var(--text-3)' }}>{p.isSubscriberOnly ? 'Placené' : 'Zdarma'}</span>
             </label>
           ))
