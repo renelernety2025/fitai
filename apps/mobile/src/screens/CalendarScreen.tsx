@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Pressable,
-  Modal,
   StyleSheet,
 } from 'react-native';
 import {
@@ -12,9 +11,9 @@ import {
   V2Display,
   V2SectionLabel,
   V2Button,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { useHaptic, LoadingState, NativeConfirm } from '../components/native';
 import {
   getCalendarMonth,
   scheduleWorkout,
@@ -104,6 +103,8 @@ export function CalendarScreen({ navigation }: any) {
   const [formTitle, setFormTitle] = useState('');
   const [formNotes, setFormNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     setLoading(true);
@@ -128,23 +129,31 @@ export function CalendarScreen({ navigation }: any) {
 
   async function handleAdd() {
     if (!selectedDate || !formTitle.trim()) return;
+    haptic.tap();
     setSaving(true);
     try {
       await scheduleWorkout({ date: selectedDate, title: formTitle, notes: formNotes });
+      haptic.success();
       setFormTitle('');
       setFormNotes('');
       load();
     } catch {
+      haptic.error();
       setError('Failed to save workout');
     }
     setSaving(false);
   }
 
-  async function handleDelete(id: string) {
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
+    setPendingDelete(null);
     try {
       await deleteScheduledWorkout(id);
+      haptic.success();
       load();
     } catch {
+      haptic.error();
       setError('Failed to delete');
     }
   }
@@ -153,28 +162,41 @@ export function CalendarScreen({ navigation }: any) {
 
   return (
     <V2Screen>
-      {/* Back */}
-      <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
+      {/* Back — native iOS chevron */}
+      <Pressable
+        onPress={() => { haptic.tap(); navigation.goBack(); }}
+        hitSlop={12}
+        style={({ pressed }) => [s.backBtnWrap, pressed && { opacity: 0.5 }]}
+      >
+        <Text style={s.backChevron}>‹</Text>
+        <Text style={s.backLabel}>Back</Text>
       </Pressable>
 
       <V2SectionLabel>Workout calendar</V2SectionLabel>
 
       {/* Month navigation */}
       <View style={s.monthNav}>
-        <Pressable onPress={() => setMonth(shiftMonth(month, -1))} style={s.navBtn}>
-          <Text style={s.navBtnText}>{'<'}</Text>
+        <Pressable
+          onPress={() => { haptic.selection(); setMonth(shiftMonth(month, -1)); }}
+          style={({ pressed }) => [s.navBtn, pressed && { opacity: 0.5 }]}
+          hitSlop={8}
+        >
+          <Text style={s.navBtnText}>‹</Text>
         </Pressable>
         <V2Display size="sm">{monthLabel(month)}</V2Display>
-        <Pressable onPress={() => setMonth(shiftMonth(month, 1))} style={s.navBtn}>
-          <Text style={s.navBtnText}>{'>'}</Text>
+        <Pressable
+          onPress={() => { haptic.selection(); setMonth(shiftMonth(month, 1)); }}
+          style={({ pressed }) => [s.navBtn, pressed && { opacity: 0.5 }]}
+          hitSlop={8}
+        >
+          <Text style={s.navBtnText}>›</Text>
         </Pressable>
       </View>
 
       {error && <Text style={s.error}>{error}</Text>}
 
       {loading ? (
-        <V2Loading />
+        <LoadingState label="Loading calendar" />
       ) : (
         <>
           {/* Day headers */}
@@ -202,12 +224,13 @@ export function CalendarScreen({ navigation }: any) {
                 return (
                   <Pressable
                     key={ci}
-                    onPress={() => setSelectedDate(date)}
-                    style={[
+                    onPress={() => { haptic.selection(); setSelectedDate(date); }}
+                    style={({ pressed }) => [
                       s.gridCell,
                       s.gridCellBorder,
                       today && s.cellToday,
                       selected && s.cellSelected,
+                      pressed && { opacity: 0.6 },
                     ]}
                   >
                     <Text style={[s.dayNum, today && s.dayNumToday]}>{dayNum}</Text>
@@ -249,7 +272,11 @@ export function CalendarScreen({ navigation }: any) {
                     {w.completed && <Text style={{ color: v2.green, marginRight: 6 }}>OK</Text>}
                     <Text style={s.workoutTitle}>{w.title}</Text>
                   </View>
-                  <Pressable onPress={() => handleDelete(w.id)}>
+                  <Pressable
+                    onPress={() => { haptic.press(); setPendingDelete({ id: w.id, title: w.title }); }}
+                    hitSlop={8}
+                    style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+                  >
                     <Text style={s.deleteText}>Delete</Text>
                   </Pressable>
                 </View>
@@ -283,6 +310,16 @@ export function CalendarScreen({ navigation }: any) {
           )}
         </>
       )}
+
+      <NativeConfirm
+        visible={!!pendingDelete}
+        title="Smazat trénink?"
+        message={pendingDelete ? `"${pendingDelete.title}" zmizí z plánu.` : undefined}
+        confirmLabel="Smazat"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </V2Screen>
   );
 }
@@ -290,6 +327,9 @@ export function CalendarScreen({ navigation }: any) {
 const CELL_SIZE = `${100 / 7}%`;
 
 const s = StyleSheet.create({
+  backBtnWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 8, marginBottom: 4 },
+  backChevron: { color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 },
+  backLabel: { color: v2.text, fontSize: 16, fontWeight: '500' },
   monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -303,7 +343,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  navBtnText: { color: v2.muted, fontSize: 14, fontWeight: '600' },
+  navBtnText: { color: v2.text, fontSize: 22, fontWeight: '300', lineHeight: 22 },
   error: { color: v2.red, fontSize: 13, marginBottom: 12 },
   gridRow: { flexDirection: 'row' },
   gridCell: {
