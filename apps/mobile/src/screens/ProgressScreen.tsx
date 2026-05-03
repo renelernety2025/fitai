@@ -6,9 +6,9 @@ import {
   V2Display,
   V2SectionLabel,
   V2Stat,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { LoadingState, ErrorState } from '../components/native';
 
 export function ProgressScreen() {
   const [stats, setStats] = useState<any>(null);
@@ -25,19 +25,10 @@ export function ProgressScreen() {
   useEffect(load, [load]);
 
   if (error) {
-    return (
-      <V2Screen>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
-          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load progress</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
-      </V2Screen>
-    );
+    return <V2Screen><ErrorState message="Failed to load progress." onRetry={load} /></V2Screen>;
   }
 
-  if (!stats) return <V2Screen><V2Loading /></V2Screen>;
+  if (!stats) return <V2Screen><LoadingState label="Loading progress" /></V2Screen>;
 
   const plateaus = insights?.plateaus ?? [];
   const weakGroups = insights?.weakPoints?.weakMuscleGroups ?? [];

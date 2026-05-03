@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getWorkoutPlans } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Row, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Row, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, ErrorState } from '../components/native';
 
 const planAccent: Record<string, string> = {
   PUSH_PULL_LEGS: v2.red,
@@ -14,13 +15,18 @@ export function PlansScreen({ navigation }: any) {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const haptic = useHaptic();
 
-  useEffect(() => {
+  function load() {
+    setLoading(true);
+    setError(false);
     getWorkoutPlans()
       .then(setPlans)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(load, []);
 
   return (
     <V2Screen>
@@ -42,15 +48,16 @@ export function PlansScreen({ navigation }: any) {
         ].map((q) => (
           <Pressable
             key={q.label}
-            onPress={() => navigation.navigate(q.screen)}
-            style={{
+            onPress={() => { haptic.tap(); navigation.navigate(q.screen); }}
+            style={({ pressed }) => ({
               flex: 1,
               minWidth: 100,
               padding: 20,
               borderRadius: 24,
               borderWidth: 1,
               borderColor: v2.border,
-            }}
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
             <View style={{ width: 32, height: 4, borderRadius: 2, backgroundColor: q.color, marginBottom: 12 }} />
             <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>{q.label}</Text>
@@ -60,25 +67,22 @@ export function PlansScreen({ navigation }: any) {
 
       <V2SectionLabel>Plans</V2SectionLabel>
 
-      {loading && <V2Loading />}
+      {loading && <LoadingState label="Loading plans" />}
 
-      {error && !loading && (
-        <View style={{ alignItems: 'center', padding: 32 }}>
-          <Text style={{ color: v2.red, fontSize: 14, marginBottom: 12 }}>Failed to load plans.</Text>
-        </View>
-      )}
+      {error && !loading && <ErrorState message="Failed to load plans." onRetry={load} />}
 
       {!loading && !error && plans.length === 0 && (
-        <View style={{ alignItems: 'center', padding: 32 }}>
-          <Text style={{ color: v2.muted, fontSize: 14, marginBottom: 12 }}>No training plans yet.</Text>
-          <Pressable onPress={() => navigation.navigate('AICoach')}>
-            <Text style={{ color: v2.text, fontSize: 14, fontWeight: '600' }}>Create with AI →</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="🏋️"
+          title="No plans yet"
+          body="Generate a personalized one with AI Coach."
+          actionLabel="Create with AI"
+          onAction={() => navigation.navigate('AICoach')}
+        />
       )}
 
       {plans.map((p) => (
-        <V2Row key={p.id} onPress={() => navigation.navigate('PlanDetail', { id: p.id })}>
+        <V2Row key={p.id} onPress={() => { haptic.tap(); navigation.navigate('PlanDetail', { id: p.id }); }}>
           <Text style={{ color: planAccent[p.type] || '#FFF', fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
             {(p.type || '').replace(/_/g, ' ')} · {p.daysPerWeek}x/WEEK
           </Text>

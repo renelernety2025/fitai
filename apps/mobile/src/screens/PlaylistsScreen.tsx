@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Linking } from 'react-native';
 import { getPlaylists } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 const ALLOWED_DOMAINS = ['open.spotify.com', 'music.apple.com', 'spotify.com', 'itunes.apple.com'];
 
 export function PlaylistsScreen() {
   const [playlists, setPlaylists] = useState<any[] | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getPlaylists().then(setPlaylists).catch(() => setPlaylists([]));
@@ -17,7 +19,8 @@ export function PlaylistsScreen() {
     try {
       const domain = new URL(url).hostname;
       if (!ALLOWED_DOMAINS.some(d => domain.endsWith(d))) return;
-      Linking.openURL(url).catch(() => {});
+      haptic.tap();
+      Linking.openURL(url).catch(() => { haptic.error(); });
     } catch { /* invalid URL — ignore */ }
   }
 
@@ -34,11 +37,9 @@ export function PlaylistsScreen() {
       </View>
 
       {playlists === null ? (
-        <V2Loading />
+        <LoadingState label="Loading playlists" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No playlists yet
-        </Text>
+        <EmptyState icon="🎧" title="No playlists yet" body="Workout playlists from the community will appear here." />
       ) : null}
 
       {items.map((p) => (
