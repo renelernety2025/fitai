@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getMySquad, getSquadLeaderboard } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 export function SquadsScreen() {
   const [tab, setTab] = useState<'squad' | 'leaderboard'>('squad');
-  const [squad, setSquad] = useState<any>(undefined); // undefined = loading, null = no squad
+  const [squad, setSquad] = useState<any>(undefined);
   const [leaderboard, setLeaderboard] = useState<any[] | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getMySquad().then(s => setSquad(s || null)).catch(() => setSquad(null));
@@ -23,11 +25,11 @@ export function SquadsScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="My squad" selected={tab === 'squad'} onPress={() => setTab('squad')} />
-        <V2Chip label="Leaderboard" selected={tab === 'leaderboard'} onPress={() => setTab('leaderboard')} />
+        <V2Chip label="My squad" selected={tab === 'squad'} onPress={() => { haptic.selection(); setTab('squad'); }} />
+        <V2Chip label="Leaderboard" selected={tab === 'leaderboard'} onPress={() => { haptic.selection(); setTab('leaderboard'); }} />
       </View>
 
-      {loading && <V2Loading />}
+      {loading && <LoadingState label="Loading squads" />}
 
       {tab === 'squad' && (
         squad ? (
@@ -51,17 +53,13 @@ export function SquadsScreen() {
             ))}
           </View>
         ) : (
-          <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-            You are not in a squad yet
-          </Text>
+          <EmptyState icon="🤝" title="No squad yet" body="Join or create a squad on the web app to compete weekly." />
         )
       )}
 
       {tab === 'leaderboard' && !loading && (
         (leaderboard ?? []).length === 0 ? (
-          <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-            No squads yet
-          </Text>
+          <EmptyState icon="🏆" title="No squads yet" body="Be the first to start a squad — leaderboard will fill up fast." />
         ) : (
           (leaderboard ?? []).map((s, i) => (
             <View
