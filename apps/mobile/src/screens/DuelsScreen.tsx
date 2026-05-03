@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getActiveDuels, getDuelHistory, submitDuelScore } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, NativeConfirm } from '../components/native';
 
 /** Resolve names from nested backend shape (challenger/challenged objects) */
 function getChallengerName(d: any): string {
@@ -24,6 +25,9 @@ export function DuelsScreen() {
   const [tab, setTab] = useState<'active' | 'history'>('active');
   const [active, setActive] = useState<any[] | null>(null);
   const [history, setHistory] = useState<any[] | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     loadData();
@@ -34,18 +38,19 @@ export function DuelsScreen() {
     getDuelHistory().then(setHistory).catch(() => setHistory([]));
   }
 
-  function handleSubmitScore(id: string) {
-    Alert.alert('Submit Score', 'Mark this duel as completed with your current workout data?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Submit',
-        onPress: () => {
-          submitDuelScore(id, 0)
-            .then(loadData)
-            .catch(() => Alert.alert('Error', 'Failed to submit score'));
-        },
-      },
-    ]);
+  async function confirmSubmit() {
+    if (!pendingSubmit) return;
+    const id = pendingSubmit;
+    setPendingSubmit(null);
+    setError(null);
+    try {
+      await submitDuelScore(id, 0);
+      haptic.success();
+      loadData();
+    } catch {
+      haptic.error();
+      setError('Failed to submit score');
+    }
   }
 
   const items = tab === 'active' ? (active ?? []) : (history ?? []);
@@ -59,16 +64,24 @@ export function DuelsScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="Active" selected={tab === 'active'} onPress={() => setTab('active')} />
-        <V2Chip label="History" selected={tab === 'history'} onPress={() => setTab('history')} />
+        <V2Chip label="Active" selected={tab === 'active'} onPress={() => { haptic.selection(); setTab('active'); }} />
+        <V2Chip label="History" selected={tab === 'history'} onPress={() => { haptic.selection(); setTab('history'); }} />
       </View>
 
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
       {loading ? (
-        <V2Loading />
+        <LoadingState label="Loading duels" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          {tab === 'active' ? 'No active duels' : 'No history yet'}
-        </Text>
+        <EmptyState
+          icon="⚔"
+          title={tab === 'active' ? 'No active duels' : 'No history yet'}
+          body={tab === 'active' ? 'Challenge someone from the community to get started.' : 'Past duels will appear here once finished.'}
+        />
       ) : null}
 
       {items.map((d) => (
@@ -117,7 +130,11 @@ export function DuelsScreen() {
           </View>
 
           {tab === 'active' && (
-            <V2Button onPress={() => handleSubmitScore(d.id)} variant="secondary" full>
+            <V2Button
+              onPress={() => { haptic.tap(); setPendingSubmit(d.id); }}
+              variant="secondary"
+              full
+            >
               Submit score
             </V2Button>
           )}
@@ -129,6 +146,15 @@ export function DuelsScreen() {
           )}
         </View>
       ))}
+
+      <NativeConfirm
+        visible={!!pendingSubmit}
+        title="Submit score?"
+        message="Mark this duel as completed using your current workout data."
+        confirmLabel="Submit"
+        onConfirm={confirmSubmit}
+        onCancel={() => setPendingSubmit(null)}
+      />
     </V2Screen>
   );
 }
