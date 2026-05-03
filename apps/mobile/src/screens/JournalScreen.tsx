@@ -4,16 +4,15 @@ import {
   Text,
   TextInput,
   Pressable,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import {
   V2Screen,
   V2Display,
   V2SectionLabel,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 import {
   getJournalMonth,
   upsertJournalEntry,
@@ -57,7 +56,8 @@ function formatDay(date: string): string {
 interface JournalDay {
   date: string;
   gymSession?: { totalReps: number; averageFormScore: number; exercises?: string[] };
-  entry?: { notes?: string; mood?: number; rating?: number; tags?: string[]; aiInsight?: string };
+  // Backend mood is enum string: GREAT | GOOD | NEUTRAL | TIRED | BAD
+  entry?: { notes?: string; mood?: string; rating?: number; tags?: string[]; aiInsight?: string };
 }
 
 function DayCard({
@@ -77,11 +77,15 @@ function DayCard({
 }) {
   const [notes, setNotes] = useState(day.entry?.notes || '');
   const [expanded, setExpanded] = useState(false);
+  const haptic = useHaptic();
 
   return (
     <View style={s.dayCard}>
       {/* Day header */}
-      <Pressable onPress={() => setExpanded(!expanded)} style={s.dayHeader}>
+      <Pressable
+        onPress={() => { haptic.tap(); setExpanded(!expanded); }}
+        style={({ pressed }) => [s.dayHeader, pressed && { opacity: 0.7 }]}
+      >
         <Text style={s.dayDate}>{formatDay(day.date)}</Text>
         {day.gymSession && (
           <View style={s.sessionBadge}>
@@ -90,7 +94,7 @@ function DayCard({
             </Text>
           </View>
         )}
-        <Text style={s.expandArrow}>{expanded ? 'v' : '>'}</Text>
+        <Text style={s.expandArrow}>{expanded ? '⌄' : '›'}</Text>
       </Pressable>
 
       {expanded && (
@@ -121,8 +125,12 @@ function DayCard({
             {MOOD_VALUES.map((moodVal, i) => (
               <Pressable
                 key={moodVal}
-                onPress={() => onSaveMood(day.date, moodVal as any)}
-                style={[s.moodBtn, day.entry?.mood === moodVal && s.moodBtnActive]}
+                onPress={() => { haptic.selection(); onSaveMood(day.date, moodVal); }}
+                style={({ pressed }) => [
+                  s.moodBtn,
+                  day.entry?.mood === moodVal && s.moodBtnActive,
+                  pressed && { opacity: 0.6 },
+                ]}
               >
                 <Text style={[s.moodLabel, day.entry?.mood === moodVal && s.moodLabelActive]}>
                   {MOOD_LABELS[i]}
@@ -135,7 +143,12 @@ function DayCard({
           <V2SectionLabel>Rating</V2SectionLabel>
           <View style={s.starsRow}>
             {[1,2,3,4,5].map(star => (
-              <Pressable key={star} onPress={() => onSaveRating(day.date, star)}>
+              <Pressable
+                key={star}
+                onPress={() => { haptic.selection(); onSaveRating(day.date, star); }}
+                hitSlop={6}
+                style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+              >
                 <Text style={[s.star, (day.entry?.rating || 0) >= star && s.starActive]}>
                   *
                 </Text>
@@ -151,8 +164,12 @@ function DayCard({
               return (
                 <Pressable
                   key={tag}
-                  onPress={() => onToggleTag(day.date, tag)}
-                  style={[s.tagChip, active && s.tagChipActive]}
+                  onPress={() => { haptic.selection(); onToggleTag(day.date, tag); }}
+                  style={({ pressed }) => [
+                    s.tagChip,
+                    active && s.tagChipActive,
+                    pressed && { opacity: 0.6 },
+                  ]}
                 >
                   <Text style={[s.tagText, active && s.tagTextActive]}>
                     {tag.toUpperCase()}
@@ -169,7 +186,10 @@ function DayCard({
               <Text style={s.insightText}>{day.entry.aiInsight}</Text>
             </View>
           ) : (
-            <Pressable onPress={() => onRequestInsight(day.date)} style={s.insightBtn}>
+            <Pressable
+              onPress={() => { haptic.tap(); onRequestInsight(day.date); }}
+              style={({ pressed }) => [s.insightBtn, pressed && { opacity: 0.6 }]}
+            >
               <Text style={s.insightBtnText}>Generate AI insight</Text>
             </Pressable>
           )}
@@ -184,6 +204,7 @@ export function JournalScreen({ navigation }: any) {
   const [days, setDays] = useState<JournalDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   const load = useCallback(async (m: string) => {
     setLoading(true);
@@ -208,14 +229,14 @@ export function JournalScreen({ navigation }: any) {
     try {
       await upsertJournalEntry(date, { mood });
       load(month);
-    } catch { /* silent */ }
+    } catch { haptic.error(); }
   }
 
   async function handleSaveRating(date: string, rating: number) {
     try {
       await upsertJournalEntry(date, { rating });
       load(month);
-    } catch { /* silent */ }
+    } catch { haptic.error(); }
   }
 
   async function handleToggleTag(date: string, tag: string) {
@@ -227,14 +248,18 @@ export function JournalScreen({ navigation }: any) {
     try {
       await upsertJournalEntry(date, { tags });
       load(month);
-    } catch { /* silent */ }
+    } catch { haptic.error(); }
   }
 
   async function handleRequestInsight(date: string) {
     try {
       await generateJournalInsight(date);
+      haptic.success();
       load(month);
-    } catch { setError('Failed to generate insight'); }
+    } catch {
+      haptic.error();
+      setError('Failed to generate insight');
+    }
   }
 
   const sortedDays = [...days].sort((a, b) => b.date.localeCompare(a.date));
@@ -243,9 +268,14 @@ export function JournalScreen({ navigation }: any) {
 
   return (
     <V2Screen>
-      {/* Back */}
-      <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
+      {/* Back — native iOS chevron */}
+      <Pressable
+        onPress={() => { haptic.tap(); navigation.goBack(); }}
+        hitSlop={12}
+        style={({ pressed }) => [s.backBtnWrap, pressed && { opacity: 0.5 }]}
+      >
+        <Text style={s.backChevron}>‹</Text>
+        <Text style={s.backLabel}>Back</Text>
       </Pressable>
 
       {/* Hero */}
@@ -259,12 +289,20 @@ export function JournalScreen({ navigation }: any) {
 
       {/* Month navigation */}
       <View style={s.monthNav}>
-        <Pressable onPress={() => setMonth(shiftMonth(month, -1))} style={s.navBtn}>
-          <Text style={s.navBtnText}>{'<'}</Text>
+        <Pressable
+          onPress={() => { haptic.selection(); setMonth(shiftMonth(month, -1)); }}
+          style={({ pressed }) => [s.navBtn, pressed && { opacity: 0.5 }]}
+          hitSlop={6}
+        >
+          <Text style={s.navBtnText}>‹</Text>
         </Pressable>
         <Text style={s.monthLabel}>{formatMonth(month)}</Text>
-        <Pressable onPress={() => setMonth(shiftMonth(month, 1))} style={s.navBtn}>
-          <Text style={s.navBtnText}>{'>'}</Text>
+        <Pressable
+          onPress={() => { haptic.selection(); setMonth(shiftMonth(month, 1)); }}
+          style={({ pressed }) => [s.navBtn, pressed && { opacity: 0.5 }]}
+          hitSlop={6}
+        >
+          <Text style={s.navBtnText}>›</Text>
         </Pressable>
       </View>
 
@@ -273,9 +311,9 @@ export function JournalScreen({ navigation }: any) {
 
       {/* Content */}
       {loading ? (
-        <V2Loading />
+        <LoadingState label="Loading entries" />
       ) : sortedDays.length === 0 ? (
-        <Text style={s.emptyText}>No entries for this month</Text>
+        <EmptyState icon="📓" title="No entries yet" body="Workouts logged this month will appear here once they happen." />
       ) : (
         <>
           <V2SectionLabel>Entries</V2SectionLabel>
@@ -297,6 +335,9 @@ export function JournalScreen({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
+  backBtnWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 8 },
+  backChevron: { color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 },
+  backLabel: { color: v2.text, fontSize: 16, fontWeight: '500' },
   statMini: { color: v2.faint, fontSize: 13 },
   monthNav: {
     flexDirection: 'row',
@@ -311,7 +352,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
-  navBtnText: { color: v2.muted, fontSize: 14, fontWeight: '600' },
+  navBtnText: { color: v2.text, fontSize: 22, fontWeight: '300', lineHeight: 22 },
   monthLabel: { color: v2.text, fontSize: 16, fontWeight: '600' },
   errorText: { color: v2.red, fontSize: 13, marginBottom: 12 },
   emptyText: { color: v2.ghost, fontSize: 14, textAlign: 'center', marginTop: 48 },
