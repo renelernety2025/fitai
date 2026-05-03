@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getCoachingMemories } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 export function CoachingNotesScreen() {
   const [memories, setMemories] = useState<any[] | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const haptic = useHaptic();
 
   useEffect(() => {
     loadMemories(1);
@@ -36,11 +38,9 @@ export function CoachingNotesScreen() {
       </View>
 
       {memories === null ? (
-        <V2Loading />
+        <LoadingState label="Loading notes" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No coaching notes yet
-        </Text>
+        <EmptyState icon="📝" title="No notes yet" body="AI builds notes from your training over time. They appear here as you log sessions." />
       ) : null}
 
       {items.map((m, i) => (
@@ -93,8 +93,8 @@ export function CoachingNotesScreen() {
 
       {items.length > 0 && items.length < total && (
         <Pressable
-          onPress={() => loadMemories(page + 1)}
-          style={{ alignItems: 'center', paddingVertical: 20 }}
+          onPress={() => { haptic.tap(); loadMemories(page + 1); }}
+          style={({ pressed }) => [{ alignItems: 'center', paddingVertical: 20 }, pressed && { opacity: 0.5 }]}
         >
           <Text style={{ color: v2.green, fontSize: 13, fontWeight: '600' }}>Load more</Text>
         </Pressable>
