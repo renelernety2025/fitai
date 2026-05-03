@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getVIPStatus, checkVIPEligibility, acceptVIP } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState } from '../components/native';
 
 export function VIPScreen() {
   const [status, setStatus] = useState<any>(null);
   const [eligibility, setEligibility] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [welcomed, setWelcomed] = useState(false);
+  const haptic = useHaptic();
 
   useEffect(() => {
     Promise.all([
@@ -18,10 +22,18 @@ export function VIPScreen() {
     }).finally(() => setLoading(false));
   }, []);
 
-  function handleAccept() {
-    acceptVIP()
-      .then((s) => { setStatus(s); Alert.alert('VIP', 'Welcome to VIP!'); })
-      .catch((e: any) => Alert.alert('Error', e?.message || 'Could not accept VIP'));
+  async function handleAccept() {
+    haptic.tap();
+    setError(null);
+    try {
+      const s = await acceptVIP();
+      haptic.success();
+      setStatus(s);
+      setWelcomed(true);
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not accept VIP');
+    }
   }
 
   // Backend returns {isVip: true/false} — check the field, not truthy object
@@ -29,7 +41,7 @@ export function VIPScreen() {
   const stats = eligibility?.stats;
   const isEligible = eligibility?.isEligible === true;
 
-  if (loading) return <V2Screen><V2Loading /></V2Screen>;
+  if (loading) return <V2Screen><LoadingState label="Loading VIP status" /></V2Screen>;
 
   return (
     <V2Screen>
@@ -37,6 +49,18 @@ export function VIPScreen() {
         <V2SectionLabel>Exclusive</V2SectionLabel>
         <V2Display size="xl">VIP.</V2Display>
       </View>
+
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
+      {welcomed && (
+        <View style={{ marginBottom: 16, backgroundColor: `${v2.yellow}15`, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: `${v2.yellow}40` }}>
+          <Text style={{ color: v2.yellow, fontSize: 13, fontWeight: '600' }}>✦ Welcome to VIP.</Text>
+        </View>
+      )}
 
       {isVip ? (
         <View style={{ borderRadius: 24, borderWidth: 1, borderColor: v2.yellow, padding: 24, marginBottom: 24, backgroundColor: `${v2.yellow}10` }}>
