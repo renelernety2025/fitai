@@ -1,31 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { getWorkoutPlan, startGymSession } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 export function PlanDetailScreen({ route, navigation }: any) {
   const [plan, setPlan] = useState<any>(null);
   const [loadError, setLoadError] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const id = route?.params?.id;
+  const haptic = useHaptic();
+
+  function reload() {
+    setLoadError(false);
+    getWorkoutPlan(id).then(setPlan).catch(() => setLoadError(true));
+  }
 
   useEffect(() => {
     if (!id) return;
-    setLoadError(false);
-    getWorkoutPlan(id)
-      .then(setPlan)
-      .catch(() => setLoadError(true));
+    reload();
   }, [id]);
 
   const [starting, setStarting] = useState(false);
 
   async function handleStart(dayIndex: number) {
     if (!plan) return;
+    haptic.tap();
+    setStartError(null);
     setStarting(true);
     try {
       const session = await startGymSession({ workoutPlanId: plan.id, workoutDayIndex: dayIndex });
+      haptic.success();
       navigation.navigate('CameraWorkout', { sessionId: session.id });
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to start workout');
+      haptic.error();
+      setStartError(e?.message || 'Failed to start workout');
     } finally {
       setStarting(false);
     }
@@ -34,25 +43,30 @@ export function PlanDetailScreen({ route, navigation }: any) {
   if (loadError) {
     return (
       <V2Screen>
-        <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
-          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← PLANS</Text>
+        <Pressable
+          onPress={() => { haptic.tap(); navigation.goBack(); }}
+          hitSlop={12}
+          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 8 }, pressed && { opacity: 0.5 }]}
+        >
+          <Text style={{ color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 }}>‹</Text>
+          <Text style={{ color: v2.text, fontSize: 16, fontWeight: '500' }}>Plans</Text>
         </Pressable>
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load plan</Text>
-          <Pressable onPress={() => { setLoadError(false); getWorkoutPlan(id).then(setPlan).catch(() => setLoadError(true)); }} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load plan." onRetry={reload} />
       </V2Screen>
     );
   }
 
-  if (!plan) return <V2Screen><V2Loading /></V2Screen>;
+  if (!plan) return <V2Screen><LoadingState label="Loading plan" /></V2Screen>;
 
   return (
     <V2Screen>
-      <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
-        <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← PLANS</Text>
+      <Pressable
+        onPress={() => { haptic.tap(); navigation.goBack(); }}
+        hitSlop={12}
+        style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 8, paddingBottom: 16 }, pressed && { opacity: 0.5 }]}
+      >
+        <Text style={{ color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 }}>‹</Text>
+        <Text style={{ color: v2.text, fontSize: 16, fontWeight: '500' }}>Plans</Text>
       </Pressable>
 
       <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 8 }}>
@@ -60,6 +74,12 @@ export function PlanDetailScreen({ route, navigation }: any) {
       </Text>
       <V2Display size="xl">{plan.nameCs}</V2Display>
       <Text style={{ color: v2.muted, marginTop: 12, fontSize: 14 }}>{plan.description}</Text>
+
+      {startError && (
+        <View style={{ marginTop: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{startError}</Text>
+        </View>
+      )}
 
       {plan.days?.map((day: any) => (
         <View key={day.id} style={{ marginTop: 40 }}>
@@ -73,13 +93,13 @@ export function PlanDetailScreen({ route, navigation }: any) {
             <Pressable
               onPress={() => handleStart(day.dayIndex)}
               disabled={starting}
-              style={{
+              style={({ pressed }) => ({
                 backgroundColor: '#FFF',
                 paddingVertical: 12,
                 paddingHorizontal: 20,
                 borderRadius: 999,
-                opacity: starting ? 0.5 : 1,
-              }}
+                opacity: starting ? 0.5 : pressed ? 0.7 : 1,
+              })}
             >
               <Text style={{ color: '#000', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 }}>
                 START →
