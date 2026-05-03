@@ -11,9 +11,9 @@ import {
   V2Display,
   V2SectionLabel,
   V2Button,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 import { getLeagueCurrent, joinLeague } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 
@@ -68,6 +68,7 @@ export function LeaguesScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   const reload = () => {
     setLoading(true);
@@ -79,13 +80,15 @@ export function LeaguesScreen({ navigation }: any) {
   useEffect(reload, []);
 
   async function handleJoin() {
+    haptic.tap();
     setJoining(true);
     setError(null);
     try {
       await joinLeague();
-      // Re-fetch to get full league data (join returns raw membership, not LeagueData)
+      haptic.success();
       reload();
     } catch {
+      haptic.error();
       setError('Failed to join league');
     }
     setJoining(false);
@@ -100,9 +103,14 @@ export function LeaguesScreen({ navigation }: any) {
 
   return (
     <V2Screen>
-      {/* Back */}
-      <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 8 }}>
-        <Text style={{ color: v2.muted, fontSize: 14, fontWeight: '600' }}>Back</Text>
+      {/* Back — native iOS chevron */}
+      <Pressable
+        onPress={() => { haptic.tap(); navigation.goBack(); }}
+        hitSlop={12}
+        style={({ pressed }) => [s.backBtnWrap, pressed && { opacity: 0.5 }]}
+      >
+        <Text style={s.backChevron}>‹</Text>
+        <Text style={s.backLabel}>Back</Text>
       </Pressable>
 
       <V2SectionLabel>Leagues</V2SectionLabel>
@@ -110,7 +118,7 @@ export function LeaguesScreen({ navigation }: any) {
 
       {error && <Text style={s.error}>{error}</Text>}
 
-      {loading && <V2Loading />}
+      {loading && <LoadingState label="Loading league" />}
 
       {showLeague && data && (
         <>
@@ -203,8 +211,8 @@ export function LeaguesScreen({ navigation }: any) {
                   ]}
                 >
                   <Text style={s.leaderRank}>{entry.rank}</Text>
-                  {promoted && <Text style={s.promoArrow}>^</Text>}
-                  {relegated && <Text style={s.relegArrow}>v</Text>}
+                  {promoted && <Text style={s.promoArrow}>↑</Text>}
+                  {relegated && <Text style={s.relegArrow}>↓</Text>}
                   <Text
                     style={[s.leaderName, isMe && { color: v2.green }]}
                     numberOfLines={1}
@@ -224,22 +232,22 @@ export function LeaguesScreen({ navigation }: any) {
 
       {/* Not joined / no data state */}
       {!loading && !showLeague && (
-        <View style={s.noDataWrap}>
-          <Text style={s.emptyText}>
-            {data?.joined === false ? 'Join the weekly league to compete!' : 'Leagues are not active.'}
-          </Text>
-          <View style={{ marginTop: 16 }}>
-            <V2Button onPress={handleJoin} disabled={joining}>
-              {joining ? 'Joining...' : 'Join league'}
-            </V2Button>
-          </View>
-        </View>
+        <EmptyState
+          icon="🏆"
+          title={data?.joined === false ? 'Join the weekly league' : 'No league active'}
+          body="Compete with others, climb tiers each week."
+          actionLabel={joining ? 'Joining…' : 'Join league'}
+          onAction={joining ? undefined : handleJoin}
+        />
       )}
     </V2Screen>
   );
 }
 
 const s = StyleSheet.create({
+  backBtnWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 8 },
+  backChevron: { color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 },
+  backLabel: { color: v2.text, fontSize: 16, fontWeight: '500' },
   error: { color: v2.red, fontSize: 13, marginTop: 12 },
   heroCenter: { alignItems: 'center', marginTop: 32, marginBottom: 32 },
   tierBadge: {
