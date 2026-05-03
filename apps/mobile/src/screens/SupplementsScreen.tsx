@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { getMyStack, logSupplement } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 // Backend enum is UPPERCASE — match both for safety
 const timingColors: Record<string, string> = {
@@ -20,6 +21,8 @@ function getItemName(item: any): string {
 
 export function SupplementsScreen() {
   const [stack, setStack] = useState<any[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getMyStack().then(setStack).catch(() => setStack([]));
@@ -27,13 +30,19 @@ export function SupplementsScreen() {
 
   function handleToggle(item: any) {
     if (item.takenToday) return;
+    haptic.tap();
+    setError(null);
     logSupplement(item.id)
       .then(() => {
+        haptic.success();
         setStack((prev) =>
           (prev ?? []).map((s) => (s.id === item.id ? { ...s, takenToday: true } : s)),
         );
       })
-      .catch(() => Alert.alert('Error', 'Failed to log supplement'));
+      .catch(() => {
+        haptic.error();
+        setError('Failed to log supplement');
+      });
   }
 
   const items = stack ?? [];
@@ -49,12 +58,16 @@ export function SupplementsScreen() {
         </Text>
       </View>
 
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
       {stack === null ? (
-        <V2Loading />
+        <LoadingState label="Loading stack" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No supplements in your stack. Add them on the web app.
-        </Text>
+        <EmptyState icon="💊" title="Empty stack" body="Add supplements on the web app to see them here." />
       ) : null}
 
       {items.map((item) => (
