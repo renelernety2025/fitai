@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { getWishlist, removeFromWishlist } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, NativeConfirm } from '../components/native';
 
-/** Human-readable type label from backend enum */
 const TYPE_LABELS: Record<string, string> = {
   WISH_EXERCISE: 'Exercise',
   WISH_PLAN: 'Workout Plan',
@@ -24,6 +24,8 @@ const TYPE_ICONS: Record<string, string> = {
 
 export function WishlistScreen() {
   const [wishlist, setWishlist] = useState<any[] | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     loadWishlist();
@@ -33,15 +35,17 @@ export function WishlistScreen() {
     getWishlist().then(setWishlist).catch(() => setWishlist([]));
   }
 
-  function handleRemove(id: string) {
-    Alert.alert('Remove', 'Remove from wishlist?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeFromWishlist(id).then(loadWishlist).catch(() => {}),
-      },
-    ]);
+  async function confirmRemove() {
+    if (!pendingRemove) return;
+    const id = pendingRemove;
+    setPendingRemove(null);
+    try {
+      await removeFromWishlist(id);
+      haptic.success();
+      loadWishlist();
+    } catch {
+      haptic.error();
+    }
   }
 
   const items = wishlist ?? [];
@@ -57,11 +61,9 @@ export function WishlistScreen() {
       </View>
 
       {wishlist === null ? (
-        <V2Loading />
+        <LoadingState label="Loading wishlist" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          Wishlist is empty
-        </Text>
+        <EmptyState icon="🔖" title="Wishlist empty" body="Bookmark items across the app to save them here." />
       ) : null}
 
       {items.map((item) => (
@@ -89,11 +91,24 @@ export function WishlistScreen() {
               Added {new Date(item.addedAt).toLocaleDateString('en-US')}
             </Text>
           </View>
-          <Pressable onPress={() => handleRemove(item.id)} style={{ paddingLeft: 12 }}>
+          <Pressable
+            onPress={() => { haptic.press(); setPendingRemove(item.id); }}
+            hitSlop={8}
+            style={({ pressed }) => [{ paddingLeft: 12 }, pressed && { opacity: 0.5 }]}
+          >
             <Text style={{ color: v2.red, fontSize: 12, fontWeight: '600' }}>Remove</Text>
           </Pressable>
         </View>
       ))}
+
+      <NativeConfirm
+        visible={!!pendingRemove}
+        title="Remove from wishlist?"
+        confirmLabel="Remove"
+        destructive
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
     </V2Screen>
   );
 }

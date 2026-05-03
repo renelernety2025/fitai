@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
 import { getVideos } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, ErrorState } from '../components/native';
 
 const CATS = [
   { v: 'ALL', l: 'All' },
@@ -24,6 +25,7 @@ export function VideosScreen({ navigation }: any) {
   const [videos, setVideos] = useState<any[] | null>(null);
   const [cat, setCat] = useState('ALL');
   const [error, setError] = useState(false);
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     setError(false);
@@ -44,29 +46,22 @@ export function VideosScreen({ navigation }: any) {
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
         {CATS.map((c) => (
-          <V2Chip key={c.v} label={c.l} selected={cat === c.v} onPress={() => setCat(c.v)} />
+          <V2Chip key={c.v} label={c.l} selected={cat === c.v} onPress={() => { haptic.selection(); setCat(c.v); }} />
         ))}
       </View>
 
       {error ? (
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load videos</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load videos." onRetry={load} />
       ) : videos === null ? (
-        <V2Loading />
+        <LoadingState label="Loading videos" />
       ) : videos.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', paddingVertical: 40 }}>
-          No videos in this category yet.
-        </Text>
+        <EmptyState icon="🎬" title="No videos here" body="Try a different category." />
       ) : (
         videos.map((v) => (
           <Pressable
             key={v.id}
-            onPress={() => navigation.navigate('VideoDetail', { id: v.id })}
-            style={{ marginBottom: 32 }}
+            onPress={() => { haptic.tap(); navigation.navigate('VideoDetail', { id: v.id }); }}
+            style={({ pressed }) => [{ marginBottom: 32 }, pressed && { opacity: 0.6 }]}
           >
             <Image
               source={{ uri: v.thumbnailUrl }}
