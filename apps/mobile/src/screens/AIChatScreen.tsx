@@ -10,8 +10,9 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { v2, V2SectionLabel, V2Loading } from '../components/v2/V2';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { v2, V2SectionLabel } from '../components/v2/V2';
+import { useHaptic } from '../components/native';
 import { sendChatMessage } from '../lib/api';
 
 interface Msg {
@@ -73,6 +74,8 @@ export function AIChatScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+  const haptic = useHaptic();
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
@@ -81,9 +84,11 @@ export function AIChatScreen({ navigation }: any) {
   const handleSend = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
     if (text.trim().length > MAX_MESSAGE_LENGTH) {
+      haptic.warning();
       setError(`Message too long (${text.trim().length}/${MAX_MESSAGE_LENGTH} chars)`);
       return;
     }
+    haptic.tap();
     setError(null);
     setInput('');
 
@@ -120,6 +125,7 @@ export function AIChatScreen({ navigation }: any) {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong';
+      haptic.error();
       setError(msg);
       setMessages(prev => {
         const updated = [...prev];
@@ -132,7 +138,7 @@ export function AIChatScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [conversationId, loading, scrollToEnd]);
+  }, [conversationId, loading, scrollToEnd, haptic]);
 
   const hasMessages = messages.length > 0;
 
@@ -144,13 +150,18 @@ export function AIChatScreen({ navigation }: any) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
-          {/* Header */}
+          {/* Header — native iOS chevron + title */}
           <View style={s.header}>
-            <Pressable onPress={() => navigation.goBack()}>
+            <Pressable
+              onPress={() => { haptic.tap(); navigation.goBack(); }}
+              hitSlop={12}
+              style={({ pressed }) => [s.backBtnWrap, pressed && { opacity: 0.5 }]}
+            >
+              <Text style={s.backChevron}>‹</Text>
               <Text style={s.backBtn}>Back</Text>
             </Pressable>
             <Text style={s.headerTitle}>Alex</Text>
-            <View style={{ width: 48 }} />
+            <View style={{ width: 64 }} />
           </View>
 
           {/* Messages or Hero */}
@@ -169,7 +180,11 @@ export function AIChatScreen({ navigation }: any) {
                 <V2SectionLabel>Try asking</V2SectionLabel>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   {SUGGESTED.map(p => (
-                    <Pressable key={p} onPress={() => handleSend(p)} style={s.suggestChip}>
+                    <Pressable
+                      key={p}
+                      onPress={() => { haptic.selection(); handleSend(p); }}
+                      style={({ pressed }) => [s.suggestChip, pressed && { opacity: 0.6 }]}
+                    >
                       <Text style={s.suggestText}>{p}</Text>
                     </Pressable>
                   ))}
@@ -197,8 +212,8 @@ export function AIChatScreen({ navigation }: any) {
             <Text style={s.errorText}>{error}</Text>
           )}
 
-          {/* Input */}
-          <View style={s.inputRow}>
+          {/* Input — bottom safe area handled here (KAV pads top edge) */}
+          <View style={[s.inputRow, { paddingBottom: 12 + insets.bottom }]}>
             <TextInput
               style={s.textInput}
               value={input}
@@ -209,11 +224,17 @@ export function AIChatScreen({ navigation }: any) {
               returnKeyType="send"
               onSubmitEditing={() => handleSend(input)}
               editable={!loading}
+              multiline
+              blurOnSubmit
             />
             <Pressable
               onPress={() => handleSend(input)}
               disabled={loading || !input.trim()}
-              style={[s.sendBtn, (!input.trim() || loading) && { opacity: 0.3 }]}
+              style={({ pressed }) => [
+                s.sendBtn,
+                (!input.trim() || loading) && { opacity: 0.3 },
+                pressed && { opacity: 0.7 },
+              ]}
             >
               <Text style={s.sendText}>Send</Text>
             </Pressable>
@@ -237,7 +258,9 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: v2.border,
   },
-  backBtn: { color: v2.muted, fontSize: 14, fontWeight: '600' },
+  backBtnWrap: { flexDirection: 'row', alignItems: 'center', gap: 2, width: 64 },
+  backChevron: { color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 },
+  backBtn: { color: v2.text, fontSize: 16, fontWeight: '500' },
   headerTitle: { color: v2.text, fontSize: 16, fontWeight: '700' },
   heroContainer: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 24 },
   avatar: {
@@ -313,6 +336,7 @@ const s = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 12,
+    maxHeight: 120,
   },
   sendBtn: {
     backgroundColor: v2.text,
