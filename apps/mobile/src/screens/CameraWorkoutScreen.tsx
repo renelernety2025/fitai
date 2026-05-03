@@ -15,14 +15,19 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Modal,
-  Alert,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { completeGymSet, endGymSession, getGymSession } from '../lib/api';
 import { v2, V2Button, V2SectionLabel, V2Display } from '../components/v2/V2';
+import {
+  useHaptic,
+  NativeConfirm,
+  NativeBottomSheet,
+  NativeBottomSheetRef,
+} from '../components/native';
+
+type ConfirmKind = 'end' | 'finish' | 'last' | null;
 
 const RPE_VALUES = [6, 7, 8, 9, 10];
 const RPE_LABELS: Record<number, string> = {
@@ -36,6 +41,7 @@ const RPE_LABELS: Record<number, string> = {
 export function CameraWorkoutScreen({ route, navigation }: any) {
   const sessionId = route?.params?.sessionId as string;
   const [permission, requestPermission] = useCameraPermissions();
+  const haptic = useHaptic();
 
   const [session, setSession] = useState<any>(null);
   const [currentSetIdx, setCurrentSetIdx] = useState(0);
@@ -45,20 +51,28 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
   const [restRemaining, setRestRemaining] = useState(90);
   const [elapsed, setElapsed] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmKind>(null);
   const pendingSetRef = useRef<any>(null);
   const startTimeRef = useRef<number>(Date.now());
   const restIntervalRef = useRef<any>(null);
   const elapsedIntervalRef = useRef<any>(null);
+  const rpeSheetRef = useRef<NativeBottomSheetRef>(null);
 
   // ── Load session ──
   useEffect(() => {
     if (!sessionId) return;
     getGymSession(sessionId).then(setSession).catch((e) => {
       console.error(e);
-      Alert.alert('Error', 'Failed to load workout');
+      haptic.error();
       navigation.goBack();
     });
   }, [sessionId]);
+
+  // ── Drive RPE bottom sheet from showRPE state ──
+  useEffect(() => {
+    if (showRPE) rpeSheetRef.current?.present();
+    else rpeSheetRef.current?.dismiss();
+  }, [showRPE]);
 
   // ── Elapsed timer ──
   useEffect(() => {
@@ -78,24 +92,24 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         if (r <= 1) {
           clearInterval(restIntervalRef.current);
           setIsResting(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          haptic.success();
           return 0;
         }
         return r - 1;
       });
     }, 1000);
     return () => clearInterval(restIntervalRef.current);
-  }, [isResting]);
+  }, [isResting, haptic]);
 
   // ── Rep increment with haptic ──
   const addRep = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    haptic.press();
     setReps((r) => r + 1);
   };
 
   const subtractRep = () => {
     if (reps === 0) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    haptic.tap();
     setReps((r) => Math.max(0, r - 1));
   };
 
@@ -118,34 +132,29 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
   // Skip current exercise — jump to first set of next exerciseId
   const skipExercise = () => {
     if (!session || !currentSet) return;
+    haptic.press();
     const next = session.exerciseSets.findIndex(
       (s: any, i: number) => i > currentSetIdx && s.exerciseId !== currentSet.exerciseId,
     );
     if (next === -1) {
-      // No more exercises — end workout
-      Alert.alert('Last exercise', 'This was the last exercise. End workout?', [
-        { text: 'No', style: 'cancel' },
-        { text: 'Yes', onPress: handleEnd },
-      ]);
+      setConfirm('last');
       return;
     }
     setCurrentSetIdx(next);
     setReps(0);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const confirmFinish = () => {
-    Alert.alert(
-      'Finish workout?',
-      'Incomplete sets will be marked as skipped.',
-      [
-        { text: 'Continue', style: 'cancel' },
-        { text: 'Finish', style: 'destructive', onPress: handleEnd },
-      ],
-    );
+    haptic.tap();
+    setConfirm('finish');
   };
 
-  // ── Complete set — show RPE modal ──
+  const confirmExit = () => {
+    haptic.tap();
+    setConfirm('end');
+  };
+
+  // ── Complete set — show RPE bottom sheet ──
   const handleSetComplete = () => {
     if (!session || !currentSet) return;
     pendingSetRef.current = {
@@ -153,7 +162,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
       reps,
       weight: currentSet.targetWeight,
     };
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptic.success();
     if (currentSet.isWarmup) submitSet(null);
     else setShowRPE(true);
   };
@@ -196,6 +205,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
   };
 
   const skipRest = () => {
+    haptic.tap();
     clearInterval(restIntervalRef.current);
     setIsResting(false);
   };
@@ -279,20 +289,15 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
           }}
         >
           <Pressable
-            onPress={() => {
-              Alert.alert('End workout?', 'Your progress will be saved.', [
-                { text: 'Continue', style: 'cancel' },
-                { text: 'End', style: 'destructive', onPress: handleEnd },
-              ]);
-            }}
-            style={{
+            onPress={confirmExit}
+            style={({ pressed }) => [{
               paddingVertical: 8,
               paddingHorizontal: 16,
               borderRadius: 999,
               backgroundColor: 'rgba(0,0,0,0.5)',
               borderWidth: 1,
               borderColor: v2.border,
-            }}
+            }, pressed && { opacity: 0.6 }]}
           >
             <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>
               ✕ EXIT
@@ -438,51 +443,76 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         </View>
       </SafeAreaView>
 
-      {/* RPE Modal */}
-      <Modal visible={showRPE} transparent animationType="slide" onRequestClose={() => setShowRPE(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'flex-end' }}>
-          <View
-            style={{
-              backgroundColor: '#000',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderTopWidth: 1,
-              borderColor: v2.border,
-              padding: 28,
-            }}
-          >
-            <V2SectionLabel>How was it?</V2SectionLabel>
-            <V2Display size="lg">RPE</V2Display>
-            <Text style={{ color: v2.muted, fontSize: 13, marginTop: 8, marginBottom: 24 }}>
-              Rate of Perceived Exertion — how hard was this set?
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {RPE_VALUES.map((r) => (
-                <Pressable
-                  key={r}
-                  onPress={() => submitSet(r)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 16,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: v2.borderStrong,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#FFF', fontSize: 24, fontWeight: '700' }}>{r}</Text>
-                  <Text style={{ color: v2.faint, fontSize: 9, marginTop: 2 }}>{RPE_LABELS[r]}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable onPress={() => submitSet(null)} style={{ marginTop: 16, alignItems: 'center' }}>
-              <Text style={{ color: v2.faint, fontSize: 12, fontWeight: '600', letterSpacing: 1.5 }}>
-                SKIP
-              </Text>
-            </Pressable>
+      {/* RPE — native bottom sheet */}
+      <NativeBottomSheet
+        ref={rpeSheetRef}
+        snapPoints={[340]}
+        onDismiss={() => { if (showRPE) setShowRPE(false); }}
+      >
+        <View style={{ paddingTop: 8 }}>
+          <V2SectionLabel>How was it?</V2SectionLabel>
+          <V2Display size="lg">RPE</V2Display>
+          <Text style={{ color: v2.muted, fontSize: 13, marginTop: 8, marginBottom: 24 }}>
+            Rate of Perceived Exertion — how hard was this set?
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {RPE_VALUES.map((r) => (
+              <Pressable
+                key={r}
+                onPress={() => { haptic.selection(); submitSet(r); }}
+                style={({ pressed }) => [{
+                  flex: 1,
+                  paddingVertical: 16,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: v2.borderStrong,
+                  alignItems: 'center',
+                }, pressed && { opacity: 0.6 }]}
+              >
+                <Text style={{ color: '#FFF', fontSize: 24, fontWeight: '700' }}>{r}</Text>
+                <Text style={{ color: v2.faint, fontSize: 9, marginTop: 2 }}>{RPE_LABELS[r]}</Text>
+              </Pressable>
+            ))}
           </View>
+          <Pressable
+            onPress={() => { haptic.tap(); submitSet(null); }}
+            hitSlop={12}
+            style={({ pressed }) => [{ marginTop: 16, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
+          >
+            <Text style={{ color: v2.faint, fontSize: 12, fontWeight: '600', letterSpacing: 1.5 }}>
+              SKIP
+            </Text>
+          </Pressable>
         </View>
-      </Modal>
+      </NativeBottomSheet>
+
+      {/* Confirmations — native iOS bottom sheets replace Alert.alert */}
+      <NativeConfirm
+        visible={confirm === 'end'}
+        title="End workout?"
+        message="Your progress will be saved."
+        confirmLabel="End"
+        destructive
+        onConfirm={() => { setConfirm(null); handleEnd(); }}
+        onCancel={() => setConfirm(null)}
+      />
+      <NativeConfirm
+        visible={confirm === 'finish'}
+        title="Finish workout?"
+        message="Incomplete sets will be marked as skipped."
+        confirmLabel="Finish"
+        destructive
+        onConfirm={() => { setConfirm(null); handleEnd(); }}
+        onCancel={() => setConfirm(null)}
+      />
+      <NativeConfirm
+        visible={confirm === 'last'}
+        title="Last exercise"
+        message="This was the last exercise. End workout?"
+        confirmLabel="End workout"
+        onConfirm={() => { setConfirm(null); handleEnd(); }}
+        onCancel={() => setConfirm(null)}
+      />
 
       {/* Rest overlay */}
       {isResting && (
