@@ -8,7 +8,8 @@ import {
   completeOnboarding,
   getSuggestedWeights,
 } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Input, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Input, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState } from '../components/native';
 
 type Step = 'measurements' | 'test' | 'review';
 
@@ -24,6 +25,8 @@ export function OnboardingScreen({ navigation }: any) {
   const [results, setResults] = useState<Record<string, { weight: string; reps: string }>>({});
 
   const [suggested, setSuggested] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     Promise.allSettled([getOnboardingStatus(), getOnboardingTestExercises()])
@@ -46,9 +49,17 @@ export function OnboardingScreen({ navigation }: any) {
     const a = parseInt(age);
     const w = parseFloat(weight);
     const h = parseFloat(height);
-    if (!a || !w || !h) return;
-    await saveOnboardingMeasurements({ age: a, weightKg: w, heightCm: h });
-    setStep('test');
+    if (!a || !w || !h) { haptic.warning(); return; }
+    haptic.tap();
+    setError(null);
+    try {
+      await saveOnboardingMeasurements({ age: a, weightKg: w, heightCm: h });
+      haptic.success();
+      setStep('test');
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not save measurements');
+    }
   }
 
   async function handleTestNext() {
@@ -59,19 +70,35 @@ export function OnboardingScreen({ navigation }: any) {
         weight: parseFloat(v.weight),
         reps: parseInt(v.reps),
       }));
-    if (r.length === 0) return;
-    await submitFitnessTest(r);
-    const sw = await getSuggestedWeights();
-    setSuggested(sw);
-    setStep('review');
+    if (r.length === 0) { haptic.warning(); return; }
+    haptic.tap();
+    setError(null);
+    try {
+      await submitFitnessTest(r);
+      const sw = await getSuggestedWeights();
+      haptic.success();
+      setSuggested(sw);
+      setStep('review');
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not submit test');
+    }
   }
 
   async function handleFinish() {
-    await completeOnboarding();
-    navigation.replace('Main');
+    haptic.tap();
+    setError(null);
+    try {
+      await completeOnboarding();
+      haptic.success();
+      navigation.replace('Main');
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not finalize onboarding');
+    }
   }
 
-  if (loading) return <V2Screen><V2Loading /></V2Screen>;
+  if (loading) return <V2Screen><LoadingState label="Loading onboarding" /></V2Screen>;
 
   const stepIdx = ['measurements', 'test', 'review'].indexOf(step);
 
@@ -99,6 +126,12 @@ export function OnboardingScreen({ navigation }: any) {
           />
         ))}
       </View>
+
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
 
       {step === 'measurements' && (
         <View>
