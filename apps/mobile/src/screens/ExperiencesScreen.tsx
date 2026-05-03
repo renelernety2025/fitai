@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getExperiences, bookExperience } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, NativeConfirm } from '../components/native';
 
-// Backend enum: GROUP, OUTDOOR, WELLNESS, COMBAT, ADVENTURE, NUTRITION_WORKSHOP
 const categoryColors: Record<string, string> = {
   GROUP: v2.blue,
   OUTDOOR: v2.green,
@@ -13,7 +13,6 @@ const categoryColors: Record<string, string> = {
   NUTRITION_WORKSHOP: v2.yellow,
 };
 
-/** Resolve fields from backend shape */
 function getName(e: any): string { return e.name || e.title || 'Experience'; }
 function getLocation(e: any): string | null { return e.location || e.locationAddress || null; }
 function getTrainerName(e: any): string | null { return e.trainerName || e.trainer?.user?.name || null; }
@@ -22,31 +21,29 @@ function getPrice(e: any): number | null { return e.price ?? e.priceKc ?? null; 
 export function ExperiencesScreen() {
   const [experiences, setExperiences] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('all');
+  const [pending, setPending] = useState<{ id: string; name: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getExperiences().then(setExperiences).catch(() => setExperiences([]));
   }, []);
 
-  function handleBook(exp: any) {
-    Alert.alert(
-      'Book',
-      `Book "${getName(exp)}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Book',
-          onPress: () => {
-            bookExperience(exp.id)
-              .then(() => {
-                setExperiences((prev) =>
-                  (prev ?? []).map((e) => (e.id === exp.id ? { ...e, booked: true } : e)),
-                );
-              })
-              .catch((e: any) => Alert.alert('Error', e.message || 'Could not book'));
-          },
-        },
-      ],
-    );
+  async function confirmBook() {
+    if (!pending) return;
+    const id = pending.id;
+    setPending(null);
+    setError(null);
+    try {
+      await bookExperience(id);
+      haptic.success();
+      setExperiences((prev) =>
+        (prev ?? []).map((e) => (e.id === id ? { ...e, booked: true } : e)),
+      );
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not book');
+    }
   }
 
   const items = experiences ?? [];
@@ -62,19 +59,23 @@ export function ExperiencesScreen() {
 
       {categories.length > 0 && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-          <V2Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          <V2Chip label="All" selected={filter === 'all'} onPress={() => { haptic.selection(); setFilter('all'); }} />
           {categories.map((c) => (
-            <V2Chip key={c} label={c.replace(/_/g, ' ')} selected={filter === c} onPress={() => setFilter(c)} />
+            <V2Chip key={c} label={c.replace(/_/g, ' ')} selected={filter === c} onPress={() => { haptic.selection(); setFilter(c); }} />
           ))}
         </View>
       )}
 
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
       {experiences === null ? (
-        <V2Loading />
+        <LoadingState label="Loading experiences" />
       ) : filtered.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No experiences available
-        </Text>
+        <EmptyState icon="🎟" title="No experiences" body="New events appear here as trainers publish them." />
       ) : null}
 
       {filtered.map((exp) => (
@@ -135,7 +136,7 @@ export function ExperiencesScreen() {
           </View>
 
           <V2Button
-            onPress={() => handleBook(exp)}
+            onPress={() => { haptic.tap(); setPending({ id: exp.id, name: getName(exp) }); }}
             variant={exp.booked ? 'secondary' : 'primary'}
             full
             disabled={exp.booked}
@@ -144,6 +145,14 @@ export function ExperiencesScreen() {
           </V2Button>
         </View>
       ))}
+
+      <NativeConfirm
+        visible={!!pending}
+        title={pending ? `Book "${pending.name}"?` : ''}
+        confirmLabel="Book"
+        onConfirm={confirmBook}
+        onCancel={() => setPending(null)}
+      />
     </V2Screen>
   );
 }
