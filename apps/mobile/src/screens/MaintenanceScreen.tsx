@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getMaintenanceStatus, getMaintenanceAlerts, markDeload } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, NativeConfirm } from '../components/native';
 
 // Backend enum: FRESH, DUE, OVERDUE
 const STATUS_COLOR: Record<string, string> = {
@@ -13,6 +14,9 @@ const STATUS_COLOR: Record<string, string> = {
 export function MaintenanceScreen() {
   const [status, setStatus] = useState<any[] | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     loadData();
@@ -23,14 +27,19 @@ export function MaintenanceScreen() {
     getMaintenanceAlerts().then(setAlerts).catch(() => setAlerts([]));
   }
 
-  function handleDeload(muscle: string) {
-    Alert.alert('Deload', `Mark ${muscle.replace(/_/g, ' ')} for deload?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Confirm',
-        onPress: () => markDeload(muscle).then(loadData).catch((e: any) => Alert.alert('Error', e?.message || 'Failed')),
-      },
-    ]);
+  async function confirmDeload() {
+    if (!pending) return;
+    const muscle = pending;
+    setPending(null);
+    setError(null);
+    try {
+      await markDeload(muscle);
+      haptic.success();
+      loadData();
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Failed to mark deload');
+    }
   }
 
   const items = status ?? [];
@@ -41,6 +50,12 @@ export function MaintenanceScreen() {
         <V2SectionLabel>Body Service</V2SectionLabel>
         <V2Display size="xl">Maintenance.</V2Display>
       </View>
+
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
 
       {alerts.length > 0 && (
         <View style={{ marginBottom: 24 }}>
@@ -68,11 +83,9 @@ export function MaintenanceScreen() {
       <V2SectionLabel>MUSCLE GROUP STATUS</V2SectionLabel>
 
       {status === null ? (
-        <V2Loading />
+        <LoadingState label="Loading maintenance" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 32 }}>
-          No maintenance data yet
-        </Text>
+        <EmptyState icon="🔧" title="No data yet" body="Maintenance signals appear after a few training weeks." />
       ) : null}
 
       {items.map((s, i) => (
@@ -109,12 +122,25 @@ export function MaintenanceScreen() {
           )}
 
           {(s.status === 'DUE' || s.status === 'OVERDUE') && (
-            <V2Button onPress={() => handleDeload(s.muscleGroup)} variant="secondary" full>
+            <V2Button
+              onPress={() => { haptic.tap(); setPending(s.muscleGroup); }}
+              variant="secondary"
+              full
+            >
               Mark deload
             </V2Button>
           )}
         </View>
       ))}
+
+      <NativeConfirm
+        visible={!!pending}
+        title="Mark deload?"
+        message={pending ? `Reset ${pending.replace(/_/g, ' ')} session counter — next training will use lighter loads.` : undefined}
+        confirmLabel="Confirm"
+        onConfirm={confirmDeload}
+        onCancel={() => setPending(null)}
+      />
     </V2Screen>
   );
 }
