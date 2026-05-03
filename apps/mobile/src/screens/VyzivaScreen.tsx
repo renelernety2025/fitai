@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   getNutritionToday,
@@ -23,9 +23,14 @@ import {
   V2Display,
   V2SectionLabel,
   V2Ring,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import {
+  useHaptic,
+  LoadingState,
+  NativeBottomSheet,
+  NativeBottomSheetRef,
+} from '../components/native';
 
 const MEALS = [
   { v: 'breakfast', l: 'Breakfast' },
@@ -41,6 +46,7 @@ export function VyzivaScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [meal, setMeal] = useState('breakfast');
   const [photoAnalyzing, setPhotoAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [photoResult, setPhotoResult] = useState<{
     name: string;
     kcal: number;
@@ -49,14 +55,31 @@ export function VyzivaScreen() {
     fatG: number;
     mealType: string;
   } | null>(null);
+  const haptic = useHaptic();
+  const addSheetRef = useRef<NativeBottomSheetRef>(null);
+  const photoSheetRef = useRef<NativeBottomSheetRef>(null);
+
+  // Drive bottom sheets from state
+  useEffect(() => {
+    if (showAdd) addSheetRef.current?.present();
+    else addSheetRef.current?.dismiss();
+  }, [showAdd]);
+
+  useEffect(() => {
+    if (photoResult) photoSheetRef.current?.present();
+    else photoSheetRef.current?.dismiss();
+  }, [photoResult]);
 
   const handleFoodPhoto = async () => {
+    haptic.tap();
+    setError(null);
     try {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
         const libPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!libPerm.granted) {
-          Alert.alert('Permission needed', 'Allow access to camera or gallery.');
+          haptic.warning();
+          setError('Allow camera or photo library in Settings to scan food.');
           return;
         }
       }
@@ -79,12 +102,11 @@ export function VyzivaScreen() {
 
       const analysis = await analyzeFoodPhoto(s3Key);
       if (analysis.confidence < 30) {
-        Alert.alert(
-          'Not recognized',
-          'Could not reliably recognize the food. Try a better photo or add manually.',
-        );
+        haptic.warning();
+        setError('Not recognized. Try a better photo or add manually.');
         return;
       }
+      haptic.success();
       setPhotoResult({
         name: analysis.name,
         kcal: analysis.kcal,
@@ -94,7 +116,8 @@ export function VyzivaScreen() {
         mealType: 'lunch',
       });
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Analysis failed');
+      haptic.error();
+      setError(e.message || 'Analysis failed');
     } finally {
       setPhotoAnalyzing(false);
     }
@@ -107,7 +130,7 @@ export function VyzivaScreen() {
   };
   useEffect(reload, []);
 
-  if (!data) return <V2Screen><V2Loading /></V2Screen>;
+  if (!data) return <V2Screen><LoadingState label="Loading nutrition" /></V2Screen>;
 
   const grouped = MEALS.map((m) => ({
     ...m,
@@ -139,11 +162,17 @@ export function VyzivaScreen() {
         <V2Ring value={data.totals.fatG} total={data.goals.dailyFatG} size={100} color={v2.blue} label="Fat" />
       </View>
 
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
       {/* Food photo button */}
       <Pressable
         onPress={handleFoodPhoto}
         disabled={photoAnalyzing}
-        style={{
+        style={({ pressed }) => ({
           backgroundColor: 'rgba(108,99,255,0.15)',
           borderWidth: 1,
           borderColor: 'rgba(108,99,255,0.3)',
@@ -154,8 +183,8 @@ export function VyzivaScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 12,
-          opacity: photoAnalyzing ? 0.6 : 1,
-        }}
+          opacity: photoAnalyzing ? 0.6 : pressed ? 0.7 : 1,
+        })}
       >
         {photoAnalyzing ? (
           <>
@@ -191,7 +220,11 @@ export function VyzivaScreen() {
         <View key={m.v} style={{ marginBottom: 32 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <V2Display size="md">{m.l}</V2Display>
-            <Pressable onPress={() => { setMeal(m.v); setShowAdd(true); }}>
+            <Pressable
+              onPress={() => { haptic.tap(); setMeal(m.v); setShowAdd(true); }}
+              hitSlop={8}
+              style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+            >
               <Text style={{ color: v2.muted, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 }}>
                 + ADD
               </Text>
@@ -208,7 +241,14 @@ export function VyzivaScreen() {
                     {item.kcal} kcal · P {item.proteinG}g · S {item.carbsG}g · T {item.fatG}g
                   </Text>
                 </View>
-                <Pressable onPress={async () => { try { await deleteFoodLog(item.id); reload(); } catch {} }}>
+                <Pressable
+                  onPress={async () => {
+                    haptic.tap();
+                    try { await deleteFoodLog(item.id); haptic.success(); reload(); } catch { haptic.error(); }
+                  }}
+                  hitSlop={8}
+                  style={({ pressed }) => [pressed && { opacity: 0.4 }]}
+                >
                   <Text style={{ color: v2.ghost, fontSize: 16, paddingHorizontal: 8 }}>✕</Text>
                 </Pressable>
               </View>
@@ -217,113 +257,114 @@ export function VyzivaScreen() {
         </View>
       ))}
 
-      {/* Modal */}
-      <Modal visible={showAdd} animationType="slide" transparent onRequestClose={() => setShowAdd(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }} onPress={() => setShowAdd(false)}>
-          <Pressable
-            onPress={() => {}}
-            style={{
-              backgroundColor: '#000',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderTopWidth: 1,
-              borderColor: v2.border,
-              padding: 24,
-              maxHeight: '80%',
-            }}
-          >
-            <V2SectionLabel>{MEALS.find((x) => x.v === meal)?.l}</V2SectionLabel>
-            <V2Display size="md">Add food</V2Display>
-            <View style={{ marginTop: 16 }}>
-              {foods.map((f) => (
-                <Pressable
-                  key={f.name}
-                  onPress={async () => {
+      {/* Add food — native bottom sheet */}
+      <NativeBottomSheet
+        ref={addSheetRef}
+        snapPoints={['70%']}
+        onDismiss={() => { if (showAdd) setShowAdd(false); }}
+      >
+        <View style={{ paddingTop: 8 }}>
+          <V2SectionLabel>{MEALS.find((x) => x.v === meal)?.l}</V2SectionLabel>
+          <V2Display size="md">Add food</V2Display>
+          <View style={{ marginTop: 16 }}>
+            {foods.map((f) => (
+              <Pressable
+                key={f.name}
+                onPress={async () => {
+                  haptic.selection();
+                  try {
                     await addFoodLog({ ...f, mealType: meal });
-                    setShowAdd(false);
-                    reload();
+                    haptic.success();
+                  } catch { haptic.error(); }
+                  setShowAdd(false);
+                  reload();
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottomWidth: 1,
+                  borderBottomColor: v2.border,
+                  paddingVertical: 14,
+                  opacity: pressed ? 0.5 : 1,
+                })}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#FFF', fontSize: 15 }}>{f.name}</Text>
+                  <Text style={{ color: v2.faint, fontSize: 11 }}>
+                    P {f.proteinG}g · S {f.carbsG}g · T {f.fatG}g
+                  </Text>
+                </View>
+                <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>{f.kcal}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </NativeBottomSheet>
+
+      {/* Photo result — native bottom sheet */}
+      <NativeBottomSheet
+        ref={photoSheetRef}
+        snapPoints={['85%']}
+        onDismiss={() => { if (photoResult) setPhotoResult(null); }}
+      >
+        <View style={{ paddingTop: 8 }}>
+          <V2SectionLabel>AI recognized</V2SectionLabel>
+          <V2Display size="md">{photoResult?.name}</V2Display>
+
+          <View style={{ marginTop: 20, gap: 14 }}>
+            {[
+              { label: 'Name', key: 'name' as const, suffix: '' },
+              { label: 'Calories', key: 'kcal' as const, suffix: ' kcal' },
+              { label: 'Protein', key: 'proteinG' as const, suffix: ' g' },
+              { label: 'Carbs', key: 'carbsG' as const, suffix: ' g' },
+              { label: 'Fat', key: 'fatG' as const, suffix: ' g' },
+            ].map((field) => (
+              <View key={field.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ color: v2.muted, fontSize: 14, width: 80 }}>{field.label}</Text>
+                <TextInput
+                  style={{ color: '#FFF', fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'right', padding: 8, borderBottomWidth: 1, borderBottomColor: v2.border }}
+                  keyboardType={field.key === 'name' ? 'default' : 'numeric'}
+                  value={String(photoResult?.[field.key] ?? '')}
+                  onChangeText={(val) => {
+                    if (!photoResult) return;
+                    setPhotoResult({
+                      ...photoResult,
+                      [field.key]: field.key === 'name' ? val : Number(val) || 0,
+                    });
                   }}
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
+                />
+                {field.suffix ? <Text style={{ color: v2.ghost, fontSize: 14, marginLeft: 4 }}>{field.suffix}</Text> : null}
+              </View>
+            ))}
+
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              {MEALS.map((m) => (
+                <Pressable
+                  key={m.v}
+                  onPress={() => { haptic.selection(); photoResult && setPhotoResult({ ...photoResult, mealType: m.v }); }}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    backgroundColor: photoResult?.mealType === m.v ? 'rgba(108,99,255,0.3)' : 'rgba(255,255,255,0.06)',
                     alignItems: 'center',
-                    borderBottomWidth: 1,
-                    borderBottomColor: v2.border,
-                    paddingVertical: 14,
-                  }}
+                    opacity: pressed ? 0.7 : 1,
+                  })}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#FFF', fontSize: 15 }}>{f.name}</Text>
-                    <Text style={{ color: v2.faint, fontSize: 11 }}>
-                      P {f.proteinG}g · S {f.carbsG}g · T {f.fatG}g
-                    </Text>
-                  </View>
-                  <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '700' }}>{f.kcal}</Text>
+                  <Text style={{ color: photoResult?.mealType === m.v ? '#6c63ff' : v2.muted, fontSize: 12, fontWeight: '600' }}>
+                    {m.l}
+                  </Text>
                 </Pressable>
               ))}
             </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-      {/* Food photo result modal */}
-      <Modal visible={!!photoResult} animationType="slide" transparent onRequestClose={() => setPhotoResult(null)}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' }} onPress={() => setPhotoResult(null)}>
-          <Pressable onPress={() => {}} style={{ backgroundColor: '#000', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: v2.border, padding: 24 }}>
-            <V2SectionLabel>AI recognized</V2SectionLabel>
-            <V2Display size="md">{photoResult?.name}</V2Display>
+          </View>
 
-            <View style={{ marginTop: 20, gap: 14 }}>
-              {[
-                { label: 'Name', key: 'name' as const, suffix: '' },
-                { label: 'Calories', key: 'kcal' as const, suffix: ' kcal' },
-                { label: 'Protein', key: 'proteinG' as const, suffix: ' g' },
-                { label: 'Carbs', key: 'carbsG' as const, suffix: ' g' },
-                { label: 'Fat', key: 'fatG' as const, suffix: ' g' },
-              ].map((field) => (
-                <View key={field.key} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ color: v2.muted, fontSize: 14, width: 80 }}>{field.label}</Text>
-                  <TextInput
-                    style={{ color: '#FFF', fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'right', padding: 8, borderBottomWidth: 1, borderBottomColor: v2.border }}
-                    keyboardType={field.key === 'name' ? 'default' : 'numeric'}
-                    value={String(photoResult?.[field.key] ?? '')}
-                    onChangeText={(val) => {
-                      if (!photoResult) return;
-                      setPhotoResult({
-                        ...photoResult,
-                        [field.key]: field.key === 'name' ? val : Number(val) || 0,
-                      });
-                    }}
-                  />
-                  {field.suffix ? <Text style={{ color: v2.ghost, fontSize: 14, marginLeft: 4 }}>{field.suffix}</Text> : null}
-                </View>
-              ))}
-
-              {/* Meal type picker */}
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                {MEALS.map((m) => (
-                  <Pressable
-                    key={m.v}
-                    onPress={() => photoResult && setPhotoResult({ ...photoResult, mealType: m.v })}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 10,
-                      borderRadius: 10,
-                      backgroundColor: photoResult?.mealType === m.v ? 'rgba(108,99,255,0.3)' : 'rgba(255,255,255,0.06)',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: photoResult?.mealType === m.v ? '#6c63ff' : v2.muted, fontSize: 12, fontWeight: '600' }}>
-                      {m.l}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            {/* Save button */}
-            <Pressable
-              onPress={async () => {
-                if (!photoResult) return;
+          <Pressable
+            onPress={async () => {
+              if (!photoResult) return;
+              haptic.tap();
+              try {
                 await addFoodLog({
                   name: photoResult.name,
                   kcal: photoResult.kcal,
@@ -332,22 +373,24 @@ export function VyzivaScreen() {
                   fatG: photoResult.fatG,
                   mealType: photoResult.mealType,
                 });
-                setPhotoResult(null);
-                reload();
-              }}
-              style={{
-                backgroundColor: '#6c63ff',
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: 'center',
-                marginTop: 24,
-              }}
-            >
-              <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Save to log</Text>
-            </Pressable>
+                haptic.success();
+              } catch { haptic.error(); }
+              setPhotoResult(null);
+              reload();
+            }}
+            style={({ pressed }) => ({
+              backgroundColor: '#6c63ff',
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: 'center',
+              marginTop: 24,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Save to log</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      </NativeBottomSheet>
     </V2Screen>
   );
 }
