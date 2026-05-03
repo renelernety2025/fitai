@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getMyRoutines, getPublicRoutines } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 export function RoutineBuilderScreen() {
   const [tab, setTab] = useState<'mine' | 'public'>('mine');
   const [mine, setMine] = useState<any[] | null>(null);
   const [pub, setPub] = useState<any[] | null>(null);
+  const haptic = useHaptic();
 
   useEffect(() => {
     getMyRoutines().then(setMine).catch(() => setMine([]));
@@ -24,16 +26,18 @@ export function RoutineBuilderScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', marginBottom: 24 }}>
-        <V2Chip label="Mine" selected={tab === 'mine'} onPress={() => setTab('mine')} />
-        <V2Chip label="Public" selected={tab === 'public'} onPress={() => setTab('public')} />
+        <V2Chip label="Mine" selected={tab === 'mine'} onPress={() => { haptic.selection(); setTab('mine'); }} />
+        <V2Chip label="Public" selected={tab === 'public'} onPress={() => { haptic.selection(); setTab('public'); }} />
       </View>
 
       {current === null ? (
-        <V2Loading />
+        <LoadingState label="Loading routines" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          {tab === 'mine' ? 'No routines yet' : 'No public routines'}
-        </Text>
+        <EmptyState
+          icon="🗓"
+          title={tab === 'mine' ? 'No routines yet' : 'No public routines'}
+          body={tab === 'mine' ? 'Build a routine on the web app — it will sync here.' : 'Curated routines from the community appear here.'}
+        />
       ) : null}
 
       {items.map((r) => (
