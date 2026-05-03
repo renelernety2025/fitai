@@ -5,7 +5,8 @@ import {
   getChallenges, joinChallenge, getFollowCounts,
   getForYouFeed, getFollowingFeed, getTrendingFeed,
 } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState } from '../components/native';
 
 type FeedTab = 'forYou' | 'following' | 'trending' | 'challenges';
 
@@ -47,6 +48,7 @@ export function CommunityScreen() {
   const [tab, setTab] = useState<FeedTab>('forYou');
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const haptic = useHaptic();
 
   const fetchFeed = useCallback(async (activeTab: FeedTab) => {
     if (activeTab === 'forYou') {
@@ -72,10 +74,11 @@ export function CommunityScreen() {
   }, [tab, fetchFeed]);
 
   const onRefresh = useCallback(async () => {
+    haptic.tap();
     setRefreshing(true);
     await fetchFeed(tab).catch(console.error);
     setRefreshing(false);
-  }, [tab, fetchFeed]);
+  }, [tab, fetchFeed, haptic]);
 
   const renderFeedItem = ({ item }: { item: any }) => (
     <View style={styles.feedItem}>
@@ -133,11 +136,13 @@ export function CommunityScreen() {
           ) : (
             <V2Button
               onPress={async () => {
+                haptic.tap();
                 try {
                   await joinChallenge(ch.id);
+                  haptic.success();
                   setChallenges(await getChallenges());
                 } catch {
-                  // Silently fail — user can retry
+                  haptic.error();
                 }
               }}
             >
@@ -176,17 +181,21 @@ export function CommunityScreen() {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-              <V2Chip label="For You" selected={tab === 'forYou'} onPress={() => setTab('forYou')} />
-              <V2Chip label="Following" selected={tab === 'following'} onPress={() => setTab('following')} />
-              <V2Chip label="Trending" selected={tab === 'trending'} onPress={() => setTab('trending')} />
-              <V2Chip label="Challenges" selected={tab === 'challenges'} onPress={() => setTab('challenges')} />
+              <V2Chip label="For You" selected={tab === 'forYou'} onPress={() => { haptic.selection(); setTab('forYou'); }} />
+              <V2Chip label="Following" selected={tab === 'following'} onPress={() => { haptic.selection(); setTab('following'); }} />
+              <V2Chip label="Trending" selected={tab === 'trending'} onPress={() => { haptic.selection(); setTab('trending'); }} />
+              <V2Chip label="Challenges" selected={tab === 'challenges'} onPress={() => { haptic.selection(); setTab('challenges'); }} />
             </View>
           </View>
         }
         ListEmptyComponent={
           initialLoading
-            ? <V2Loading />
-            : <Text style={{ color: v2.faint, textAlign: 'center', marginTop: 24 }}>{emptyText}</Text>
+            ? <LoadingState label="Loading feed" />
+            : <EmptyState
+                icon={tab === 'challenges' ? '🏁' : '👥'}
+                title={tab === 'following' ? 'Follow some people' : tab === 'challenges' ? 'No challenges' : 'Feed is empty'}
+                body={emptyText}
+              />
         }
         contentContainerStyle={{ paddingHorizontal: 0 }}
       />
