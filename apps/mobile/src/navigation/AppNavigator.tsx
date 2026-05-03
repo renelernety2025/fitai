@@ -3,6 +3,7 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../lib/auth-context';
 
 // Auth + Onboarding
@@ -90,6 +91,8 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+  const tabHeight = 50 + insets.bottom;
   return (
     <Tab.Navigator
       screenOptions={{
@@ -98,8 +101,8 @@ function MainTabs() {
           backgroundColor: '#000',
           borderTopColor: 'rgba(255,255,255,0.1)',
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 6,
+          height: tabHeight,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
           paddingTop: 8,
         },
         tabBarShowLabel: false,
@@ -152,7 +155,16 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer theme={v2Theme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' } }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#000' },
+          animation: 'slide_from_right',
+          animationDuration: 280,
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
+        }}
+      >
         {user ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
