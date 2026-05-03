@@ -94,11 +94,12 @@ export function VyzivaScreen() {
       const { uploadUrl, s3Key } = await getFoodPhotoUploadUrl();
       const fileRes = await fetch(result.assets[0].uri);
       const blob = await fileRes.blob();
-      await fetch(uploadUrl, {
+      const upload = await fetch(uploadUrl, {
         method: 'PUT',
         body: blob,
         headers: { 'Content-Type': 'image/jpeg' },
       });
+      if (!upload.ok) throw new Error(`Upload failed (S3 ${upload.status})`);
 
       const analysis = await analyzeFoodPhoto(s3Key);
       if (analysis.confidence < 30) {

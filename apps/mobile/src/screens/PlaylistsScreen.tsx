@@ -17,8 +17,10 @@ export function PlaylistsScreen() {
   function openLink(url?: string) {
     if (!url) return;
     try {
-      const domain = new URL(url).hostname;
-      if (!ALLOWED_DOMAINS.some(d => domain.endsWith(d))) return;
+      const domain = new URL(url).hostname.toLowerCase();
+      // Match exactly or as a subdomain — prevents bypass via "evilspotify.com"
+      const allowed = ALLOWED_DOMAINS.some(d => domain === d || domain.endsWith('.' + d));
+      if (!allowed) return;
       haptic.tap();
       Linking.openURL(url).catch(() => { haptic.error(); });
     } catch { /* invalid URL — ignore */ }

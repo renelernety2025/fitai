@@ -43,14 +43,45 @@ export function NativeConfirm({
 }: NativeConfirmProps) {
   const sheetRef = useRef<NativeBottomSheetRef>(null);
   const haptic = useHaptic();
+  // Tracks whether the sheet is closing because the user already chose
+  // (Confirm or explicit Cancel button). Suppresses the onDismiss → onCancel
+  // chain so onCancel only fires for swipe-to-dismiss, not for Confirm.
+  const resolvingRef = useRef(false);
 
   useEffect(() => {
-    if (visible) sheetRef.current?.present();
-    else sheetRef.current?.dismiss();
+    if (visible) {
+      resolvingRef.current = false;
+      sheetRef.current?.present();
+    } else {
+      sheetRef.current?.dismiss();
+    }
   }, [visible]);
 
+  function handleConfirm() {
+    if (destructive) haptic.warning();
+    else haptic.success();
+    resolvingRef.current = true;
+    onConfirm();
+  }
+
+  function handleCancel() {
+    haptic.tap();
+    resolvingRef.current = true;
+    onCancel();
+  }
+
+  function handleDismiss() {
+    if (resolvingRef.current) {
+      // Closed because user picked Confirm/Cancel — don't double-fire.
+      resolvingRef.current = false;
+      return;
+    }
+    // Closed via swipe-down — treat as cancel.
+    onCancel();
+  }
+
   return (
-    <NativeBottomSheet ref={sheetRef} snapPoints={[message ? 280 : 220]} onDismiss={onCancel}>
+    <NativeBottomSheet ref={sheetRef} snapPoints={[message ? 280 : 220]} onDismiss={handleDismiss}>
       <View style={{ paddingTop: 8, gap: 16 }}>
         <View style={{ gap: 8 }}>
           <Text style={{ color: v2.text, fontSize: 18, fontWeight: '700', textAlign: 'center' }}>{title}</Text>
@@ -60,7 +91,7 @@ export function NativeConfirm({
         </View>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
           <Pressable
-            onPress={() => { haptic.tap(); onCancel(); }}
+            onPress={handleCancel}
             style={({ pressed }) => ({
               flex: 1,
               paddingVertical: 16,
@@ -74,7 +105,7 @@ export function NativeConfirm({
             <Text style={{ color: v2.text, fontSize: 14, fontWeight: '600' }}>{cancelLabel}</Text>
           </Pressable>
           <Pressable
-            onPress={() => { destructive ? haptic.warning() : haptic.success(); onConfirm(); }}
+            onPress={handleConfirm}
             style={({ pressed }) => ({
               flex: 1,
               paddingVertical: 16,

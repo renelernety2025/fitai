@@ -34,7 +34,7 @@ interface NativeListItemProps {
   disabled?: boolean;
 }
 
-function renderActions(actions: SwipeAction[], align: 'left' | 'right', haptic: ReturnType<typeof useHaptic>) {
+function renderActions(actions: SwipeAction[], haptic: ReturnType<typeof useHaptic>) {
   if (actions.length === 0) return null;
   return (
     <View style={{ flexDirection: 'row' }}>
@@ -94,8 +94,8 @@ export function NativeListItem({
 
   return (
     <Swipeable
-      renderLeftActions={leftActions.length > 0 ? () => renderActions(leftActions, 'left', haptic) : undefined}
-      renderRightActions={rightActions.length > 0 ? () => renderActions(rightActions, 'right', haptic) : undefined}
+      renderLeftActions={leftActions.length > 0 ? () => renderActions(leftActions, haptic) : undefined}
+      renderRightActions={rightActions.length > 0 ? () => renderActions(rightActions, haptic) : undefined}
       friction={2}
       overshootLeft={false}
       overshootRight={false}
