@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getMyGear } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { LoadingState, EmptyState } from '../components/native';
 
 // Backend enum is UPPERCASE — match it
 const categoryIcons: Record<string, string> = {
@@ -41,11 +42,9 @@ export function GearScreen() {
       </View>
 
       {gear === null ? (
-        <V2Loading />
+        <LoadingState label="Loading gear" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No gear tracked. Add items on the web app.
-        </Text>
+        <EmptyState icon="🎒" title="No gear tracked" body="Add items on the web app to track wear and replacement timing." />
       ) : null}
 
       {items.map((item) => {

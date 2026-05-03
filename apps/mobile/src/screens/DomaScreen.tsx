@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getQuickWorkout, getHomeWorkout, getTravelWorkout } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 type Mode = 'quick' | 'home' | 'travel';
 
@@ -16,6 +17,7 @@ export function DomaScreen() {
   const [workout, setWorkout] = useState<any>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     setError(false);
@@ -40,15 +42,16 @@ export function DomaScreen() {
         {MODES.map((m) => (
           <Pressable
             key={m.v}
-            onPress={() => setMode(m.v)}
-            style={{
+            onPress={() => { haptic.selection(); setMode(m.v); }}
+            style={({ pressed }) => ({
               flex: 1,
               padding: 16,
               borderRadius: 20,
               borderWidth: 1,
               borderColor: mode === m.v ? '#FFF' : v2.border,
               backgroundColor: mode === m.v ? 'rgba(255,255,255,0.05)' : 'transparent',
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <View style={{ width: 24, height: 3, borderRadius: 2, backgroundColor: m.color, marginBottom: 10 }} />
             <Text style={{ color: v2.faint, fontSize: 9, fontWeight: '600', letterSpacing: 1.5 }}>{m.min.toUpperCase()}</Text>
@@ -59,14 +62,9 @@ export function DomaScreen() {
       </View>
 
       {error ? (
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load workout</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load workout." onRetry={load} />
       ) : loading ? (
-        <V2Loading />
+        <LoadingState label="Loading workout" />
       ) : workout ? (
         <View>
           <View style={{ marginBottom: 16 }}>
