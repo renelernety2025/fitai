@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, Pressable, Image, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, Image, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
   V2Screen,
   V2Display,
   V2SectionLabel,
   V2Stat,
-  V2Loading,
   v2,
 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, NativeConfirm } from '../components/native';
 import {
   getProgressPhotos,
   getProgressPhotoStats,
@@ -31,6 +31,9 @@ export function ProgressPhotosScreen({ navigation }: any) {
   const [filter, setFilter] = useState<Side | 'ALL'>('ALL');
   const [busy, setBusy] = useState(false);
   const [analyzing, setAnalyzing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const haptic = useHaptic();
   const filterRef = useRef(filter);
   filterRef.current = filter;
 
@@ -46,9 +49,12 @@ export function ProgressPhotosScreen({ navigation }: any) {
   }, [filter, reload]);
 
   async function pickAndUpload(side: Side) {
+    setError(null);
+    haptic.tap();
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow access to your photo library to upload progress photos.');
+      haptic.warning();
+      setError('Allow photo library access in Settings to upload progress photos.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -65,7 +71,6 @@ export function ProgressPhotosScreen({ navigation }: any) {
         contentType: 'image/jpeg',
         side,
       });
-      // Read file as blob
       const fileRes = await fetch(asset.uri);
       const blob = await fileRes.blob();
       const upload = await fetch(uploadUrl, {
@@ -73,43 +78,46 @@ export function ProgressPhotosScreen({ navigation }: any) {
         body: blob,
         headers: { 'Content-Type': 'image/jpeg' },
       });
-      if (!upload.ok) throw new Error(`S3 ${upload.status}`);
+      if (!upload.ok) throw new Error(`Upload failed (S3 ${upload.status})`);
+      haptic.success();
       reload();
     } catch (e: any) {
-      Alert.alert('Upload failed', e.message);
+      haptic.error();
+      setError(e.message || 'Upload failed');
     } finally {
       setBusy(false);
     }
   }
 
   async function onAnalyze(id: string) {
+    haptic.tap();
+    setError(null);
     setAnalyzing(id);
     try {
       await analyzeProgressPhoto(id);
+      haptic.success();
       reload();
     } catch (e: any) {
-      Alert.alert('Analysis failed', e.message || 'Please try again');
+      haptic.error();
+      setError(e.message || 'Analysis failed. Please try again.');
     } finally {
       setAnalyzing(null);
     }
   }
 
-  function onDelete(id: string) {
-    Alert.alert('Delete photo?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteProgressPhoto(id);
-            reload();
-          } catch {
-            Alert.alert('Error', 'Failed to delete photo');
-          }
-        },
-      },
-    ]);
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const id = pendingDelete;
+    setPendingDelete(null);
+    setError(null);
+    try {
+      await deleteProgressPhoto(id);
+      haptic.success();
+      reload();
+    } catch {
+      haptic.error();
+      setError('Failed to delete photo');
+    }
   }
 
   return (
@@ -140,6 +148,12 @@ export function ProgressPhotosScreen({ navigation }: any) {
         </View>
       )}
 
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
       {/* Upload buttons */}
       <V2SectionLabel>New photo</V2SectionLabel>
       <View style={{ gap: 12, marginBottom: 32 }}>
@@ -148,15 +162,15 @@ export function ProgressPhotosScreen({ navigation }: any) {
             key={s.value}
             onPress={() => pickAndUpload(s.value)}
             disabled={busy}
-            style={{
+            style={({ pressed }) => ({
               borderWidth: 1,
               borderStyle: 'dashed',
               borderColor: v2.border,
               borderRadius: 16,
               paddingVertical: 24,
               alignItems: 'center',
-              opacity: busy ? 0.5 : 1,
-            }}
+              opacity: busy ? 0.5 : pressed ? 0.6 : 1,
+            })}
           >
             <Text style={{ color: v2.text, fontSize: 16, fontWeight: '600' }}>+ {s.label}</Text>
           </Pressable>
@@ -173,15 +187,16 @@ export function ProgressPhotosScreen({ navigation }: any) {
         {(['ALL', 'FRONT', 'SIDE', 'BACK'] as const).map((f) => (
           <Pressable
             key={f}
-            onPress={() => setFilter(f as any)}
-            style={{
+            onPress={() => { haptic.selection(); setFilter(f as any); }}
+            style={({ pressed }) => ({
               paddingHorizontal: 16,
               paddingVertical: 8,
               borderRadius: 999,
               borderWidth: 1,
               borderColor: filter === f ? '#FFF' : v2.border,
               backgroundColor: filter === f ? '#FFF' : 'transparent',
-            }}
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
             <Text
               style={{
@@ -199,20 +214,9 @@ export function ProgressPhotosScreen({ navigation }: any) {
       {/* Gallery */}
       <V2SectionLabel>Gallery ({photos?.length ?? 0})</V2SectionLabel>
       {photos === null ? (
-        <V2Loading />
+        <LoadingState label="Loading photos" inline />
       ) : photos.length === 0 ? (
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: v2.border,
-            borderRadius: 16,
-            padding: 32,
-            alignItems: 'center',
-            marginTop: 12,
-          }}
-        >
-          <Text style={{ color: v2.muted }}>No photos yet.</Text>
-        </View>
+        <EmptyState icon="📸" title="No photos yet" body="Tap one of the upload zones above to start your visual progress log." />
       ) : (
         <View style={{ gap: 16, marginTop: 12, marginBottom: 32 }}>
           {photos.map((p: any) => (
@@ -237,7 +241,11 @@ export function ProgressPhotosScreen({ navigation }: any) {
                     {SIDES.find((s) => s.value === p.side)?.label} ·{' '}
                     {new Date(p.takenAt).toLocaleDateString('en-US')}
                   </Text>
-                  <Pressable onPress={() => onDelete(p.id)}>
+                  <Pressable
+                    onPress={() => { haptic.press(); setPendingDelete(p.id); }}
+                    hitSlop={8}
+                    style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+                  >
                     <Text style={{ color: '#ff6464', fontSize: 12 }}>Delete</Text>
                   </Pressable>
                 </View>
@@ -269,13 +277,14 @@ export function ProgressPhotosScreen({ navigation }: any) {
                   <Pressable
                     onPress={() => onAnalyze(p.id)}
                     disabled={analyzing === p.id}
-                    style={{
+                    style={({ pressed }) => ({
                       backgroundColor: '#FFF',
                       paddingVertical: 8,
                       paddingHorizontal: 16,
                       borderRadius: 999,
                       alignSelf: 'flex-start',
-                    }}
+                      opacity: analyzing === p.id ? 0.5 : pressed ? 0.7 : 1,
+                    })}
                   >
                     <Text style={{ color: '#000', fontSize: 12, fontWeight: '600' }}>
                       {analyzing === p.id ? 'Analyzing...' : '✦ AI analysis'}
@@ -287,6 +296,16 @@ export function ProgressPhotosScreen({ navigation }: any) {
           ))}
         </View>
       )}
+
+      <NativeConfirm
+        visible={!!pendingDelete}
+        title="Delete photo?"
+        message="This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </V2Screen>
   );
 }
