@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { getGlossary } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { LoadingState, EmptyState, ErrorState } from '../components/native';
 
 export function SlovnikScreen() {
   const [terms, setTerms] = useState<any[] | null>(null);
@@ -41,16 +42,11 @@ export function SlovnikScreen() {
       />
 
       {error ? (
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load glossary</Text>
-          <Pressable onPress={() => setQuery(q => q)} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load glossary." onRetry={() => setQuery(q => q + '')} />
       ) : terms === null ? (
-        <V2Loading />
+        <LoadingState label="Loading terms" />
       ) : terms.length === 0 ? (
-        <Text style={{ color: v2.faint, textAlign: 'center', marginTop: 24 }}>No results.</Text>
+        <EmptyState icon="🔍" title="No results" body="Try a different search term." />
       ) : (
         terms.map((t) => (
           <View key={t.id} style={{ borderBottomWidth: 1, borderBottomColor: v2.border, paddingVertical: 24 }}>

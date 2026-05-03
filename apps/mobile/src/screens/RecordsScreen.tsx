@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { getPersonalRecords } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { LoadingState, EmptyState } from '../components/native';
 
 export function RecordsScreen() {
   const [records, setRecords] = useState<any[] | null>(null);
@@ -23,11 +24,9 @@ export function RecordsScreen() {
       </View>
 
       {records === null ? (
-        <V2Loading />
+        <LoadingState label="Loading records" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No records yet. Complete workouts to track PRs.
-        </Text>
+        <EmptyState icon="🏆" title="No records yet" body="Complete workouts to track personal bests automatically." />
       ) : null}
 
       {items.map((r) => {

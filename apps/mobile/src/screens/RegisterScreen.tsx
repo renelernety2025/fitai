@@ -3,6 +3,7 @@ import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-nat
 import { useAuth } from '../lib/auth-context';
 import { authRegister } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Input, V2Button, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic } from '../components/native';
 
 const LEVELS = [
   { v: 'BEGINNER', l: 'Beginner' },
@@ -18,14 +19,18 @@ export function RegisterScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const haptic = useHaptic();
 
   async function handleRegister() {
+    haptic.tap();
     setError('');
     setLoading(true);
     try {
       const res = await authRegister({ name, email, password, level });
+      haptic.success();
       await login(res.accessToken, res.user);
     } catch (e: any) {
+      haptic.error();
       setError(e.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -47,7 +52,7 @@ export function RegisterScreen({ navigation }: any) {
         <V2SectionLabel>Level</V2SectionLabel>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
           {LEVELS.map((l) => (
-            <V2Chip key={l.v} label={l.l} selected={level === l.v} onPress={() => setLevel(l.v)} />
+            <V2Chip key={l.v} label={l.l} selected={level === l.v} onPress={() => { haptic.selection(); setLevel(l.v); }} />
           ))}
         </View>
 
@@ -57,7 +62,11 @@ export function RegisterScreen({ navigation }: any) {
           {loading ? 'Creating...' : 'Create account →'}
         </V2Button>
 
-        <Pressable onPress={() => navigation.navigate('Login')} style={{ marginTop: 32, alignItems: 'center' }}>
+        <Pressable
+          onPress={() => { haptic.tap(); navigation.navigate('Login'); }}
+          hitSlop={8}
+          style={({ pressed }) => [{ marginTop: 32, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
+        >
           <Text style={{ color: v2.faint, fontSize: 14 }}>
             Already have an account? <Text style={{ color: v2.text }}>Sign in</Text>
           </Text>
