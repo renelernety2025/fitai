@@ -3,6 +3,7 @@ import { View, Text, KeyboardAvoidingView, Platform, Pressable } from 'react-nat
 import { useAuth } from '../lib/auth-context';
 import { authLogin } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Input, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic } from '../components/native';
 
 export function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -10,14 +11,18 @@ export function LoginScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const haptic = useHaptic();
 
   async function handleLogin() {
+    haptic.tap();
     setError('');
     setLoading(true);
     try {
       const res = await authLogin(email, password);
+      haptic.success();
       await login(res.accessToken, res.user);
     } catch (e: any) {
+      haptic.error();
       setError(e.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -41,7 +46,11 @@ export function LoginScreen({ navigation }: any) {
           {loading ? 'Signing in...' : 'Continue →'}
         </V2Button>
 
-        <Pressable onPress={() => navigation.navigate('Register')} style={{ marginTop: 32, alignItems: 'center' }}>
+        <Pressable
+          onPress={() => { haptic.tap(); navigation.navigate('Register'); }}
+          hitSlop={8}
+          style={({ pressed }) => [{ marginTop: 32, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
+        >
           <Text style={{ color: v2.faint, fontSize: 14 }}>
             No account? <Text style={{ color: v2.text }}>Sign up</Text>
           </Text>

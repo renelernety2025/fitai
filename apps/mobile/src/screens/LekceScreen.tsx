@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getLessons } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Row, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Row, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, EmptyState, ErrorState } from '../components/native';
 
 const CATS = [
   { v: 'all', l: 'All' },
@@ -22,6 +23,7 @@ export function LekceScreen({ navigation }: any) {
   const [lessons, setLessons] = useState<any[] | null>(null);
   const [cat, setCat] = useState('all');
   const [error, setError] = useState(false);
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     setError(false);
@@ -44,26 +46,19 @@ export function LekceScreen({ navigation }: any) {
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
         {CATS.map((c) => (
-          <V2Chip key={c.v} label={c.l} selected={cat === c.v} onPress={() => setCat(c.v)} />
+          <V2Chip key={c.v} label={c.l} selected={cat === c.v} onPress={() => { haptic.selection(); setCat(c.v); }} />
         ))}
       </View>
 
       {error ? (
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load lessons</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
+        <ErrorState message="Failed to load lessons." onRetry={load} />
       ) : lessons === null ? (
-        <V2Loading />
+        <LoadingState label="Loading lessons" />
       ) : lessons.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', paddingVertical: 40 }}>
-          No lessons in this category yet.
-        </Text>
+        <EmptyState icon="📚" title="No lessons" body="More lessons in this category coming soon." />
       ) : (
         lessons.map((l) => (
-          <V2Row key={l.id} onPress={() => navigation.navigate('LessonDetail', { slug: l.slug })}>
+          <V2Row key={l.id} onPress={() => { haptic.tap(); navigation.navigate('LessonDetail', { slug: l.slug }); }}>
             <Text style={{ color: accent[l.category] || '#FFF', fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 6 }}>
               {l.category.toUpperCase()} · {l.durationMin} MIN
             </Text>
