@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { getAchievements, checkAchievements } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Chip, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 const categoryColors: Record<string, string> = {
   training: v2.red,
@@ -28,6 +29,7 @@ export function UspechyScreen() {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     setError(false);
@@ -45,19 +47,10 @@ export function UspechyScreen() {
   const categories = Array.from(new Set(achievements.map((a) => a.category)));
 
   if (error) {
-    return (
-      <V2Screen>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
-          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load achievements</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
-      </V2Screen>
-    );
+    return <V2Screen><ErrorState message="Failed to load achievements." onRetry={load} /></V2Screen>;
   }
 
-  if (loading) return <V2Screen><V2Loading /></V2Screen>;
+  if (loading) return <V2Screen><LoadingState label="Loading achievements" /></V2Screen>;
 
   return (
     <V2Screen>
@@ -70,13 +63,13 @@ export function UspechyScreen() {
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-        <V2Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
+        <V2Chip label="All" selected={filter === 'all'} onPress={() => { haptic.selection(); setFilter('all'); }} />
         {categories.map((c) => (
           <V2Chip
             key={c}
             label={categoryLabels[c] || c}
             selected={filter === c}
-            onPress={() => setFilter(c)}
+            onPress={() => { haptic.selection(); setFilter(c); }}
           />
         ))}
       </View>

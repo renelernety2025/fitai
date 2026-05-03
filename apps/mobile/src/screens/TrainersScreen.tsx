@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { getTrainers } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
+import { LoadingState, EmptyState } from '../components/native';
 
 export function TrainersScreen() {
   const [trainers, setTrainers] = useState<any[] | null>(null);
@@ -42,11 +43,9 @@ export function TrainersScreen() {
       />
 
       {trainers === null ? (
-        <V2Loading />
+        <LoadingState label="Loading trainers" />
       ) : items.length === 0 ? (
-        <Text style={{ color: v2.muted, fontSize: 14, textAlign: 'center', marginTop: 48 }}>
-          No trainers found
-        </Text>
+        <EmptyState icon="🧑‍🏫" title="No trainers found" body="Try a different search query." />
       ) : null}
 
       {items.map((t) => (

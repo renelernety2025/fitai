@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
 import { getVideo } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 const accent: Record<string, string> = {
   YOGA: v2.green,
@@ -15,6 +16,7 @@ export function VideoDetailScreen({ route, navigation }: any) {
   const [video, setVideo] = useState<any>(null);
   const [error, setError] = useState(false);
   const id = route?.params?.id;
+  const haptic = useHaptic();
 
   const load = useCallback(() => {
     if (!id) return;
@@ -25,29 +27,26 @@ export function VideoDetailScreen({ route, navigation }: any) {
   }, [id]);
   useEffect(load, [load]);
 
+  const BackButton = () => (
+    <Pressable
+      onPress={() => { haptic.tap(); navigation.goBack(); }}
+      hitSlop={12}
+      style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingTop: 16, paddingBottom: 16 }, pressed && { opacity: 0.5 }]}
+    >
+      <Text style={{ color: v2.text, fontSize: 32, fontWeight: '300', lineHeight: 32, marginTop: -3 }}>‹</Text>
+      <Text style={{ color: v2.text, fontSize: 16, fontWeight: '500' }}>Videos</Text>
+    </Pressable>
+  );
+
   if (error) {
-    return (
-      <V2Screen>
-        <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
-          <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← VIDEOS</Text>
-        </Pressable>
-        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-          <Text style={{ color: '#FF375F', fontSize: 15, fontWeight: '600', marginBottom: 16 }}>Failed to load video</Text>
-          <Pressable onPress={load} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
-      </V2Screen>
-    );
+    return <V2Screen><BackButton /><ErrorState message="Failed to load video." onRetry={load} /></V2Screen>;
   }
 
-  if (!video) return <V2Screen><V2Loading /></V2Screen>;
+  if (!video) return <V2Screen><BackButton /><LoadingState label="Loading video" /></V2Screen>;
 
   return (
     <V2Screen>
-      <Pressable onPress={() => navigation.goBack()} style={{ paddingTop: 16, paddingBottom: 16 }}>
-        <Text style={{ color: v2.faint, fontSize: 11, fontWeight: '600', letterSpacing: 2 }}>← VIDEOS</Text>
-      </Pressable>
+      <BackButton />
 
       <Image
         source={{ uri: video.thumbnailUrl }}
