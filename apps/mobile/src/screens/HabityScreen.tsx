@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import { getHabitsToday, updateHabitsToday, getHabitsStats, getRecoveryTips } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Ring, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Ring, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, ErrorState } from '../components/native';
 
 const tipColors: Record<string, string> = {
   sleep: '#0A84FF',
@@ -22,6 +23,7 @@ function Scale1to5({
   onChange: (v: number) => void;
   hint?: string;
 }) {
+  const haptic = useHaptic();
   return (
     <View style={{ marginBottom: 28 }}>
       <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 2, marginBottom: 12 }}>
@@ -33,8 +35,8 @@ function Scale1to5({
           return (
             <Pressable
               key={n}
-              onPress={() => onChange(n)}
-              style={{
+              onPress={() => { haptic.selection(); onChange(n); }}
+              style={({ pressed }) => ({
                 flex: 1,
                 height: 56,
                 borderRadius: 18,
@@ -43,7 +45,8 @@ function Scale1to5({
                 backgroundColor: sel ? '#FFF' : 'transparent',
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
+                opacity: pressed ? 0.6 : 1,
+              })}
             >
               <Text style={{ color: sel ? '#000' : v2.muted, fontSize: 22, fontWeight: '700' }}>{n}</Text>
             </Pressable>
@@ -141,19 +144,10 @@ export function HabityScreen() {
   };
 
   if (loadError) {
-    return (
-      <V2Screen>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 }}>
-          <Text style={{ color: '#FF375F', fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Failed to load check-in</Text>
-          <Pressable onPress={reload} style={{ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#FFF' }}>
-            <Text style={{ color: '#000', fontWeight: '700' }}>Retry</Text>
-          </Pressable>
-        </View>
-      </V2Screen>
-    );
+    return <V2Screen><ErrorState message="Failed to load check-in." onRetry={reload} /></V2Screen>;
   }
 
-  if (!today) return <V2Screen><V2Loading /></V2Screen>;
+  if (!today) return <V2Screen><LoadingState label="Loading habits" /></V2Screen>;
 
   return (
     <V2Screen>
