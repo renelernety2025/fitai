@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { useAuth } from '../lib/auth-context';
 import { testPushNotification } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, NativeConfirm } from '../components/native';
 
 const SECONDARY = [
   { screen: 'AIChat', label: 'AI Chat', color: v2.green },
@@ -41,6 +42,21 @@ const SECONDARY = [
 
 export function ProfileScreen({ navigation }: any) {
   const { user, logout } = useAuth();
+  const [pushResult, setPushResult] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const haptic = useHaptic();
+
+  async function runPushTest() {
+    haptic.tap();
+    try {
+      const r = await testPushNotification();
+      haptic.success();
+      setPushResult(`Expo: ${r.expo?.sent ? 'sent ✓' : r.expo?.reason || 'failed'} · Web: ${r.web?.sent || 0}`);
+    } catch (e: any) {
+      haptic.error();
+      setPushResult(e?.message || 'Push test failed');
+    }
+  }
 
   return (
     <V2Screen>
@@ -55,42 +71,48 @@ export function ProfileScreen({ navigation }: any) {
         {SECONDARY.map((s) => (
           <Pressable
             key={s.screen}
-            onPress={() => navigation.navigate(s.screen)}
-            style={{
+            onPress={() => { haptic.tap(); navigation.navigate(s.screen); }}
+            style={({ pressed }) => ({
               flexDirection: 'row',
               alignItems: 'center',
               borderBottomWidth: 1,
               borderBottomColor: v2.border,
               paddingVertical: 20,
-            }}
+              opacity: pressed ? 0.6 : 1,
+            })}
           >
             <View style={{ width: 24, height: 3, borderRadius: 2, backgroundColor: s.color, marginRight: 16 }} />
             <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '600', flex: 1 }}>{s.label}</Text>
-            <Text style={{ color: v2.ghost, fontSize: 18 }}>→</Text>
+            <Text style={{ color: v2.ghost, fontSize: 18 }}>›</Text>
           </Pressable>
         ))}
       </View>
 
+      {pushResult && (
+        <View style={{ marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: v2.border }}>
+          <Text style={{ color: v2.muted, fontSize: 12 }}>{pushResult}</Text>
+        </View>
+      )}
+
       <View style={{ marginBottom: 16 }}>
-        <V2Button
-          onPress={async () => {
-            try {
-              const r = await testPushNotification();
-              Alert.alert('Test push', `Expo: ${r.expo?.sent ? 'sent ✓' : r.expo?.reason || 'failed'}\nWeb: ${r.web?.sent || 0}`);
-            } catch (e: any) {
-              Alert.alert('Test push', e.message || 'Failed');
-            }
-          }}
-          variant="secondary"
-          full
-        >
+        <V2Button onPress={runPushTest} variant="secondary" full>
           Test push notifications
         </V2Button>
       </View>
 
-      <V2Button onPress={logout} variant="secondary" full>
+      <V2Button onPress={() => { haptic.press(); setConfirmLogout(true); }} variant="secondary" full>
         Log out
       </V2Button>
+
+      <NativeConfirm
+        visible={confirmLogout}
+        title="Log out?"
+        message="You'll need to sign in again to keep training."
+        confirmLabel="Log out"
+        destructive
+        onConfirm={() => { setConfirmLogout(false); logout(); }}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </V2Screen>
   );
 }
