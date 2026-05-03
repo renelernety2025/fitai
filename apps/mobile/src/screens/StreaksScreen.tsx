@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { getStreakFreezeStatus, useStreakFreeze, getHabitsStats } from '../lib/api';
-import { V2Screen, V2Display, V2SectionLabel, V2Button, V2Loading, v2 } from '../components/v2/V2';
+import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components/v2/V2';
+import { useHaptic, LoadingState, NativeConfirm } from '../components/native';
 
 export function StreaksScreen() {
   const [freeze, setFreeze] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  function reload() {
-    getStreakFreezeStatus().then(setFreeze).catch(() => setFreeze(null));
-    getHabitsStats().then(setStats).catch(() => setStats(null));
-  }
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const haptic = useHaptic();
 
   useEffect(() => {
     setLoading(true);
@@ -21,20 +21,20 @@ export function StreaksScreen() {
     ]).finally(() => setLoading(false));
   }, []);
 
-  function handleFreeze() {
-    Alert.alert('Streak Freeze', 'Use streak freeze for today?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Use',
-        onPress: () => useStreakFreeze()
-          .then(() => {
-            Alert.alert('Done', 'Streak freeze used!');
-            // Re-fetch to get correct status shape
-            getStreakFreezeStatus().then(setFreeze).catch(() => {});
-          })
-          .catch((e: any) => Alert.alert('Error', e?.message || 'Could not use freeze')),
-      },
-    ]);
+  async function confirmFreeze() {
+    setPending(false);
+    setError(null);
+    setSuccess(false);
+    try {
+      await useStreakFreeze();
+      haptic.success();
+      setSuccess(true);
+      const fresh = await getStreakFreezeStatus().catch(() => null);
+      setFreeze(fresh);
+    } catch (e: any) {
+      haptic.error();
+      setError(e?.message || 'Could not use freeze');
+    }
   }
 
   return (
@@ -44,7 +44,19 @@ export function StreaksScreen() {
         <V2Display size="xl">Streaks.</V2Display>
       </View>
 
-      {loading && <V2Loading />}
+      {loading && <LoadingState label="Loading streaks" />}
+
+      {error && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(255,55,95,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,55,95,0.25)' }}>
+          <Text style={{ color: v2.red, fontSize: 13 }}>{error}</Text>
+        </View>
+      )}
+
+      {success && (
+        <View style={{ marginBottom: 16, backgroundColor: 'rgba(168,255,0,0.10)', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(168,255,0,0.25)' }}>
+          <Text style={{ color: v2.green, fontSize: 13 }}>✓ Freeze used. Streak protected.</Text>
+        </View>
+      )}
 
       {!loading && stats && (
         <View style={{ borderRadius: 24, borderWidth: 1, borderColor: v2.border, padding: 24, marginBottom: 24, backgroundColor: v2.surface }}>
@@ -88,7 +100,7 @@ export function StreaksScreen() {
             </Text>
           </View>
           <V2Button
-            onPress={handleFreeze}
+            onPress={() => { haptic.tap(); setSuccess(false); setPending(true); }}
             variant="secondary"
             full
             disabled={(freeze.remaining ?? freeze.available ?? 0) === 0}
@@ -97,6 +109,15 @@ export function StreaksScreen() {
           </V2Button>
         </View>
       )}
+
+      <NativeConfirm
+        visible={pending}
+        title="Use streak freeze?"
+        message="Today won't break your streak."
+        confirmLabel="Use"
+        onConfirm={confirmFreeze}
+        onCancel={() => setPending(false)}
+      />
     </V2Screen>
   );
 }
