@@ -62,12 +62,23 @@ Tech-uplift "Wave 1" první polovina. Backend je kompletní + lokálně ověřen
 - 4 modifikované: `app.module.ts`, `exercises/{controller,service}.ts`, `ai-insights/{controller,module,service,helpers}.ts`, `wearables/dto/sync-wearables.dto.ts`, `docker-compose.yml`
 - 0 breaking changes (existing users + endpoints fungují beze změny)
 
-### Co zbývá z Wave 1 (next session)
-- HealthKit native modul (`react-native-health` + EAS plugin + entitlements)
-- Health Connect Android modul (`react-native-health-connect` + Android manifest)
-- Mobile UI: HealthKit onboarding + ProfileScreen settings re-sync button
-- EAS development build + iOS/Android device test
-- Production deploy: `CREATE EXTENSION vector` na RDS, schema push, embedding seed via Secrets Manager OPENAI_API_KEY
+### Mobile Wave 1 (HealthKit + Health Connect) ✅
+- Packages: `@kingstinct/react-native-healthkit` (TurboModule-ready, kompatibilní s `newArchEnabled: true`) + `react-native-health-connect` (Mateus Ribeiro, Expo plugin)
+- `app.json` rozšíření:
+  - iOS Info.plist: `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription`
+  - iOS entitlement `com.apple.developer.healthkit`
+  - Android permissions: `READ_HEART_RATE`, `READ_SLEEP`, `READ_STEPS`, `READ_HEART_RATE_VARIABILITY`, `READ_RESTING_HEART_RATE`
+  - Plugins: `@kingstinct/react-native-healthkit` (s usage descriptions) + `react-native-health-connect`
+- `apps/mobile/src/lib/health-sync.ts` — cross-platform wrapper: `requestHealthPermissions()`, `syncRecent7Days()` (mapuje HealthKit / Health Connect záznamy na backend `WearableData` shape, lazy-require pattern dle mobile.md)
+- `apps/mobile/src/lib/api.ts` — přidány `syncWearables()` + `getRecoveryScore()` (typed `WearableEntry` interface)
+- Nový screen `HealthSyncScreen.tsx` — onboarding s vysvětlením, connect button, status display, re-sync; haptic feedback (tap/success/warning/error), error state s retry
+- Wired v `AppNavigator.tsx` (Stack.Screen `HealthSync`) + `ProfileScreen.tsx` SECONDARY menu
+
+### Co zbývá z Wave 1 (user-driven)
+- `cd apps/mobile && npx expo prebuild --clean && cd ios && pod install` (lokální native sync)
+- `eas build --profile development --platform ios` + Android (~15 min každá)
+- Device test: open `Profile → Health Sync → Připojit Apple Health/Health Connect`, verify permission prompt + initial sync
+- Production deploy: `CREATE EXTENSION vector` na RDS, `prisma db push` přes ECS migrate task, embedding seed přes ECS task s `OPENAI_API_KEY` ze Secrets Manager
 - Smoke test prod (`bash test-production.sh` → 115/115)
 
 ---

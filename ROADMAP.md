@@ -53,12 +53,17 @@ Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md` — 8 příležito
 - **HealthKit-aware Daily Brief**: `calcRecoveryScoreSmart` preferuje HRV/sleep/restingHR z `WearableData` před self-reported `DailyCheckIn`
 - **Wearables DTO**: přidány providery `google_fit` + `health_connect`
 
-### Wave 1 zbývá (mobile, next session)
-- HealthKit native modul (`react-native-health` + EAS plugin + Info.plist)
-- Health Connect Android (`react-native-health-connect` + manifest permissions)
-- Mobile UI: onboarding screen + ProfileScreen re-sync
-- EAS development build + device test
-- Production: `CREATE EXTENSION vector` na RDS + schema push + embedding seed přes Secrets Manager
+### Wave 1 mobile ✅
+- `@kingstinct/react-native-healthkit` + `react-native-health-connect` installed + plugin config v `app.json`
+- Cross-platform `health-sync.ts` wrapper + `HealthSyncScreen` + ProfileScreen entry
+- Code-complete; user-driven: `expo prebuild --clean` + `pod install` + EAS dev build + device test
+
+### Wave 1 zbývá pro produkci (user-driven)
+- EAS development build (iOS + Android, ~15 min každá)
+- Device test HealthKit/Health Connect permissions + initial 7d sync
+- RDS: `CREATE EXTENSION vector;` + schema push (Exercise/Recipe/WorkoutSession `embedding` column) přes ECS migrate task
+- Embedding seed přes ECS task (`OPENAI_API_KEY` ze Secrets Manager, ~$0.05)
+- Smoke test prod (`bash test-production.sh` → 115/115)
 
 ---
 

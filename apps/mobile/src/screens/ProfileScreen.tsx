@@ -38,6 +38,7 @@ const SECONDARY = [
   { screen: 'Playlists', label: 'Playlists', color: v2.green },
   { screen: 'Streaks', label: 'Streaks', color: v2.red },
   { screen: 'FormCheck', label: 'Form Check', color: v2.green },
+  { screen: 'HealthSync', label: 'Health Sync', color: v2.red },
 ];
 
 export function ProfileScreen({ navigation }: any) {

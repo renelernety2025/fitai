@@ -592,3 +592,24 @@ export function markNotificationRead(id: string) {
 export function markAllNotificationsRead() {
   return request<any>('/smart-notifications/read-all', { method: 'POST' });
 }
+
+// ── Wearables (HealthKit / Health Connect) ──
+export interface WearableEntry {
+  dataType: 'heart_rate' | 'hrv' | 'resting_hr' | 'sleep' | 'steps' | 'calories';
+  value: number;
+  unit: string;
+  timestamp: string;
+}
+export function syncWearables(
+  provider: 'apple_health' | 'health_connect',
+  entries: WearableEntry[],
+  sessionId?: string,
+) {
+  return request<{ synced: number }>('/wearables/sync', {
+    method: 'POST',
+    body: JSON.stringify({ provider, entries, sessionId }),
+  });
+}
+export function getRecoveryScore() {
+  return request<{ score: number; recommendation: string; hrv: number | null; restingHR: number | null; sleepHours: number | null }>('/wearables/recovery');
+}
