@@ -21,6 +21,7 @@ import {
   greeting,
   avg,
   calcRecoveryScore,
+  calcRecoveryScoreSmart,
   classifyRecovery,
   normalizeMood,
   normalizeWorkout,
@@ -305,7 +306,7 @@ export class AiInsightsService {
       this.prisma.fitnessProfile.findUnique({ where: { userId } }),
     ]);
 
-    const [checkIns, recentSessions, oneRepMaxes, weeklyVolumes] =
+    const [checkIns, recentSessions, oneRepMaxes, weeklyVolumes, wearableData] =
       await Promise.all([
         this.prisma.dailyCheckIn.findMany({
           where: { userId, date: { gte: sevenDaysAgo } },
@@ -326,9 +327,18 @@ export class AiInsightsService {
         this.prisma.weeklyVolume.findMany({
           where: { userId, weekStart: { gte: sevenDaysAgo } },
         }),
+        this.prisma.wearableData.findMany({
+          where: {
+            userId,
+            timestamp: { gte: sevenDaysAgo },
+            dataType: { in: ['hrv', 'sleep', 'resting_hr'] },
+          },
+          select: { dataType: true, value: true },
+        }),
       ]);
 
-    const recoveryScore = calcRecoveryScore(checkIns);
+    const recovery = calcRecoveryScoreSmart(checkIns, wearableData);
+    const recoveryScore = recovery.score;
     const recoveryStatus = classifyRecovery(
       recoveryScore,
       recentSessions.length,
@@ -343,6 +353,10 @@ export class AiInsightsService {
           greeting: greet,
           recoveryScore,
           recoveryStatus,
+          recoverySource: recovery.source,
+          hrv: recovery.hrv,
+          restingHR: recovery.restingHR,
+          wearableSleepHours: recovery.source === 'wearables' ? recovery.sleepHours : null,
           user,
           profile,
           checkIns,
@@ -603,6 +617,10 @@ Pouze JSON, žádný další text.`;
     greeting: string;
     recoveryScore: number;
     recoveryStatus: RecoveryStatus;
+    recoverySource?: 'wearables' | 'self-reported';
+    hrv?: number | null;
+    restingHR?: number | null;
+    wearableSleepHours?: number | null;
     user: any;
     profile: any;
     checkIns: any[];
@@ -615,6 +633,10 @@ Pouze JSON, žádný další text.`;
       todayKey,
       recoveryScore,
       recoveryStatus,
+      recoverySource,
+      hrv,
+      restingHR,
+      wearableSleepHours,
       user,
       profile,
       checkIns,
@@ -665,15 +687,17 @@ PROFIL:
 - Priority svaly: ${profile?.priorityMuscles?.join(', ') || 'žádné'}
 
 REGENERACE (posledních 7 dní):
-- Recovery score: ${recoveryScore}/100 (status: ${recoveryStatus})
+- Recovery score: ${recoveryScore}/100 (status: ${recoveryStatus}, zdroj: ${recoverySource || 'self-reported'})
 - Check-iny: ${checkIns.length}/7
 ${
+  recoverySource === 'wearables'
+    ? `- HealthKit/Watch data: ${wearableSleepHours != null ? `spánek ${wearableSleepHours.toFixed(1)}h` : ''}${hrv != null ? `, HRV ${hrv}ms` : ''}${restingHR != null ? `, klidový tep ${restingHR}bpm` : ''}`
+    : ''
+}
+${
   checkIns.length > 0
-    ? `- Průměr spánku: ${avg(checkIns, 'sleepHours')?.toFixed(1) || '?'}h
-- Průměr energie: ${avg(checkIns, 'energy')?.toFixed(1) || '?'}/5
-- Průměr soreness: ${avg(checkIns, 'soreness')?.toFixed(1) || '?'}/5
-- Průměr stresu: ${avg(checkIns, 'stress')?.toFixed(1) || '?'}/5`
-    : '- Žádná data, použij konzervativní RPE'
+    ? `- Self-report: spánek ${avg(checkIns, 'sleepHours')?.toFixed(1) || '?'}h, energie ${avg(checkIns, 'energy')?.toFixed(1) || '?'}/5, soreness ${avg(checkIns, 'soreness')?.toFixed(1) || '?'}/5, stres ${avg(checkIns, 'stress')?.toFixed(1) || '?'}/5`
+    : '- Žádná self-report data'
 }
 
 POSLEDNÍ TRÉNINKY (posledních 14 dní):

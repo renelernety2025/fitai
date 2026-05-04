@@ -7,6 +7,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
+import { EmbeddingsModule } from './embeddings/embeddings.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
@@ -138,6 +139,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     PrismaModule,
     CacheModule,
+    EmbeddingsModule,
     MetricsModule,
     NotifyModule,
     HealthModule,

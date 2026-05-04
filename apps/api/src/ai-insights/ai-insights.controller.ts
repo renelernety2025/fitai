@@ -1,7 +1,9 @@
-import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiInsightsService } from './ai-insights.service';
+import { HistoryQueryService } from './history-query.service';
+import { HistoryQueryDto } from './dto/history-query.dto';
 
 /**
  * AI endpoints hit Claude Haiku — each call costs real money. All endpoints
@@ -11,7 +13,10 @@ import { AiInsightsService } from './ai-insights.service';
 @Controller('ai-insights')
 @UseGuards(JwtAuthGuard)
 export class AiInsightsController {
-  constructor(private service: AiInsightsService) {}
+  constructor(
+    private service: AiInsightsService,
+    private historyQuery: HistoryQueryService,
+  ) {}
 
   @Get('recovery-tips')
   @Throttle({ default: { limit: 10, ttl: seconds(3600) } }) // 10/hour
@@ -50,5 +55,12 @@ export class AiInsightsController {
   @Throttle({ default: { limit: 20, ttl: seconds(3600) } })
   todayAction(@Request() req: any) {
     return this.service.getTodayAction(req.user.id);
+  }
+
+  /** RAG over the user's WorkoutSession history — natural-language Q&A. */
+  @Post('history-query')
+  @Throttle({ default: { limit: 10, ttl: seconds(3600) } })
+  historyQueryEndpoint(@Request() req: any, @Body() dto: HistoryQueryDto) {
+    return this.historyQuery.query(req.user.id, dto.query);
   }
 }

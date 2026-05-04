@@ -133,6 +133,49 @@ export function calcRecoveryScore(checkIns: any[]): number {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+interface WearablePoint { dataType: string; value: number }
+
+/**
+ * Smart recovery score — prefers HealthKit/HealthConnect wearable data
+ * (HRV, objective sleep, resting HR) over self-reported DailyCheckIn.
+ * Falls back to the legacy formula when no wearable signals are present.
+ */
+export function calcRecoveryScoreSmart(
+  checkIns: any[],
+  wearables: WearablePoint[],
+): { score: number; source: 'wearables' | 'self-reported'; hrv: number | null; sleepHours: number | null; restingHR: number | null } {
+  const hrvVals = wearables.filter((w) => w.dataType === 'hrv').map((w) => w.value);
+  const sleepVals = wearables.filter((w) => w.dataType === 'sleep').map((w) => w.value);
+  const restVals = wearables.filter((w) => w.dataType === 'resting_hr').map((w) => w.value);
+  const meanOf = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
+  const hrv = meanOf(hrvVals);
+  const wearableSleep = meanOf(sleepVals);
+  const restingHR = meanOf(restVals);
+
+  if (hrv == null && wearableSleep == null && restingHR == null) {
+    return { score: calcRecoveryScore(checkIns), source: 'self-reported', hrv: null, sleepHours: avg(checkIns, 'sleepHours'), restingHR: null };
+  }
+
+  const sleep = wearableSleep ?? avg(checkIns, 'sleepHours');
+  const energy = avg(checkIns, 'energy');
+  const soreness = avg(checkIns, 'soreness');
+  const stress = avg(checkIns, 'stress');
+  let score = 50;
+  if (sleep != null) score += Math.max(-15, Math.min(20, (sleep - 6.5) * 6));
+  if (hrv != null) score += Math.max(-10, Math.min(15, (hrv - 35) * 0.5));
+  if (restingHR != null) score += Math.max(-8, Math.min(10, (75 - restingHR) * 0.4));
+  if (energy != null) score += (energy - 3) * 6;
+  if (soreness != null) score += (3 - soreness) * 5;
+  if (stress != null) score += (3 - stress) * 4;
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    source: 'wearables',
+    hrv: hrv != null ? Math.round(hrv) : null,
+    sleepHours: sleep,
+    restingHR: restingHR != null ? Math.round(restingHR) : null,
+  };
+}
+
 export function classifyRecovery(
   score: number,
   recentSessions: number,

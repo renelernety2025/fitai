@@ -8,6 +8,70 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Wave 1 backend — pgvector + RAG + HealthKit-aware Daily Brief] 2026-05-04
+
+Tech-uplift "Wave 1" první polovina. Backend je kompletní + lokálně ověřený, mobile native moduly (HealthKit/Health Connect) zbývají na separate session s EAS build.
+
+### pgvector infrastructure
+- Local docker-compose postgres image swap: `postgres:16` → `pgvector/pgvector:pg16` (volume `fitai_pgdata` zachován)
+- `CREATE EXTENSION vector` (pgvector 0.8.2) + collation refresh + reindex
+- Prisma schema: `embedding Unsupported("vector(1536)")?` přidáno na `Exercise`, `Recipe`, `WorkoutSession`
+- HNSW indexy s `vector_cosine_ops` + `WHERE embedding IS NOT NULL` partial filter
+- Pro produkci: `CREATE EXTENSION vector` na RDS Postgres 16 (out-of-the-box, žádný downtime), pak `prisma db push` přes ECS migrate task
+
+### EmbeddingsService (shared, @Global module)
+- `apps/api/src/embeddings/{embeddings.module,embeddings.service}.ts` — lazy OpenAI client, `text-embedding-3-small` (1536 dim)
+- API: `embed(text)`, `embedBatch(texts)`, `toVectorString(vector)` — používáno semantic search + RAG + cron
+
+### Embedding seed script
+- `apps/api/prisma/seed-embeddings.ts` — embeduje `Exercise.descriptionCs/nameCs/muscleGroups/equipment` a `Recipe.name/ingredients/tags`
+- `npm run seed:embeddings` (vyžaduje `OPENAI_API_KEY` env var, ~$0.05 jednorázový náklad pro 60 cviků)
+- Idempotentní — skip rows where `embedding IS NOT NULL`
+
+### Semantic exercise search
+- `POST /api/exercises/search/semantic` — natural-language query → top-K cosine similarity match
+- DTO validace (`query` 2-200 znaků, `limit` 1-20)
+- `@Throttle(30/min)`, `@UseGuards(JwtAuthGuard)`, Redis cache 1h per query hash (content-only key)
+- Vrací `{ id, name, nameCs, descriptionCs, category, equipment, muscleGroups, relevance }` (relevance 0-1 z `1 - cosine_distance`)
+
+### RAG history query
+- `POST /api/ai-insights/history-query` — uživatel pokládá natural-language otázku ("co mi šlo loni v dubnu?"), backend retrieves top-10 nejrelevantnějších `WorkoutSessions` přes pgvector, posílá kontext do Claude Haiku
+- Nový `HistoryQueryService` (`apps/api/src/ai-insights/history-query.service.ts`) s:
+  - `query(userId, query)` — cached 24h per user+query
+  - `reembedRecentSessions()` `@Cron('0 3 * * 0')` — každou neděli 3:00 UTC, batch 100 sessions, 50 per OpenAI batch
+- DTO `query` 3-300 znaků, `@Throttle(10/hour)`
+- Fallback summary když Claude API nedostupné
+
+### Daily Brief — wearable-aware recovery score
+- Nový helper `calcRecoveryScoreSmart(checkIns, wearables)` v `ai-insights.helpers.ts` — preferuje HRV / objective sleep / resting HR z `WearableData` přes `DailyCheckIn` self-report
+- `getDailyBrief()` načítá 7d `WearableData` (`hrv`, `sleep`, `resting_hr`) paralelně s checkIns
+- Claude prompt obsahuje `zdroj: wearables/self-reported` + konkrétní HealthKit hodnoty když jsou dostupné
+- Fallback na původní `calcRecoveryScore` když user nemá wearables data — žádný breaking change pro existing users
+
+### Wearables sync DTO rozšíření
+- `apps/api/src/wearables/dto/sync-wearables.dto.ts` — přidány providery `google_fit` + `health_connect` pro Android Health Connect; `sessionId` jako optional UUID
+- Existing `POST /api/wearables/sync` endpoint je drop-in pro mobile native moduly (žádný nový endpoint není třeba)
+
+### Verifikace
+- TypeScript clean (`npm run lint` 0 errors)
+- API build úspěšný (`npm run build`)
+- Local boot: `EmbeddingsModule dependencies initialized` + obě nové routes mapped (`Mapped {/api/exercises/search/semantic, POST}`, `Mapped {/api/ai-insights/history-query, POST}`)
+
+### Stats
+- 8 nových souborů: `embeddings/{service,module}.ts`, `seed-embeddings.ts`, `history-query.service.ts`, 2 DTO, package.json script, schema vector fields
+- 4 modifikované: `app.module.ts`, `exercises/{controller,service}.ts`, `ai-insights/{controller,module,service,helpers}.ts`, `wearables/dto/sync-wearables.dto.ts`, `docker-compose.yml`
+- 0 breaking changes (existing users + endpoints fungují beze změny)
+
+### Co zbývá z Wave 1 (next session)
+- HealthKit native modul (`react-native-health` + EAS plugin + entitlements)
+- Health Connect Android modul (`react-native-health-connect` + Android manifest)
+- Mobile UI: HealthKit onboarding + ProfileScreen settings re-sync button
+- EAS development build + iOS/Android device test
+- Production deploy: `CREATE EXTENSION vector` na RDS, schema push, embedding seed via Secrets Manager OPENAI_API_KEY
+- Smoke test prod (`bash test-production.sh` → 115/115)
+
+---
+
 ## [Mobile iOS native pass — 47 screens + foundation + creator-dashboard fix] 2026-05-03
 
 ### Foundation (Phase 0)

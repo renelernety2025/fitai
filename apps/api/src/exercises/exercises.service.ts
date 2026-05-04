@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { MuscleGroup, VideoDifficulty } from '@prisma/client';
 
 /**
@@ -14,6 +16,7 @@ export class ExercisesService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private embeddings: EmbeddingsService,
   ) {}
 
   async findAll(filters?: { muscleGroup?: MuscleGroup; difficulty?: VideoDifficulty }) {
@@ -96,5 +99,51 @@ export class ExercisesService {
   private async invalidate(id?: string) {
     await this.cache.del('exercises:all');
     if (id) await this.cache.del(`exercises:${id}`);
+  }
+
+  /**
+   * Cosine-similarity search over exercise embeddings (pgvector HNSW).
+   * Cached 1h per query — content-only key, safe across users.
+   */
+  async searchSemantic(query: string, limit = 10) {
+    const safeLimit = Math.max(1, Math.min(20, limit));
+    const hash = createHash('md5').update(query.trim().toLowerCase()).digest('hex');
+    const cacheKey = `exercises:semantic:${hash}:${safeLimit}`;
+    return this.cache.getOrSet(cacheKey, 3600, async () => {
+      const embedding = await this.embeddings.embed(query);
+      const vector = this.embeddings.toVectorString(embedding);
+      const rows = await this.prisma.$queryRawUnsafe<
+        Array<{
+          id: string;
+          name: string;
+          nameCs: string;
+          descriptionCs: string;
+          category: string;
+          equipment: string[];
+          muscleGroups: string[];
+          distance: number;
+        }>
+      >(
+        `SELECT id, name, "nameCs", "descriptionCs", category, equipment,
+                "muscleGroups"::text[] AS "muscleGroups",
+                embedding <=> $1::vector AS distance
+         FROM "Exercise"
+         WHERE embedding IS NOT NULL
+         ORDER BY distance ASC
+         LIMIT $2`,
+        vector,
+        safeLimit,
+      );
+      return rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        nameCs: r.nameCs,
+        descriptionCs: r.descriptionCs,
+        category: r.category,
+        equipment: r.equipment,
+        muscleGroups: r.muscleGroups,
+        relevance: Math.max(0, Math.min(1, 1 - r.distance)),
+      }));
+    });
   }
 }

@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { MuscleGroup, VideoDifficulty } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
+import { SemanticSearchDto } from './dto/semantic-search.dto';
 
 @Controller('exercises')
 export class ExercisesController {
@@ -21,6 +23,14 @@ export class ExercisesController {
   @UseGuards(JwtAuthGuard)
   getMicroWorkout() {
     return this.exercisesService.getMicroWorkout();
+  }
+
+  /** Semantic exercise search — embeds query and ranks via pgvector cosine distance. */
+  @Throttle({ default: { limit: 30, ttl: seconds(60) } })
+  @UseGuards(JwtAuthGuard)
+  @Post('search/semantic')
+  searchSemantic(@Body() dto: SemanticSearchDto) {
+    return this.exercisesService.searchSemantic(dto.query, dto.limit ?? 10);
   }
 
   @Get(':id/personal-best')

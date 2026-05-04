@@ -41,6 +41,27 @@
 
 ---
 
+## Hotovo (2026-05-04)
+
+### Wave 1 backend (tech-uplift) ✅
+Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md` — 8 příležitostí ve 3 vlnách. Wave 1 backend dokončený:
+- **pgvector setup**: docker-compose pgvector image, HNSW indexy, Prisma schema (Exercise/Recipe/WorkoutSession `embedding vector(1536)`)
+- **EmbeddingsService** (@Global, lazy OpenAI client, `text-embedding-3-small`)
+- **Embedding seed script** `npm run seed:embeddings` (cca $0.05 jednorázově)
+- **Semantic exercise search**: `POST /api/exercises/search/semantic` (cosine similarity, cache 1h, throttle 30/min)
+- **RAG history query**: `POST /api/ai-insights/history-query` (top-10 sessions → Claude Haiku, cache 24h, throttle 10/h) + weekly cron pro re-embed
+- **HealthKit-aware Daily Brief**: `calcRecoveryScoreSmart` preferuje HRV/sleep/restingHR z `WearableData` před self-reported `DailyCheckIn`
+- **Wearables DTO**: přidány providery `google_fit` + `health_connect`
+
+### Wave 1 zbývá (mobile, next session)
+- HealthKit native modul (`react-native-health` + EAS plugin + Info.plist)
+- Health Connect Android (`react-native-health-connect` + manifest permissions)
+- Mobile UI: onboarding screen + ProfileScreen re-sync
+- EAS development build + device test
+- Production: `CREATE EXTENSION vector` na RDS + schema push + embedding seed přes Secrets Manager
+
+---
+
 ## Aktuální priorita
 
 ### 1. VoiceEngine debug + hardware AEC (~4h, potřeba Xcode)

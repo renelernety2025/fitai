@@ -3,6 +3,8 @@ import {
   IsArray,
   IsNumber,
   IsIn,
+  IsOptional,
+  IsUUID,
   MaxLength,
   ArrayMaxSize,
   ValidateNested,
@@ -26,8 +28,12 @@ class WearableEntryDto {
 }
 
 export class SyncWearablesDto {
-  @IsIn(['apple_health', 'garmin', 'fitbit', 'polar', 'whoop'])
+  @IsIn(['apple_health', 'google_fit', 'health_connect', 'garmin', 'fitbit', 'polar', 'whoop'])
   provider: string;
+
+  @IsOptional()
+  @IsUUID()
+  sessionId?: string;
 
   @IsArray()
   @ArrayMaxSize(1000)

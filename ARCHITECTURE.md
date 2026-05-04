@@ -348,6 +348,30 @@ grep -rn "@Get\|@Post\|@Put\|@Delete\|@Patch" apps/api/src/**/*.controller.ts
 - **IAM:** task role `fitai-production-ecs-task` has S3 Get/Put/Delete/ListBucket
   on `fitai-assets-production`
 
+## Semantic Search & RAG (pgvector)
+
+```
+Exercise/Recipe seed time:
+  text (name+description+muscleGroups+...) → OpenAI text-embedding-3-small (1536 dim)
+  → UPDATE table SET embedding = vector::vector
+  → HNSW partial index (WHERE embedding IS NOT NULL) is built lazily
+
+Query time (semantic search):
+  user query → EmbeddingsService.embed() → vector
+  → SELECT ... ORDER BY embedding <=> $1::vector LIMIT K
+  → relevance = 1 - cosine_distance
+  → Redis cache 1h per query hash
+
+RAG history query:
+  user question → embed → SELECT WorkoutSessions WHERE userId=$1 ORDER BY distance
+  → fetch top-10 + their exerciseSets summary
+  → Claude Haiku prompt with retrieved context
+  → answer cached 24h per (userId, query hash)
+
+Weekly cron (Sunday 03:00 UTC):
+  embed completed WorkoutSessions where embedding IS NULL (batch 100, 50 per OpenAI batch)
+```
+
 ## Pose Detection Pipeline
 
 ```
@@ -477,3 +501,5 @@ Stack screens (přístupné z Profile menu / Plans / Dashboard):
 | 13 | 2026-04-12 | Sentence-boundary flushing pro Claude→ElevenLabs pipeline | Word-by-word = příliš mnoho TTS requestů. Celá odpověď = zabíjí latency. Sentence boundary (`. ! ?`) = optimální trade-off |
 | 14 | 2026-04-19 | Rollback VoiceEngine na expo-audio | VoiceEngine native modul (AVAudioEngine + VoiceProcessingIO) měl nevyřešený silent playback bug (format/routing). Expo-audio funguje spolehlivě. VoiceEngine debug v separate session s Xcode |
 | 15 | 2026-04-19 | Archive rhythm pro CHANGELOG/ROADMAP | CHANGELOG narostl na 74 KB (2x budget). Archive completed phases verbatim, aktivní docs drží jen recent. Viz CHANGELOG-archive/ a ROADMAP-archive/ |
+| 16 | 2026-05-04 | pgvector pro semantic search + RAG | OpenAI `text-embedding-3-small` (1536 dim) přes `EmbeddingsService` (@Global, lazy client). Postgres pgvector 0.8.2 s HNSW partial indexy `WHERE embedding IS NOT NULL`. Vector field je `Unsupported("vector(1536)")` v Prisma — query přes `$queryRawUnsafe` s `$1::vector` cast. Produkce: RDS Postgres 16 má pgvector out-of-the-box, žádný downtime |
+| 17 | 2026-05-04 | HealthKit data preferred over self-reported DailyCheckIn | `calcRecoveryScoreSmart()` aplikuje HRV (15 max body), objective sleep (20 max body), resting HR (10 max body) z `WearableData` když je dostupné. Self-reported (energy, soreness, stress) zůstávají jako přídavný signál. Bez wearable data fallback na původní `calcRecoveryScore` (zero breaking change pro existing users) |

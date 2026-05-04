@@ -235,6 +235,7 @@ model WorkoutSession {
   durationSeconds Int       @default(0)
   accuracyScore   Float     @default(0)
   poseData        Json?
+  embedding       Unsupported("vector(1536)")?
 
   user       User           @relation(fields: [userId], references: [id])
   video      Video?         @relation(fields: [videoId], references: [id])
@@ -276,6 +277,7 @@ model Exercise {
   thumbnailUrl   String?
   instructionUrl String?
   videoUrl       String?
+  embedding      Unsupported("vector(1536)")?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -657,6 +659,7 @@ model Recipe {
   photoS3Key     String?
   tags           String[]
   isFavorite     Boolean  @default(false)
+  embedding      Unsupported("vector(1536)")?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
