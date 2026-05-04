@@ -53,6 +53,13 @@ Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md` — 8 příležito
 - **HealthKit-aware Daily Brief**: `calcRecoveryScoreSmart` preferuje HRV/sleep/restingHR z `WearableData` před self-reported `DailyCheckIn`
 - **Wearables DTO**: přidány providery `google_fit` + `health_connect`
 
+### Wave 3 sneak — Oura Ring OAuth ✅
+- `WearableConnection` model + `OuraOAuthService` (CSRF přes JWT state) + `OuraSyncService` + daily cron `@Cron('0 4 * * *')`
+- 5 new endpointů: `oauth/oura/{authorize,callback,sync}`, DELETE, `wearables/connections`
+- Mobile `HealthSyncScreen` rozšířený o Oura sekci s `expo-web-browser` OAuth flow
+- Production deploy: env `OURA_CLIENT_ID/SECRET/REDIRECT_URI` přes Secrets Manager
+- Wave 2 #20/#21 (VisionCamera mobile pose) — **už shipped** v `apps/mobile/src/lib/pose/` + `CameraWorkoutProScreen`
+
 ### Wave 1 mobile ✅
 - `@kingstinct/react-native-healthkit` + `react-native-health-connect` installed + plugin config v `app.json`
 - Cross-platform `health-sync.ts` wrapper + `HealthSyncScreen` + ProfileScreen entry

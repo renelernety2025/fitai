@@ -613,3 +613,22 @@ export function syncWearables(
 export function getRecoveryScore() {
   return request<{ score: number; recommendation: string; hrv: number | null; restingHR: number | null; sleepHours: number | null }>('/wearables/recovery');
 }
+export function ouraAuthorize() {
+  return request<{ url: string; state: string }>('/wearables/oauth/oura/authorize');
+}
+export function ouraSyncNow() {
+  return request<{ synced: number }>('/wearables/oauth/oura/sync', { method: 'POST' });
+}
+export function ouraDisconnect() {
+  return request<{ ok: boolean }>('/wearables/oauth/oura', { method: 'DELETE' });
+}
+export interface WearableConnectionInfo {
+  provider: string;
+  lastSyncAt: string | null;
+  expiresAt: string | null;
+  scopes: string[];
+  createdAt: string;
+}
+export function getWearableConnections() {
+  return request<WearableConnectionInfo[]>('/wearables/connections');
+}

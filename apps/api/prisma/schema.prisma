@@ -95,6 +95,7 @@ model User {
   feedItems             ActivityFeedItem[]
   challengeEntries      ChallengeParticipant[]
   wearableData          WearableData[]
+  wearableConnections   WearableConnection[]
   contentImports        ContentImport[]
   marketplaceItems      MarketplaceItem[]
   foodLogs              FoodLog[]
@@ -1241,7 +1242,7 @@ model WearableData {
   id        String   @id @default(uuid())
   userId    String
   sessionId String?
-  provider  String // apple_health, google_fit, garmin
+  provider  String // apple_health, google_fit, garmin, oura, whoop
   dataType  String // heart_rate, calories, steps, hrv, sleep
   value     Float
   unit      String // bpm, kcal, steps, ms
@@ -1252,6 +1253,26 @@ model WearableData {
 
   @@index([userId, dataType])
   @@index([userId, sessionId])
+}
+
+/// OAuth connection for direct wearable provider integrations (Oura, Whoop, Garmin, Polar).
+/// Tokens stored plaintext for now — TODO: encrypt at rest via KMS when production-ready.
+model WearableConnection {
+  id           String   @id @default(uuid())
+  userId       String
+  provider     String // oura, whoop, garmin, polar
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  scopes       String[] @default([])
+  lastSyncAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, provider])
+  @@index([provider, expiresAt])
 }
 
 // ── Content Pipeline ──
