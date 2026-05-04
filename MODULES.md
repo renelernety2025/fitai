@@ -1,7 +1,7 @@
 # FitAI — Module Index
 
-> 83 modulů · 381 endpointů · 110 DB modelů · 88 web stránek · 47 mobile screens
-> Aktualizováno: 2026-04-30
+> 84 modulů · 388 endpointů · 121 DB modelů · 88 web stránek · 47 mobile screens
+> Aktualizováno: 2026-05-04
 
 ## Jak používat
 
@@ -32,7 +32,7 @@ grep -A2 "export function" apps/web/src/lib/api/<domain>.ts | grep <module>
 ### Workouts & Training
 | Modul | Prefix | EP | Popis | Web | Mobile |
 |---|---|---|---|---|---|
-| exercises | /exercises | 7 | Knihovna 60+ cviků s fázemi | exercises, exercises/[id] | ExercisesScreen |
+| exercises | /exercises | 8 | Knihovna 60+ cviků s fázemi + pgvector semantic search | exercises, exercises/[id] | ExercisesScreen |
 | workout-plans | /workout-plans | 6 | Plány (PPL, Upper/Lower, Custom) | plans, plans/[id] | PlansScreen |
 | gym-sessions | /gym-sessions | 6 | Tracking setů, formScore, RPE | gym/[sessionId] | CameraWorkoutScreen |
 | sessions | /sessions | 5 | Video workout sessions | workout | CameraWorkoutScreen |
@@ -47,7 +47,7 @@ grep -A2 "export function" apps/web/src/lib/api/<domain>.ts | grep <module>
 | coaching | /coaching | 9 | Real-time feedback, TTS, SSE streaming | ai-coach | AICoachScreen |
 | coaching-memory | /coaching-memory | 4 | AI paměť coaching insights | coaching-notes | CoachingNotesScreen |
 | ai-planner | /ai-planner | 6 | Claude generované plány | plans/create | — |
-| ai-insights | /ai-insights | 6 | Daily brief, recovery, weekly review | dashboard | DashboardScreen |
+| ai-insights | /ai-insights | 7 | Daily brief (HealthKit-aware), recovery, weekly review, RAG history-query | dashboard | DashboardScreen |
 | vision | /vision | 3 | Pose estimation, form detection | form-check | FormCheckScreen |
 
 ### Nutrition & Health
@@ -60,7 +60,8 @@ grep -A2 "export function" apps/web/src/lib/api/<domain>.ts | grep <module>
 | bloodwork | /bloodwork | 4 | Lab results tracking | bloodwork | — |
 | rehab | /rehab | 5 | Injury recovery plans | rehab | — |
 | maintenance | /maintenance | 5 | Body service book, deload alerts | maintenance | MaintenanceScreen |
-| wearables | /wearables | 4 | Apple Health/Garmin sync | — | — |
+| wearables | /wearables | 10 | HealthKit/Health Connect sync + Oura OAuth (authorize/callback/sync/disconnect) + connections list | — | HealthSyncScreen |
+| embeddings | — | 0 | OpenAI embedding wrapper (text-embedding-3-small) — shared @Global service | — | — |
 
 ### Social & Community
 | Modul | Prefix | EP | Popis | Web | Mobile |
