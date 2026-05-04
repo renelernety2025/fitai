@@ -37,6 +37,7 @@ import { ProgressPhotosScreen } from '../screens/ProgressPhotosScreen';
 import { JidelnicekScreen } from '../screens/JidelnicekScreen';
 import { CameraWorkoutProScreen } from '../screens/CameraWorkoutProScreen';
 import { HealthSyncScreen } from '../screens/HealthSyncScreen';
+import { ShowcaseDashboardScreen } from '../screens/ShowcaseDashboardScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import { JournalScreen } from '../screens/JournalScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
@@ -187,6 +188,7 @@ export function AppNavigator() {
             <Stack.Screen name="Jidelnicek" component={JidelnicekScreen} />
             <Stack.Screen name="CameraWorkoutPro" component={CameraWorkoutProScreen} options={{ gestureEnabled: false }} />
             <Stack.Screen name="HealthSync" component={HealthSyncScreen} options={{ title: 'Health Sync' }} />
+            <Stack.Screen name="ShowcaseDashboard" component={ShowcaseDashboardScreen} options={{ title: 'Showcase' }} />
             <Stack.Screen name="AIChat" component={AIChatScreen} />
             <Stack.Screen name="Journal" component={JournalScreen} />
             <Stack.Screen name="Calendar" component={CalendarScreen} />
