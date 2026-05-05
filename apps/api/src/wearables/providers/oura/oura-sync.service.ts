@@ -5,6 +5,8 @@ import { OuraOAuthService } from './oura-oauth.service';
 
 const API_BASE = 'https://api.ouraring.com/v2/usercollection';
 const SYNC_DAYS = 7;
+const FETCH_TIMEOUT_MS = 8000;
+const SYNC_CONCURRENCY = 5;
 
 interface WearableDataInsert {
   userId: string;
@@ -73,12 +75,13 @@ export class OuraSyncService {
     const conns = await this.prisma.wearableConnection.findMany({ where: { provider: 'oura' } });
     if (!conns.length) return { users: 0, records: 0 };
     let total = 0;
-    for (const conn of conns) {
-      try {
-        const { synced } = await this.syncRecentData(conn.id);
-        total += synced;
-      } catch (err) {
-        this.logger.warn(`Oura sync failed for connection ${conn.id}: ${(err as Error).message}`);
+    for (let i = 0; i < conns.length; i += SYNC_CONCURRENCY) {
+      const chunk = conns.slice(i, i + SYNC_CONCURRENCY);
+      const results = await Promise.allSettled(chunk.map((c) => this.syncRecentData(c.id)));
+      for (let j = 0; j < results.length; j++) {
+        const r = results[j];
+        if (r.status === 'fulfilled') total += r.value.synced;
+        else this.logger.warn(`Oura sync failed for connection ${chunk[j].id}: ${(r.reason as Error).message}`);
       }
     }
     return { users: conns.length, records: total };
@@ -97,12 +100,14 @@ export class OuraSyncService {
   }
 
   private async replaceWindow(userId: string, since: Date, records: WearableDataInsert[]): Promise<void> {
-    await this.prisma.wearableData.deleteMany({
-      where: { userId, provider: 'oura', timestamp: { gte: since } },
-    });
-    if (records.length) {
-      await this.prisma.wearableData.createMany({ data: records });
-    }
+    // Atomic: delete + insert in one transaction so a failed createMany doesn't leave the user
+    // with an empty wearable window (which would silently degrade Daily Brief recovery score).
+    await this.prisma.$transaction([
+      this.prisma.wearableData.deleteMany({
+        where: { userId, provider: 'oura', timestamp: { gte: since } },
+      }),
+      ...(records.length ? [this.prisma.wearableData.createMany({ data: records })] : []),
+    ]);
   }
 
   private async fetchSleep(
@@ -168,7 +173,10 @@ export class OuraSyncService {
 
   private async fetch<T>(url: string, token: string): Promise<T | null> {
     try {
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
       if (!res.ok) {
         this.logger.warn(`Oura API ${res.status} ${url}`);
         return null;

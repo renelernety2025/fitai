@@ -22,9 +22,9 @@ export class OuraController {
 
   /**
    * OAuth callback — public endpoint. CSRF protection is provided by the signed JWT
-   * `state` parameter (10-minute expiry, embeds userId + provider).
+   * `state` parameter (2-minute expiry, embeds userId + provider, audience-scoped).
    */
-  @Throttle({ default: { limit: 30, ttl: seconds(60) } })
+  @Throttle({ default: { limit: 10, ttl: seconds(60) } })
   @Get('callback')
   @Redirect()
   async callback(@Query('code') code?: string, @Query('state') state?: string, @Query('error') error?: string) {

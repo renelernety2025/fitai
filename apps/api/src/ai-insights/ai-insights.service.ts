@@ -345,6 +345,13 @@ export class AiInsightsService {
     );
     const greet = greeting(user?.name);
 
+    const recoverySignals = {
+      source: recovery.source,
+      hrv: recovery.hrv,
+      sleepHours: recovery.sleepHours,
+      restingHR: recovery.restingHR,
+    };
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (apiKey) {
       try {
@@ -365,8 +372,9 @@ export class AiInsightsService {
           weeklyVolumes,
           apiKey,
         });
-        await this.cache.set(cacheKey, brief, this.TTL_24H);
-        return { brief, cached: false };
+        const enriched = { ...brief, recoverySignals };
+        await this.cache.set(cacheKey, enriched, this.TTL_24H);
+        return { brief: enriched, cached: false };
       } catch (e: any) {
         this.logger.warn(`Claude daily brief failed: ${e.message}`);
       }
@@ -380,8 +388,9 @@ export class AiInsightsService {
       profile,
       recentSessions,
     });
-    await this.cache.set(cacheKey, brief, this.TTL_24H);
-    return { brief, cached: false };
+    const enriched = { ...brief, recoverySignals };
+    await this.cache.set(cacheKey, enriched, this.TTL_24H);
+    return { brief: enriched, cached: false };
   }
 
   async getMotivation(userId: string) {

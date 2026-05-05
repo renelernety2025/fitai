@@ -9,6 +9,45 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Wave 1 + 3 review fixes — code + security audit] 2026-05-05
+
+Two-agent review (code-reviewer + security-reviewer) ran proti commitům `1315254`/`f9e2e7a`/`076f0b9`/`4be618d`/`1e1bf67`. Aplikované fixes:
+
+### Code review (BLOCKER + IMPORTANT)
+- **`$queryRawUnsafe` → `$queryRaw`** na 4 místech (porušení `.claude/rules/api.md`):
+  - `exercises.service.ts` searchSemantic — `Prisma.sql\`SELECT … embedding <=> ${vector}::vector …\``
+  - `history-query.service.ts` rankSessions, reembedRecentSessions, updateSessionEmbedding — všude tagged template literals
+- **OuraSyncService.replaceWindow atomic** — `prisma.$transaction([deleteMany, createMany])`. Předchozí non-atomic varianta riskovala silent data loss při createMany failu (recovery score → fallback na self-report bez varování)
+- **`fetch` timeout 8s** na všech Oura V2 API calls (`AbortSignal.timeout(8000)`) — prevence noisy-neighbor v cronu
+- **Sync concurrency 5 batches** s `Promise.allSettled` v cronu (předtím sequential — DoS surface při 1k+ users)
+- **`health-sync.ts` lazy require guard** — `loadHealthKit()`/`loadHealthConnect()` helpers s try/catch, syncFromHealthKit/syncFromHealthConnect early-return při MODULE_NOT_FOUND
+- **Daily Brief `recoverySignals`** — response shape rozšířený o `{source: 'wearables'|'self-reported', hrv, sleepHours, restingHR}` aby UI mohlo ukázat "měřeno z Apple Watch — HRV 32 ms" a vysvětlit případnou změnu skóre
+
+### Security review (HIGH)
+- **OAuth state JWT — audience + issuer claims** — `audience: 'oauth-state'`, `issuer: 'fitai-oauth'` při sign + verify. Zabraňuje budoucímu cross-token-class confusion (auth JWT nemůže být replayed jako OAuth state, i kdyby provider check byl loosened)
+- **State TTL `10m → 2m`** — single-use Oura code mitiguje replay, kratší okno snižuje attack surface
+- **OAuth callback throttle `30/min → 10/min`**
+
+### Type cleanups (NIT)
+- `avg<T>(items: T[], key: keyof T)` — generic typed (předtím `any[]`)
+- SVG gradient IDs prefixované `showcase-` aby nebyl ID collision risk
+
+### Deferred (post-MVP, evidováno jako TODO)
+- **H2 — KMS envelope encryption** pro `WearableConnection.accessToken/refreshToken`. Aktuálně plaintext (riziko: RDS snapshot leak = mass token leak, Oura grants 7d health PII scopes). Plán: per-row data key + AES-256-GCM, rotation on token refresh
+- **M3 — Universal Links / App Links** místo `fitai://` custom scheme pro Oura redirect (Android pre-app-links risk: malicious app může intercept). iOS WebBrowser.openAuthSessionAsync je safer (system-managed callback)
+- **M5 — `seed-embeddings.ts` `$executeRawUnsafe`** s table name interpolation. Safe today (tabulky hardcoded v souboru), ale future-proofing TODO když se script rozšíří
+
+### Verifikace
+- TypeScript clean (api + mobile + web)
+- API build OK + boot test: 9 nových endpointů mapped (`/exercises/search/semantic`, `/ai-insights/history-query`, `/wearables/connections`, `/wearables/oauth/oura/{authorize,callback,sync}`, DELETE oura, `/wearables/sync`)
+- Žádný breaking change
+
+### Stats
+- 8 modifikovaných souborů: 4× api/src + 1× api/helpers + 1× mobile lib + 1× web showcase
+- 0 nových testů (existing testy passují)
+
+---
+
 ## [Wave 3 sneak — Oura Ring OAuth + sync] 2026-05-04
 
 Z roadmap-u Wave 3 první deliverable: directní wearable hardware integrace (kromě HealthKit/Health Connect které agreguje od Apple Watch). Oura Ring má best-in-class API + ~$300 hardware base.

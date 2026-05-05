@@ -5,7 +5,9 @@ import { PrismaService } from '../../../prisma/prisma.service';
 const AUTHORIZE_URL = 'https://cloud.ouraring.com/oauth/authorize';
 const TOKEN_URL = 'https://api.ouraring.com/oauth/token';
 const SCOPES = ['daily', 'heartrate', 'session', 'sleep', 'workout'];
-const STATE_TTL = '10m';
+const STATE_TTL = '2m';
+const STATE_AUDIENCE = 'oauth-state';
+const STATE_ISSUER = 'fitai-oauth';
 
 interface OuraTokenResponse {
   access_token: string;
@@ -27,7 +29,10 @@ export class OuraOAuthService {
   generateAuthUrl(userId: string): { url: string; state: string } {
     const clientId = this.requireEnv('OURA_CLIENT_ID');
     const redirectUri = this.requireEnv('OURA_REDIRECT_URI');
-    const state = this.jwtService.sign({ userId, provider: 'oura' }, { expiresIn: STATE_TTL });
+    const state = this.jwtService.sign(
+      { userId, provider: 'oura' },
+      { expiresIn: STATE_TTL, audience: STATE_AUDIENCE, issuer: STATE_ISSUER },
+    );
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: clientId,
@@ -71,7 +76,10 @@ export class OuraOAuthService {
 
   private verifyState(state: string): { userId: string; provider: string } {
     try {
-      const payload = this.jwtService.verify<{ userId: string; provider: string }>(state);
+      const payload = this.jwtService.verify<{ userId: string; provider: string }>(state, {
+        audience: STATE_AUDIENCE,
+        issuer: STATE_ISSUER,
+      });
       if (payload.provider !== 'oura') throw new Error('provider mismatch');
       return payload;
     } catch (err) {

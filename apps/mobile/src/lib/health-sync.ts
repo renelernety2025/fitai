@@ -24,8 +24,9 @@ export async function syncRecent7Days(): Promise<HealthSyncResult> {
 }
 
 async function requestHealthKit(): Promise<boolean> {
+  const HealthKit = loadHealthKit();
+  if (!HealthKit) return false;
   try {
-    const HealthKit = require('@kingstinct/react-native-healthkit');
     const ok = await HealthKit.requestAuthorization(
       [
         'HKQuantityTypeIdentifierHeartRate',
@@ -43,8 +44,9 @@ async function requestHealthKit(): Promise<boolean> {
 }
 
 async function requestHealthConnect(): Promise<boolean> {
+  const HC = loadHealthConnect();
+  if (!HC) return false;
   try {
-    const HC = require('react-native-health-connect');
     await HC.initialize();
     const granted = await HC.requestPermission([
       { accessType: 'read', recordType: 'HeartRate' },
@@ -59,8 +61,25 @@ async function requestHealthConnect(): Promise<boolean> {
   }
 }
 
+function loadHealthKit(): any | null {
+  try {
+    return require('@kingstinct/react-native-healthkit');
+  } catch {
+    return null;
+  }
+}
+
+function loadHealthConnect(): any | null {
+  try {
+    return require('react-native-health-connect');
+  } catch {
+    return null;
+  }
+}
+
 async function syncFromHealthKit(): Promise<HealthSyncResult> {
-  const HealthKit = require('@kingstinct/react-native-healthkit');
+  const HealthKit = loadHealthKit();
+  if (!HealthKit) return { synced: 0, provider: 'apple_health' };
   const since = sevenDaysAgo();
   const entries: WearableEntry[] = [];
   await Promise.all([
@@ -76,7 +95,8 @@ async function syncFromHealthKit(): Promise<HealthSyncResult> {
 }
 
 async function syncFromHealthConnect(): Promise<HealthSyncResult> {
-  const HC = require('react-native-health-connect');
+  const HC = loadHealthConnect();
+  if (!HC) return { synced: 0, provider: 'health_connect' };
   await HC.initialize();
   const range = { operator: 'between', startTime: sevenDaysAgo().toISOString(), endTime: new Date().toISOString() };
   const entries: WearableEntry[] = [];

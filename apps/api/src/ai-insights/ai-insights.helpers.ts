@@ -44,6 +44,13 @@ export interface DailyBriefWorkout {
   finisher?: string;
 }
 
+export interface DailyBriefRecoverySignals {
+  source: 'wearables' | 'self-reported';
+  hrv: number | null;
+  sleepHours: number | null;
+  restingHR: number | null;
+}
+
 export interface DailyBrief {
   date: string;
   greeting: string;
@@ -51,6 +58,7 @@ export interface DailyBrief {
   mood: DailyBriefMood;
   recoveryStatus: RecoveryStatus;
   recoveryScore: number;
+  recoverySignals?: DailyBriefRecoverySignals;
   workout: DailyBriefWorkout;
   rationale: string;
   motivationalHook: string;
@@ -109,10 +117,12 @@ export function greeting(name?: string | null): string {
 
 // ── Numeric helpers ──
 
-export function avg(items: any[], key: string): number | null {
-  const vals = items
-    .map((i) => i[key])
-    .filter((v): v is number => typeof v === 'number');
+export function avg<T extends Record<string, unknown>>(items: T[], key: keyof T): number | null {
+  const vals: number[] = [];
+  for (const item of items) {
+    const value = item[key];
+    if (typeof value === 'number') vals.push(value);
+  }
   if (!vals.length) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }

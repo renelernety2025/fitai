@@ -104,12 +104,12 @@ function HeroDecoration() {
   return (
     <svg className="absolute -right-10 -top-10 w-72 h-72 opacity-90" viewBox="0 0 200 200">
       <defs>
-        <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+        <radialGradient id="showcase-hero-halo" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.25" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle cx="120" cy="80" r="80" fill="url(#halo)" />
+      <circle cx="120" cy="80" r="80" fill="url(#showcase-hero-halo)" />
       <circle cx="170" cy="40" r="3" fill="#FFFFFF" opacity="0.6" />
       <circle cx="155" cy="65" r="2" fill="#FFFFFF" opacity="0.4" />
       <circle cx="180" cy="100" r="1.5" fill="#FFFFFF" opacity="0.5" />
@@ -283,12 +283,12 @@ function HydrationWave() {
   return (
     <svg className="absolute inset-x-0 bottom-0 w-full h-16" viewBox="0 0 200 48" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="showcase-hydration-wave" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={BLUE} stopOpacity="0.5" />
           <stop offset="100%" stopColor={BLUE} stopOpacity="0.15" />
         </linearGradient>
       </defs>
-      <path d="M0,24 Q50,8 100,20 T200,16 L200,48 L0,48 Z" fill="url(#wave)" />
+      <path d="M0,24 Q50,8 100,20 T200,16 L200,48 L0,48 Z" fill="url(#showcase-hydration-wave)" />
       <path d="M0,32 Q50,18 100,28 T200,26 L200,48 L0,48 Z" fill={BLUE} fillOpacity="0.25" />
     </svg>
   );

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { createHash } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
@@ -62,17 +63,14 @@ export class HistoryQueryService {
   private async rankSessions(userId: string, userQuery: string): Promise<RankedSession[]> {
     const embedding = await this.embeddings.embed(userQuery);
     const vector = this.embeddings.toVectorString(embedding);
-    return this.prisma.$queryRawUnsafe<RankedSession[]>(
-      `SELECT id, "startedAt", "durationSeconds", "accuracyScore",
-              embedding <=> $1::vector AS distance
-       FROM "WorkoutSession"
-       WHERE "userId" = $2 AND embedding IS NOT NULL AND "completedAt" IS NOT NULL
-       ORDER BY distance ASC
-       LIMIT $3`,
-      vector,
-      userId,
-      CONTEXT_LIMIT,
-    );
+    return this.prisma.$queryRaw<RankedSession[]>(Prisma.sql`
+      SELECT id, "startedAt", "durationSeconds", "accuracyScore",
+             embedding <=> ${vector}::vector AS distance
+      FROM "WorkoutSession"
+      WHERE "userId" = ${userId} AND embedding IS NOT NULL AND "completedAt" IS NOT NULL
+      ORDER BY distance ASC
+      LIMIT ${CONTEXT_LIMIT}
+    `);
   }
 
   private async buildContext(ranked: RankedSession[]): Promise<SessionContext[]> {
@@ -162,14 +160,13 @@ export class HistoryQueryService {
       this.logger.warn('Skipping re-embed cron: OPENAI_API_KEY not set');
       return;
     }
-    const pending = await this.prisma.$queryRawUnsafe<PendingSession[]>(
-      `SELECT id, "startedAt", "durationSeconds", "accuracyScore", "gymSessionId"
-       FROM "WorkoutSession"
-       WHERE embedding IS NULL AND "completedAt" IS NOT NULL
-       ORDER BY "startedAt" DESC
-       LIMIT $1`,
-      REEMBED_LIMIT_PER_RUN,
-    );
+    const pending = await this.prisma.$queryRaw<PendingSession[]>(Prisma.sql`
+      SELECT id, "startedAt", "durationSeconds", "accuracyScore", "gymSessionId"
+      FROM "WorkoutSession"
+      WHERE embedding IS NULL AND "completedAt" IS NOT NULL
+      ORDER BY "startedAt" DESC
+      LIMIT ${REEMBED_LIMIT_PER_RUN}
+    `);
     if (!pending.length) return;
     const texts = await Promise.all(pending.map((s) => this.buildSessionText(s)));
     for (let i = 0; i < pending.length; i += REEMBED_BATCH) {
@@ -199,10 +196,8 @@ export class HistoryQueryService {
 
   private async updateSessionEmbedding(id: string, embedding: number[]): Promise<void> {
     const vector = this.embeddings.toVectorString(embedding);
-    await this.prisma.$executeRawUnsafe(
-      `UPDATE "WorkoutSession" SET embedding = $1::vector WHERE id = $2`,
-      vector,
-      id,
-    );
+    await this.prisma.$executeRaw(Prisma.sql`
+      UPDATE "WorkoutSession" SET embedding = ${vector}::vector WHERE id = ${id}
+    `);
   }
 }

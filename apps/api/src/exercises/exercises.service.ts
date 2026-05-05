@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
@@ -112,7 +113,7 @@ export class ExercisesService {
     return this.cache.getOrSet(cacheKey, 3600, async () => {
       const embedding = await this.embeddings.embed(query);
       const vector = this.embeddings.toVectorString(embedding);
-      const rows = await this.prisma.$queryRawUnsafe<
+      const rows = await this.prisma.$queryRaw<
         Array<{
           id: string;
           name: string;
@@ -123,17 +124,15 @@ export class ExercisesService {
           muscleGroups: string[];
           distance: number;
         }>
-      >(
-        `SELECT id, name, "nameCs", "descriptionCs", category, equipment,
-                "muscleGroups"::text[] AS "muscleGroups",
-                embedding <=> $1::vector AS distance
-         FROM "Exercise"
-         WHERE embedding IS NOT NULL
-         ORDER BY distance ASC
-         LIMIT $2`,
-        vector,
-        safeLimit,
-      );
+      >(Prisma.sql`
+        SELECT id, name, "nameCs", "descriptionCs", category, equipment,
+               "muscleGroups"::text[] AS "muscleGroups",
+               embedding <=> ${vector}::vector AS distance
+        FROM "Exercise"
+        WHERE embedding IS NOT NULL
+        ORDER BY distance ASC
+        LIMIT ${safeLimit}
+      `);
       return rows.map((r) => ({
         id: r.id,
         name: r.name,
