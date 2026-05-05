@@ -1,3 +1,8 @@
+/**
+ * Mock fixture used by the /showcase visual reference page (web + mobile).
+ * Pure static data — no platform-specific imports.
+ */
+
 export type DayActivity = { workouts: number; recovery: number };
 
 export interface DayCellData {

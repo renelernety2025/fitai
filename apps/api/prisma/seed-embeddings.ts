@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
@@ -53,9 +53,18 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
   return res.data.map((d) => d.embedding);
 }
 
-async function updateEmbedding(table: string, id: string, embedding: number[]): Promise<void> {
-  const vectorStr = `[${embedding.join(',')}]`;
-  await prisma.$executeRawUnsafe(`UPDATE "${table}" SET embedding = $1::vector WHERE id = $2`, vectorStr, id);
+function toVectorString(embedding: number[]): string {
+  return `[${embedding.join(',')}]`;
+}
+
+async function updateExerciseEmbedding(id: string, embedding: number[]): Promise<void> {
+  const vector = toVectorString(embedding);
+  await prisma.$executeRaw(Prisma.sql`UPDATE "Exercise" SET embedding = ${vector}::vector WHERE id = ${id}`);
+}
+
+async function updateRecipeEmbedding(id: string, embedding: number[]): Promise<void> {
+  const vector = toVectorString(embedding);
+  await prisma.$executeRaw(Prisma.sql`UPDATE "Recipe" SET embedding = ${vector}::vector WHERE id = ${id}`);
 }
 
 async function seedExercises(): Promise<number> {
@@ -70,7 +79,7 @@ async function seedExercises(): Promise<number> {
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
     const embeddings = await embedBatch(batch.map(buildExerciseText));
-    await Promise.all(batch.map((row, j) => updateEmbedding('Exercise', row.id, embeddings[j])));
+    await Promise.all(batch.map((row, j) => updateExerciseEmbedding(row.id, embeddings[j])));
   }
   return rows.length;
 }
@@ -86,7 +95,7 @@ async function seedRecipes(): Promise<number> {
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
     const embeddings = await embedBatch(batch.map(buildRecipeText));
-    await Promise.all(batch.map((row, j) => updateEmbedding('Recipe', row.id, embeddings[j])));
+    await Promise.all(batch.map((row, j) => updateRecipeEmbedding(row.id, embeddings[j])));
   }
   return rows.length;
 }

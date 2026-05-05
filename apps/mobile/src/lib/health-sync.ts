@@ -101,10 +101,10 @@ async function syncFromHealthConnect(): Promise<HealthSyncResult> {
   const range = { operator: 'between', startTime: sevenDaysAgo().toISOString(), endTime: new Date().toISOString() };
   const entries: WearableEntry[] = [];
   await Promise.all([
-    pushHCSamples(entries, () => HC.readRecords('HeartRate', { timeRangeFilter: range }), 'heart_rate', 'bpm', (r: any) => r.beatsPerMinute),
-    pushHCSamples(entries, () => HC.readRecords('RestingHeartRate', { timeRangeFilter: range }), 'resting_hr', 'bpm', (r: any) => r.beatsPerMinute),
-    pushHCSamples(entries, () => HC.readRecords('HeartRateVariabilityRmssd', { timeRangeFilter: range }), 'hrv', 'ms', (r: any) => r.heartRateVariabilityMillis),
-    pushHCSamples(entries, () => HC.readRecords('Steps', { timeRangeFilter: range }), 'steps', 'count', (r: any) => r.count),
+    pushHCSamples(entries, () => HC.readRecords('HeartRate', { timeRangeFilter: range }), 'heart_rate', 'bpm', (r) => r.beatsPerMinute),
+    pushHCSamples(entries, () => HC.readRecords('RestingHeartRate', { timeRangeFilter: range }), 'resting_hr', 'bpm', (r) => r.beatsPerMinute),
+    pushHCSamples(entries, () => HC.readRecords('HeartRateVariabilityRmssd', { timeRangeFilter: range }), 'hrv', 'ms', (r) => r.heartRateVariabilityMillis),
+    pushHCSamples(entries, () => HC.readRecords('Steps', { timeRangeFilter: range }), 'steps', 'count', (r) => r.count),
     pushHCSleep(entries, () => HC.readRecords('SleepSession', { timeRangeFilter: range })),
   ]);
   if (!entries.length) return { synced: 0, provider: 'health_connect' };
@@ -147,19 +147,28 @@ async function pushSleep(
   }
 }
 
+interface HCScalarRecord {
+  time?: string;
+  startTime?: string;
+  beatsPerMinute?: number;
+  count?: number;
+  heartRateVariabilityMillis?: number;
+}
+
 async function pushHCSamples(
   out: WearableEntry[],
-  fetcher: () => Promise<{ records: any[] }>,
+  fetcher: () => Promise<{ records: HCScalarRecord[] }>,
   dataType: WearableEntry['dataType'],
   unit: string,
-  extract: (r: any) => number,
+  extract: (r: HCScalarRecord) => number | undefined,
 ): Promise<void> {
   try {
     const { records } = await fetcher();
     for (const r of records) {
       const value = extract(r);
       if (typeof value === 'number') {
-        out.push({ dataType, value, unit, timestamp: r.time || r.startTime });
+        const timestamp = r.time || r.startTime;
+        if (timestamp) out.push({ dataType, value, unit, timestamp });
       }
     }
   } catch {

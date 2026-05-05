@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { WearableConnection } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { OuraOAuthService } from './oura-oauth.service';
 
@@ -48,11 +49,13 @@ export class OuraSyncService {
     private oauth: OuraOAuthService,
   ) {}
 
-  async syncRecentData(connectionId: string): Promise<{ synced: number }> {
-    await this.oauth.refreshIfNeeded(connectionId);
-    const conn = await this.prisma.wearableConnection.findUnique({ where: { id: connectionId } });
-    if (!conn) throw new NotFoundException('Wearable connection not found');
+  async syncRecentData(connOrId: WearableConnection | string): Promise<{ synced: number }> {
+    const initial = typeof connOrId === 'string'
+      ? await this.prisma.wearableConnection.findUnique({ where: { id: connOrId } })
+      : connOrId;
+    if (!initial) throw new NotFoundException('Wearable connection not found');
 
+    const conn = await this.oauth.refreshIfNeeded(initial);
     const range = this.dateRange(SYNC_DAYS);
     const records: WearableDataInsert[] = [];
 
@@ -64,7 +67,7 @@ export class OuraSyncService {
 
     await this.replaceWindow(conn.userId, range.startDate, records);
     await this.prisma.wearableConnection.update({
-      where: { id: connectionId },
+      where: { id: conn.id },
       data: { lastSyncAt: new Date() },
     });
     return { synced: records.length };
@@ -77,7 +80,7 @@ export class OuraSyncService {
     let total = 0;
     for (let i = 0; i < conns.length; i += SYNC_CONCURRENCY) {
       const chunk = conns.slice(i, i + SYNC_CONCURRENCY);
-      const results = await Promise.allSettled(chunk.map((c) => this.syncRecentData(c.id)));
+      const results = await Promise.allSettled(chunk.map((c) => this.syncRecentData(c)));
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (r.status === 'fulfilled') total += r.value.synced;

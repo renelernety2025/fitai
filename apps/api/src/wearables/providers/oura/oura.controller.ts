@@ -48,7 +48,7 @@ export class OuraController {
       where: { userId_provider: { userId: req.user.id, provider: 'oura' } },
     });
     if (!conn) throw new BadRequestException('Oura is not connected');
-    return this.sync.syncRecentData(conn.id);
+    return this.sync.syncRecentData(conn);
   }
 
   @UseGuards(JwtAuthGuard)

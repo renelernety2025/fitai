@@ -1,4 +1,4 @@
-import { monthDays, weekChart } from './mock-data';
+import { monthDays, weekChart } from '@fitai/shared';
 
 export const metadata = {
   title: 'FitAI Showcase — Your Body, Your Power',

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Rect, Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v2 } from '../components/v2/V2';
-import { monthDays, weekChart, type DayActivity, type DayCellData } from './showcase-mock-data';
+import { monthDays, weekChart, type DayActivity, type DayCellData } from '@fitai/shared';
 
 const PEACH = '#FFA38C';
 const PEACH_DEEP = '#E15A6F';

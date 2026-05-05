@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { WearableConnection } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 const AUTHORIZE_URL = 'https://cloud.ouraring.com/oauth/authorize';
@@ -54,18 +55,21 @@ export class OuraOAuthService {
     return { userId: decoded.userId };
   }
 
-  async refreshIfNeeded(connectionId: string): Promise<void> {
-    const conn = await this.prisma.wearableConnection.findUnique({ where: { id: connectionId } });
-    if (!conn || !conn.refreshToken) return;
+  /**
+   * Refresh access token if it's near expiry. Returns the (possibly updated) connection
+   * so callers don't need a second findUnique to pick up the new token.
+   */
+  async refreshIfNeeded(conn: WearableConnection): Promise<WearableConnection> {
+    if (!conn.refreshToken) return conn;
     const buffer = 5 * 60 * 1000;
-    if (conn.expiresAt && conn.expiresAt.getTime() - buffer > Date.now()) return;
+    if (conn.expiresAt && conn.expiresAt.getTime() - buffer > Date.now()) return conn;
 
     const tokens = await this.requestTokens({
       grant_type: 'refresh_token',
       refresh_token: conn.refreshToken,
     });
-    await this.prisma.wearableConnection.update({
-      where: { id: connectionId },
+    return this.prisma.wearableConnection.update({
+      where: { id: conn.id },
       data: this.toUpdateData(tokens),
     });
   }
