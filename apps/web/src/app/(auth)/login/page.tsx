@@ -36,10 +36,17 @@ function LoginForm() {
       const res = await authLogin(email, password);
       login(res.accessToken, res.user);
       const redirect = searchParams.get('redirect');
-      const safeRedirect =
-        redirect && redirect.startsWith('/') && !redirect.startsWith('//')
-          ? redirect
-          : '/dashboard';
+      let safeRedirect = '/dashboard';
+      if (redirect) {
+        try {
+          const url = new URL(redirect, window.location.origin);
+          if (url.origin === window.location.origin) {
+            safeRedirect = url.pathname + url.search;
+          }
+        } catch {
+          // Fall through to default
+        }
+      }
       router.push(safeRedirect);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
