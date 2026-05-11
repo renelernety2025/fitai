@@ -134,11 +134,8 @@ export class HistoryQueryService {
       const response = await client.messages.create({
         model: 'claude-haiku-4-5',
         max_tokens: 400,
-        system:
-          'Jsi AI fitness analytik. Odpovídej česky, konkrétně, podle dat. Max 5 vět. Nikdy si nevymýšlej čísla, pracuj jen s tím, co máš v kontextu.',
-        messages: [
-          { role: 'user', content: `Historie tréninků (top ${context.length} relevantních):\n${ctxText}\n\nOtázka: ${userQuery}` },
-        ],
+        system: `Jsi AI fitness analytik. Odpovídej česky, konkrétně, podle dat. Max 5 vět. Nikdy si nevymýšlej čísla, pracuj jen s tím, co máš v kontextu.\n\nHistorie tréninků uživatele (top ${context.length} relevantních):\n${ctxText}`,
+        messages: [{ role: 'user', content: userQuery }],
       });
       return response.content[0]?.type === 'text' ? response.content[0].text.trim() : this.fallbackSummary(context);
     } catch (err) {

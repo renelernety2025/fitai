@@ -7,6 +7,8 @@ import { AskCoachDto } from './dto/ask-coach.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { CoachingFeedbackDto } from './dto/coaching-feedback.dto';
 import { SafetyEventDto } from './dto/safety-event.dto';
+import { SynthesizeDto } from './dto/synthesize.dto';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @Controller('coaching')
 @UseGuards(JwtAuthGuard)
@@ -32,13 +34,12 @@ export class CoachingController {
 
   @Throttle({ default: { limit: 30, ttl: seconds(3600) } })
   @Post('tts')
-  synthesize(
-    @Body('text') text: string,
-    @Body('audioFormat') audioFormat?: 'mp3' | 'pcm',
-  ) {
-    return this.coachingService.synthesize(text, audioFormat);
+  synthesize(@Body() dto: SynthesizeDto) {
+    return this.coachingService.synthesize(dto.text, dto.audioFormat);
   }
 
+  @UseGuards(AdminGuard)
+  @Throttle({ default: { limit: 3, ttl: seconds(3600) } })
   @Post('precache')
   precache() {
     return this.coachingService.precache();

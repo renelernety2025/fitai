@@ -64,7 +64,8 @@ export class ElevenLabsService {
       });
 
       if (!res.ok) {
-        this.logger.error(`ElevenLabs error: ${res.status} ${await res.text()}`);
+        const body = await res.text().catch(() => '');
+        this.logger.error(`ElevenLabs error: ${res.status} ${body.slice(0, 200)}`);
         return null;
       }
 
@@ -128,7 +129,8 @@ export class ElevenLabsService {
     });
 
     if (!res.ok || !res.body) {
-      this.logger.error(`ElevenLabs stream error: ${res.status} ${await res.text()}`);
+      const body = await res.text().catch(() => '');
+      this.logger.error(`ElevenLabs stream error: ${res.status} ${body.slice(0, 200)}`);
       return;
     }
 
