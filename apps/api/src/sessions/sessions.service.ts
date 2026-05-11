@@ -118,14 +118,12 @@ export class SessionsService {
       weeklyActivity.push({ date: dateStr, minutes: dayMinutes });
     }
 
-    // Average accuracy from completed sessions
-    const completedSessions = await this.prisma.workoutSession.findMany({
+    // Average accuracy from completed sessions — DB aggregate (no full table scan)
+    const accuracyAgg = await this.prisma.workoutSession.aggregate({
       where: { userId, completedAt: { not: null } },
-      select: { accuracyScore: true },
+      _avg: { accuracyScore: true },
     });
-    const avgAccuracy = completedSessions.length
-      ? completedSessions.reduce((s, r) => s + r.accuracyScore, 0) / completedSessions.length
-      : 0;
+    const avgAccuracy = accuracyAgg._avg.accuracyScore ?? 0;
 
     return {
       totalSessions: progress.totalSessions,

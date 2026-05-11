@@ -115,6 +115,11 @@ export class GymSessionsService {
     if (!session) throw new NotFoundException('Session not found');
     if (session.userId !== userId) throw new ForbiddenException();
 
+    const set = await this.prisma.exerciseSet.findUnique({ where: { id: dto.setId } });
+    if (!set || set.gymSessionId !== sessionId) {
+      throw new ForbiddenException('Set does not belong to this session');
+    }
+
     return this.prisma.exerciseSet.update({
       where: { id: dto.setId },
       data: {
@@ -218,6 +223,7 @@ export class GymSessionsService {
     });
     if (!session) throw new NotFoundException('Session not found');
     if (session.userId !== userId) throw new ForbiddenException();
+    if (session.completedAt) return session;
 
     const completedSets = session.exerciseSets.filter((s) => s.status === 'COMPLETED');
 
@@ -314,16 +320,17 @@ export class GymSessionsService {
     });
   }
 
-  async getSession(sessionId: string) {
+  async getSession(sessionId: string, userId: string) {
     const session = await this.prisma.gymSession.findUnique({
       where: { id: sessionId },
       include: { exerciseSets: { include: { exercise: true }, orderBy: { setNumber: 'asc' } } },
     });
     if (!session) throw new NotFoundException('Session not found');
+    if (session.userId !== userId) throw new ForbiddenException('Not your session');
     return session;
   }
 
-  async getShareCard(sessionId: string) {
+  async getShareCard(sessionId: string, userId: string) {
     const session = await this.prisma.gymSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -334,6 +341,7 @@ export class GymSessionsService {
       },
     });
     if (!session) throw new NotFoundException('Session not found');
+    if (session.userId !== userId) throw new ForbiddenException('Not your session');
 
     const completed = session.exerciseSets.filter(
       (s) => s.status === 'COMPLETED' && !s.isWarmup,

@@ -77,7 +77,7 @@ export class FormCheckService {
     exerciseId: string,
   ): Promise<FormAnalysis> {
     const expectedPrefix = `form-checks/${userId}/`;
-    if (!s3Key.startsWith(expectedPrefix)) {
+    if (!s3Key.startsWith(expectedPrefix) || s3Key.includes('..') || s3Key.includes('//')) {
       throw new BadRequestException('Invalid S3 key');
     }
 

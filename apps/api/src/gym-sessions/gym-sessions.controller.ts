@@ -43,13 +43,14 @@ export class GymSessionsController {
   }
 
   @Get(':id/share-card')
-  getShareCard(@Param('id') id: string) {
-    return this.gymSessionsService.getShareCard(id);
+  @UseGuards(JwtAuthGuard)
+  getShareCard(@Param('id') id: string, @Request() req: any) {
+    return this.gymSessionsService.getShareCard(id, req.user.id);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  getSession(@Param('id') id: string) {
-    return this.gymSessionsService.getSession(id);
+  getSession(@Param('id') id: string, @Request() req: any) {
+    return this.gymSessionsService.getSession(id, req.user.id);
   }
 }

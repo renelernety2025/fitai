@@ -176,7 +176,7 @@ export function CameraWorkoutScreen({ route, navigation }: any) {
         setId: p.setId,
         actualReps: p.reps,
         actualWeight: p.weight,
-        formScore: 100, // no pose detection yet
+        formScore: 0, // no pose detection on this screen — use CameraWorkoutPro for scored sets
         repData: [],
         ...(rpe ? { rpe } : {}),
       });
