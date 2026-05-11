@@ -84,24 +84,32 @@ export class RehabService {
   }
 
   private async generatePlan(dto: CreateRehabDto) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return this.fallbackPlan(dto);
+
     try {
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic();
+      const client = new Anthropic({ apiKey });
 
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 800,
-        messages: [{
-          role: 'user',
-          content: `Create a structured rehab plan for:
+      const msg = await Promise.race([
+        client.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 800,
+          messages: [{
+            role: 'user',
+            content: `Create a structured rehab plan for:
 Injury: ${dto.injuryType}
 Body part: ${dto.bodyPart}
 Severity: ${dto.severity}
 
 Reply in Czech, JSON format:
 {"phases":[{"name":"...","weekStart":1,"weekEnd":2,"exercises":[{"name":"...","sets":3,"reps":"10-12","notes":"..."}],"goals":["..."]}],"timeline":"...","precautions":["..."]}`,
-        }],
-      });
+          }],
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Claude timeout')), 15000),
+        ),
+      ]);
 
       const text = msg.content[0]?.type === 'text'
         ? msg.content[0].text : '{}';

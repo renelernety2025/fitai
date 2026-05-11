@@ -85,9 +85,18 @@ export class BloodworkService {
 
     const markers = this.analyzeMarkers(entries);
 
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return {
+        summary: 'AI analysis unavailable.',
+        markers,
+        recommendations: this.fallbackRecommendations(markers),
+      };
+    }
+
     try {
       const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic();
+      const client = new Anthropic({ apiKey });
 
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5',

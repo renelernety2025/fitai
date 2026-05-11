@@ -8,7 +8,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RehabService } from './rehab.service';
 import { CreateRehabDto } from './dto/create-rehab.dto';
@@ -26,7 +26,7 @@ export class RehabController {
   }
 
   @Post()
-  @Throttle({ short: { ttl: 60_000, limit: 3 } })
+  @Throttle({ default: { limit: 3, ttl: seconds(60) } })
   create(@Request() req: any, @Body() dto: CreateRehabDto) {
     return this.service.create(req.user.id, dto);
   }

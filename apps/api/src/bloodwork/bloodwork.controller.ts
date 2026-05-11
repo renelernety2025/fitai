@@ -8,7 +8,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BloodworkService } from './bloodwork.service';
 import { CreateBloodworkDto } from './dto/create-bloodwork.dto';
@@ -34,7 +34,7 @@ export class BloodworkController {
   }
 
   @Get('analysis')
-  @Throttle({ short: { ttl: 60_000, limit: 3 } })
+  @Throttle({ default: { limit: 3, ttl: seconds(60) } })
   getAnalysis(@Request() req: any) {
     return this.service.getAnalysis(req.user.id);
   }

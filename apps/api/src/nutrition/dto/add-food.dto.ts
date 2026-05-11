@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsIn,
+  Matches,
   MaxLength,
   Min,
   Max,
@@ -56,6 +57,9 @@ export class AddFoodDto {
   @IsOptional()
   @IsString()
   @MaxLength(300)
+  @Matches(/^food-photos\/[a-f0-9-]+\/[a-zA-Z0-9._-]+$/, {
+    message: 'photoS3Key must match food-photos/{userId}/{file}',
+  })
   photoS3Key?: string;
 
   @IsOptional()

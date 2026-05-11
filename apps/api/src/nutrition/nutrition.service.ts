@@ -32,7 +32,9 @@ export class NutritionService {
     const age = profile.age ?? 30;
     // Assume male formula (no gender field yet)
     const bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    const activity = 1.375 + 0.075 * profile.daysPerWeek; // 1.375 sedavé → ~1.825 6×týdně
+    // Standard Mifflin-St Jeor discrete activity multipliers
+    const d = profile.daysPerWeek;
+    const activity = d === 0 ? 1.2 : d <= 3 ? 1.375 : d <= 5 ? 1.55 : d <= 6 ? 1.725 : 1.9;
     let tdee = bmr * activity;
 
     // Goal adjustment
@@ -628,7 +630,7 @@ DŮLEŽITÉ:
         carbsG: 40,
         fatG: 10,
         confidence: 0,
-        note: `Analýza selhala: ${e.message}`,
+        note: 'Analýza selhala. Zkus to znovu.',
       };
     }
   }

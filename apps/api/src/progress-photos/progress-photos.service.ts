@@ -320,7 +320,7 @@ Buď respektující, motivační, konkrétní. Žádné medical advice. Nevypisu
 
   private async presignedGetUrl(s3Key: string): Promise<string> {
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: s3Key });
-    return getSignedUrl(this.client as any, command as any, { expiresIn: 3600 });
+    return getSignedUrl(this.client as any, command as any, { expiresIn: 900 });
   }
 
   private async fetchAsBase64(s3Key: string): Promise<string> {
