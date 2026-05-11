@@ -1,0 +1,6 @@
+# scripts/check-api-conventions.sh — intentional exceptions
+# Format: paste the offending grep match line exactly. One per line.
+
+# SNS webhook payload — third-party shape varies (SubscriptionConfirmation vs Notification);
+# auth handled via shared-secret query param, not body validation.
+/Users/renechlubny/projekty/fitai/apps/api/src/videos/videos.controller.ts:82:  async handleWebhook(@Body() body: any, @Query('secret') secret?: string) {

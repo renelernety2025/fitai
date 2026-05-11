@@ -9,6 +9,8 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "lint:conventions": "bash scripts/check-api-conventions.sh",
+    "lint:docs": "bash scripts/verify-docs-integrity.sh",
     "db:migrate": "cd apps/api && npx prisma migrate dev",
     "db:seed": "cd apps/api && npx prisma db seed",
     "db:studio": "cd apps/api && npx prisma studio"

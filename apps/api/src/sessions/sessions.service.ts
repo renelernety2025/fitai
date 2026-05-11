@@ -11,9 +11,11 @@ export class SessionsService {
     private progressService: ProgressService,
   ) {}
 
-  async startSession(userId: string, videoId: string) {
-    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
-    if (!video) throw new NotFoundException('Video not found');
+  async startSession(userId: string, videoId?: string) {
+    if (videoId) {
+      const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+      if (!video) throw new NotFoundException('Video not found');
+    }
 
     return this.prisma.workoutSession.create({
       data: { userId, videoId },

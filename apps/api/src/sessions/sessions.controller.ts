@@ -3,6 +3,7 @@ import { SessionsService } from './sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EndSessionDto } from './dto/end-session.dto';
 import { PoseSnapshotDto } from './dto/pose-snapshot.dto';
+import { StartSessionDto } from './dto/start-session.dto';
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
@@ -10,8 +11,8 @@ export class SessionsController {
   constructor(private sessionsService: SessionsService) {}
 
   @Post('start')
-  start(@Request() req: any, @Body('videoId') videoId: string) {
-    return this.sessionsService.startSession(req.user.id, videoId);
+  start(@Request() req: any, @Body() dto: StartSessionDto) {
+    return this.sessionsService.startSession(req.user.id, dto.videoId);
   }
 
   @Post(':id/end')

@@ -9,6 +9,38 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [6-slice comprehensive audit + 42 fixes + CI enforcement] 2026-05-11
+
+Six specialized review agents (auth, workouts, AI, nutrition+health, social, marketplace+infra) ran against the entire repo. Confidence-filtered findings: 12 BLOCKER + ~28 HIGH + medium. All applied across slices 1–6 (commits `f7906fa..10604b5`).
+
+### Audit fixes deployed (one commit per slice)
+- **slice-1 auth** (`f7906fa`): SaveMeasurements/SubmitFitnessTest/SetManualOneRM DTOs, changePassword MinLength 6→8, login redirect URL-parse hardening
+- **slice-2 workouts** (`fb6dafb`): IDOR fix on `GET /gym-sessions/:id` + `/share-card`, completeSet setId belongs-to-session check, endSession idempotency, Vision DTOs + @Throttle, form-check path-traversal guard, getMyStats Prisma aggregate, CameraWorkoutScreen formScore 100→0
+- **slice-3 AI** (`a426a91`): SynthesizeDto + precache AdminGuard, history-query context→system prompt (prompt-injection mitigation), ElevenLabs error log truncate
+- **slice-4 nutrition+health** (`1b5c2cc`): progress-photos presign 3600s→900s, bloodwork/rehab throttle name fix + ANTHROPIC guard + 15s timeout, Mifflin-St Jeor discrete formula, food error sanitize, photoS3Key prefix regex
+- **slice-5 social+gamification** (`7e31cdf`): searchUsers drops email + min 2 chars + throttle, duels race fix, creator tip/subscribe atomic XP debit, streak-freeze MAX 2→4 + TOCTOU transaction, leagues guard tier<7, CreateChallengeDto @IsIn, photoKeys @MaxLength
+- **slice-6 marketplace+infra** (`10604b5`): NotifyModule duplicate registration removed, ValidationPipe forbidNonWhitelisted+transform, MediaConvert webhook shared-secret, marketplace purchase TOCTOU into transaction, content/import SSRF guard, gym-finder NaN bounds, experiences XP debit, email digest opt-out filter
+
+### CI enforcement (new, prevents regressions)
+- `scripts/check-api-conventions.sh` — greps controllers for: raw `@Body()` types, missing `@Throttle()` on AI endpoints, unknown named throttle keys
+- Found and fixed 7 additional violations beyond audit (achievements/intelligence/social/sessions/preprocessing — DTOs added)
+- Wired into `.github/workflows/ci.yml` as required step
+- `npm run lint:conventions` + `npm run lint:docs` for local dev
+- Intentional exceptions tracked in `scripts/check-api-conventions.ignore` (currently 1 — SNS webhook body)
+
+### New docs
+- `docs/api-conventions.md` — canonical controller/DTO/service template + raw SQL guidance + SSRF/webhook patterns
+- `docs/pre-launch-checklist.md` — what's already done + pen-test recommendation + KMS encryption plan + scale readiness + compliance items
+- ADR #20: API convention CI enforcement
+
+### Stats
+- 14 commits this session deployed via GitHub Actions, all smoke tests 115/115
+- 42 audit fixes + 7 follow-up DTO additions + 4 new scripts/docs
+- TypeScript clean (api + mobile + web)
+- 0 outstanding BLOCKER/HIGH findings
+
+---
+
 ## [Wave 1 + 3 review fixes — code + security audit] 2026-05-05
 
 Two-agent review (code-reviewer + security-reviewer) ran proti commitům `1315254`/`f9e2e7a`/`076f0b9`/`4be618d`/`1e1bf67`. Aplikované fixes:

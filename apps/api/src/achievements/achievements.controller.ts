@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AchievementsService } from './achievements.service';
+import { UnlockByCodeDto } from './dto/unlock-by-code.dto';
 
 @Controller('achievements')
 @UseGuards(JwtAuthGuard)
@@ -23,7 +24,7 @@ export class AchievementsController {
   }
 
   @Post('unlock')
-  unlockByCode(@Request() req: any, @Body() body: { code: string }) {
-    return this.service.unlockByCode(req.user.id, body.code);
+  unlockByCode(@Request() req: any, @Body() dto: UnlockByCodeDto) {
+    return this.service.unlockByCode(req.user.id, dto.code);
   }
 }

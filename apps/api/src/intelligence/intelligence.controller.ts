@@ -1,6 +1,7 @@
 import { Controller, Get, Put, Body, UseGuards, Request } from '@nestjs/common';
 import { IntelligenceService } from './intelligence.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdatePriorityMusclesDto } from './dto/update-priority-muscles.dto';
 
 @Controller('intelligence')
 @UseGuards(JwtAuthGuard)
@@ -33,7 +34,7 @@ export class IntelligenceController {
   }
 
   @Put('priority-muscles')
-  updatePriorityMuscles(@Request() req: any, @Body('muscles') muscles: string[]) {
-    return this.intelligenceService.updatePriorityMuscles(req.user.id, muscles || []);
+  updatePriorityMuscles(@Request() req: any, @Body() dto: UpdatePriorityMusclesDto) {
+    return this.intelligenceService.updatePriorityMuscles(req.user.id, dto.muscles);
   }
 }

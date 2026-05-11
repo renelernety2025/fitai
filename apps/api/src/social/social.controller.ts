@@ -3,6 +3,7 @@ import { Throttle, seconds } from '@nestjs/throttler';
 import { SocialService } from './social.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
+import { InviteToChallengeDto, FlashUpdateDto } from './dto/invite-and-flash.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { ReactDto } from './dto/react.dto';
 import { CommentDto } from './dto/comment.dto';
@@ -82,9 +83,9 @@ export class SocialController {
   inviteToChallenge(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('userId') userId: string,
+    @Body() dto: InviteToChallengeDto,
   ) {
-    return this.socialService.inviteToChallenge(req.user.id, id, userId);
+    return this.socialService.inviteToChallenge(req.user.id, id, dto.userId);
   }
 
   @Get('challenges/:id/leaderboard')
@@ -176,9 +177,9 @@ export class SocialController {
   updateFlash(
     @Request() req: any,
     @Param('id') id: string,
-    @Body('value') value: number,
+    @Body() dto: FlashUpdateDto,
   ) {
-    return this.socialService.updateFlash(req.user.id, id, value);
+    return this.socialService.updateFlash(req.user.id, id, dto.value);
   }
 
   // Share
