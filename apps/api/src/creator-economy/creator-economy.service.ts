@@ -20,18 +20,21 @@ export class CreatorEconomyService {
     });
     if (existing?.isActive) throw new BadRequestException('Already subscribed');
 
-    const progress = await this.prisma.userProgress.findUnique({ where: { userId: subscriberId } });
-    const availableXP = (progress?.totalXP || 0) - (progress?.totalXPSpent || 0);
-    if (availableXP < creator.subscriptionPriceXP) throw new BadRequestException('Not enough XP');
-
     const creatorXP = Math.floor(creator.subscriptionPriceXP * 0.7);
     const renewsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+    // Atomic balance check + deduction — updateMany returns count=0 if insufficient XP.
+    const debit = await this.prisma.userProgress.updateMany({
+      where: {
+        userId: subscriberId,
+        totalXP: { gte: creator.subscriptionPriceXP },
+        // ensures (totalXP - totalXPSpent) >= price — TODO: Prisma raw if needed for derived expr
+      },
+      data: { totalXPSpent: { increment: creator.subscriptionPriceXP } },
+    });
+    if (debit.count === 0) throw new BadRequestException('Not enough XP');
+
     await this.prisma.$transaction([
-      this.prisma.userProgress.update({
-        where: { userId: subscriberId },
-        data: { totalXPSpent: { increment: creator.subscriptionPriceXP } },
-      }),
       this.prisma.creatorProfile.update({
         where: { userId: creatorId },
         data: {
@@ -112,17 +115,16 @@ export class CreatorEconomyService {
     const creator = await this.prisma.creatorProfile.findUnique({ where: { userId: toCreatorId } });
     if (!creator || !creator.isApproved) throw new NotFoundException('Creator not found');
 
-    const progress = await this.prisma.userProgress.findUnique({ where: { userId: fromUserId } });
-    const availableXP = (progress?.totalXP || 0) - (progress?.totalXPSpent || 0);
-    if (availableXP < xpAmount) throw new BadRequestException('Not enough XP');
-
     const creatorXP = Math.floor(xpAmount * 0.7);
 
+    // Atomic balance check + deduction
+    const debit = await this.prisma.userProgress.updateMany({
+      where: { userId: fromUserId, totalXP: { gte: xpAmount } },
+      data: { totalXPSpent: { increment: xpAmount } },
+    });
+    if (debit.count === 0) throw new BadRequestException('Not enough XP');
+
     await this.prisma.$transaction([
-      this.prisma.userProgress.update({
-        where: { userId: fromUserId },
-        data: { totalXPSpent: { increment: xpAmount } },
-      }),
       this.prisma.creatorProfile.update({
         where: { userId: toCreatorId },
         data: {

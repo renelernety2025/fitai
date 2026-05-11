@@ -293,13 +293,12 @@ export class SocialService {
   // ── User Search ──
 
   async searchUsers(query: string, currentUserId: string) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return [];
     const users = await this.prisma.user.findMany({
       where: {
         id: { not: currentUserId },
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-        ],
+        name: { contains: trimmed, mode: 'insensitive' },
       },
       select: { id: true, name: true, avatarUrl: true, level: true },
       take: 10,

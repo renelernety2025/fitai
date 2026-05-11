@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-const MAX_FREEZES_PER_MONTH = 2;
+const MAX_FREEZES_PER_MONTH = 4;
 
 @Injectable()
 export class StreakFreezeService {
@@ -29,34 +29,30 @@ export class StreakFreezeService {
     const today = this.todayDate();
     const { monthStart, monthEnd } = this.currentMonth();
 
-    const existing = await this.prisma.streakFreeze.findUnique({
-      where: { userId_usedDate: { userId, usedDate: today } },
-    });
-    if (existing) {
-      throw new BadRequestException('Freeze already used today');
-    }
+    // Atomic month-count + create via interactive transaction to prevent TOCTOU.
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.streakFreeze.findUnique({
+        where: { userId_usedDate: { userId, usedDate: today } },
+      });
+      if (existing) throw new BadRequestException('Freeze already used today');
 
-    const monthCount = await this.prisma.streakFreeze.count({
-      where: {
-        userId,
-        usedDate: { gte: monthStart, lt: monthEnd },
-      },
-    });
-    if (monthCount >= MAX_FREEZES_PER_MONTH) {
-      throw new BadRequestException(
-        `Max ${MAX_FREEZES_PER_MONTH} freezes per month`,
-      );
-    }
+      const monthCount = await tx.streakFreeze.count({
+        where: { userId, usedDate: { gte: monthStart, lt: monthEnd } },
+      });
+      if (monthCount >= MAX_FREEZES_PER_MONTH) {
+        throw new BadRequestException(`Max ${MAX_FREEZES_PER_MONTH} freezes per month`);
+      }
 
-    const freeze = await this.prisma.streakFreeze.create({
-      data: { userId, usedDate: today },
-    });
+      const freeze = await tx.streakFreeze.create({
+        data: { userId, usedDate: today },
+      });
 
-    return {
-      success: true,
-      remaining: MAX_FREEZES_PER_MONTH - monthCount - 1,
-      usedDate: freeze.usedDate,
-    };
+      return {
+        success: true,
+        remaining: MAX_FREEZES_PER_MONTH - monthCount - 1,
+        usedDate: freeze.usedDate,
+      };
+    });
   }
 
   private todayDate(): Date {

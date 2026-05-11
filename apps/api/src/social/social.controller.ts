@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { SocialService } from './social.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
@@ -92,6 +93,7 @@ export class SocialController {
   }
 
   // Search
+  @Throttle({ default: { limit: 30, ttl: seconds(60) } })
   @Get('search')
   searchUsers(@Request() req: any, @Query('q') query: string) {
     return this.socialService.searchUsers(query || '', req.user.id);

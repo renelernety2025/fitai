@@ -19,6 +19,7 @@ export class CreatePostDto {
   @IsArray()
   @ArrayMaxSize(4)
   @IsString({ each: true })
+  @MaxLength(500, { each: true })
   photoKeys?: string[];
 
   @IsOptional()

@@ -1,4 +1,6 @@
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+
+export const CHALLENGE_TYPES = ['workout', 'reps', 'volume', 'streak', 'minutes', 'sessions'] as const;
 
 export class CreateChallengeDto {
   @IsString()
@@ -10,8 +12,8 @@ export class CreateChallengeDto {
   @MaxLength(500)
   description?: string;
 
-  @IsString()
-  type!: string;
+  @IsIn(CHALLENGE_TYPES)
+  type!: typeof CHALLENGE_TYPES[number];
 
   @IsInt()
   @Min(1)

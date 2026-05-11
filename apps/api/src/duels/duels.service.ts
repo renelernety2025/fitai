@@ -149,29 +149,35 @@ export class DuelsService {
     }
 
     return (this.prisma as any).$transaction(async (tx: any) => {
+      // Re-read inside transaction to prevent double-payout when both participants submit concurrently.
+      const fresh = await tx.duel.findUnique({ where: { id: duelId } });
+      if (!fresh || fresh.status !== 'ACTIVE') {
+        return fresh; // already settled by the other participant
+      }
+
       const data: Record<string, any> = isChallenger
         ? { challengerScore: { increment: score } }
         : { challengedScore: { increment: score } };
 
-      const isExpired = duel.endsAt && duel.endsAt < new Date();
+      const isExpired = fresh.endsAt && fresh.endsAt < new Date();
       if (isExpired) {
         data.status = 'COMPLETED';
-        const winnerId = this.computeWinner(duel, isChallenger, score);
+        const winnerId = this.computeWinner(fresh, isChallenger, score);
         data.winnerId = winnerId;
 
         if (winnerId) {
           await tx.userProgress.update({
             where: { userId: winnerId },
-            data: { totalXP: { increment: duel.xpBet * 2 } },
+            data: { totalXP: { increment: fresh.xpBet * 2 } },
           });
         } else {
           await tx.userProgress.update({
-            where: { userId: duel.challengerId },
-            data: { totalXP: { increment: duel.xpBet } },
+            where: { userId: fresh.challengerId },
+            data: { totalXP: { increment: fresh.xpBet } },
           });
           await tx.userProgress.update({
-            where: { userId: duel.challengedId },
-            data: { totalXP: { increment: duel.xpBet } },
+            where: { userId: fresh.challengedId },
+            data: { totalXP: { increment: fresh.xpBet } },
           });
         }
       }
