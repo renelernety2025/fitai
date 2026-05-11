@@ -40,7 +40,11 @@ async function bootstrap() {
     },
     crossOriginEmbedderPolicy: false,
   }));
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
   app.enableCors({
     origin: process.env.NODE_ENV === 'production'
       ? ['https://fitai.bfevents.cz']

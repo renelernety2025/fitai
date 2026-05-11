@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, UseGuards, Request } from '@
 import { ContentService } from './content.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateMarketplaceItemDto } from './dto/create-marketplace-item.dto';
+import { ImportUrlDto } from './dto/import-url.dto';
 
 @Controller('content')
 @UseGuards(JwtAuthGuard)
@@ -10,8 +11,8 @@ export class ContentController {
 
   // URL Import
   @Post('import')
-  importUrl(@Request() req: any, @Body('sourceUrl') sourceUrl: string) {
-    return this.contentService.importFromUrl(req.user.id, sourceUrl);
+  importUrl(@Request() req: any, @Body() dto: ImportUrlDto) {
+    return this.contentService.importFromUrl(req.user.id, dto.sourceUrl);
   }
 
   @Get('import/:id')

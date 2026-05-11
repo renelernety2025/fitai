@@ -1,5 +1,21 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+const PRIVATE_HOSTNAME_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^10\./,
+  /^192\.168\./,
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  /^169\.254\./, // link-local incl. AWS metadata
+  /^::1$/,
+  /^fc[0-9a-f]{2}:/i,
+  /^fe[89ab][0-9a-f]:/i,
+];
+
+function isPrivateHostname(hostname: string): boolean {
+  return PRIVATE_HOSTNAME_PATTERNS.some((p) => p.test(hostname));
+}
 
 @Injectable()
 export class ContentService {
@@ -10,6 +26,16 @@ export class ContentService {
   // ── URL Import ──
 
   async importFromUrl(userId: string, sourceUrl: string) {
+    let parsed: URL;
+    try {
+      parsed = new URL(sourceUrl);
+    } catch {
+      throw new BadRequestException('Invalid URL');
+    }
+    if (isPrivateHostname(parsed.hostname)) {
+      throw new BadRequestException('Private network addresses are not allowed');
+    }
+
     const importRecord = await this.prisma.contentImport.create({
       data: { userId, sourceUrl, status: 'pending' },
     });

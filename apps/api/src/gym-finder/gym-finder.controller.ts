@@ -32,10 +32,16 @@ export class GymFinderController {
     @Query('lng') lng: string,
     @Query('radius') radius?: string,
   ) {
-    return this.service.getNearby(
-      parseFloat(lat),
-      parseFloat(lng),
-      parseFloat(radius || '10'),
-    );
+    const parsedLat = Number(lat);
+    const parsedLng = Number(lng);
+    const parsedRadius = radius != null ? Number(radius) : 10;
+    if (
+      !Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90 ||
+      !Number.isFinite(parsedLng) || parsedLng < -180 || parsedLng > 180 ||
+      !Number.isFinite(parsedRadius) || parsedRadius <= 0 || parsedRadius > 500
+    ) {
+      return { error: 'Invalid lat/lng/radius', results: [] };
+    }
+    return this.service.getNearby(parsedLat, parsedLng, parsedRadius);
   }
 }

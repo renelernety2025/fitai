@@ -220,7 +220,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     HashtagsModule,
     FeedModule,
     PromoModule,
-    NotifyModule,
     CreatorEconomyModule,
     CreatorDashboardModule,
   ],

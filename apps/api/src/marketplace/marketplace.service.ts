@@ -77,28 +77,21 @@ export class MarketplaceService {
       throw new NotFoundException('Listing not found');
     }
 
-    const existing = await this.prisma.marketplacePurchase.findUnique({
-      where: {
-        userId_listingId: { userId, listingId },
-      },
-    });
-    if (existing) {
-      throw new BadRequestException('Already purchased');
-    }
-
     await this.prisma.$transaction(async (tx) => {
+      // Move duplicate-purchase check inside transaction to close TOCTOU window.
+      const existing = await tx.marketplacePurchase.findUnique({
+        where: { userId_listingId: { userId, listingId } },
+      });
+      if (existing) {
+        throw new BadRequestException('Already purchased');
+      }
+
       if (listing.priceXP > 0) {
-        const progress = await tx.userProgress.findUnique({
-          where: { userId },
-        });
-        const xp = progress?.totalXP ?? 0;
-        if (xp < listing.priceXP) {
-          throw new BadRequestException('Not enough XP');
-        }
-        await tx.userProgress.update({
-          where: { userId },
+        const debit = await tx.userProgress.updateMany({
+          where: { userId, totalXP: { gte: listing.priceXP } },
           data: { totalXP: { decrement: listing.priceXP } },
         });
+        if (debit.count === 0) throw new BadRequestException('Not enough XP');
       }
 
       await tx.marketplacePurchase.create({

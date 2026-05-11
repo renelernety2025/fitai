@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, Query, UseGuards, Logger,
+  Body, Param, Query, UseGuards, Logger, UnauthorizedException,
 } from '@nestjs/common';
 import { VideosService } from './videos.service';
 import { S3Service } from './s3.service';
@@ -79,10 +79,17 @@ export class VideosController {
   }
 
   @Post('mediaconvert-webhook')
-  async handleWebhook(@Body() body: any) {
+  async handleWebhook(@Body() body: any, @Query('secret') secret?: string) {
+    // Shared-secret auth — SNS subscription URL must include ?secret=<MEDIACONVERT_WEBHOOK_SECRET>.
+    // TODO: replace with proper SNS signature verification once sns-validator is wired in.
+    const expected = process.env.MEDIACONVERT_WEBHOOK_SECRET;
+    if (!expected || secret !== expected) {
+      throw new UnauthorizedException('Invalid webhook secret');
+    }
+
     // SNS sends a confirmation request first
     if (body.Type === 'SubscriptionConfirmation') {
-      this.logger.log(`SNS subscription confirmation: ${body.SubscribeURL}`);
+      this.logger.log('SNS subscription confirmation received');
       return { ok: true };
     }
 

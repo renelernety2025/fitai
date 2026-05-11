@@ -133,6 +133,15 @@ export class ExperiencesService {
       });
       if (existing) throw new ConflictException('Already booked');
 
+      // Deduct XP atomically if the experience is paid
+      if (exp.priceXP && exp.priceXP > 0) {
+        const debit = await tx.userProgress.updateMany({
+          where: { userId, totalXP: { gte: exp.priceXP } },
+          data: { totalXP: { decrement: exp.priceXP } },
+        });
+        if (debit.count === 0) throw new BadRequestException('Not enough XP');
+      }
+
       // Atomic increment with capacity guard
       const updated = await tx.experience.updateMany({
         where: {

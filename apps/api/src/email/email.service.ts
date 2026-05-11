@@ -152,6 +152,12 @@ export class EmailService {
       this.logger.log('[EMAIL] Weekly digest cron triggered');
       // TODO: Add full pagination for large user bases
       const users = await this.prisma.user.findMany({
+        where: {
+          OR: [
+            { notificationPrefs: { is: null } },
+            { notificationPrefs: { workoutReminder: true } },
+          ],
+        },
         select: {
           email: true,
           name: true,
