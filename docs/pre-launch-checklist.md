@@ -77,6 +77,11 @@ Operational checklist before App Store / public launch. Driven by 2026-05 6-slic
   - Replace OAuth redirect URI to `https://fitai.bfevents.cz/oauth/...`
   - Estimate: 1 day
 
+### CI/CD hardening (small but real)
+- [ ] **Add `aws ecs update-service --force-new-deployment` step to `.github/workflows/deploy.yml`** after build-api job (independent of migrate result). Currently if migrate fails or paths-filter skips build, ECS keeps running stale image even though ECR has a newer build. Discovered 2026-05-11 when `ec4fb7d` API image sat in ECR for an hour waiting for migrate (OOM) to pass.
+- [ ] **Bump `fitai-migrate` memory headroom** — current `:3` (1024 MB) leaves ~200 MB headroom over peak Prisma generate. If schema grows past 150 models, bump to 2048 MB preemptively.
+- [ ] **Add SNS signature verification** to `videos/mediaconvert-webhook` (currently shared-secret) — wire `sns-validator` package.
+
 ### Scale readiness
 - [ ] **k6 load tests** — 4 scenarios (smoke / soak / spike / stress) at 100/1000/10k concurrent
 - [ ] **HNSW index verification** on all pgvector queries via `EXPLAIN ANALYZE`

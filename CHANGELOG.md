@@ -34,10 +34,22 @@ Six specialized review agents (auth, workouts, AI, nutrition+health, social, mar
 - ADR #20: API convention CI enforcement
 
 ### Stats
-- 14 commits this session deployed via GitHub Actions, all smoke tests 115/115
+- 16 commits this session deployed via GitHub Actions, all smoke tests 115/115
 - 42 audit fixes + 7 follow-up DTO additions + 4 new scripts/docs
 - TypeScript clean (api + mobile + web)
 - 0 outstanding BLOCKER/HIGH findings
+
+### Post-deploy fix — fitai-migrate task OOM (commit `614b5d7`)
+`ec4fb7d` workflow failed in migrate step with exit 137 (SIGKILL/OOM): `prisma generate` after `prisma db push` exceeded the 512 MB task definition limit. Schema was already in sync (no-op push) — only the codegen step OOMed.
+
+Fix applied:
+- Registered new `fitai-migrate:3` revision via `aws ecs register-task-definition` (memory 512→1024 MB, cpu 256→512 — Fargate valid combo)
+- Updated `.github/workflows/deploy.yml` to reference `:3` (commit `614b5d7`)
+- Force-deployed API service via `aws ecs update-service --force-new-deployment` because that follow-up commit only touched `.github/`, so paths-filter skipped build/migrate jobs and the new `ec4fb7d` API image (already in ECR from the failed prior workflow) was never deployed by ECS
+
+Followup TODOs (documented in pre-launch-checklist):
+- Add `aws ecs update-service --force-new-deployment` step to deploy.yml after build-api (independent of migrate result), so this scenario auto-resolves
+- Monitor migrate memory under load; bump again if needed
 
 ---
 
