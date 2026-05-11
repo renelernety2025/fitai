@@ -124,7 +124,7 @@ jobs:
         run: |
           TASK_ARN=$(aws ecs run-task \
             --cluster $ECS_CLUSTER \
-            --task-definition fitai-migrate:2 \
+            --task-definition fitai-migrate:3 \
             --launch-type FARGATE \
             --region $AWS_REGION \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-0bd0a6c5d4eadd609,subnet-0d261214e57e14fba],securityGroups=[sg-0bfd908240d06c541]}" \
