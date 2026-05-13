@@ -1,10 +1,11 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, Query, UseGuards, Logger, UnauthorizedException,
+  Body, Param, Query, UseGuards, Logger,
 } from '@nestjs/common';
 import { VideosService } from './videos.service';
 import { S3Service } from './s3.service';
 import { MediaConvertService } from './mediaconvert.service';
+import { SnsVerificationService } from './sns-verification.service';
 import { PreprocessingService } from '../preprocessing/preprocessing.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,6 +20,7 @@ export class VideosController {
     private videosService: VideosService,
     private s3Service: S3Service,
     private mediaConvertService: MediaConvertService,
+    private snsVerification: SnsVerificationService,
     private preprocessingService: PreprocessingService,
   ) {}
 
@@ -79,28 +81,25 @@ export class VideosController {
   }
 
   @Post('mediaconvert-webhook')
-  async handleWebhook(@Body() body: any, @Query('secret') secret?: string) {
-    // Shared-secret auth — SNS subscription URL must include ?secret=<MEDIACONVERT_WEBHOOK_SECRET>.
-    // TODO: replace with proper SNS signature verification once sns-validator is wired in.
-    const expected = process.env.MEDIACONVERT_WEBHOOK_SECRET;
-    if (!expected || secret !== expected) {
-      throw new UnauthorizedException('Invalid webhook secret');
-    }
+  async handleWebhook(@Body() body: unknown) {
+    // Public endpoint: auth comes from SNS X.509 signature verification (sns-validator).
+    // Optional TopicArn whitelist via MEDIACONVERT_SNS_TOPIC_ARN env var.
+    const message = await this.snsVerification.verify(body);
 
-    // SNS sends a confirmation request first
-    if (body.Type === 'SubscriptionConfirmation') {
-      this.logger.log('SNS subscription confirmation received');
+    if (message.Type === 'SubscriptionConfirmation') {
+      await this.snsVerification.confirmSubscription(message);
       return { ok: true };
     }
 
-    let message = body;
-    if (body.Type === 'Notification' && typeof body.Message === 'string') {
-      message = JSON.parse(body.Message);
+    if (message.Type !== 'Notification') {
+      this.logger.warn(`Ignoring SNS message type: ${message.Type}`);
+      return { ok: true };
     }
 
-    const detail = message.detail || message;
-    const status = detail.status;
+    const event = JSON.parse(message.Message);
+    const detail = event.detail || event;
     const videoId = detail.userMetadata?.videoId;
+    const status = detail.status;
 
     if (!videoId) {
       this.logger.warn('Webhook received without videoId');

@@ -9,6 +9,23 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [SNS signature verification for MediaConvert webhook] 2026-05-13
+
+Replaces the shared-secret query param auth (added in slice-6, `10604b5`) with proper AWS SNS X.509 signature verification via the `sns-validator` package. Closes the second item from the 2026-05-11 audit pre-launch checklist.
+
+**Details:**
+- New `SnsVerificationService` (`apps/api/src/videos/sns-verification.service.ts`, 69 lines): wraps `sns-validator` (AWS-maintained, `aws/aws-js-sns-message-validator`), validates X.509 signature + SignatureVersion + canonical string for Notification / SubscriptionConfirmation / UnsubscribeConfirmation. Throws `UnauthorizedException` on invalid signature.
+- Optional `MEDIACONVERT_SNS_TOPIC_ARN` env: if set, rejects messages from any other TopicArn (defense-in-depth even if signing cert is somehow trusted).
+- `confirmSubscription()` auto-handles `SubscriptionConfirmation` by GETting `SubscribeURL` — only allows HTTPS + `*.amazonaws.com` hosts. SNS sometimes resends confirmation; previously the endpoint logged but never confirmed, which would have silently failed if the subscription got recycled.
+- Controller `handleWebhook` switched from `@Body() body: any` + `@Query('secret')` to `@Body() body: unknown` → `snsVerification.verify(body)`. No DTO needed (SNS payload shape is third-party + verified by signature, not by class-validator).
+- `MEDIACONVERT_WEBHOOK_SECRET` env var is now unused — leaving it in Secrets Manager until cleanup, code path is fully dead. Old SNS subscription URL still includes `?secret=…` query string but signature verification ignores it.
+- `scripts/check-api-conventions.ignore` cleaned: the only exception (SNS webhook raw `@Body()`) is no longer needed since `unknown` passes Check 1 natively.
+
+**Why this matters (audit context):**
+Shared-secret in a query string is logged by ALB access logs and CloudTrail (URL captured intact). A leak of a single log row leaks the secret. SNS signature verification is keyless from our side — the cert chain is validated against AWS's published SNS signing cert URLs.
+
+---
+
 ## [CI hardening — explicit ECS redeploy step in deploy.yml] 2026-05-13
 
 Closes the gap noted on 2026-05-11: when a commit only touches `.github/` (like `614b5d7`), paths-filter skips `build-api`/`build-web`, so the CodeBuild `post_build` step that normally calls `aws ecs update-service --force-new-deployment` never runs. Previously required manual `aws ecs update-service` from a shell.

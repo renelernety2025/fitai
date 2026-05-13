@@ -80,7 +80,7 @@ Operational checklist before App Store / public launch. Driven by 2026-05 6-slic
 ### CI/CD hardening (small but real)
 - [x] **Add `aws ecs update-service --force-new-deployment` step to `.github/workflows/deploy.yml`** — Done 2026-05-13. New `deploy-api` (after migrate) and `deploy-web` (after build-web) jobs. `deploy-api` skipped when migrate fails (prevents new code against stale schema). Both run on `workflow_dispatch` even when build skipped — gives in-workflow recovery for `.github/`-only commits.
 - [ ] **Bump `fitai-migrate` memory headroom** — current `:3` (1024 MB) leaves ~200 MB headroom over peak Prisma generate. If schema grows past 150 models, bump to 2048 MB preemptively.
-- [ ] **Add SNS signature verification** to `videos/mediaconvert-webhook` (currently shared-secret) — wire `sns-validator` package.
+- [x] **Add SNS signature verification** to `videos/mediaconvert-webhook` — Done 2026-05-13. `SnsVerificationService` wraps `sns-validator`; controller drops `?secret` query check and uses `@Body() body: unknown` → verify. Optional `MEDIACONVERT_SNS_TOPIC_ARN` env for topic whitelist. SubscriptionConfirmation auto-confirmed via SubscribeURL GET (HTTPS + `*.amazonaws.com` allowlist).
 
 ### Scale readiness
 - [ ] **k6 load tests** — 4 scenarios (smoke / soak / spike / stress) at 100/1000/10k concurrent
