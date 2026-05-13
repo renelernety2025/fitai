@@ -9,6 +9,20 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [CI hardening — explicit ECS redeploy step in deploy.yml] 2026-05-13
+
+Closes the gap noted on 2026-05-11: when a commit only touches `.github/` (like `614b5d7`), paths-filter skips `build-api`/`build-web`, so the CodeBuild `post_build` step that normally calls `aws ecs update-service --force-new-deployment` never runs. Previously required manual `aws ecs update-service` from a shell.
+
+**Details:**
+- Added `deploy-api` job (after `migrate`) and `deploy-web` job (after `build-web`) in `.github/workflows/deploy.yml`
+- `deploy-api` is skipped when migrate failed — prevents shipping new code against a stale schema
+- Both jobs also run on `workflow_dispatch` trigger even when the build was skipped, giving an in-workflow recovery path for `.github/`-only commits
+- `smoke-test` and `summary` jobs depend on the new deploy jobs so the table reflects redeploy status
+- Belt-and-suspenders: buildspec.yml `post_build` retains its own `update-service` call (redundant force-deploy is harmless — ECS just rolls once)
+- IAM: extended inline policy `fitai-deploy-policy` on role `fitai-github-actions` to add `ecs:UpdateService` (previously had `RunTask`/`DescribeTasks`/`DescribeServices`/`ListTasks` only). Role is provisioned outside Terraform (one-shot setup per `docs-archive/GITHUB_ACTIONS_SETUP.md`), so change is persistent — `terraform apply` does not own it
+
+---
+
 ## [6-slice comprehensive audit + 42 fixes + CI enforcement] 2026-05-11
 
 Six specialized review agents (auth, workouts, AI, nutrition+health, social, marketplace+infra) ran against the entire repo. Confidence-filtered findings: 12 BLOCKER + ~28 HIGH + medium. All applied across slices 1–6 (commits `f7906fa..10604b5`).

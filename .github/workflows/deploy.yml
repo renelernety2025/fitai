@@ -145,9 +145,55 @@ jobs:
             exit 1
           fi
 
+  deploy-api:
+    name: Force ECS redeploy (API)
+    needs: [build-api, migrate]
+    # Belt-and-suspenders: buildspec.yml post_build already calls update-service
+    # when CodeBuild runs. This step runs again so that workflow_dispatch (or any
+    # future flow that skips build-api but still wants to roll the running tasks)
+    # can force a redeploy without manual `aws ecs update-service` from a shell.
+    # Skipped automatically when migrate failed — we don't want to deploy new
+    # code against a stale schema.
+    if: always() && !cancelled() && needs.migrate.result != 'failure' && (needs.build-api.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Force new deployment
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $API_SERVICE \
+            --force-new-deployment \
+            --region $AWS_REGION \
+            --query 'service.deployments[0].{Status:status,TaskDef:taskDefinition,Desired:desiredCount}' \
+            --output table
+
+  deploy-web:
+    name: Force ECS redeploy (Web)
+    needs: [build-web]
+    if: always() && !cancelled() && (needs.build-web.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
+          aws-region: eu-west-1
+      - name: Force new deployment
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $WEB_SERVICE \
+            --force-new-deployment \
+            --region $AWS_REGION \
+            --query 'service.deployments[0].{Status:status,TaskDef:taskDefinition,Desired:desiredCount}' \
+            --output table
+
   smoke-test:
     name: Smoke test production
-    needs: [build-api, build-web, migrate]
+    needs: [build-api, build-web, migrate, deploy-api, deploy-web]
     if: always() && !cancelled() && !contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     steps:
@@ -180,7 +226,7 @@ jobs:
 
   summary:
     name: Deploy summary
-    needs: [detect-changes, build-api, build-web, migrate, smoke-test]
+    needs: [detect-changes, build-api, build-web, migrate, deploy-api, deploy-web, smoke-test]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -190,5 +236,7 @@ jobs:
           echo "- API build: ${{ needs.build-api.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Web build: ${{ needs.build-web.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Migration: ${{ needs.migrate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API redeploy: ${{ needs.deploy-api.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Web redeploy: ${{ needs.deploy-web.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Smoke test: ${{ needs.smoke-test.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Production: https://fitai.bfevents.cz" >> $GITHUB_STEP_SUMMARY
