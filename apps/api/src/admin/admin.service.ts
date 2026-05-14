@@ -1,9 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AdminService {
   constructor(private prisma: PrismaService) {}
+
+  private async ensureUserExists(userId: string) {
+    const exists = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!exists) throw new NotFoundException('User not found');
+  }
 
   async getStats() {
     const todayStart = new Date();
@@ -47,6 +55,7 @@ export class AdminService {
   }
 
   async verifyUser(userId: string) {
+    await this.ensureUserExists(userId);
     return this.prisma.user.update({
       where: { id: userId },
       data: { badgeType: 'VERIFIED', badgeVerifiedAt: new Date() },
@@ -54,6 +63,7 @@ export class AdminService {
   }
 
   async unverifyUser(userId: string) {
+    await this.ensureUserExists(userId);
     const creator = await this.prisma.creatorProfile.findUnique({
       where: { userId },
     });

@@ -330,7 +330,7 @@ export class GymSessionsService {
     return session;
   }
 
-  async getShareCard(sessionId: string, userId: string) {
+  async getShareCard(sessionId: string) {
     const session = await this.prisma.gymSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -341,7 +341,6 @@ export class GymSessionsService {
       },
     });
     if (!session) throw new NotFoundException('Session not found');
-    if (session.userId !== userId) throw new ForbiddenException('Not your session');
 
     const completed = session.exerciseSets.filter(
       (s) => s.status === 'COMPLETED' && !s.isWarmup,

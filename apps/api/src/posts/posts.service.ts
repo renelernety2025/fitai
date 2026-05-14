@@ -114,11 +114,25 @@ export class PostsService {
   }
 
   async deletePost(postId: string, userId: string) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { hashtags: true },
+    });
     if (!post) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException();
 
-    await this.prisma.post.delete({ where: { id: postId } });
+    const hashtagIds = post.hashtags.map((h) => h.hashtagId);
+    await this.prisma.$transaction([
+      this.prisma.post.delete({ where: { id: postId } }),
+      ...(hashtagIds.length
+        ? [
+            this.prisma.hashtag.updateMany({
+              where: { id: { in: hashtagIds }, postCount: { gt: 0 } },
+              data: { postCount: { decrement: 1 } },
+            }),
+          ]
+        : []),
+    ]);
     return { deleted: true };
   }
 
@@ -224,7 +238,7 @@ export class PostsService {
     for (const name of tagNames) {
       const hashtag = await this.prisma.hashtag.upsert({
         where: { name },
-        create: { name },
+        create: { name, postCount: 1 },
         update: { postCount: { increment: 1 } },
       });
       await this.prisma.postHashtag.create({

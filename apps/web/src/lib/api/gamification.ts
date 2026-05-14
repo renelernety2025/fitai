@@ -85,11 +85,17 @@ export function completeBoss(
   });
 }
 
-export function getStreakFreezeStatus(): Promise<any> {
-  return request('/streak-freeze/status');
+export interface StreakFreezeStatus {
+  available: number;
+  maxPerMonth: number;
+  usedDates: string[];
 }
 
-export function useStreakFreeze(): Promise<any> {
+export function getStreakFreezeStatus(): Promise<StreakFreezeStatus> {
+  return request<StreakFreezeStatus>('/streak-freeze/status');
+}
+
+export function useStreakFreeze(): Promise<{ ok: boolean; date: string }> {
   return request('/streak-freeze/use', { method: 'POST' });
 }
 

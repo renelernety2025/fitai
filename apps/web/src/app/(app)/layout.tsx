@@ -7,6 +7,9 @@ import { V2Layout } from '@/components/v2/V2Layout';
 import { ErrorBoundary } from '@/components/v3/ErrorBoundary';
 import { Logo } from '@/components/v3/Logo';
 import { analytics } from '@/lib/analytics';
+import { getOnboardingStatus } from '@/lib/api';
+
+const ONBOARDING_EXEMPT_PATHS = ['/onboarding', '/settings', '/privacy', '/terms', '/ai-disclaimer'];
 
 export default function AppLayout({
   children,
@@ -23,6 +26,16 @@ export default function AppLayout({
       router.replace(`/login?redirect=${redirect}`);
     }
   }, [user, isLoading, router, pathname]);
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    if (ONBOARDING_EXEMPT_PATHS.some((p) => pathname.startsWith(p))) return;
+    getOnboardingStatus()
+      .then((status) => {
+        if (!status.completed) router.replace('/onboarding');
+      })
+      .catch(() => {});
+  }, [user, isLoading, pathname, router]);
 
   useEffect(() => {
     analytics.page(pathname);

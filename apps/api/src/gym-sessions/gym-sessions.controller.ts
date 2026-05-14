@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { GymSessionsService } from './gym-sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StartGymSessionDto } from './dto/start-gym-session.dto';
@@ -42,10 +43,12 @@ export class GymSessionsController {
     return this.gymSessionsService.getMyWeeklyVolume(req.user.id);
   }
 
+  // Public — anyone with a session UUID can view the share card.
+  // UUIDs are not enumerable; response shape is sanitized (no PII).
   @Get(':id/share-card')
-  @UseGuards(JwtAuthGuard)
-  getShareCard(@Param('id') id: string, @Request() req: any) {
-    return this.gymSessionsService.getShareCard(id, req.user.id);
+  @Throttle({ default: { limit: 60, ttl: seconds(60) } })
+  getShareCard(@Param('id') id: string) {
+    return this.gymSessionsService.getShareCard(id);
   }
 
   @Get(':id')

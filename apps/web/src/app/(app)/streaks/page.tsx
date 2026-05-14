@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getHabitsStats, getHabitsHistory, type DailyCheckIn, type HabitsStats } from '@/lib/api';
-import { getStreakFreezeStatus, useStreakFreeze } from '@/lib/api';
+import { getStreakFreezeStatus, useStreakFreeze, type StreakFreezeStatus } from '@/lib/api';
 
 const MILESTONES = [
   { day: 7, label: 'First week' },
@@ -16,7 +16,8 @@ const MILESTONES = [
 export default function StreaksPage() {
   const [stats, setStats] = useState<HabitsStats | null>(null);
   const [history, setHistory] = useState<DailyCheckIn[]>([]);
-  const [freezes, setFreezes] = useState<{ available: number; max: number } | null>(null);
+  const [freezes, setFreezes] = useState<StreakFreezeStatus | null>(null);
+  const [usingFreeze, setUsingFreeze] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Streaks'; }, []);
   useEffect(() => {
@@ -24,6 +25,20 @@ export default function StreaksPage() {
     getHabitsHistory(365).then(setHistory).catch(console.error);
     getStreakFreezeStatus().then(setFreezes).catch(() => {});
   }, []);
+
+  async function handleUseFreeze() {
+    if (usingFreeze || !freezes || freezes.available <= 0) return;
+    setUsingFreeze(true);
+    try {
+      await useStreakFreeze();
+      const fresh = await getStreakFreezeStatus();
+      setFreezes(fresh);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUsingFreeze(false);
+    }
+  }
 
   const streak = stats?.streakDays ?? 0;
   const grid = useHeatmapGrid(history);
@@ -34,7 +49,7 @@ export default function StreaksPage() {
       <StatCards streak={streak} stats={stats} />
       <HeatmapSection grid={grid} />
       <MilestonesSection streak={streak} />
-      <FreezesSection freezes={freezes} />
+      <FreezesSection freezes={freezes} onUse={handleUseFreeze} busy={usingFreeze} />
     </div>
   );
 }
@@ -137,9 +152,9 @@ function MilestonesSection({ streak }: { streak: number }) {
   );
 }
 
-function FreezesSection({ freezes }: { freezes: { available: number; max: number } | null }) {
+function FreezesSection({ freezes, onUse, busy }: { freezes: StreakFreezeStatus | null; onUse: () => void; busy: boolean }) {
   const avail = freezes?.available ?? 0;
-  const max = freezes?.max ?? 4;
+  const max = freezes?.maxPerMonth ?? 4;
   return (
     <Card padding={32}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -149,6 +164,15 @@ function FreezesSection({ freezes }: { freezes: { available: number; max: number
           <div className="v3-body" style={{ maxWidth: 560 }}>
             Life happens. Use a freeze to skip a day without losing your streak.
           </div>
+          <button
+            type="button"
+            disabled={busy || avail <= 0}
+            onClick={onUse}
+            className="v3-btn"
+            style={{ marginTop: 16, opacity: avail > 0 && !busy ? 1 : 0.5, cursor: avail > 0 && !busy ? 'pointer' : 'not-allowed' }}
+          >
+            {busy ? 'Using…' : avail > 0 ? `Use freeze (${avail} left)` : 'No freezes available'}
+          </button>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {Array.from({ length: max }, (_, i) => (

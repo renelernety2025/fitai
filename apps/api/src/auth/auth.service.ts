@@ -35,6 +35,7 @@ export class AuthService {
       email: dto.email,
       passwordHash,
       name: dto.name,
+      level: dto.level as any,
     });
 
     await this.emailService.sendWelcome(user.email, user.name);
@@ -129,6 +130,7 @@ export class AuthService {
       name: user.name,
       avatarUrl: user.avatarUrl,
       level: user.level,
+      isAdmin: !!user.isAdmin,
       createdAt: user.createdAt.toISOString(),
     };
   }
