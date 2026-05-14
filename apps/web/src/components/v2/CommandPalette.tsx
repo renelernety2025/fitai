@@ -30,7 +30,6 @@ const PAGES: PaletteItem[] = [
   { label: 'Drops', href: '/drops', group: 'Stranky' },
   { label: 'VIP', href: '/vip', group: 'Stranky' },
   { label: 'Micro Workout', href: '/micro-workout', group: 'Stranky' },
-  { label: 'Sporty', href: '/sports', group: 'Stranky' },
   { label: 'Cviky', href: '/exercises', group: 'Stranky' },
   { label: 'Komunita', href: '/community', group: 'Stranky' },
   { label: 'Gym Buddy (Trenak)', href: '/gym-buddy', group: 'Stranky' },

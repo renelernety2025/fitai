@@ -25,7 +25,6 @@ const MORE_CATEGORIES = [
       { href: '/form-check', label: 'Form Check' },
       { href: '/micro-workout', label: 'Micro' },
       { href: '/doma', label: 'Doma' },
-      { href: '/workout-mode', label: 'Workout Mode' },
     ],
   },
   {

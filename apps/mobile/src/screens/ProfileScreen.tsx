@@ -39,7 +39,6 @@ const SECONDARY = [
   { screen: 'Streaks', label: 'Streaks', color: v2.red },
   { screen: 'FormCheck', label: 'Form Check', color: v2.green },
   { screen: 'HealthSync', label: 'Health Sync', color: v2.red },
-  { screen: 'ShowcaseDashboard', label: 'Showcase Dashboard', color: v2.orange },
 ];
 
 export function ProfileScreen({ navigation }: any) {
