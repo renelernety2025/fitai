@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LeaguesService } from './leagues.service';
 import { LeaderboardQueryDto } from './dto/league-query.dto';
@@ -14,6 +15,7 @@ export class LeaguesController {
   }
 
   @Post('join')
+  @Throttle({ default: { limit: 10, ttl: seconds(3600) } })
   join(@Request() req: any) {
     return this.service.joinLeague(req.user.id);
   }

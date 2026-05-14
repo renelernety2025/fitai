@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Param, Req, UseGuards } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DailyQuestsService } from './daily-quests.service';
 
@@ -13,6 +14,7 @@ export class DailyQuestsController {
   }
 
   @Post(':id/complete')
+  @Throttle({ default: { limit: 60, ttl: seconds(3600) } })
   complete(@Req() req: any, @Param('id') id: string) {
     return this.service.completeQuest(req.user.id, id);
   }

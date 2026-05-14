@@ -15,8 +15,8 @@ export class WorkoutPlansController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.plansService.findById(id);
+  findOne(@Param('id') id: string, @Request() req: any) {
+    return this.plansService.findById(id, req.user.id);
   }
 
   @Post()

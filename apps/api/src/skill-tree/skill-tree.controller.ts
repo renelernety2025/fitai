@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SkillTreeService } from './skill-tree.service';
 
@@ -13,6 +14,7 @@ export class SkillTreeController {
   }
 
   @Post('check')
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
   checkAndUnlock(@Request() req: any) {
     return this.service.checkAndUnlock(req.user.id);
   }

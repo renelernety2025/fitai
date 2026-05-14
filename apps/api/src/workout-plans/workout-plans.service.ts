@@ -14,12 +14,15 @@ export class WorkoutPlansService {
     });
   }
 
-  async findById(id: string) {
+  async findById(id: string, userId?: string) {
     const plan = await this.prisma.workoutPlan.findUnique({
       where: { id },
       include: { days: { include: { plannedExercises: { include: { exercise: true }, orderBy: { orderIndex: 'asc' } } }, orderBy: { dayIndex: 'asc' } } },
     });
     if (!plan) throw new NotFoundException('Workout plan not found');
+    if (userId && !plan.isTemplate && plan.userId !== userId) {
+      throw new ForbiddenException('Not your workout plan');
+    }
     return plan;
   }
 
@@ -52,7 +55,7 @@ export class WorkoutPlansService {
   }
 
   async clone(id: string, userId: string) {
-    const source = await this.findById(id);
+    const source = await this.findById(id, userId);
     return this.create(userId, {
       name: `${source.name} (kopie)`,
       nameCs: `${source.nameCs} (kopie)`,

@@ -7,6 +7,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BossFightsService } from './boss-fights.service';
 import { CompleteBossDto } from './dto/complete-boss.dto';
@@ -22,11 +23,13 @@ export class BossFightsController {
   }
 
   @Post(':code/start')
+  @Throttle({ default: { limit: 20, ttl: seconds(3600) } })
   start(@Request() req: any, @Param('code') code: string) {
     return this.service.start(req.user.id, code);
   }
 
   @Post(':code/complete')
+  @Throttle({ default: { limit: 20, ttl: seconds(3600) } })
   complete(
     @Request() req: any,
     @Param('code') code: string,

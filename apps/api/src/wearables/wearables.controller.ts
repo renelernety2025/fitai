@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { WearablesService } from './wearables.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SyncWearablesDto } from './dto/sync-wearables.dto';
@@ -9,6 +10,7 @@ export class WearablesController {
   constructor(private wearablesService: WearablesService) {}
 
   @Post('sync')
+  @Throttle({ default: { limit: 20, ttl: seconds(3600) } })
   sync(@Request() req: any, @Body() dto: SyncWearablesDto) {
     return this.wearablesService.syncData(req.user.id, dto);
   }

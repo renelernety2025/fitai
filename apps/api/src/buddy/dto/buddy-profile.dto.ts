@@ -1,6 +1,10 @@
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class BuddyProfileDto {
+  @IsString()
+  @IsIn(['buddy', 'spotter', 'group'])
+  lookingFor: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -20,9 +24,4 @@ export class BuddyProfileDto {
   @IsString()
   @MaxLength(500)
   bio?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['buddy', 'spotter', 'group'])
-  lookingFor?: string;
 }

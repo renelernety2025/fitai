@@ -62,6 +62,7 @@ export class RecipesController {
   }
 
   @Post(':id/photo-url')
+  @Throttle({ default: { limit: 20, ttl: seconds(86400) } })
   getPhotoUploadUrl(@Request() req: any, @Param('id') id: string) {
     return this.service.getPhotoUploadUrl(req.user.id, id);
   }

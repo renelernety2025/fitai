@@ -94,6 +94,7 @@ export class NutritionController {
 
   /** Get presigned S3 URL for food photo upload */
   @Post('photo-upload-url')
+  @Throttle({ default: { limit: 40, ttl: seconds(86400) } })
   getFoodPhotoUploadUrl(@Request() req: any) {
     return this.service.getFoodPhotoUploadUrl(req.user.id);
   }

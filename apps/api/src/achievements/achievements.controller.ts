@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AchievementsService } from './achievements.service';
 import { UnlockByCodeDto } from './dto/unlock-by-code.dto';
@@ -19,11 +20,13 @@ export class AchievementsController {
   }
 
   @Post('check')
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
   check(@Request() req: any) {
     return this.service.checkAndUnlock(req.user.id);
   }
 
   @Post('unlock')
+  @Throttle({ default: { limit: 20, ttl: seconds(60) } })
   unlockByCode(@Request() req: any, @Body() dto: UnlockByCodeDto) {
     return this.service.unlockByCode(req.user.id, dto.code);
   }

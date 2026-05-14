@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProgressService } from '../progress/progress.service';
 import { UsersService } from './users.service';
@@ -36,6 +37,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: seconds(3600) } })
   @Put('me/password')
   changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
     return this.usersService.changePassword(
@@ -46,6 +48,7 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 3, ttl: seconds(3600) } })
   @Delete('me')
   deleteAccount(@Request() req: any) {
     return this.usersService.deleteAccount(req.user.id);

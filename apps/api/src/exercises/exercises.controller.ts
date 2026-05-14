@@ -11,7 +11,9 @@ import { SemanticSearchDto } from './dto/semantic-search.dto';
 export class ExercisesController {
   constructor(private exercisesService: ExercisesService) {}
 
+  // Public catalog — 114 KB response. Cap rate so the egress isn't free.
   @Get()
+  @Throttle({ default: { limit: 30, ttl: seconds(60) } })
   findAll(
     @Query('muscleGroup') muscleGroup?: MuscleGroup,
     @Query('difficulty') difficulty?: VideoDifficulty,
