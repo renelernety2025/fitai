@@ -1,23 +1,38 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 
-const INITIAL_SEASON = {
-  name: 'Jarni vyzva 2026',
-  startDate: new Date('2026-04-01'),
-  endDate: new Date('2026-04-30'),
-  missions: [
-    { code: 'workout_5', titleCs: '5 treninku', description: 'Complete 5 workouts', type: 'weekly', targetValue: 5, xpReward: 100, orderIndex: 0 },
-    { code: 'streak_3', titleCs: '3denni streak', description: '3-day training streak', type: 'daily', targetValue: 3, xpReward: 50, orderIndex: 1 },
-    { code: 'log_food_7', titleCs: 'Loguj jidlo 7 dni', description: 'Log food for 7 days', type: 'weekly', targetValue: 7, xpReward: 75, orderIndex: 2 },
-    { code: 'form_75', titleCs: 'Prumerna forma 75%+', description: 'Average form score 75%+', type: 'challenge', targetValue: 75, xpReward: 150, orderIndex: 3 },
-    { code: 'checkin_10', titleCs: '10 check-inu', description: '10 daily check-ins', type: 'weekly', targetValue: 10, xpReward: 100, orderIndex: 4 },
-    { code: 'volume_10k', titleCs: '10,000kg objem', description: '10,000kg total volume', type: 'challenge', targetValue: 10000, xpReward: 200, orderIndex: 5 },
-    { code: 'workout_15', titleCs: '15 treninku', description: 'Complete 15 workouts', type: 'challenge', targetValue: 15, xpReward: 300, orderIndex: 6 },
-    { code: 'journal_5', titleCs: '5 zapisu v deniku', description: '5 journal entries', type: 'weekly', targetValue: 5, xpReward: 75, orderIndex: 7 },
-    { code: 'streak_7', titleCs: '7denni streak', description: '7-day training streak', type: 'challenge', targetValue: 7, xpReward: 200, orderIndex: 8 },
-    { code: 'all_missions', titleCs: 'Spln vse!', description: 'Complete all other missions', type: 'challenge', targetValue: 9, xpReward: 500, orderIndex: 9 },
-  ],
-};
+const MONTH_NAMES_CS = [
+  'Lednova', 'Unorova', 'Brezenova', 'Dubnova', 'Kvetnova', 'Cervnova',
+  'Cervencova', 'Srpnova', 'Zarijova', 'Rijnova', 'Listopadova', 'Prosincova',
+];
+
+const SEASON_MISSIONS = [
+  { code: 'workout_5', titleCs: '5 treninku', description: 'Complete 5 workouts', type: 'weekly', targetValue: 5, xpReward: 100, orderIndex: 0 },
+  { code: 'streak_3', titleCs: '3denni streak', description: '3-day training streak', type: 'daily', targetValue: 3, xpReward: 50, orderIndex: 1 },
+  { code: 'log_food_7', titleCs: 'Loguj jidlo 7 dni', description: 'Log food for 7 days', type: 'weekly', targetValue: 7, xpReward: 75, orderIndex: 2 },
+  { code: 'form_75', titleCs: 'Prumerna forma 75%+', description: 'Average form score 75%+', type: 'challenge', targetValue: 75, xpReward: 150, orderIndex: 3 },
+  { code: 'checkin_10', titleCs: '10 check-inu', description: '10 daily check-ins', type: 'weekly', targetValue: 10, xpReward: 100, orderIndex: 4 },
+  { code: 'volume_10k', titleCs: '10,000kg objem', description: '10,000kg total volume', type: 'challenge', targetValue: 10000, xpReward: 200, orderIndex: 5 },
+  { code: 'workout_15', titleCs: '15 treninku', description: 'Complete 15 workouts', type: 'challenge', targetValue: 15, xpReward: 300, orderIndex: 6 },
+  { code: 'journal_5', titleCs: '5 zapisu v deniku', description: '5 journal entries', type: 'weekly', targetValue: 5, xpReward: 75, orderIndex: 7 },
+  { code: 'streak_7', titleCs: '7denni streak', description: '7-day training streak', type: 'challenge', targetValue: 7, xpReward: 200, orderIndex: 8 },
+  { code: 'all_missions', titleCs: 'Spln vse!', description: 'Complete all other missions', type: 'challenge', targetValue: 9, xpReward: 500, orderIndex: 9 },
+];
+
+function buildCurrentMonthSeason(now: Date = new Date()) {
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const startDate = new Date(Date.UTC(year, month, 1));
+  const endDate = new Date(Date.UTC(year, month + 1, 1));
+  endDate.setUTCSeconds(endDate.getUTCSeconds() - 1);
+  return {
+    name: `${MONTH_NAMES_CS[month]} vyzva ${year}`,
+    startDate,
+    endDate,
+    missions: SEASON_MISSIONS,
+  };
+}
 
 @Injectable()
 export class SeasonsService {
@@ -224,23 +239,61 @@ export class SeasonsService {
   }
 
   private async seedInitialSeason() {
+    const tmpl = buildCurrentMonthSeason();
+    // Deactivate any expired seasons before seeding to avoid two isActive=true rows.
+    await this.prisma.season.updateMany({
+      where: { isActive: true, endDate: { lt: tmpl.startDate } },
+      data: { isActive: false },
+    });
     const existing = await this.prisma.season.findFirst({
-      where: { name: INITIAL_SEASON.name },
+      where: { name: tmpl.name },
       include: { missions: { orderBy: { orderIndex: 'asc' } } },
     });
-    if (existing) return existing;
+    if (existing) {
+      if (!existing.isActive) {
+        return this.prisma.season.update({
+          where: { id: existing.id },
+          data: { isActive: true },
+          include: { missions: { orderBy: { orderIndex: 'asc' } } },
+        });
+      }
+      return existing;
+    }
 
     return this.prisma.season.create({
       data: {
-        name: INITIAL_SEASON.name,
-        startDate: INITIAL_SEASON.startDate,
-        endDate: INITIAL_SEASON.endDate,
+        name: tmpl.name,
+        startDate: tmpl.startDate,
+        endDate: tmpl.endDate,
         isActive: true,
         missions: {
-          create: INITIAL_SEASON.missions,
+          create: tmpl.missions,
         },
       },
       include: { missions: { orderBy: { orderIndex: 'asc' } } },
     });
+  }
+
+  // Daily 01:00 UTC: deactivate ended seasons + ensure current-month season exists.
+  // Without this, getCurrentSeason() would seed a stale season once and then re-serve
+  // it past its end date because `isActive: true` flag overrides the date filter on
+  // the existing row. Run idempotently — no-op when current season is still valid.
+  @Cron('0 1 * * *')
+  async rotateSeasons() {
+    const now = new Date();
+    const ended = await this.prisma.season.updateMany({
+      where: { isActive: true, endDate: { lt: now } },
+      data: { isActive: false },
+    });
+    if (ended.count > 0) {
+      this.logger.log(`Deactivated ${ended.count} expired season(s)`);
+    }
+    const current = await this.prisma.season.findFirst({
+      where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+    });
+    if (!current) {
+      const seeded = await this.seedInitialSeason();
+      this.logger.log(`Seeded new season: ${seeded.name}`);
+    }
   }
 }

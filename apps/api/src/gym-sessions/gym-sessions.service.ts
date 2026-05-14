@@ -4,6 +4,7 @@ import { ProgressService } from '../progress/progress.service';
 import { LeaguesService } from '../leagues/leagues.service';
 import { SeasonsService } from '../seasons/seasons.service';
 import { SkillTreeService } from '../skill-tree/skill-tree.service';
+import { AchievementsService } from '../achievements/achievements.service';
 import { StartGymSessionDto } from './dto/start-gym-session.dto';
 import { CompleteSetDto } from './dto/complete-set.dto';
 
@@ -17,6 +18,7 @@ export class GymSessionsService {
     @Optional() private leaguesService: LeaguesService,
     @Optional() private seasonsService: SeasonsService,
     @Optional() private skillTreeService: SkillTreeService,
+    @Optional() private achievementsService: AchievementsService,
   ) {}
 
   async startSession(userId: string, dto: StartGymSessionDto) {
@@ -303,6 +305,9 @@ export class GymSessionsService {
     }
     if (this.skillTreeService) {
       this.skillTreeService.checkAndUnlock(userId).catch(e => this.logger.warn(`Skill tree: ${e.message}`));
+    }
+    if (this.achievementsService) {
+      this.achievementsService.checkAndUnlock(userId).catch(e => this.logger.warn(`Achievements: ${e.message}`));
     }
 
     return { session: updated, progress: { ...progressResult, bonusRepXP: goodFormReps }, totalReps, avgForm };

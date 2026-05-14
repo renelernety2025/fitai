@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class CompleteBossDto {
   @IsInt()
@@ -7,4 +7,9 @@ export class CompleteBossDto {
 
   @IsBoolean()
   defeated: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  durationSec?: number;
 }

@@ -5,9 +5,10 @@ import { ProgressModule } from '../progress/progress.module';
 import { LeaguesModule } from '../leagues/leagues.module';
 import { SeasonsModule } from '../seasons/seasons.module';
 import { SkillTreeModule } from '../skill-tree/skill-tree.module';
+import { AchievementsModule } from '../achievements/achievements.module';
 
 @Module({
-  imports: [ProgressModule, LeaguesModule, SeasonsModule, SkillTreeModule],
+  imports: [ProgressModule, LeaguesModule, SeasonsModule, SkillTreeModule, AchievementsModule],
   controllers: [GymSessionsController],
   providers: [GymSessionsService],
 })

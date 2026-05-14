@@ -35,9 +35,7 @@ export class DailyQuestsService {
     const selected = this.selectQuestsForUser(userId, dateStr);
     const todayDate = new Date(dateStr);
 
-    const completions = await (
-      this.prisma as any
-    ).dailyQuestCompletion.findMany({
+    const completions = await this.prisma.dailyQuestCompletion.findMany({
       where: { userId, date: todayDate },
       select: { questId: true },
     });
@@ -61,9 +59,7 @@ export class DailyQuestsService {
 
     const todayDate = new Date(dateStr);
 
-    const existing = await (
-      this.prisma as any
-    ).dailyQuestCompletion.findUnique({
+    const existing = await this.prisma.dailyQuestCompletion.findUnique({
       where: {
         userId_questId_date: { userId, questId, date: todayDate },
       },
@@ -72,7 +68,7 @@ export class DailyQuestsService {
       return { alreadyCompleted: true, xpAwarded: 0 };
     }
 
-    await (this.prisma as any).dailyQuestCompletion.create({
+    await this.prisma.dailyQuestCompletion.create({
       data: {
         userId,
         questId,
