@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/lib/theme-context';
+import { useAuth } from '@/lib/auth-context';
 import { CommandPalette } from '@/components/v2/CommandPalette';
 
 const PRIMARY_NAV: { href: string; label: string; tour?: string }[] = [
@@ -25,6 +26,7 @@ const MORE_CATEGORIES = [
       { href: '/form-check', label: 'Form Check' },
       { href: '/micro-workout', label: 'Micro' },
       { href: '/doma', label: 'Doma' },
+      { href: '/gym-finder', label: 'Gym Finder' },
     ],
   },
   {
@@ -36,6 +38,8 @@ const MORE_CATEGORIES = [
       { href: '/habity', label: 'Habity' },
       { href: '/journal', label: 'Deník', tour: 'nav-journal' },
       { href: '/bloodwork', label: 'Krevní testy' },
+      { href: '/rehab', label: 'Rehabilitace' },
+      { href: '/maintenance', label: 'Údržba' },
     ],
   },
   {
@@ -47,6 +51,9 @@ const MORE_CATEGORIES = [
       { href: '/squads', label: 'Squady' },
       { href: '/duels', label: 'Duely' },
       { href: '/creators', label: 'Creators' },
+      { href: '/trending', label: 'Trending' },
+      { href: '/playlists', label: 'Playlists' },
+      { href: '/streaks', label: 'Streaks' },
     ],
   },
   {
@@ -58,6 +65,16 @@ const MORE_CATEGORIES = [
       { href: '/boss-fights', label: 'Boss Fights' },
       { href: '/uspechy', label: 'Úspěchy' },
       { href: '/wrapped', label: 'Wrapped' },
+      { href: '/paid-challenges', label: 'Placené výzvy' },
+    ],
+  },
+  {
+    title: 'Knihovna',
+    items: [
+      { href: '/videos', label: 'Videa' },
+      { href: '/lekce', label: 'Lekce' },
+      { href: '/slovnik', label: 'Slovník' },
+      { href: '/discover-weekly', label: 'Discover Weekly' },
     ],
   },
   {
@@ -69,6 +86,9 @@ const MORE_CATEGORIES = [
       { href: '/courses', label: 'Kurzy' },
       { href: '/bundles', label: 'Balíčky' },
       { href: '/drops', label: 'Drops' },
+      { href: '/gear', label: 'Vybavení' },
+      { href: '/wishlist', label: 'Wishlist' },
+      { href: '/vip', label: 'VIP' },
     ],
   },
   {
@@ -79,14 +99,32 @@ const MORE_CATEGORIES = [
       { href: '/body-portfolio', label: 'Portfolio' },
       { href: '/routine-builder', label: 'Rutiny' },
       { href: '/export', label: 'Export' },
+      { href: '/enterprise', label: 'Enterprise' },
+      { href: '/pricing', label: 'Pricing' },
       { href: '/settings', label: 'Nastavení' },
     ],
   },
 ];
 
+function useExtendedCategories() {
+  const { user } = useAuth();
+  if (!user?.isAdmin) return MORE_CATEGORIES;
+  return [
+    ...MORE_CATEGORIES,
+    {
+      title: 'Admin',
+      items: [
+        { href: '/admin', label: 'Dashboard' },
+        { href: '/admin/upload', label: 'Upload video' },
+      ],
+    },
+  ];
+}
+
 function MoreDropdown({ pathname }: { pathname: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null!);
+  const categories = useExtendedCategories();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -98,7 +136,7 @@ function MoreDropdown({ pathname }: { pathname: string }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const isMoreActive = MORE_CATEGORIES.some((cat) =>
+  const isMoreActive = categories.some((cat) =>
     cat.items.some((i) => pathname === i.href)
   );
 
@@ -124,7 +162,7 @@ function MoreDropdown({ pathname }: { pathname: string }) {
           }}
         >
           <div className="grid grid-cols-3 gap-6">
-            {MORE_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <div key={cat.title}>
                 <div
                   className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
@@ -158,6 +196,7 @@ function MoreDropdown({ pathname }: { pathname: string }) {
 }
 
 function MobileMenuOverlay({ pathname, onClose }: { pathname: string; onClose: () => void }) {
+  const categories = useExtendedCategories();
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -184,7 +223,7 @@ function MobileMenuOverlay({ pathname, onClose }: { pathname: string; onClose: (
         </button>
       </div>
       <div className="grid grid-cols-2 gap-6 p-6">
-        {MORE_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <div key={cat.title}>
             <div
               className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em]"
