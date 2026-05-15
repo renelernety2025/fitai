@@ -58,6 +58,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async ping(timeoutMs = 500): Promise<boolean> {
+    if (!this.client || !this.ready) return false;
+    try {
+      const res = await Promise.race([
+        this.client.ping(),
+        new Promise<string>((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs)),
+      ]);
+      return res === 'PONG';
+    } catch {
+      return false;
+    }
+  }
+
+  isConfigured(): boolean {
+    return !!process.env.REDIS_URL;
+  }
+
   /**
    * Get-or-set pattern. If key exists in cache, return cached value.
    * Otherwise call fetcher, cache the result with given TTL, return.

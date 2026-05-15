@@ -88,6 +88,94 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   tags = var.tags
 }
 
+# RDS storage free space alarm — fires when free disk drops under threshold (default 5 GiB).
+# RDS autoscale won't help if writes outpace autoscale; this gives operator an early page.
+resource "aws_cloudwatch_metric_alarm" "rds_storage_low" {
+  alarm_name          = "${var.project_name}-${var.env}-rds-storage-low"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "FreeStorageSpace"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Minimum"
+  threshold           = var.rds_storage_alert_bytes
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBInstanceIdentifier = var.rds_identifier
+  }
+
+  tags = var.tags
+}
+
+# RDS connection saturation — db.t3.micro defaults to ~80 connections.
+resource "aws_cloudwatch_metric_alarm" "rds_connections" {
+  alarm_name          = "${var.project_name}-${var.env}-rds-connections-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "DatabaseConnections"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 60
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DBInstanceIdentifier = var.rds_identifier
+  }
+
+  tags = var.tags
+}
+
+# Redis CPU — only created when redis_cluster_id is provided.
+resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
+  count               = var.redis_cluster_id == "" ? 0 : 1
+  alarm_name          = "${var.project_name}-${var.env}-redis-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "EngineCPUUtilization"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 75
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    CacheClusterId = var.redis_cluster_id
+  }
+
+  tags = var.tags
+}
+
+# Redis memory usage — alarm when working set approaches eviction territory.
+resource "aws_cloudwatch_metric_alarm" "redis_memory" {
+  count               = var.redis_cluster_id == "" ? 0 : 1
+  alarm_name          = "${var.project_name}-${var.env}-redis-memory-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "DatabaseMemoryUsagePercentage"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    CacheClusterId = var.redis_cluster_id
+  }
+
+  tags = var.tags
+}
+
+# NOTE: CloudFront alarms require a us-east-1 provider alias (CloudFront metrics live
+# only in us-east-1 regardless of distribution region). Skipped here to avoid
+# cross-module provider-alias plumbing — track as backlog: add aws.us_east_1 alias
+# to the root provider block, then re-enable a 5xxErrorRate alarm.
+
 # Dashboard
 resource "aws_cloudwatch_dashboard" "main" {
   dashboard_name = "${var.project_name}-${var.env}"

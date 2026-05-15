@@ -3,6 +3,7 @@
 Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 > **Archive (čti přímo, NEJSOU auto-load):**
+> - `CHANGELOG-archive/2026-04-fitness-instagram.md` (2026-04-30 Fitness Instagram Wave 1 + Wave 2)
 > - `CHANGELOG-archive/2026-04-features-and-cross-industry.md` (2026-04-20 to 2026-04-22)
 > - `CHANGELOG-archive/2026-04-voice-coaching-and-streaming.md` (2026-04-11 to 2026-04-19)
 > - `CHANGELOG-archive/2026-04-foundation-and-infra.md` (2026-04-07 to 2026-04-09)
@@ -23,6 +24,98 @@ Replaces the shared-secret query param auth (added in slice-6, `10604b5`) with p
 
 **Why this matters (audit context):**
 Shared-secret in a query string is logged by ALB access logs and CloudTrail (URL captured intact). A leak of a single log row leaks the secret. SNS signature verification is keyless from our side — the cert chain is validated against AWS's published SNS signing cert URLs.
+
+---
+
+## [Monster audit + fix slices 1-6] 2026-05-14
+
+8 parallel review agents (6 customer-facing slices + visibility/orphan
++ operator) audited all 91 modules / 97 web pages / 49 mobile screens /
+423 endpoints. Confidence-filtered: 21 BLOCKER + 30 HIGH + 25 MEDIUM.
+
+Full report: `docs/audit-2026-05-14.md`.
+
+Six fix commits this session — every BLOCKER/HIGH that doesn't require
+multi-hour feature work shipped + deployed.
+
+### Slice 1 — critical customer-facing bug fixes (`336bb08`)
+- register DTO accepts optional `level` (BEGINNER/INTERMEDIATE/ADVANCED).
+  forbidNonWhitelisted was 400-ing every signup attempt.
+- auth/toProfile includes `isAdmin`. Admin pages were permanently
+  inaccessible because /auth/me never returned the field.
+- /share/:sessionId/share-card → public + throttled 60/min. Share
+  recipients (no JWT) were getting 401.
+- posts.linkHashtags: `create: { name, postCount: 1 }`. New hashtags
+  were stuck at 0 → trending stayed empty.
+- posts.deletePost: transactional decrement of linked hashtag counts.
+- streaks page fix contract ({available, maxPerMonth, usedDates}) +
+  add "Use freeze" CTA (calls POST /streak-freeze/use).
+- admin.verifyUser/unverifyUser: pre-check user exists, NotFoundException
+  (404) instead of leaking Prisma P2025 as 500.
+- AppLayout enforces onboarding redirect for incomplete users.
+
+### Slice 2 — delete stub pages reachable in production (`7ce13f8`)
+12 page files deleted, ~1672 LOC removed. Each was 100% hardcoded
+mocks reachable via URL: /live, /body-report, /workouts/[slug],
+/golf-lab, /shadow-boxing, /soccer-drills, /sequences, /sports,
+/workout-mode, /design-system, /showcase. App Store reviewer rejection
+risk eliminated. Also removed nav entries + mobile Showcase tile.
+
+### Slice 3 — IDOR + auth gaps + missing throttles (`5b9ef79`)
+- workout-plans GET /:id enforces ownership for non-templates (was IDOR).
+- home-training/* gets @UseGuards(JwtAuthGuard) + @Throttle 60/min
+  (was fully public, unlimited rate).
+- buddy/profile DTO requires lookingFor (was all-optional, accepting {}).
+- 11 endpoints capped: exercises GET (30/min, public 114 KB catalog),
+  users password (5/h), delete-account (3/h), wearables sync (20/h),
+  nutrition photo-upload (40/day), recipes photo-url (20/day),
+  achievements/leagues/seasons/skill-tree/boss-fights/daily-quests
+  write endpoints (per-user limits).
+
+### Slice 4 — gamification fixes (`97ad25f`)
+- boss-fights CompleteBossDto accepts optional `durationSec` (feature
+  was broken — DTO rejected the field clients needed to send).
+- seasons: hardcoded "Jarni vyzva 2026" replaced with dynamic
+  buildCurrentMonthSeason(). New @Cron('0 1 * * *') rotateSeasons
+  daily-deactivates expired + ensures current month is seeded. Stale
+  active season (endDate 2026-04-30, still showing on 2026-05-14)
+  resolved.
+- gym-sessions endSession now also fires AchievementsService
+  .checkAndUnlock — previously achievements only unlocked when user
+  manually visited /uspechy.
+- daily-quests removed `prisma as any` casts (3 sites).
+
+### Slice 5 — visibility + nav for orphan pages (`eefa1b6`)
+16 web pages had full BE + UI but no V2Layout entry. Added to "Více"
+dropdown: Gym Finder, Rehabilitace, Údržba, Trending, Playlists,
+Streaks, Placené výzvy, Videa, Lekce, Slovník, Discover Weekly,
+Vybavení, Wishlist, VIP, Enterprise, Pricing. New conditional "Admin"
+section appears only when user.isAdmin (links to /admin + /admin/upload).
+
+### Slice 6 — deep health check + CloudWatch alarms
+- /health now pings Postgres (SELECT 1) + Redis (PING) with 500ms
+  timeouts. Returns 503 + degraded when DB fails. ALB target check
+  will now actually drop a dead task. Redis is treated as optional
+  (only DB failure flips overall status). New /health/live for liveness
+  probes (returns 200 unconditionally).
+- CacheService.ping() + isConfigured() helpers.
+- New CloudWatch alarms: RDS FreeStorageSpace < 5 GiB, RDS connections
+  > 60, Redis EngineCPU > 75%, Redis DatabaseMemoryUsage > 80% (Redis
+  alarms gated on `redis_cluster_id` variable). CloudFront 5xx alarm
+  deferred (needs us-east-1 provider alias).
+
+### Deferred (separate sessions or user input)
+- Mobile account deletion UI (App Store 5.1.1) — ~2h
+- Content moderation system (App Store 1.2) — ~6h
+- Sentry DSN provisioning — needs user
+- Clips video playback (HLS pipeline) — ~6h
+- Post photos broken (NEXT_PUBLIC_CDN_URL env) — needs ops
+- Duels create UI — ~1h
+- Mobile Forgot Password — ~30 min
+- Mobile parity 15+ screens — ~15h
+- Marketplace seed data — needs business
+- AI token metrics across all Claude callers — ~2h
+- Cron observability table + admin widget — ~3h
 
 ---
 
@@ -436,91 +529,7 @@ CoachingNotesScreen, DashboardScreen, DomaScreen, ExerciseDetailScreen, Exercise
 
 ---
 
-## [Fitness Instagram Wave 2 — Creator Economy, Smart Notifications, Creator Dashboard] 2026-04-30
 
-### Creator XP Economy
-- XP-based subscriptions (100-5000 XP/month, 70/30 creator/platform split)
-- Tip system (preset 50-1000 XP + custom 10-5000 + message)
-- Subscriber-only posts (blur overlay for non-subscribers)
-- Daily subscription renewal cron (03:00 UTC, auto-deactivate on insufficient XP)
+## [Earlier entries archived]
 
-### Smart Notifications v2
-- 11 notification types: follower, like, comment, challenge, squad PR, buddy workout, tips, milestones
-- Inline triggers in posts (like/comment) and social (follow) services
-- Engagement-driven cron (every 2h): buddy workouts, post milestones
-- Batching: 5+ same-type in 5 min → single notification
-- Deduplication: same actor+target+type within 24h
-- Notification page: social tabs, mark read, unread counter
-
-### Creator Dashboard (/creator-dashboard)
-- Stats hero: 6 metrics (subscribers, XP earned, posts, engagement rate, top post)
-- Analytics: subscriber growth chart (30d), XP earnings (12 weeks), post performance table, top hashtags cloud
-- Content tools: scheduled posts (create/edit/publish-now/cancel), pinned post, subscription price setter, bulk subscriber-only toggle
-- Scheduled post publisher cron (every 1 min)
-
-### Feed Integration
-- Subscriber-only blur: non-subscribers see blurred posts with "Subscribe for X XP" CTA
-- Pinned posts: shown first on creator profile
-- Scheduled posts excluded from all feed queries
-
-### Backend
-- 3 new NestJS modules: creator-economy (7 endpoints), notify (global service), creator-dashboard (13 endpoints)
-- 4 new smart-notifications endpoints
-- 3 new Prisma models (CreatorSubscription, CreatorTip, SocialNotification), 1 new enum
-- Post extended: isSubscriberOnly, isPinned, publishAt, isScheduled
-- 3 cron jobs: subscription renewal, engagement check, scheduled publisher
-
-### Frontend
-- v3 SubscriberBlur + TipModal components
-- PostCard: blur overlay + pinned badge
-- /creator-dashboard page (stats + analytics + content tools)
-- /notifications refactored with social tabs + mark read
-- Mobile: creator economy API + subscriber blur overlay
-
----
-
-## [Fitness Instagram Wave 1 — Posts, Feed, Hashtags, Badges, Promo] 2026-04-30
-
-### Post System
-- New Post model with photos (1-4), captions (2000 chars), auto-cards
-- S3 presigned upload for post photos
-- Like/unlike toggle, comments, delete own posts
-- Hashtag auto-parsing from captions (#BenchPR → clickable links)
-
-### Algorithmic "For You" Feed
-- 3 feed tabs: Pro tebe (algorithmic), Sledovani (chronological), Trending
-- Scoring: engagement * sourceWeight * timeDecay * diversityBoost
-- Background workers: engagement recompute (10 min), trending hashtags (hourly)
-- Fallback to chronological for users with < 5 follows
-
-### Hashtags + Trending
-- Hashtag model with auto-parse, upsert, postCount tracking
-- Trending computation: recent uses / log(total) penalizes evergreen tags
-- /trending page: top 3 hero, hashtag grid (24h/7d), hot posts
-- Autocomplete search while composing posts
-
-### Verified Badges
-- BadgeType enum: NONE / CREATOR (orange star) / VERIFIED (blue check)
-- Auto-set CREATOR on creator approval (won't downgrade VERIFIED)
-- Admin endpoints: verify/unverify user
-
-### Promo Cards
-- PromoCard model with audience targeting + priority
-- Feed injection at positions 5, 12, 20 (max 3 per load)
-- Dismiss tracking via Redis (30-day TTL)
-- 8 seed promo cards for feature discovery
-
-### Frontend
-- v3 Badge, PostComposer, PostCard components
-- Community page refactored with feed tabs + infinite scroll
-- Trending page with hashtag grid + hot posts
-- Mobile CommunityScreen with feed tabs
-
-### Backend
-- 4 new NestJS modules: posts (8 endpoints), hashtags (4), feed (3), promo (5)
-- 8 new Prisma models, 5 new enums
-- User.badgeType + badgeVerifiedAt fields
-- 2 cron jobs (engagement scoring, trending computation)
-
----
-
+See `CHANGELOG-archive/2026-04-fitness-instagram.md` for Fitness Instagram Wave 1 + Wave 2 entries.
