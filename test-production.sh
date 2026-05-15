@@ -228,12 +228,6 @@ pages=(
   "/progres-fotky"
   "/jidelnicek"
   "/micro-workout"
-  "/sports"
-  "/shadow-boxing"
-  "/golf-lab"
-  "/soccer-drills"
-  "/workout-mode"
-  "/sequences"
   # Tier 1-3 new pages
   "/ai-chat"
   "/journal"
