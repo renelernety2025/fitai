@@ -38,6 +38,16 @@ export class MetricsService implements OnModuleInit {
     await this.put('ClaudeOutputTokens', outputTokens, 'Count', { Endpoint: endpoint });
   }
 
+  /**
+   * Fire-and-forget convenience for Claude responses. Reads `.usage` and records.
+   * Never throws — caller doesn't need to wrap in try/catch.
+   */
+  trackClaudeUsage(endpoint: string, response: { usage?: { input_tokens?: number; output_tokens?: number } } | null | undefined) {
+    const u = response?.usage;
+    if (!u || u.input_tokens == null || u.output_tokens == null) return;
+    this.recordClaudeTokens(endpoint, u.input_tokens, u.output_tokens).catch(() => {});
+  }
+
   /** Record ElevenLabs TTS character usage. */
   async recordElevenLabsCharacters(chars: number) {
     await this.put('ElevenLabsCharacters', chars, 'Count');

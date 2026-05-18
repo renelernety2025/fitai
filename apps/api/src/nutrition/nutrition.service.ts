@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -10,7 +11,7 @@ export class NutritionService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
       region: process.env.AWS_REGION || 'eu-west-1',
@@ -319,6 +320,7 @@ Pravidla:
           max_tokens: 16000, // 28 meals + shopping list + ingredients is heavy
           messages: [{ role: 'user', content: prompt }],
         });
+        this.metrics.trackClaudeUsage('nutrition/meal-plan', response);
         const text = response.content[0].type === 'text' ? response.content[0].text : '';
         // Balanced-brace extraction: find first `{` and walk to matching `}`.
         // Safer than greedy regex for long responses that might contain
@@ -604,6 +606,7 @@ DŮLEŽITÉ:
           },
         ],
       });
+      this.metrics.trackClaudeUsage('nutrition/photo-analysis', response);
 
       const text =
         response.content[0].type === 'text' ? response.content[0].text : '';

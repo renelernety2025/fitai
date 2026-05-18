@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 const CONTEXT_LIMIT = 10;
 const CACHE_TTL_SECONDS = 24 * 3600;
@@ -42,6 +43,7 @@ export class HistoryQueryService {
     private prisma: PrismaService,
     private cache: CacheService,
     private embeddings: EmbeddingsService,
+    private metrics: MetricsService,
   ) {}
 
   async query(userId: string, userQuery: string) {
@@ -137,6 +139,7 @@ export class HistoryQueryService {
         system: `Jsi AI fitness analytik. Odpovídej česky, konkrétně, podle dat. Max 5 vět. Nikdy si nevymýšlej čísla, pracuj jen s tím, co máš v kontextu.\n\nHistorie tréninků uživatele (top ${context.length} relevantních):\n${ctxText}`,
         messages: [{ role: 'user', content: userQuery }],
       });
+      this.metrics.trackClaudeUsage('ai-insights/history-query', response);
       return response.content[0]?.type === 'text' ? response.content[0].text.trim() : this.fallbackSummary(context);
     } catch (err) {
       this.logger.warn(`history-query Claude error: ${(err as Error).message}`);

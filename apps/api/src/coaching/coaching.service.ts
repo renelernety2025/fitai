@@ -1,6 +1,7 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ElevenLabsService } from './elevenlabs.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { buildCoachingSystemPrompt, buildCoachingUserMessage, type CoachingContext } from './coaching-prompt';
 import { buildChatSystemPrompt } from './coaching-chat-prompt';
 import { checkSafetyRules } from './safety-rules';
@@ -64,6 +65,7 @@ export class CoachingService {
   constructor(
     private prisma: PrismaService,
     private elevenLabs: ElevenLabsService,
+    private metrics: MetricsService,
   ) {}
 
   async generateFeedback(req: FeedbackRequest) {
@@ -195,6 +197,7 @@ export class CoachingService {
         system: systemPrompt,
         messages: [{ role: 'user', content: question }],
       });
+      this.metrics.trackClaudeUsage('coaching/ask', response);
 
       const answer = response.content[0]?.type === 'text'
         ? response.content[0].text
@@ -480,6 +483,7 @@ PRAVIDLA:
         system: buildCoachingSystemPrompt(ctx),
         messages: [{ role: 'user', content: buildCoachingUserMessage(ctx) }],
       });
+      this.metrics.trackClaudeUsage('coaching/feedback', response);
 
       const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
       return text || this.getStaticFeedback(ctx);
@@ -713,6 +717,7 @@ PRAVIDLA:
         },
       ],
     });
+    this.metrics.trackClaudeUsage('coaching/title', response);
 
     const title =
       response.content[0]?.type === 'text'

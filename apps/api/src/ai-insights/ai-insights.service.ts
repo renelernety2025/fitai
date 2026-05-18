@@ -432,6 +432,7 @@ export class AiInsightsService {
           },
         ],
       });
+      this.metrics.trackClaudeUsage('ai-insights/motivation', response);
       const text =
         response.content[0]?.type === 'text'
           ? response.content[0].text.trim()
@@ -539,6 +540,7 @@ Pouze JSON, žádný další text.`;
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     });
+    this.metrics.trackClaudeUsage('ai-insights/recovery-tips', response);
     const text =
       response.content[0].type === 'text'
         ? response.content[0].text
@@ -572,6 +574,7 @@ Pouze JSON, žádný další text.`;
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     });
+    this.metrics.trackClaudeUsage('ai-insights/nutrition-tips', response);
     const text =
       response.content[0].type === 'text'
         ? response.content[0].text
@@ -612,6 +615,7 @@ Pouze JSON, žádný další text.`;
       max_tokens: 500,
       messages: [{ role: 'user', content: prompt }],
     });
+    this.metrics.trackClaudeUsage('ai-insights/weekly-review', response);
     const text =
       response.content[0].type === 'text'
         ? response.content[0].text

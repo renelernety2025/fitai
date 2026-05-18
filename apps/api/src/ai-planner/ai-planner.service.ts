@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { FitnessGoal } from '@prisma/client';
 
 const HOME_EXERCISES = ['Plank', 'Lunges']; // Bodyweight exercises available at home
@@ -8,7 +9,7 @@ const HOME_EXERCISES = ['Plank', 'Lunges']; // Bodyweight exercises available at
 export class AIPlannerService {
   private readonly logger = new Logger(AIPlannerService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {}
 
   // ── Fitness Profile ──
 
@@ -318,6 +319,7 @@ Pravidla:
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       });
+      this.metrics.trackClaudeUsage('ai-planner/generate', response);
 
       const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
