@@ -47,9 +47,17 @@ export function LoginScreen({ navigation }: any) {
         </V2Button>
 
         <Pressable
+          onPress={() => { haptic.tap(); navigation.navigate('ForgotPassword'); }}
+          hitSlop={8}
+          style={({ pressed }) => [{ marginTop: 20, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
+        >
+          <Text style={{ color: v2.faint, fontSize: 13 }}>Forgot password?</Text>
+        </Pressable>
+
+        <Pressable
           onPress={() => { haptic.tap(); navigation.navigate('Register'); }}
           hitSlop={8}
-          style={({ pressed }) => [{ marginTop: 32, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
+          style={({ pressed }) => [{ marginTop: 16, alignItems: 'center' }, pressed && { opacity: 0.5 }]}
         >
           <Text style={{ color: v2.faint, fontSize: 14 }}>
             No account? <Text style={{ color: v2.text }}>Sign up</Text>

@@ -50,6 +50,33 @@ export function authRegister(data: { email: string; password: string; name: stri
 export function authMe() {
   return request<any>('/auth/me');
 }
+export function authForgotPassword(email: string) {
+  return request<{ message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+export function authResetPassword(token: string, newPassword: string) {
+  return request<{ message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+export function updateUserName(name: string) {
+  return request<any>('/users/me/name', {
+    method: 'PUT',
+    body: JSON.stringify({ name }),
+  });
+}
+export function changeUserPassword(currentPassword: string, newPassword: string) {
+  return request<{ message: string }>('/users/me/password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+export function deleteUserAccount() {
+  return request<{ deleted: boolean }>('/users/me', { method: 'DELETE' });
+}
 
 // ── Videos ────────────────────────────────────────
 export function getVideos(query = '') { return request<any[]>(`/videos${query}`); }

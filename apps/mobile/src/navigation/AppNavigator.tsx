@@ -9,6 +9,8 @@ import { useAuth } from '../lib/auth-context';
 // Auth + Onboarding
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { AccountScreen } from '../screens/AccountScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 
 // Main tabs
@@ -211,11 +213,13 @@ export function AppNavigator() {
             <Stack.Screen name="Playlists" component={PlaylistsScreen} />
             <Stack.Screen name="Streaks" component={StreaksScreen} />
             <Stack.Screen name="FormCheck" component={FormCheckScreen} />
+            <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Account' }} />
           </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot password' }} />
           </>
         )}
       </Stack.Navigator>

@@ -6,6 +6,7 @@ import { V2Screen, V2Display, V2SectionLabel, V2Button, v2 } from '../components
 import { useHaptic, NativeConfirm } from '../components/native';
 
 const SECONDARY = [
+  { screen: 'Account', label: 'Account & privacy', color: v2.orange },
   { screen: 'AIChat', label: 'AI Chat', color: v2.green },
   { screen: 'Journal', label: 'Journal', color: v2.blue },
   { screen: 'Calendar', label: 'Calendar', color: v2.orange },
