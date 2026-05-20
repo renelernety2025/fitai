@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 
 const CONTEXT_LIMIT = 10;
 const CACHE_TTL_SECONDS = 24 * 3600;
@@ -44,6 +45,7 @@ export class HistoryQueryService {
     private cache: CacheService,
     private embeddings: EmbeddingsService,
     private metrics: MetricsService,
+    private cronTracking: CronTrackingService,
   ) {}
 
   async query(userId: string, userQuery: string) {
@@ -160,21 +162,23 @@ export class HistoryQueryService {
       this.logger.warn('Skipping re-embed cron: OPENAI_API_KEY not set');
       return;
     }
-    const pending = await this.prisma.$queryRaw<PendingSession[]>(Prisma.sql`
-      SELECT id, "startedAt", "durationSeconds", "accuracyScore", "gymSessionId"
-      FROM "WorkoutSession"
-      WHERE embedding IS NULL AND "completedAt" IS NOT NULL
-      ORDER BY "startedAt" DESC
-      LIMIT ${REEMBED_LIMIT_PER_RUN}
-    `);
-    if (!pending.length) return;
-    const texts = await Promise.all(pending.map((s) => this.buildSessionText(s)));
-    for (let i = 0; i < pending.length; i += REEMBED_BATCH) {
-      const slice = pending.slice(i, i + REEMBED_BATCH);
-      const embeddings = await this.embeddings.embedBatch(texts.slice(i, i + REEMBED_BATCH));
-      await Promise.all(slice.map((s, j) => this.updateSessionEmbedding(s.id, embeddings[j])));
-    }
-    this.logger.log(`Re-embedded ${pending.length} workout sessions`);
+    await this.cronTracking.track('history-reembed-sessions', async () => {
+      const pending = await this.prisma.$queryRaw<PendingSession[]>(Prisma.sql`
+        SELECT id, "startedAt", "durationSeconds", "accuracyScore", "gymSessionId"
+        FROM "WorkoutSession"
+        WHERE embedding IS NULL AND "completedAt" IS NOT NULL
+        ORDER BY "startedAt" DESC
+        LIMIT ${REEMBED_LIMIT_PER_RUN}
+      `);
+      if (!pending.length) return;
+      const texts = await Promise.all(pending.map((s) => this.buildSessionText(s)));
+      for (let i = 0; i < pending.length; i += REEMBED_BATCH) {
+        const slice = pending.slice(i, i + REEMBED_BATCH);
+        const embeddings = await this.embeddings.embedBatch(texts.slice(i, i + REEMBED_BATCH));
+        await Promise.all(slice.map((s, j) => this.updateSessionEmbedding(s.id, embeddings[j])));
+      }
+      this.logger.log(`Re-embedded ${pending.length} workout sessions`);
+    });
   }
 
   private async buildSessionText(s: PendingSession): Promise<string> {

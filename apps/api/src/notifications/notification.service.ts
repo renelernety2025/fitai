@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiInsightsService } from '../ai-insights/ai-insights.service';
 import { EmailService } from '../email/email.service';
 import { CacheService } from '../cache/cache.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 import * as webpush from 'web-push';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class NotificationService {
     private aiInsights: AiInsightsService,
     private emailService: EmailService,
     private cache: CacheService,
+    private cronTracking: CronTrackingService,
   ) {
     const publicKey = process.env.VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -89,38 +91,40 @@ export class NotificationService {
     const acquired = await this.cache.acquireLock('cron:sendStreakReminders', 82800);
     if (!acquired) return;
     try {
-      // Find users who haven't worked out today but have active streaks
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const usersWithStreaks = await this.prisma.userProgress.findMany({
-        where: {
-          currentStreak: { gte: 2 },
-          lastWorkoutDate: { lt: today },
-        },
-        include: { user: true },
-      });
-
-      let sent = 0;
-      for (const progress of usersWithStreaks) {
-        const prefs = await this.prisma.notificationPreference.findUnique({
-          where: { userId: progress.userId },
-        });
-        if (prefs && !prefs.streakWarning) continue;
-
-        const payload = buildStreakFearMessage(
-          progress.user.name || 'trenere',
-          progress.currentStreak,
-        );
-        await this.sendToUser(progress.userId, { ...payload, url: '/dashboard', tag: 'streak-reminder' });
-        await this.sendExpoToUser(progress.userId, payload);
-        sent++;
-      }
-
-      return { sent, total: usersWithStreaks.length };
+      return await this.cronTracking.track('notifications-streak-reminders', () => this.runStreakReminders());
     } finally {
       await this.cache.releaseLock('cron:sendStreakReminders');
     }
+  }
+
+  private async runStreakReminders() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const usersWithStreaks = await this.prisma.userProgress.findMany({
+      where: {
+        currentStreak: { gte: 2 },
+        lastWorkoutDate: { lt: today },
+      },
+      include: { user: true },
+    });
+
+    let sent = 0;
+    for (const progress of usersWithStreaks) {
+      const prefs = await this.prisma.notificationPreference.findUnique({
+        where: { userId: progress.userId },
+      });
+      if (prefs && !prefs.streakWarning) continue;
+
+      const payload = buildStreakFearMessage(
+        progress.user.name || 'trenere',
+        progress.currentStreak,
+      );
+      await this.sendToUser(progress.userId, { ...payload, url: '/dashboard', tag: 'streak-reminder' });
+      await this.sendExpoToUser(progress.userId, payload);
+      sent++;
+    }
+    return { sent, total: usersWithStreaks.length };
   }
 
   /** Register Expo push token for mobile push notifications. */
@@ -170,32 +174,37 @@ export class NotificationService {
     const acquired = await this.cache.acquireLock('cron:sendMorningBriefs', 82800);
     if (!acquired) return;
     try {
-      this.logger.log('[MORNING BRIEF] Cron triggered');
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setUTCDate(fourteenDaysAgo.getUTCDate() - 14);
-
-      const activeUsers = await this.prisma.user.findMany({
-        where: {
-          sessions: { some: { completedAt: { gte: fourteenDaysAgo } } },
-        },
-        select: { id: true, name: true, email: true },
-        take: 100,
-      });
-
-      let sent = 0;
-      for (const user of activeUsers) {
-        try {
-          await this.sendMorningBriefToUser(user);
-          sent++;
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e);
-          this.logger.warn(`Morning brief failed for ${user.id}: ${msg}`);
-        }
-      }
-      this.logger.log(`[MORNING BRIEF] Sent ${sent}/${activeUsers.length}`);
+      await this.cronTracking.track('notifications-morning-briefs', () => this.runMorningBriefs());
     } finally {
       await this.cache.releaseLock('cron:sendMorningBriefs');
     }
+  }
+
+  private async runMorningBriefs() {
+    this.logger.log('[MORNING BRIEF] Cron triggered');
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setUTCDate(fourteenDaysAgo.getUTCDate() - 14);
+
+    const activeUsers = await this.prisma.user.findMany({
+      where: {
+        sessions: { some: { completedAt: { gte: fourteenDaysAgo } } },
+      },
+      select: { id: true, name: true, email: true },
+      take: 100,
+    });
+
+    let sent = 0;
+    for (const user of activeUsers) {
+      try {
+        await this.sendMorningBriefToUser(user);
+        sent++;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        this.logger.warn(`Morning brief failed for ${user.id}: ${msg}`);
+      }
+    }
+    this.logger.log(`[MORNING BRIEF] Sent ${sent}/${activeUsers.length}`);
+    return { sent, total: activeUsers.length };
   }
 
   private async sendMorningBriefToUser(user: {

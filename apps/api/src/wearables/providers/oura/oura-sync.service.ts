@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { WearableConnection } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { OuraOAuthService } from './oura-oauth.service';
+import { CronTrackingService } from '../../../cron-tracking/cron-tracking.service';
 
 const API_BASE = 'https://api.ouraring.com/v2/usercollection';
 const SYNC_DAYS = 7;
@@ -47,6 +48,7 @@ export class OuraSyncService {
   constructor(
     private prisma: PrismaService,
     private oauth: OuraOAuthService,
+    private cronTracking: CronTrackingService,
   ) {}
 
   async syncRecentData(connOrId: WearableConnection | string): Promise<{ synced: number }> {
@@ -75,19 +77,21 @@ export class OuraSyncService {
 
   @Cron('0 4 * * *')
   async syncAll(): Promise<{ users: number; records: number }> {
-    const conns = await this.prisma.wearableConnection.findMany({ where: { provider: 'oura' } });
-    if (!conns.length) return { users: 0, records: 0 };
-    let total = 0;
-    for (let i = 0; i < conns.length; i += SYNC_CONCURRENCY) {
-      const chunk = conns.slice(i, i + SYNC_CONCURRENCY);
-      const results = await Promise.allSettled(chunk.map((c) => this.syncRecentData(c)));
-      for (let j = 0; j < results.length; j++) {
-        const r = results[j];
-        if (r.status === 'fulfilled') total += r.value.synced;
-        else this.logger.warn(`Oura sync failed for connection ${chunk[j].id}: ${(r.reason as Error).message}`);
+    return this.cronTracking.track('oura-daily-sync', async () => {
+      const conns = await this.prisma.wearableConnection.findMany({ where: { provider: 'oura' } });
+      if (!conns.length) return { users: 0, records: 0 };
+      let total = 0;
+      for (let i = 0; i < conns.length; i += SYNC_CONCURRENCY) {
+        const chunk = conns.slice(i, i + SYNC_CONCURRENCY);
+        const results = await Promise.allSettled(chunk.map((c) => this.syncRecentData(c)));
+        for (let j = 0; j < results.length; j++) {
+          const r = results[j];
+          if (r.status === 'fulfilled') total += r.value.synced;
+          else this.logger.warn(`Oura sync failed for connection ${chunk[j].id}: ${(r.reason as Error).message}`);
+        }
       }
-    }
-    return { users: conns.length, records: total };
+      return { users: conns.length, records: total };
+    });
   }
 
   private dateRange(days: number) {

@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotifyService } from '../notify/notify.service';
 import { CacheService } from '../cache/cache.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 
 @Injectable()
 export class CreatorEconomyProcessor {
@@ -12,6 +13,7 @@ export class CreatorEconomyProcessor {
     private prisma: PrismaService,
     private notifyService: NotifyService,
     private cache: CacheService,
+    private cronTracking: CronTrackingService,
   ) {}
 
   @Cron('0 3 * * *') // daily at 03:00 UTC
@@ -19,6 +21,13 @@ export class CreatorEconomyProcessor {
     const acquired = await this.cache.acquireLock('cron:renewSubscriptions', 80000);
     if (!acquired) return;
     try {
+      await this.cronTracking.track('creator-renew-subscriptions', () => this.runRenewals()).catch(() => {});
+    } finally {
+      await this.cache.releaseLock('cron:renewSubscriptions');
+    }
+  }
+
+  private async runRenewals() {
       this.logger.log('Processing subscription renewals...');
       const now = new Date();
 
@@ -83,8 +92,6 @@ export class CreatorEconomyProcessor {
       }
 
       this.logger.log(`Subscriptions: ${renewed} renewed, ${expired} expired`);
-    } finally {
-      await this.cache.releaseLock('cron:renewSubscriptions');
-    }
+      return { renewed, expired };
   }
 }
