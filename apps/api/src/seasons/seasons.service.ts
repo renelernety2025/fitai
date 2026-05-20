@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 
 const MONTH_NAMES_CS = [
   'Lednova', 'Unorova', 'Brezenova', 'Dubnova', 'Kvetnova', 'Cervnova',
@@ -38,7 +39,10 @@ function buildCurrentMonthSeason(now: Date = new Date()) {
 export class SeasonsService {
   private readonly logger = new Logger(SeasonsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cronTracking: CronTrackingService,
+  ) {}
 
   async getCurrentSeason() {
     const now = new Date();
@@ -280,20 +284,22 @@ export class SeasonsService {
   // the existing row. Run idempotently — no-op when current season is still valid.
   @Cron('0 1 * * *')
   async rotateSeasons() {
-    const now = new Date();
-    const ended = await this.prisma.season.updateMany({
-      where: { isActive: true, endDate: { lt: now } },
-      data: { isActive: false },
+    await this.cronTracking.track('seasons-rotate', async () => {
+      const now = new Date();
+      const ended = await this.prisma.season.updateMany({
+        where: { isActive: true, endDate: { lt: now } },
+        data: { isActive: false },
+      });
+      if (ended.count > 0) {
+        this.logger.log(`Deactivated ${ended.count} expired season(s)`);
+      }
+      const current = await this.prisma.season.findFirst({
+        where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
+      });
+      if (!current) {
+        const seeded = await this.seedInitialSeason();
+        this.logger.log(`Seeded new season: ${seeded.name}`);
+      }
     });
-    if (ended.count > 0) {
-      this.logger.log(`Deactivated ${ended.count} expired season(s)`);
-    }
-    const current = await this.prisma.season.findFirst({
-      where: { isActive: true, startDate: { lte: now }, endDate: { gte: now } },
-    });
-    if (!current) {
-      const seeded = await this.seedInitialSeason();
-      this.logger.log(`Seeded new season: ${seeded.name}`);
-    }
   }
 }

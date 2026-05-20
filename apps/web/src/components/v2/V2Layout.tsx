@@ -116,6 +116,7 @@ function useExtendedCategories() {
       items: [
         { href: '/admin', label: 'Dashboard' },
         { href: '/admin/moderation', label: 'Moderation queue' },
+        { href: '/admin/ops', label: 'Ops (crons)' },
         { href: '/admin/upload', label: 'Upload video' },
       ],
     },

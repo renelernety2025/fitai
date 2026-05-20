@@ -2607,3 +2607,28 @@ model UserBlock {
   @@index([blockerId])
   @@index([blockedId])
 }
+
+// ── Phase 11: Cron observability (operator dashboard) ──
+// Persists every scheduled task firing so /admin can show "did the
+// weekly digest run last Friday?" without grepping CloudWatch logs.
+// Auto-pruned via retention policy in CronTrackingService.
+
+enum CronRunStatus {
+  RUNNING
+  OK
+  FAILED
+}
+
+model CronRun {
+  id         String        @id @default(uuid())
+  name       String
+  status     CronRunStatus @default(RUNNING)
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  durationMs Int?
+  error      String?       @db.VarChar(2000)
+
+  @@index([name, startedAt])
+  @@index([startedAt])
+  @@index([status, startedAt])
+}

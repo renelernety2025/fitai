@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 import { LeagueTier } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class LeaguesService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private cronTracking: CronTrackingService,
   ) {}
 
   /** Monday 00:00 UTC of the current week */
@@ -99,10 +101,9 @@ export class LeaguesService {
     const acquired = await this.cache.acquireLock('cron:handleWeekEnd', 82800);
     if (!acquired) return;
     try {
-      this.logger.log('Processing league week end...');
-      await this.processWeekEnd();
-    } catch (e: any) {
-      this.logger.error(`League week end failed: ${e.message}`);
+      await this.cronTracking.track('leagues-week-end', () => this.processWeekEnd());
+    } catch {
+      // Already logged by cronTracking; swallow so other crons keep running.
     } finally {
       await this.cache.releaseLock('cron:handleWeekEnd');
     }

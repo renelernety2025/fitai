@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 import {
   welcomeTemplate,
   passwordResetTemplate,
@@ -19,6 +20,7 @@ export class EmailService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private cronTracking: CronTrackingService,
   ) {
     const key = process.env.RESEND_API_KEY;
     if (key) {
@@ -148,6 +150,11 @@ export class EmailService {
   async handleWeeklyDigest(): Promise<void> {
     const acquired = await this.cache.acquireLock('cron:handleWeeklyDigest', 82800);
     if (!acquired) return;
+    await this.cronTracking.track('email-weekly-digest', () => this.runWeeklyDigest()).catch(() => {});
+    await this.cache.releaseLock('cron:handleWeeklyDigest');
+  }
+
+  private async runWeeklyDigest(): Promise<void> {
     try {
       this.logger.log('[EMAIL] Weekly digest cron triggered');
       // TODO: Add full pagination for large user bases
@@ -177,8 +184,9 @@ export class EmailService {
       this.logger.log(
         `[EMAIL] Weekly digest sent to ${users.length} users`,
       );
-    } finally {
-      await this.cache.releaseLock('cron:handleWeeklyDigest');
+    } catch (err: any) {
+      this.logger.error(`[EMAIL] Weekly digest failed: ${err?.message ?? err}`);
+      throw err;
     }
   }
 }

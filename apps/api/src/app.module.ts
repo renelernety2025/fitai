@@ -58,6 +58,7 @@ import { MessagesModule } from './messages/messages.module';
 import { EmailModule } from './email/email.module';
 import { AdminModule } from './admin/admin.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { CronTrackingModule } from './cron-tracking/cron-tracking.module';
 import { DuelsModule } from './duels/duels.module';
 import { SquadsModule } from './squads/squads.module';
 import { SupplementsModule } from './supplements/supplements.module';
@@ -192,6 +193,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmailModule,
     AdminModule,
     ModerationModule,
+    CronTrackingModule,
     DuelsModule,
     SquadsModule,
     SupplementsModule,

@@ -85,6 +85,9 @@ export default function AdminPage() {
           <Link href="/admin/moderation" className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: 'var(--clay)', color: '#fff' }}>
             Moderation queue
           </Link>
+          <Link href="/admin/ops" className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: 'var(--bg-2)', border: '1px solid var(--stroke-2)', color: 'var(--text-1)' }}>
+            Ops dashboard
+          </Link>
           <Link href="/admin/upload" className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: 'var(--bg-2)', border: '1px solid var(--stroke-2)', color: 'var(--text-1)' }}>
             Upload video
           </Link>
