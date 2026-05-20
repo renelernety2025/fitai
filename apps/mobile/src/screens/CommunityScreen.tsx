@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, View, Text, Image, StyleSheet } from 'react-native';
+import { FlatList, RefreshControl, View, Text, Image, StyleSheet, Pressable, Alert } from 'react-native';
 import { useAuth } from '../lib/auth-context';
 import {
   getChallenges, joinChallenge, getFollowCounts,
   getForYouFeed, getFollowingFeed, getTrendingFeed,
+  blockUser,
 } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, V2Chip, V2Button, v2 } from '../components/v2/V2';
 import { useHaptic, LoadingState, EmptyState } from '../components/native';
+import { ReportSheet } from './ReportSheet';
 
 type FeedTab = 'forYou' | 'following' | 'trending' | 'challenges';
 
@@ -48,7 +50,51 @@ export function CommunityScreen() {
   const [tab, setTab] = useState<FeedTab>('forYou');
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [reporting, setReporting] = useState<{ id: string; author: string } | null>(null);
   const haptic = useHaptic();
+
+  function openPostMenu(item: any) {
+    haptic.press();
+    const authorName = item.user?.name ?? 'this user';
+    const isMine = item.user?.id === user?.id;
+    const opts: Array<{ text: string; style?: 'destructive' | 'cancel'; onPress?: () => void }> = [];
+    if (!isMine) {
+      opts.push({
+        text: 'Report post',
+        onPress: () => setReporting({ id: item.id, author: authorName }),
+      });
+      opts.push({
+        text: `Block ${authorName}`,
+        style: 'destructive',
+        onPress: () => confirmBlock(item.user.id, authorName),
+      });
+    }
+    opts.push({ text: 'Cancel', style: 'cancel' });
+    Alert.alert('Post options', undefined, opts);
+  }
+
+  function confirmBlock(blockedId: string, name: string) {
+    Alert.alert(
+      `Block ${name}?`,
+      "You won't see their content anymore.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await blockUser(blockedId);
+              haptic.success();
+              await fetchFeed(tab);
+            } catch {
+              haptic.error();
+            }
+          },
+        },
+      ],
+    );
+  }
 
   const fetchFeed = useCallback(async (activeTab: FeedTab) => {
     if (activeTab === 'forYou') {
@@ -81,12 +127,23 @@ export function CommunityScreen() {
   }, [tab, fetchFeed, haptic]);
 
   const renderFeedItem = ({ item }: { item: any }) => (
-    <View style={styles.feedItem}>
+    <Pressable
+      onLongPress={() => openPostMenu(item)}
+      delayLongPress={400}
+      style={styles.feedItem}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
         <Text style={{ color: '#FFF', fontWeight: '600' }}>{item.user?.name ?? item.author?.name ?? '—'}</Text>
         <Text style={{ color: v2.faint, fontSize: 10, fontWeight: '600', letterSpacing: 1.5 }}>
           {timeAgo(item.createdAt)}
         </Text>
+        <Pressable
+          onPress={() => openPostMenu(item)}
+          hitSlop={10}
+          style={({ pressed }) => ({ marginLeft: 'auto', padding: 4, opacity: pressed ? 0.5 : 1 })}
+        >
+          <Text style={{ color: v2.faint, fontSize: 18, fontWeight: '700' }}>···</Text>
+        </Pressable>
       </View>
       <Text style={{ color: '#FFF', fontSize: 15, marginTop: 4 }}>{item.title ?? item.caption}</Text>
       {item.body ? <Text style={{ color: v2.muted, fontSize: 13 }}>{item.body}</Text> : null}
@@ -114,7 +171,7 @@ export function CommunityScreen() {
           <Text style={styles.blurLabel}>Subscriber Only</Text>
         </View>
       ) : null}
-    </View>
+    </Pressable>
   );
 
   const renderChallengeItem = ({ item: ch }: { item: any }) => {
@@ -199,6 +256,15 @@ export function CommunityScreen() {
         }
         contentContainerStyle={{ paddingHorizontal: 0 }}
       />
+      {reporting && (
+        <ReportSheet
+          visible={true}
+          targetType="POST"
+          targetId={reporting.id}
+          targetLabel={`post by ${reporting.author}`}
+          onClose={() => setReporting(null)}
+        />
+      )}
     </V2Screen>
   );
 }

@@ -81,6 +81,14 @@ export default function AdminPage() {
           Admin<br/>
           <em className="v3-clay" style={{ fontWeight: 300 }}>panel.</em>
         </h1>
+        <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <Link href="/admin/moderation" className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: 'var(--clay)', color: '#fff' }}>
+            Moderation queue
+          </Link>
+          <Link href="/admin/upload" className="rounded-full px-5 py-2 text-sm font-semibold" style={{ background: 'var(--bg-2)', border: '1px solid var(--stroke-2)', color: 'var(--text-1)' }}>
+            Upload video
+          </Link>
+        </div>
       </section>
 
       {error && <p className="mb-8 text-sm" style={{ color: 'var(--accent)' }}>{error}</p>}

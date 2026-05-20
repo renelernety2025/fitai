@@ -78,6 +78,28 @@ export function deleteUserAccount() {
   return request<{ deleted: boolean }>('/users/me', { method: 'DELETE' });
 }
 
+// ── Moderation ────────────────────────────────────
+export type ReportTargetType = 'POST' | 'CLIP' | 'POST_COMMENT' | 'CLIP_COMMENT' | 'USER';
+export type ReportReason =
+  | 'SPAM' | 'HARASSMENT' | 'HATE_SPEECH' | 'NUDITY'
+  | 'VIOLENCE' | 'SELF_HARM' | 'MISINFORMATION' | 'OTHER';
+
+export function reportContent(params: { targetType: ReportTargetType; targetId: string; reason: ReportReason; details?: string }) {
+  return request<{ id: string; status: string }>('/moderation/report', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+export function blockUser(userId: string) {
+  return request<{ blocked: true }>(`/moderation/block/${userId}`, { method: 'POST' });
+}
+export function unblockUser(userId: string) {
+  return request<{ blocked: false }>(`/moderation/block/${userId}`, { method: 'DELETE' });
+}
+export function getBlockedUsers() {
+  return request<any[]>('/moderation/blocked');
+}
+
 // ── Videos ────────────────────────────────────────
 export function getVideos(query = '') { return request<any[]>(`/videos${query}`); }
 export function getVideo(id: string) { return request<any>(`/videos/${id}`); }

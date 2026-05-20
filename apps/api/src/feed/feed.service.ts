@@ -12,7 +12,10 @@ export class FeedService {
   ) {}
 
   async getForYouFeed(userId: string, cursor?: string, limit = 20) {
-    const followedIds = await this.getFollowedIds(userId);
+    const [followedIds, blockedIds] = await Promise.all([
+      this.getFollowedIds(userId),
+      this.getBlockedUserIds(userId),
+    ]);
 
     if (followedIds.length < 5) {
       return this.getChronologicalPublic(userId, cursor, limit);
@@ -26,6 +29,7 @@ export class FeedService {
         isScheduled: false,
         isHidden: false,
         createdAt: { gte: sevenDaysAgo },
+        ...(blockedIds.length ? { userId: { notIn: blockedIds } } : {}),
       },
       take: 200,
       orderBy: { createdAt: 'desc' },
@@ -85,11 +89,15 @@ export class FeedService {
   }
 
   async getFollowingFeed(userId: string, cursor?: string, limit = 20) {
-    const followedIds = await this.getFollowedIds(userId);
+    const [followedIds, blockedIds] = await Promise.all([
+      this.getFollowedIds(userId),
+      this.getBlockedUserIds(userId),
+    ]);
+    const visibleFollowed = followedIds.filter((id) => !blockedIds.includes(id));
 
     const posts = await this.prisma.post.findMany({
       where: {
-        userId: { in: [userId, ...followedIds] },
+        userId: { in: [userId, ...visibleFollowed] },
         isScheduled: false,
         isHidden: false,
       },
@@ -108,6 +116,7 @@ export class FeedService {
 
   async getTrendingFeed(userId: string, cursor?: string, limit = 20) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const blockedIds = await this.getBlockedUserIds(userId);
 
     const posts = await this.prisma.post.findMany({
       where: {
@@ -115,6 +124,7 @@ export class FeedService {
         isScheduled: false,
         isHidden: false,
         createdAt: { gte: oneDayAgo },
+        ...(blockedIds.length ? { userId: { notIn: blockedIds } } : {}),
         ...(cursor ? { engagementScore: { lt: parseFloat(cursor) } } : {}),
       },
       take: limit,
@@ -136,6 +146,26 @@ export class FeedService {
         select: { followedId: true },
       });
       return follows.map((f) => f.followedId);
+    });
+  }
+
+  /**
+   * Hide both directions of a block: posts I made don't reach my blocked
+   * users (they block me), and posts from users I blocked don't reach me.
+   * Cached 5 min — same as following list — to keep feeds snappy.
+   */
+  private async getBlockedUserIds(userId: string): Promise<string[]> {
+    return this.cache.getOrSet(`feed-blocks:${userId}`, 300, async () => {
+      const rows = await this.prisma.userBlock.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
+      });
+      const ids = new Set<string>();
+      for (const r of rows) {
+        if (r.blockerId !== userId) ids.add(r.blockerId);
+        if (r.blockedId !== userId) ids.add(r.blockedId);
+      }
+      return [...ids];
     });
   }
 
@@ -178,11 +208,13 @@ export class FeedService {
   }
 
   private async getChronologicalPublic(userId: string, cursor?: string, limit = 20) {
+    const blockedIds = await this.getBlockedUserIds(userId);
     const posts = await this.prisma.post.findMany({
       where: {
         isPublic: true,
         isScheduled: false,
         isHidden: false,
+        ...(blockedIds.length ? { userId: { notIn: blockedIds } } : {}),
       },
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       take: limit,

@@ -7,13 +7,17 @@ import {
 } from '@nestjs/common';
 import { ContentReportTargetType, ContentReportStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { ReportContentDto, ReviewReportDto } from './dto/report-content.dto';
 
 @Injectable()
 export class ModerationService {
   private readonly logger = new Logger(ModerationService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   // ── User-facing ──
 
@@ -68,6 +72,7 @@ export class ModerationService {
         },
       })
       .catch(() => {});
+    await this.invalidateBlockCaches(blockerId, blockedId);
     return { blocked: true };
   }
 
@@ -75,7 +80,17 @@ export class ModerationService {
     await this.prisma.userBlock.deleteMany({
       where: { blockerId, blockedId },
     });
+    await this.invalidateBlockCaches(blockerId, blockedId);
     return { blocked: false };
+  }
+
+  private async invalidateBlockCaches(a: string, b: string) {
+    await Promise.all([
+      this.cache.del(`feed-blocks:${a}`).catch(() => {}),
+      this.cache.del(`feed-blocks:${b}`).catch(() => {}),
+      this.cache.del(`following:${a}`).catch(() => {}),
+      this.cache.del(`following:${b}`).catch(() => {}),
+    ]);
   }
 
   async listBlocked(blockerId: string) {
