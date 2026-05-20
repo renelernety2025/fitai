@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { CreateBloodworkDto } from './dto/create-bloodwork.dto';
 
 const REFERENCE_RANGES: Record<string, { min: number; max: number; unit: string }> = {
@@ -25,6 +26,7 @@ export class BloodworkService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private metrics: MetricsService,
   ) {}
 
   async getAll(userId: string) {
@@ -106,6 +108,7 @@ export class BloodworkService {
           content: `Analyze these bloodwork results for a fitness user. Reply in Czech, JSON format: {"summary":"...","recommendations":["..."]}\n\nMarkers:\n${JSON.stringify(markers)}`,
         }],
       });
+      this.metrics.trackClaudeUsage('bloodwork/analyze', msg);
 
       const text = msg.content[0]?.type === 'text'
         ? msg.content[0].text : '{}';

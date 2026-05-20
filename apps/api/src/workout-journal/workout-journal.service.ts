@@ -13,6 +13,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
 
 export interface DayData {
@@ -40,7 +41,7 @@ export class WorkoutJournalService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
@@ -473,6 +474,7 @@ export class WorkoutJournalService {
           },
         ],
       });
+      this.metrics.trackClaudeUsage('workout-journal/monthly-summary', response);
 
       const text =
         response.content[0].type === 'text'
@@ -542,6 +544,7 @@ export class WorkoutJournalService {
           },
         ],
       });
+      this.metrics.trackClaudeUsage('workout-journal/daily-insight', response);
 
       const text =
         response.content[0].type === 'text'

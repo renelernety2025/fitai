@@ -12,6 +12,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 export interface FormAnalysis {
   overallScore: number;
@@ -26,7 +27,7 @@ export class FormCheckService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
@@ -118,6 +119,7 @@ export class FormCheckService {
           },
         ],
       });
+      this.metrics.trackClaudeUsage('form-check/analyze', response);
 
       const text =
         response.content[0].type === 'text'

@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 type PhotoSide = 'FRONT' | 'SIDE' | 'BACK';
 
@@ -31,7 +32,7 @@ export class ProgressPhotosService {
   private readonly client: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
     // Disable AWS SDK v3 auto-checksum middleware. Otherwise the SDK signs an
@@ -254,6 +255,7 @@ Buď respektující, motivační, konkrétní. Žádné medical advice. Nevypisu
         max_tokens: 800,
         messages,
       });
+      this.metrics.trackClaudeUsage('progress-photos/analyze', response);
       const text = response.content[0].type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON in Claude response');

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 import {
   S3Client,
   PutObjectCommand,
@@ -21,7 +22,7 @@ export class RecipesService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
@@ -211,6 +212,7 @@ DULEZITE: Vsechny texty cesky. Ingredience realisticky.`,
           },
         ],
       });
+      this.metrics.trackClaudeUsage('recipes/from-photo', response);
 
       const text =
         response.content[0].type === 'text'

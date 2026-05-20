@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
@@ -90,7 +91,7 @@ export class PreprocessingService {
   private bucket: string;
   private cloudfrontUrl: string;
 
-  constructor(private prisma: PrismaService) {
+  constructor(private prisma: PrismaService, private metrics: MetricsService) {
     this.bucket = process.env.S3_BUCKET_VIDEOS || 'fitai-videos';
     this.cloudfrontUrl = process.env.CLOUDFRONT_URL || '';
 
@@ -282,6 +283,7 @@ pro nejdůležitější kloub dané pózy.`;
       system: systemPrompt,
       messages: [{ role: 'user', content: JSON.stringify(transcript) }],
     });
+    this.metrics.trackClaudeUsage('preprocessing/choreography', response);
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
     // Extract JSON from response (might have markdown fences)

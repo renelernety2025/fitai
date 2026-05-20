@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class DiscoverWeeklyService {
@@ -9,6 +10,7 @@ export class DiscoverWeeklyService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private metrics: MetricsService,
   ) {}
 
   async getWeeklyWorkout(userId: string) {
@@ -61,6 +63,7 @@ Weak muscles: ${[...new Set(weakMuscles)].join(', ') || 'none identified'}
 Rules: 5-7 exercises, avoid recent ones, focus on weak areas, match experience level.`,
         }],
       });
+      this.metrics.trackClaudeUsage('discover-weekly/generate', msg);
 
       const text = msg.content[0]?.type === 'text'
         ? msg.content[0].text : '{}';
