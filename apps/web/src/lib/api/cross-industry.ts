@@ -248,6 +248,10 @@ export function getClipDetail(id: string): Promise<any> {
   return request(`/clips/${id}`);
 }
 
+export function getClipPlayUrl(id: string): Promise<{ url: string; expiresIn: number; durationSeconds: number }> {
+  return request(`/clips/${id}/play-url`);
+}
+
 export function createClip(data: {
   s3Key: string;
   durationSeconds: number;

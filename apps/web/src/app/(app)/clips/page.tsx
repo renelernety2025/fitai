@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, Button, Tag } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
-import { getClipsFeed, toggleClipLike, commentOnClip } from '@/lib/api';
+import { getClipsFeed, toggleClipLike, commentOnClip, getClipPlayUrl } from '@/lib/api';
 
 type Clip = { id: string; userName: string; userAvatar: string | null; caption: string; tags: string[]; exerciseName: string | null; formScore: number | null; likeCount: number; commentCount: number; liked: boolean };
 
@@ -14,8 +14,24 @@ export default function ClipsPage() {
   const [commentText, setCommentText] = useState('');
   const [showComment, setShowComment] = useState(false);
 
+  const [playUrl, setPlayUrl] = useState<string | null>(null);
+  const [urlLoading, setUrlLoading] = useState(false);
+
   useEffect(() => { document.title = 'FitAI — Clips'; }, []);
   useEffect(() => { setLoading(true); getClipsFeed(1, 20).then((c) => setClips(c as Clip[])).catch(() => {}).finally(() => setLoading(false)); }, []);
+
+  // Fetch a fresh signed URL when the active clip changes. Presigned URLs
+  // expire in 15 min, plenty for normal browsing; refetch on every switch
+  // so users can scroll back to older clips without dead videos.
+  useEffect(() => {
+    if (!clips[current]) return;
+    setUrlLoading(true);
+    setPlayUrl(null);
+    getClipPlayUrl(clips[current].id)
+      .then(({ url }) => setPlayUrl(url))
+      .catch(() => setPlayUrl(null))
+      .finally(() => setUrlLoading(false));
+  }, [current, clips]);
 
   const handleLike = useCallback((id: string, idx: number) => {
     toggleClipLike(id).then(() => {
@@ -45,7 +61,7 @@ export default function ClipsPage() {
     <>
       <div style={{ display: 'flex', height: '80vh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <FitIcon name="camera" size={32} color="var(--text-3)" />
-        <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No clips yet. Video upload coming soon.</p>
+        <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>No clips yet. Be the first to share.</p>
       </div>
     </>
   );
@@ -61,13 +77,36 @@ export default function ClipsPage() {
         </section>
 
         <Card padding={0} style={{ overflow: 'hidden' }}>
-          <div style={{ position: 'relative', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-card)' }}>
-            {clip.exerciseName && (
-              <p style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'var(--stroke-1)', textAlign: 'center' as const }}>{clip.exerciseName}</p>
+          <div style={{ position: 'relative', aspectRatio: '9 / 16', maxHeight: '70vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {playUrl ? (
+              <video
+                key={clip.id}
+                src={playUrl}
+                controls
+                playsInline
+                autoPlay
+                muted
+                loop
+                style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+              >
+                Your browser does not support video playback.
+              </video>
+            ) : urlLoading ? (
+              <span className="v3-caption" style={{ color: 'var(--text-3)' }}>Loading video…</span>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 32 }}>
+                <FitIcon name="camera" size={32} color="var(--text-3)" />
+                <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>Video unavailable</p>
+              </div>
             )}
             {clip.formScore !== null && (
               <div style={{ position: 'absolute', left: 16, top: 16 }}>
                 <Tag color="var(--sage, #34d399)">Form {clip.formScore}%</Tag>
+              </div>
+            )}
+            {clip.exerciseName && (
+              <div style={{ position: 'absolute', right: 16, top: 16 }}>
+                <Tag>{clip.exerciseName}</Tag>
               </div>
             )}
           </div>

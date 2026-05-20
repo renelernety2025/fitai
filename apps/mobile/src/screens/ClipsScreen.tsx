@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Dimensions } from 'react-native';
 import { getClipsFeed, toggleClipLike } from '../lib/api';
 import { V2Screen, V2Display, V2SectionLabel, v2 } from '../components/v2/V2';
 import { useHaptic, LoadingState, EmptyState } from '../components/native';
+import { ClipPlayer } from '../components/ClipPlayer';
+
+const PLAYER_HEIGHT = Math.min(Dimensions.get('window').height * 0.5, 520);
 
 export function ClipsScreen() {
   const [clips, setClips] = useState<any[] | null>(null);
@@ -50,41 +53,44 @@ export function ClipsScreen() {
             borderRadius: 24,
             borderWidth: 1,
             borderColor: v2.border,
-            padding: 20,
             marginBottom: 16,
             backgroundColor: v2.surface,
+            overflow: 'hidden',
           }}
         >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>
-              {clip.user?.name || 'User'}
-            </Text>
-            <Text style={{ color: v2.faint, fontSize: 10 }}>
-              {clip.durationSeconds ? `${clip.durationSeconds}s` : ''}
-            </Text>
-          </View>
-
-          {clip.caption && (
-            <Text style={{ color: v2.muted, fontSize: 13, marginBottom: 12 }}>
-              {clip.caption}
-            </Text>
-          )}
-
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Pressable
-              onPress={() => handleLike(clip.id, clip.liked)}
-              hitSlop={6}
-              style={({ pressed }) => [pressed && { opacity: 0.5 }]}
-            >
-              <Text style={{ color: clip.liked ? v2.red : v2.muted, fontSize: 13, fontWeight: '600' }}>
-                {clip.liked ? '♥ ' : '♡ '}{clip.likeCount || 0} likes
+          <ClipPlayer clipId={clip.id} height={PLAYER_HEIGHT} />
+          <View style={{ padding: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>
+                {clip.user?.name || 'User'}
               </Text>
-            </Pressable>
-            {clip.tags?.length > 0 && (
-              <Text style={{ color: v2.faint, fontSize: 11 }}>
-                {clip.tags.join(', ')}
+              <Text style={{ color: v2.faint, fontSize: 10 }}>
+                {clip.durationSeconds ? `${clip.durationSeconds}s` : ''}
+              </Text>
+            </View>
+
+            {clip.caption && (
+              <Text style={{ color: v2.muted, fontSize: 13, marginBottom: 12 }}>
+                {clip.caption}
               </Text>
             )}
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                onPress={() => handleLike(clip.id, clip.liked)}
+                hitSlop={6}
+                style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+              >
+                <Text style={{ color: clip.liked ? v2.red : v2.muted, fontSize: 13, fontWeight: '600' }}>
+                  {clip.liked ? '♥ ' : '♡ '}{clip.likeCount || 0} likes
+                </Text>
+              </Pressable>
+              {clip.tags?.length > 0 && (
+                <Text style={{ color: v2.faint, fontSize: 11 }}>
+                  {clip.tags.join(', ')}
+                </Text>
+              )}
+            </View>
           </View>
         </View>
       ))}

@@ -8,6 +8,7 @@ import {
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -82,6 +83,26 @@ export class ClipsService {
         caption: dto.caption ?? null,
       },
     });
+  }
+
+  /**
+   * Mint a short-lived signed GET URL for the clip's underlying S3 object.
+   * Falls back to a 15-min presign — same convention as progress photos.
+   * Until the MediaConvert HLS pipeline lands, this is the playback URL the
+   * web `<video>` and mobile `expo-video` consume directly.
+   */
+  async getPlayUrl(clipId: string) {
+    const clip = await (this.prisma as any).clip.findUnique({
+      where: { id: clipId },
+      select: { id: true, s3Key: true, isHidden: true, durationSeconds: true },
+    });
+    if (!clip || clip.isHidden) throw new NotFoundException('Clip not found');
+    const url = await getSignedUrl(
+      this.client as any,
+      new GetObjectCommand({ Bucket: this.bucket, Key: clip.s3Key }) as any,
+      { expiresIn: 900 },
+    );
+    return { url, expiresIn: 900, durationSeconds: clip.durationSeconds };
   }
 
   async getFeed(userId: string, page: number, limit: number) {

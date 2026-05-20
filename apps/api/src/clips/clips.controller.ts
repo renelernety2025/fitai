@@ -9,6 +9,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ClipsService } from './clips.service';
 import { CreateClipDto } from './dto/create-clip.dto';
@@ -45,6 +46,13 @@ export class ClipsController {
   @Get(':id')
   getOne(@Param('id') id: string) {
     return this.service.getOne(id);
+  }
+
+  // Short-lived signed S3 URL for direct playback. Throttled to cap egress.
+  @Get(':id/play-url')
+  @Throttle({ default: { limit: 60, ttl: seconds(60) } })
+  getPlayUrl(@Param('id') id: string) {
+    return this.service.getPlayUrl(id);
   }
 
   @Post()

@@ -500,6 +500,9 @@ export function getClipsFeed(page = 1, limit = 10) {
 export function toggleClipLike(id: string) {
   return request<any>(`/clips/${id}/like`, { method: 'POST' });
 }
+export function getClipPlayUrl(id: string) {
+  return request<{ url: string; expiresIn: number; durationSeconds: number }>(`/clips/${id}/play-url`);
+}
 
 // ── Trainers ──
 export function getTrainers(search?: string) {
