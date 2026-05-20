@@ -64,18 +64,18 @@ enum SetStatus {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  name          String
-  avatarUrl     String?
-  bio           String?
-  propsReceived Int       @default(0)
-  level         UserLevel @default(BEGINNER)
-  isAdmin       Boolean   @default(false)
-  expoPushToken String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  avatarUrl       String?
+  bio             String?
+  propsReceived   Int       @default(0)
+  level           UserLevel @default(BEGINNER)
+  isAdmin         Boolean   @default(false)
+  expoPushToken   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   badgeType       BadgeType @default(NONE)
   badgeVerifiedAt DateTime?
 
@@ -187,6 +187,14 @@ model User {
   tipsReceived          CreatorTip[]            @relation("TipsReceived")
   socialNotifications   SocialNotification[]    @relation("SocialNotifications")
   actedNotifications    SocialNotification[]    @relation("NotificationActor")
+  // Phase 10: Moderation (App Store guideline 1.2)
+  bannedAt              DateTime?
+  banReason             String?
+  reportsFiled          ContentReport[]         @relation("Reporter")
+  reportsAgainst        ContentReport[]         @relation("ReportedUser")
+  reportsReviewed       ContentReport[]         @relation("ReportReviewer")
+  blocksMade            UserBlock[]             @relation("Blocker")
+  blocksReceived        UserBlock[]             @relation("Blocked")
 }
 
 model UserProgress {
@@ -227,14 +235,14 @@ model Video {
 }
 
 model WorkoutSession {
-  id              String    @id @default(uuid())
+  id              String                       @id @default(uuid())
   userId          String
   videoId         String?
-  gymSessionId    String?   @unique
-  startedAt       DateTime  @default(now())
+  gymSessionId    String?                      @unique
+  startedAt       DateTime                     @default(now())
   completedAt     DateTime?
-  durationSeconds Int       @default(0)
-  accuracyScore   Float     @default(0)
+  durationSeconds Int                          @default(0)
+  accuracyScore   Float                        @default(0)
   poseData        Json?
   embedding       Unsupported("vector(1536)")?
 
@@ -264,23 +272,23 @@ model PoseSnapshot {
 // ── Gym / Exercise System ──
 
 model Exercise {
-  id             String          @id @default(uuid())
-  name           String          @unique
+  id             String                       @id @default(uuid())
+  name           String                       @unique
   nameCs         String
   description    String
   descriptionCs  String
   muscleGroups   MuscleGroup[]
   difficulty     VideoDifficulty
-  category       String          @default("isolation") // compound | isolation | accessory
-  equipment      String[]        @default([]) // [] = bodyweight; barbell, dumbbell, machine, band, kettlebell
+  category       String                       @default("isolation") // compound | isolation | accessory
+  equipment      String[]                     @default([]) // [] = bodyweight; barbell, dumbbell, machine, band, kettlebell
   phases         Json
   instructions   Json?
   thumbnailUrl   String?
   instructionUrl String?
   videoUrl       String?
   embedding      Unsupported("vector(1536)")?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
 
   plannedExercises  PlannedExercise[]
   exerciseSets      ExerciseSet[]
@@ -644,7 +652,7 @@ model FoodLog {
 }
 
 model Recipe {
-  id             String   @id @default(uuid())
+  id             String                       @id @default(uuid())
   userId         String
   name           String
   description    String?
@@ -652,17 +660,17 @@ model Recipe {
   instructions   String?
   prepMinutes    Int?
   cookMinutes    Int?
-  servings       Int      @default(1)
+  servings       Int                          @default(1)
   kcalPerServing Int?
   proteinG       Float?
   carbsG         Float?
   fatG           Float?
   photoS3Key     String?
   tags           String[]
-  isFavorite     Boolean  @default(false)
+  isFavorite     Boolean                      @default(false)
   embedding      Unsupported("vector(1536)")?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
 
   user     User      @relation(fields: [userId], references: [id])
   foodLogs FoodLog[]
@@ -1258,16 +1266,16 @@ model WearableData {
 /// OAuth connection for direct wearable provider integrations (Oura, Whoop, Garmin, Polar).
 /// Tokens stored plaintext for now — TODO: encrypt at rest via KMS when production-ready.
 model WearableConnection {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   userId       String
   provider     String // oura, whoop, garmin, polar
   accessToken  String
   refreshToken String?
   expiresAt    DateTime?
-  scopes       String[] @default([])
+  scopes       String[]  @default([])
   lastSyncAt   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 
@@ -1682,7 +1690,7 @@ model GearReview {
 // ── Cross-Industry Features: Phase 3 — Content & UGC ──
 
 model Clip {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   userId          String
   s3Key           String
   thumbnailS3Key  String?
@@ -1691,10 +1699,13 @@ model Clip {
   tags            String[]
   caption         String?
   overlayConfig   Json?
-  viewCount       Int      @default(0)
-  likeCount       Int      @default(0)
-  commentCount    Int      @default(0)
-  createdAt       DateTime @default(now())
+  viewCount       Int       @default(0)
+  likeCount       Int       @default(0)
+  commentCount    Int       @default(0)
+  isHidden        Boolean   @default(false)
+  hiddenAt        DateTime?
+  hiddenReason    String?
+  createdAt       DateTime  @default(now())
 
   user     User             @relation(fields: [userId], references: [id])
   exercise Exercise?        @relation(fields: [exerciseId], references: [id])
@@ -1705,6 +1716,7 @@ model Clip {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([isHidden])
 }
 
 model ClipLike {
@@ -2235,13 +2247,13 @@ model PaidChallengeEntry {
 // ── Creator Program ──
 
 model CreatorProfile {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  displayName     String
-  bio             String?
-  specializations String[]
-  isApproved      Boolean  @default(false)
-  totalEarnings   Float    @default(0)
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  displayName         String
+  bio                 String?
+  specializations     String[]
+  isApproved          Boolean  @default(false)
+  totalEarnings       Float    @default(0)
   subscriberCount     Int      @default(0)
   subscriptionPriceXP Int      @default(500)
   totalXPEarned       Int      @default(0)
@@ -2363,43 +2375,47 @@ model OrganizationChallenge {
 // ── Social Posts & Discovery ──
 
 model Post {
-  id               String        @id @default(uuid())
+  id               String    @id @default(uuid())
   userId           String
-  user             User          @relation(fields: [userId], references: [id])
-  caption          String?       @db.VarChar(2000)
-  type             PostType      @default(TEXT)
+  user             User      @relation(fields: [userId], references: [id])
+  caption          String?   @db.VarChar(2000)
+  type             PostType  @default(TEXT)
   cardData         Json?
-  likeCount        Int           @default(0)
-  commentCount     Int           @default(0)
-  shareCount       Int           @default(0)
-  engagementScore  Float         @default(0)
-  isPublic         Boolean       @default(true)
-  isSubscriberOnly Boolean       @default(false)
-  isPinned         Boolean       @default(false)
+  likeCount        Int       @default(0)
+  commentCount     Int       @default(0)
+  shareCount       Int       @default(0)
+  engagementScore  Float     @default(0)
+  isPublic         Boolean   @default(true)
+  isSubscriberOnly Boolean   @default(false)
+  isPinned         Boolean   @default(false)
   publishAt        DateTime?
-  isScheduled      Boolean       @default(false)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  isScheduled      Boolean   @default(false)
+  isHidden         Boolean   @default(false)
+  hiddenAt         DateTime?
+  hiddenReason     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  photos           PostPhoto[]
-  comments         PostComment[]
-  likes            PostLike[]
-  hashtags         PostHashtag[]
+  photos   PostPhoto[]
+  comments PostComment[]
+  likes    PostLike[]
+  hashtags PostHashtag[]
 
   @@index([userId, createdAt])
   @@index([engagementScore])
   @@index([createdAt])
   @@index([isPublic, isScheduled, createdAt])
+  @@index([isHidden])
 }
 
 model PostPhoto {
-  id      String @id @default(uuid())
-  postId  String
-  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  s3Key   String
-  width   Int?
-  height  Int?
-  order   Int    @default(0)
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  s3Key  String
+  width  Int?
+  height Int?
+  order  Int    @default(0)
 
   @@index([postId])
 }
@@ -2432,8 +2448,8 @@ model Hashtag {
   postCount Int      @default(0)
   createdAt DateTime @default(now())
 
-  posts     PostHashtag[]
-  trending  TrendingSnapshot[]
+  posts    PostHashtag[]
+  trending TrendingSnapshot[]
 
   @@index([postCount])
 }
@@ -2522,4 +2538,72 @@ model SocialNotification {
 
   @@index([userId, isRead, createdAt])
   @@index([userId, type, actorId, targetId])
+}
+
+// ── Phase 10: Moderation (App Store guideline 1.2) ──
+// Allow users to report objectionable content (posts, clips, comments, users)
+// and block other users so they never see each other's content. Admin reviews
+// reports + can hide content or ban users.
+
+enum ContentReportTargetType {
+  POST
+  CLIP
+  POST_COMMENT
+  CLIP_COMMENT
+  USER
+}
+
+enum ContentReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  NUDITY
+  VIOLENCE
+  SELF_HARM
+  MISINFORMATION
+  OTHER
+}
+
+enum ContentReportStatus {
+  PENDING
+  REVIEWED_VALID
+  REVIEWED_INVALID
+  DISMISSED
+}
+
+model ContentReport {
+  id             String                  @id @default(uuid())
+  reporterId     String
+  reporter       User                    @relation("Reporter", fields: [reporterId], references: [id])
+  targetType     ContentReportTargetType
+  targetId       String
+  // For USER target: convenience FK so admin can join. NULL for content-target rows.
+  reportedUserId String?
+  reportedUser   User?                   @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reason         ContentReportReason
+  details        String?                 @db.VarChar(500)
+  status         ContentReportStatus     @default(PENDING)
+  reviewerId     String?
+  reviewer       User?                   @relation("ReportReviewer", fields: [reviewerId], references: [id])
+  reviewerNotes  String?                 @db.VarChar(500)
+  reviewedAt     DateTime?
+  createdAt      DateTime                @default(now())
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reportedUserId])
+}
+
+model UserBlock {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockedId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }

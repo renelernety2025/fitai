@@ -228,7 +228,7 @@ export class ClipsService {
     skip: number,
   ) {
     return (this.prisma as any).clip.findMany({
-      where,
+      where: { ...where, isHidden: false },
       orderBy,
       take,
       skip,

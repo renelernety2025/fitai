@@ -58,6 +58,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if ((user as any).bannedAt) {
+      throw new UnauthorizedException('Account suspended');
+    }
+
     const accessToken = this.createToken(user.id, user.email);
     return {
       user: this.toProfile(user),

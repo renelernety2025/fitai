@@ -211,7 +211,7 @@ export class PostsService {
 
   async getUserPosts(userId: string, cursor?: string, limit = 20) {
     const posts = await this.prisma.post.findMany({
-      where: { userId, isPublic: true },
+      where: { userId, isPublic: true, isHidden: false },
       take: limit,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       orderBy: { createdAt: 'desc' },

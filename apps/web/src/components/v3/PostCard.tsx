@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Card, Avatar, Badge } from '@/components/v3';
 import { SubscriberBlur } from './SubscriberBlur';
-import { togglePostLike, addPostComment } from '@/lib/api';
+import { ReportModal } from './ReportModal';
+import { togglePostLike, addPostComment, blockUser } from '@/lib/api';
 import type { PostData } from '@/lib/api/posts';
 
 type PostCardData = PostData & {
@@ -25,6 +26,15 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+
+  async function handleBlock() {
+    setShowMenu(false);
+    if (!confirm(`Block ${post.user.name}? You won't see their content anymore.`)) return;
+    await blockUser(post.user.id).catch(() => {});
+    onUpdate?.();
+  }
 
   const timeAgo = getTimeAgo(post.createdAt);
 
@@ -65,12 +75,52 @@ export function PostCard({ post, onUpdate }: PostCardProps) {
                 className="text-xs font-medium px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--bg-3)', color: 'var(--text-3)' }}
               >
-                📌 Připnuto
+                📌 Pinned
               </span>
             )}
           </div>
         </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            aria-label="More options"
+            className="text-[var(--text-3)] hover:text-[var(--text-1)] px-2 py-1 rounded"
+            style={{ background: 'transparent' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+          </button>
+          {showMenu && (
+            <div
+              onMouseLeave={() => setShowMenu(false)}
+              className="absolute right-0 top-full z-10 mt-1 min-w-[160px] rounded-md shadow-lg"
+              style={{ background: 'var(--bg-2)', border: '1px solid var(--stroke-2)' }}
+            >
+              <button
+                onClick={() => { setShowMenu(false); setShowReport(true); }}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-3)]"
+                style={{ color: 'var(--text-2)' }}
+              >
+                Report post
+              </button>
+              <button
+                onClick={handleBlock}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-3)]"
+                style={{ color: 'var(--clay)' }}
+              >
+                Block @{post.user.name}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+      {showReport && (
+        <ReportModal
+          targetType="POST"
+          targetId={post.id}
+          targetLabel={`post by ${post.user.name}`}
+          onClose={() => setShowReport(false)}
+        />
+      )}
 
       {post.isBlurred ? (
         <div className="relative aspect-square bg-[var(--bg-1)]">

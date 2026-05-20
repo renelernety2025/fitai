@@ -24,6 +24,7 @@ export class FeedService {
       where: {
         isPublic: true,
         isScheduled: false,
+        isHidden: false,
         createdAt: { gte: sevenDaysAgo },
       },
       take: 200,
@@ -90,6 +91,7 @@ export class FeedService {
       where: {
         userId: { in: [userId, ...followedIds] },
         isScheduled: false,
+        isHidden: false,
       },
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       take: limit,
@@ -111,6 +113,7 @@ export class FeedService {
       where: {
         isPublic: true,
         isScheduled: false,
+        isHidden: false,
         createdAt: { gte: oneDayAgo },
         ...(cursor ? { engagementScore: { lt: parseFloat(cursor) } } : {}),
       },
@@ -179,6 +182,7 @@ export class FeedService {
       where: {
         isPublic: true,
         isScheduled: false,
+        isHidden: false,
       },
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       take: limit,
