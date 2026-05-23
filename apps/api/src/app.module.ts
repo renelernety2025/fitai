@@ -133,6 +133,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     ThrottlerModule.forRoot({
       storage: new ThrottlerStorageRedis(),
       throttlers: [
+        // `default` is the throttler 61 @Throttle({ default: ... }) decorators
+        // across the codebase reference. Without it those decorators are silent
+        // no-ops in @nestjs/throttler v5+ — verified live 2026-05-23 when 15
+        // rapid /auth/login POSTs all returned 401 (no 429). Fallback values are
+        // a conservative ceiling; per-endpoint @Throttle overrides them.
+        { name: 'default', ttl: 60_000, limit: 100 },
         { name: 'short', ttl: 1000, limit: 10 },
         { name: 'medium', ttl: 60_000, limit: 200 },
         { name: 'long', ttl: 3_600_000, limit: 3000 },

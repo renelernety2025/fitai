@@ -81,6 +81,23 @@ for dir in "${ai_dirs[@]}"; do
 done
 
 echo ""
+echo "=== Check 4: All @Throttle keys exist in ThrottlerModule registry ==="
+# Catches the 2026-05-23 audit bug where 61 endpoints used @Throttle({ default: ... })
+# but the registry only had short/medium/long — every decorator was a silent no-op.
+APP_MODULE="$API_SRC/app.module.ts"
+if [[ -f "$APP_MODULE" ]]; then
+  registered=$(grep -oE "name: '[a-zA-Z]+'" "$APP_MODULE" | grep -oE "'[a-zA-Z]+'" | tr -d "'" | sort -u)
+  while IFS= read -r match; do
+    is_ignored "$match" && continue
+    key=$(echo "$match" | grep -oE "@Throttle\(\{[[:space:]]*\w+" | grep -oE "\w+$")
+    if [[ -n "$key" ]] && ! echo "$registered" | grep -qx "$key"; then
+      red "  @Throttle key '$key' not in ThrottlerModule registry (${registered//$'\n'/, }): $match"
+      violations=$((violations + 1))
+    fi
+  done < <(grep -rEn "@Throttle\(\{[[:space:]]*\w+:" "$API_SRC" --include="*.controller.ts" 2>/dev/null || true)
+fi
+
+echo ""
 if [[ "$violations" -eq 0 ]]; then
   green "✓ All API convention checks passed."
   exit 0
