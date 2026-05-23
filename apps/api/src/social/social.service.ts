@@ -33,13 +33,9 @@ export class SocialService {
 
   @Cron('0 */4 * * *')
   async generateFlashChallenge() {
-    const acquired = await this.cache.acquireLock('cron:generateFlashChallenge', 14000);
-    if (!acquired) return;
-    try {
-      await this.cronTracking.track('social-flash-challenge', () => this.runFlashChallenge()).catch(() => {});
-    } finally {
-      await this.cache.releaseLock('cron:generateFlashChallenge');
-    }
+    await this.cronTracking
+      .trackWithLock('social-flash-challenge', 'cron:generateFlashChallenge', 14000, () => this.runFlashChallenge())
+      .catch(() => {});
   }
 
   private async runFlashChallenge() {

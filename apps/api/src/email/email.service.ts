@@ -148,10 +148,9 @@ export class EmailService {
   /** Friday 18:00 — send weekly digest to all users. */
   @Cron('0 18 * * 5')
   async handleWeeklyDigest(): Promise<void> {
-    const acquired = await this.cache.acquireLock('cron:handleWeeklyDigest', 82800);
-    if (!acquired) return;
-    await this.cronTracking.track('email-weekly-digest', () => this.runWeeklyDigest()).catch(() => {});
-    await this.cache.releaseLock('cron:handleWeeklyDigest');
+    await this.cronTracking
+      .trackWithLock('email-weekly-digest', 'cron:handleWeeklyDigest', 82800, () => this.runWeeklyDigest())
+      .catch(() => {});
   }
 
   private async runWeeklyDigest(): Promise<void> {

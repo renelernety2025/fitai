@@ -18,13 +18,9 @@ export class CreatorEconomyProcessor {
 
   @Cron('0 3 * * *') // daily at 03:00 UTC
   async renewSubscriptions() {
-    const acquired = await this.cache.acquireLock('cron:renewSubscriptions', 80000);
-    if (!acquired) return;
-    try {
-      await this.cronTracking.track('creator-renew-subscriptions', () => this.runRenewals()).catch(() => {});
-    } finally {
-      await this.cache.releaseLock('cron:renewSubscriptions');
-    }
+    await this.cronTracking
+      .trackWithLock('creator-renew-subscriptions', 'cron:renewSubscriptions', 80000, () => this.runRenewals())
+      .catch(() => {});
   }
 
   private async runRenewals() {

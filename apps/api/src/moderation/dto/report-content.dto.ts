@@ -1,5 +1,12 @@
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ContentReportReason, ContentReportTargetType } from '@prisma/client';
+
+// Strip angle-bracket content as defense-in-depth before persistence. The admin
+// queue today renders via React (auto-escapes) but any future server-rendered
+// email digest or PDF report would XSS without this. Cheap to apply at the DTO
+// layer (single regex per request).
+const stripTags = (v: unknown) => (typeof v === 'string' ? v.replace(/<[^>]*>/g, '') : v);
 
 export class ReportContentDto {
   @IsEnum(ContentReportTargetType)
@@ -15,6 +22,7 @@ export class ReportContentDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
+  @Transform(({ value }) => stripTags(value))
   details?: string;
 }
 

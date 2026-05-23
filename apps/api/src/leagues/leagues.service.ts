@@ -98,15 +98,9 @@ export class LeaguesService {
 
   @Cron('0 0 * * 1') // Every Monday 00:00
   async handleWeekEnd() {
-    const acquired = await this.cache.acquireLock('cron:handleWeekEnd', 82800);
-    if (!acquired) return;
-    try {
-      await this.cronTracking.track('leagues-week-end', () => this.processWeekEnd());
-    } catch {
-      // Already logged by cronTracking; swallow so other crons keep running.
-    } finally {
-      await this.cache.releaseLock('cron:handleWeekEnd');
-    }
+    await this.cronTracking
+      .trackWithLock('leagues-week-end', 'cron:handleWeekEnd', 82800, () => this.processWeekEnd())
+      .catch(() => { /* already logged by cronTracking */ });
   }
 
   async processWeekEnd() {

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 
 /**
  * Wraps a scheduled task so every firing leaves a CronRun audit row.
@@ -22,7 +23,34 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CronTrackingService {
   private readonly logger = new Logger(CronTrackingService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
+
+  /**
+   * Same as `track()` but acquires + releases a Redis distributed lock first
+   * (so multiple ECS tasks don't all fire the same cron). Returns `null` when
+   * the lock could not be acquired (another instance is already running).
+   *
+   * Replaces 9 sites of duplicated acquireLock + try/finally + releaseLock
+   * boilerplate across notification / email / leagues / social / oura /
+   * creator-economy / history-query crons.
+   */
+  async trackWithLock<T>(
+    name: string,
+    lockKey: string,
+    ttlSec: number,
+    fn: () => Promise<T>,
+  ): Promise<T | null> {
+    const acquired = await this.cache.acquireLock(lockKey, ttlSec);
+    if (!acquired) return null;
+    try {
+      return await this.track(name, fn);
+    } finally {
+      await this.cache.releaseLock(lockKey);
+    }
+  }
 
   async track<T>(name: string, fn: () => Promise<T>): Promise<T> {
     const row = await this.prisma.cronRun.create({
@@ -66,15 +94,20 @@ export class CronTrackingService {
   // Daily 02:30 UTC — prune CronRun history beyond 30 days. Without this
   // the table grows ~17k rows/day across all crons. Keep recent enough
   // for "did it run last Friday" + month-over-month troubleshooting.
+  // Self-tracked: the row this cron creates falls inside the 30d window
+  // so it survives the delete in its own execution.
   @Cron('30 2 * * *')
   async pruneOldRuns() {
-    const cutoff = new Date(Date.now() - 30 * 86400 * 1000);
-    const res = await this.prisma.cronRun.deleteMany({
-      where: { startedAt: { lt: cutoff } },
+    await this.track('cron-run-prune', async () => {
+      const cutoff = new Date(Date.now() - 30 * 86400 * 1000);
+      const res = await this.prisma.cronRun.deleteMany({
+        where: { startedAt: { lt: cutoff } },
+      });
+      if (res.count > 0) {
+        this.logger.log(`Pruned ${res.count} CronRun rows older than 30 days`);
+      }
+      return { pruned: res.count };
     });
-    if (res.count > 0) {
-      this.logger.log(`Pruned ${res.count} CronRun rows older than 30 days`);
-    }
   }
 
   /** Lightweight listing for the admin dashboard. */

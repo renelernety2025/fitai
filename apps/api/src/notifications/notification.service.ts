@@ -88,13 +88,12 @@ export class NotificationService {
   /** Runs daily at 19:00 Prague time (17:00 UTC). */
   @Cron('0 17 * * *')
   async sendStreakReminders() {
-    const acquired = await this.cache.acquireLock('cron:sendStreakReminders', 82800);
-    if (!acquired) return;
-    try {
-      return await this.cronTracking.track('notifications-streak-reminders', () => this.runStreakReminders());
-    } finally {
-      await this.cache.releaseLock('cron:sendStreakReminders');
-    }
+    return this.cronTracking.trackWithLock(
+      'notifications-streak-reminders',
+      'cron:sendStreakReminders',
+      82800,
+      () => this.runStreakReminders(),
+    );
   }
 
   private async runStreakReminders() {
@@ -171,13 +170,12 @@ export class NotificationService {
   /** Runs daily at 7:00 AM Prague time (5:00 UTC). */
   @Cron('0 5 * * *')
   async sendMorningBriefs() {
-    const acquired = await this.cache.acquireLock('cron:sendMorningBriefs', 82800);
-    if (!acquired) return;
-    try {
-      await this.cronTracking.track('notifications-morning-briefs', () => this.runMorningBriefs());
-    } finally {
-      await this.cache.releaseLock('cron:sendMorningBriefs');
-    }
+    await this.cronTracking.trackWithLock(
+      'notifications-morning-briefs',
+      'cron:sendMorningBriefs',
+      82800,
+      () => this.runMorningBriefs(),
+    );
   }
 
   private async runMorningBriefs() {
