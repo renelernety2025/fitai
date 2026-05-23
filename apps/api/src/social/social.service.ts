@@ -70,6 +70,20 @@ export class SocialService {
     const target = await this.prisma.user.findUnique({ where: { id: followedId } });
     if (!target) throw new NotFoundException('Uživatel nenalezen');
 
+    // Reject if either side has blocked the other — without this, B can
+    // re-follow A right after A blocks them. Block deletes the follow edge
+    // but doesn't prevent re-creation (audit A5, 2026-05-23).
+    const block = await this.prisma.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: followedId, blockedId: followerId },
+          { blockerId: followerId, blockedId: followedId },
+        ],
+      },
+      select: { id: true },
+    });
+    if (block) throw new ForbiddenException('Blocked');
+
     const result = await this.prisma.follow.upsert({
       where: { followerId_followedId: { followerId, followedId } },
       update: {},

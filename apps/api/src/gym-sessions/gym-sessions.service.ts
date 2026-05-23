@@ -228,25 +228,35 @@ export class GymSessionsService {
     if (session.completedAt) return session;
 
     const completedSets = session.exerciseSets.filter((s) => s.status === 'COMPLETED');
-
-    // Update weekly volume aggregates
-    await this.updateWeeklyVolume(userId, completedSets);
-
     const totalReps = completedSets.reduce((sum, s) => sum + s.actualReps, 0);
     const avgForm = completedSets.length
       ? completedSets.reduce((sum, s) => sum + s.formScore, 0) / completedSets.length
       : 0;
     const elapsed = Math.floor((Date.now() - session.startedAt.getTime()) / 1000);
 
-    // Update gym session
-    const updated = await this.prisma.gymSession.update({
-      where: { id: sessionId },
+    // Atomic claim of the "end" transition. Without this, two concurrent
+    // POST /gym-sessions/:id/end calls (mobile retry on timeout) both pass
+    // the completedAt:null check above and run the side-effect chain twice
+    // — doubling XP, weekly-volume, exerciseHistory rows, gamification XP.
+    const claim = await this.prisma.gymSession.updateMany({
+      where: { id: sessionId, userId, completedAt: null },
       data: {
         completedAt: new Date(),
         totalReps,
         averageFormScore: Math.round(avgForm),
         durationSeconds: elapsed,
       },
+    });
+    if (claim.count === 0) {
+      // Another concurrent request beat us; return the now-completed row.
+      return this.prisma.gymSession.findUnique({ where: { id: sessionId } });
+    }
+
+    // Update weekly volume aggregates (only runs in the winning request)
+    await this.updateWeeklyVolume(userId, completedSets);
+
+    const updated = await this.prisma.gymSession.findUnique({
+      where: { id: sessionId },
     });
 
     // Update linked workout session

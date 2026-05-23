@@ -170,39 +170,28 @@ export class ModerationService {
   private async resolveReportedUser(
     targetType: ContentReportTargetType,
     targetId: string,
-  ): Promise<string | null> {
-    switch (targetType) {
-      case 'POST': {
-        const row = await this.prisma.post.findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
-        return row?.userId ?? null;
-      }
-      case 'CLIP': {
-        const row = await this.prisma.clip.findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
-        return row?.userId ?? null;
-      }
-      case 'POST_COMMENT': {
-        const row = await this.prisma.postComment.findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
-        return row?.userId ?? null;
-      }
-      case 'CLIP_COMMENT': {
-        const row = await this.prisma.clipComment.findUnique({
-          where: { id: targetId },
-          select: { userId: true },
-        });
-        return row?.userId ?? null;
-      }
-      case 'USER':
-        return targetId;
+  ): Promise<string> {
+    // Throws NotFoundException for any missing target so the report endpoint
+    // can't be used to flood ContentReport with phantom UUIDs (audit A2,
+    // 2026-05-23). USER target verifies via single PK lookup to keep error
+    // surfaces identical and close the existence-oracle (audit A3).
+    if (targetType === 'USER') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: targetId },
+        select: { id: true },
+      });
+      if (!user) throw new NotFoundException('Target not found');
+      return targetId;
     }
+    const finders: Record<Exclude<ContentReportTargetType, 'USER'>, () => Promise<{ userId: string } | null>> = {
+      POST: () => this.prisma.post.findUnique({ where: { id: targetId }, select: { userId: true } }),
+      CLIP: () => this.prisma.clip.findUnique({ where: { id: targetId }, select: { userId: true } }),
+      POST_COMMENT: () => this.prisma.postComment.findUnique({ where: { id: targetId }, select: { userId: true } }),
+      CLIP_COMMENT: () => this.prisma.clipComment.findUnique({ where: { id: targetId }, select: { userId: true } }),
+    };
+    const row = await finders[targetType]();
+    if (!row) throw new NotFoundException('Target not found');
+    return row.userId;
   }
 
   private async hideTarget(

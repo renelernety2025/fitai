@@ -137,6 +137,14 @@ export class PostsService {
   }
 
   async toggleLike(postId: string, userId: string) {
+    // Block likes on hidden posts so moderation stops engagement amplification.
+    const state = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { isHidden: true },
+    });
+    if (!state || state.isHidden) {
+      throw new NotFoundException('Post not found');
+    }
     const { count } = await this.prisma.postLike.deleteMany({
       where: { postId, userId },
     });
@@ -171,7 +179,7 @@ export class PostsService {
 
   async addComment(postId: string, userId: string, dto: CreateCommentDto) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post) throw new NotFoundException('Post not found');
+    if (!post || post.isHidden) throw new NotFoundException('Post not found');
 
     const comment = await this.prisma.postComment.create({
       data: { postId, userId, content: dto.content },

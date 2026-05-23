@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   Post,
   Query,
   Request,
@@ -49,7 +50,10 @@ export class ModerationController {
 
   @Get('admin/reports')
   @UseGuards(AdminGuard)
-  listReports(@Query('status') status?: ContentReportStatus) {
+  listReports(
+    @Query('status', new ParseEnumPipe(ContentReportStatus, { optional: true }))
+    status?: ContentReportStatus,
+  ) {
     return this.service.listReports(status ?? 'PENDING');
   }
 

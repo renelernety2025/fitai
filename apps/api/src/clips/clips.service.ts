@@ -171,12 +171,20 @@ export class ClipsService {
         },
       },
     });
-    if (!clip) throw new NotFoundException('Clip not found');
+    if (!clip || clip.isHidden) throw new NotFoundException('Clip not found');
     return clip;
   }
 
   async toggleLike(userId: string, clipId: string) {
     return this.prisma.$transaction(async (tx: any) => {
+      // Reject like/unlike on hidden clips so moderation actually stops interaction.
+      const clipState = await tx.clip.findUnique({
+        where: { id: clipId },
+        select: { isHidden: true },
+      });
+      if (!clipState || clipState.isHidden) {
+        throw new NotFoundException('Clip not found');
+      }
       const existing = await tx.clipLike.findUnique({
         where: { clipId_userId: { clipId, userId } },
       });
@@ -208,8 +216,9 @@ export class ClipsService {
   ) {
     const clip = await (this.prisma as any).clip.findUnique({
       where: { id: clipId },
+      select: { id: true, isHidden: true },
     });
-    if (!clip) throw new NotFoundException('Clip not found');
+    if (!clip || clip.isHidden) throw new NotFoundException('Clip not found');
     return (this.prisma as any).clipComment.create({
       data: { clipId, userId, text },
       include: {
