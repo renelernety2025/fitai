@@ -21,34 +21,20 @@
 
 ---
 
-## Hotovo (2026-05-02)
+## Hotovo (recent)
 
-### Expert QA Audit ✅
-- 96 pages audited across 17 domains (each 2 passes)
-- 60+ bugs found and fixed (4 security, 15+ critical, 20+ important)
-- Language standardized CZ→EN, v3 CSS prefixes restored, missing states added
-- Legal: GDPR sections, age restriction, governing law
-- Security: S3 AdminGuard, 401 race fix, open redirect fix
-
-### Mobile QA Audit ✅
-- 43 screens audited one-by-one against production API
-- 120+ bugs found and fixed (critical crashes, data shape mismatches, security)
-- Critical: VIP false status, Calendar crash, Leagues crash, Journal mood broken, Maintenance deload hidden
-- 15+ frontend↔backend field name mismatches resolved
-- Security: api.ts 204/401 fix, auth-context logout fix, URL validation, input length
-- Code review agent + security audit agent confirmed clean
-- AWS cost optimization: $136→$90/month (ECS min 2→1, Redis deleted)
+> 2026-05-02 Expert QA Audit + Mobile QA Audit · 2026-05-04 Wave 1 backend + Oura · 2026-05-11 6-slice audit · 2026-05-14 → 2026-05-23 monster audit + 14 fix slices
+> Detaily v `CHANGELOG.md` + `CHANGELOG-archive/2026-05-wave-and-mobile-qa.md`.
 
 ---
 
-## Hotovo (2026-05-04)
+## Hotovo (2026-05-04 — odkaz)
 
 ### Wave 1 backend (tech-uplift) ✅
-Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md` — 8 příležitostí ve 3 vlnách. Wave 1 backend dokončený:
-- **pgvector setup**: docker-compose pgvector image, HNSW indexy, Prisma schema (Exercise/Recipe/WorkoutSession `embedding vector(1536)`)
-- **EmbeddingsService** (@Global, lazy OpenAI client, `text-embedding-3-small`)
-- **Embedding seed script** `npm run seed:embeddings` (cca $0.05 jednorázově)
-- **Semantic exercise search**: `POST /api/exercises/search/semantic` (cosine similarity, cache 1h, throttle 30/min)
+Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md`. Wave 1 backend dokončený:
+- **pgvector setup**, HNSW indexy, Prisma schema (Exercise/Recipe/WorkoutSession `embedding vector(1536)`)
+- **EmbeddingsService** (@Global, OpenAI text-embedding-3-small)
+- **Semantic exercise search**: `POST /api/exercises/search/semantic`
 - **RAG history query**: `POST /api/ai-insights/history-query` (top-10 sessions → Claude Haiku, cache 24h, throttle 10/h) + weekly cron pro re-embed
 - **HealthKit-aware Daily Brief**: `calcRecoveryScoreSmart` preferuje HRV/sleep/restingHR z `WearableData` před self-reported `DailyCheckIn`
 - **Wearables DTO**: přidány providery `google_fit` + `health_connect`
@@ -74,42 +60,56 @@ Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md` — 8 příležito
 
 ---
 
-## Aktuální priorita
+## Aktuální priorita (2026-05-23)
 
-### 1. VoiceEngine debug + hardware AEC (~4h, potřeba Xcode)
+### 1. App Store launch — odblokovany po audit follow-up
 
-VoiceEngine native modul (Swift, AVAudioEngine + VoiceProcessingIO) je v EAS binárce ale **nefunkční** — silent playback bug (AVAudioConverter produkuje frames ale žádný zvuk). Rollback na expo-audio (funguje). Debug vyžaduje Xcode attached k iPhone pro native breakpointy + audio session inspection.
-
-**Po opravě:**
-- Hardware AEC eliminuje echo loop → continuous mode mid-sentence interrupt
-- Phase E-3 mobile streaming playback se odblokuje (playChunk + streamSpeak)
-- Cílová latence <1.5s first word (backend streaming pipeline ready)
-
-**Known issues:**
-- Error 216/209 v SFSpeech recognition (session overlap + circuit breaker leak) — fixnout jako součást VoiceEngine debug
-- `expo-audio` + `expo-speech-recognition` zůstávají jako fallback
-
-### 2. App Store launch (~2 týdny)
+Po 14 fix slicech (2026-05-14 → 2026-05-20) jsou Apple guideline blockery hotove:
+- ✅ Apple 5.1.1 (account deletion) — mobile AccountScreen
+- ✅ Apple 1.2 (UGC moderation) — report + block + admin queue + ban + JWT reject
+- ✅ Banned-user enforcement at login + request layer
+- ✅ Stub pages deleted (reviewer crawl risk eliminated)
 
 | Fáze | Co | Status |
 |---|---|---|
-| 1. Dev build | EAS development build na iPhonu | ✅ Máme |
-| 2. Bug fixes | QA issues z device testingu | Probíhá (voice coaching) |
-| 3. TestFlight | 5-10 beta testerů | Pending |
-| 4. TestFlight iterace | Feedback → fixy → new builds | Pending |
-| 5. Compliance | Privacy policy, TOS, AI disclaimer, account deletion | Pending |
-| 6. Production build | `eas submit --profile production` | Pending |
-| 7. Apple Review | Čekání, možná rejection fixes | Pending |
-| 8. Release | Veřejně v App Store | Pending |
+| 1. Dev build | EAS development build na iPhonu | ✅ Máme (stará verze) |
+| 2. EAS rebuild | Pick up Slice 7 (account screen, forgot pw) + Slice 13 (expo-video) | **Pending (user-driven)** |
+| 3. Bug fixes | QA na novem buildu | Pending |
+| 4. TestFlight | 5-10 beta testerů | Pending |
+| 5. TestFlight iterace | Feedback → fixy → new builds | Pending |
+| 6. Compliance | Privacy policy, TOS, AI disclaimer | **Pending (user — externi pravnik)** |
+| 7. Sentry DSN | Provision project, set ECS env | **Pending (user)** |
+| 8. CDN URL env | NEXT_PUBLIC_CDN_URL pro post photos | **Pending (user)** |
+| 9. Production build | `eas submit --profile production` | Pending |
+| 10. Apple Review | Čekání, možná rejection fixes | Pending |
+| 11. Release | Veřejně v App Store | Pending |
 
-### 3. Scale Readiness (~3 dny)
+### 2. VoiceEngine debug + hardware AEC (~4h, potřeba Xcode)
+
+VoiceEngine native modul (Swift, AVAudioEngine + VoiceProcessingIO) je v EAS binárce ale **nefunkční** — silent playback bug (AVAudioConverter produkuje frames ale žádný zvuk). Rollback na expo-audio (funguje). Debug vyžaduje Xcode attached k iPhone pro native breakpointy.
+
+**Po opravě:** Hardware AEC eliminuje echo loop, Phase E-3 mobile streaming playback se odblokuje, cílová latence <1.5s first word.
+
+### 3. Backlog z 2026-05-14 monster auditu (zbyvajicich items)
+
+| Item | Effort | Status |
+|---|---|---|
+| Mobile parity 15+ screens (Marketplace, Creators, Body Portfolio, Courses, …) | ~15h | Pending |
+| HLS pipeline pro clips (MediaConvert) | ~6h | Pending (signed S3 URL works as MVP) |
+| 4 high-freq feed crons wrap (sampled) | ~1h | Pending |
+| Marketplace seed data | TBD | **Pending (user — business decision)** |
+| Admin user list / search UI | ~2h | Pending |
+| External pen-test ~$2-5k | externi | Pending |
+| KMS encryption for WearableConnection tokens | 2 dny | Pending |
+
+### 4. Scale Readiness (~3 dny)
 
 Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány ale zatím neimplementovány.
 
 | Vrstva | Co | Effort | Status |
 |---|---|---|---|
-| 1. Quick wins | Caching, indexy, rate limiting, autoscaling | ~1 den | Pending |
-| 2. Observability | CloudWatch, Sentry, structured logging | ~0.5 dne | Pending |
+| 1. Quick wins | Caching, indexy, rate limiting, autoscaling | ~1 den | Pending (cache + throttles ✅) |
+| 2. Observability | CloudWatch, Sentry, structured logging | ~0.5 dne | **Partial** — CloudWatch metrics ✅ / Sentry env pending |
 | 3. Load testing | k6, 4 scenarios, bottleneck identification | ~1 den | Pending |
 | 4. Paid upgrades | RDS larger, read replicas, Fargate Spot | Dle dat | Blocked on Vrstva 3 |
 
