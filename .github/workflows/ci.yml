@@ -19,10 +19,10 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Lint API
-        run: pnpm --filter @fitai/api lint || echo "::warning::API lint skipped"
+        run: pnpm --filter @fitai/api lint
       - name: Lint Web
-        run: pnpm --filter @fitai/web lint || echo "::warning::Web lint skipped"
+        run: pnpm --filter @fitai/web lint
       - name: Typecheck API
-        run: pnpm --filter @fitai/api exec tsc --noEmit || echo "::warning::API typecheck skipped"
+        run: pnpm --filter @fitai/api exec tsc --noEmit
       - name: Typecheck Web
-        run: pnpm --filter @fitai/web exec tsc --noEmit || echo "::warning::Web typecheck skipped"
+        run: pnpm --filter @fitai/web exec tsc --noEmit
