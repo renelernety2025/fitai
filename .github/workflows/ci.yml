@@ -4,25 +4,55 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint-and-typecheck:
-    name: Lint + Typecheck
+  build-and-typecheck:
+    name: Build + Lint + Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - name: Lint API
-        run: pnpm --filter @fitai/api lint
-      - name: Lint Web
-        run: pnpm --filter @fitai/web lint
-      - name: Typecheck API
-        run: pnpm --filter @fitai/api exec tsc --noEmit
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Prisma generate
+        run: npx prisma generate
+        working-directory: apps/api
+      - name: Build (shared + api + web via turbo)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://fitai.bfevents.cz
+      - name: Lint (turbo — api tsc, web next lint, shared tsc)
+        run: npm run lint
       - name: Typecheck Web
-        run: pnpm --filter @fitai/web exec tsc --noEmit
+        run: npx tsc --noEmit
+        working-directory: apps/web
+
+  checks:
+    name: Conventions + Docs + Mobile typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Prisma generate + validate
+        run: npx prisma generate && npx prisma validate
+        working-directory: apps/api
+      - name: API conventions
+        run: bash scripts/check-api-conventions.sh
+      - name: Docs integrity
+        run: bash scripts/verify-docs-integrity.sh
+      - name: Typecheck Mobile
+        run: npx tsc --noEmit
+        working-directory: apps/mobile

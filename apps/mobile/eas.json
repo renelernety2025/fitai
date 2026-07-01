@@ -45,7 +45,7 @@
   "submit": {
     "production": {
       "ios": {
-        "bundleIdentifier": "com.fitai.app"
+        "bundleIdentifier": "cz.bfevents.fitai"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
