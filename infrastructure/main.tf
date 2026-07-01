@@ -16,6 +16,8 @@ provider "aws" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 module "networking" {
   source       = "./modules/networking"
   vpc_cidr     = var.vpc_cidr
@@ -80,8 +82,8 @@ module "cicd" {
   aws_region           = var.aws_region
   ecr_api_url          = module.compute.ecr_api_url
   ecr_web_url          = module.compute.ecr_web_url
-  ecr_api_arn          = "arn:aws:ecr:${var.aws_region}:*:repository/${var.project_name}-api"
-  ecr_web_arn          = "arn:aws:ecr:${var.aws_region}:*:repository/${var.project_name}-web"
+  ecr_api_arn          = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.project_name}-api"
+  ecr_web_arn          = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.project_name}-web"
   ecs_cluster_name     = module.compute.ecs_cluster_name
   ecs_api_service_name = module.compute.ecs_api_service_name
   ecs_web_service_name = module.compute.ecs_web_service_name
@@ -98,5 +100,6 @@ module "monitoring" {
   ecs_cluster_name     = module.compute.ecs_cluster_name
   ecs_api_service_name = module.compute.ecs_api_service_name
   rds_identifier       = "${var.project_name}-${var.env}-postgres"
+  redis_cluster_id     = "${var.project_name}-${var.env}-redis"
   alb_arn_suffix       = replace(module.compute.alb_arn, "/.*:loadbalancer\\//", "")
 }

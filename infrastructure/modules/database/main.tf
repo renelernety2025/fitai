@@ -23,9 +23,10 @@ resource "aws_db_instance" "postgres" {
   vpc_security_group_ids = [var.rds_sg_id]
   parameter_group_name   = "default.postgres16"
 
-  backup_retention_period = 7
-  skip_final_snapshot     = true
-  deletion_protection     = false
+  backup_retention_period   = 7
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.project_name}-${var.env}-postgres-final"
+  deletion_protection       = true
 
   tags = merge(var.tags, { Name = "${var.project_name}-${var.env}-postgres" })
 }

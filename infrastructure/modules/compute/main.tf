@@ -209,6 +209,12 @@ resource "aws_ecs_task_definition" "api" {
     }
   }])
 
+  # CodeBuild deploys new images by pushing :latest and forcing a new
+  # deployment; Terraform must not fight that by re-registering the task def.
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
+
   tags = var.tags
 }
 
@@ -241,6 +247,11 @@ resource "aws_ecs_task_definition" "web" {
       }
     }
   }])
+
+  # See api task definition: deploys happen via :latest + force-new-deployment.
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
 
   tags = var.tags
 }

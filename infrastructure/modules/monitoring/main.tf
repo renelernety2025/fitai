@@ -185,7 +185,7 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric", x = 0, y = 0, width = 12, height = 6
         properties = {
-          title   = "API CPU & Memory"
+          title = "API CPU & Memory"
           metrics = [
             ["AWS/ECS", "CPUUtilization", "ClusterName", var.ecs_cluster_name, "ServiceName", var.ecs_api_service_name],
             [".", "MemoryUtilization", ".", ".", ".", "."]
@@ -196,7 +196,7 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "metric", x = 12, y = 0, width = 12, height = 6
         properties = {
-          title   = "ALB Requests & Latency"
+          title = "ALB Requests & Latency"
           metrics = [
             ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", var.alb_arn_suffix, { stat = "Sum" }],
             [".", "TargetResponseTime", ".", ".", { stat = "Average" }]
@@ -209,7 +209,7 @@ resource "aws_cloudwatch_dashboard" "main" {
         properties = {
           title   = "RDS Connections"
           metrics = [["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", var.rds_identifier]]
-          period = 300, region = var.aws_region
+          period  = 300, region = var.aws_region
         }
       }
     ]
