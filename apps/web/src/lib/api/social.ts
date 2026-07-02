@@ -1,4 +1,5 @@
 import { request } from './base';
+import type { PostData } from './posts';
 
 export interface FeedItem {
   id: string;
@@ -321,23 +322,31 @@ export function startConversation(
 }
 
 // Feed
-export function getForYouFeed(cursor?: string) {
+export function getForYouFeed(cursor?: string): Promise<PostData[]> {
   const params = cursor ? `?cursor=${cursor}` : '';
   return request(`/feed/for-you${params}`);
 }
 
-export function getFollowingFeed(cursor?: string) {
+export function getFollowingFeed(cursor?: string): Promise<PostData[]> {
   const params = cursor ? `?cursor=${cursor}` : '';
   return request(`/feed/following${params}`);
 }
 
-export function getTrendingFeed(cursor?: string) {
+export function getTrendingFeed(cursor?: string): Promise<PostData[]> {
   const params = cursor ? `?cursor=${cursor}` : '';
   return request(`/feed/trending${params}`);
 }
 
 // Promo
-export function getPromoCards() {
+export interface PromoCardData {
+  id: string;
+  title: string;
+  subtitle?: string;
+  ctaText: string;
+  ctaUrl: string;
+}
+
+export function getPromoCards(): Promise<PromoCardData[]> {
   return request('/promo/for-feed');
 }
 

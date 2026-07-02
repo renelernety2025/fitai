@@ -39,7 +39,12 @@ export interface PostCommentData {
   createdAt: string;
 }
 
-export function getUploadUrls(count: number, contentType = 'image/jpeg') {
+export interface PostUploadUrl {
+  uploadUrl: string;
+  s3Key: string;
+}
+
+export function getUploadUrls(count: number, contentType = 'image/jpeg'): Promise<PostUploadUrl[]> {
   return request('/posts/upload-url', {
     method: 'POST',
     body: JSON.stringify({ count, contentType }),
