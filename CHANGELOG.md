@@ -11,6 +11,42 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Platform hardening — Vlna 0+1 batch 1] 2026-07-01 → 2026-07-02
+
+Plný platformní audit (`docs/AUDIT-2026-07-PLATFORM.md`) + první dvě vlny fixů.
+
+- **CI konečně funguje**: ci.yml byl pnpm na npm repu → install padal na
+  každém PR, gate nikdy negatoval. Přepsáno na npm workspaces + turbo,
+  přidán build gate, unit testy, conventions/docs checky, gitleaks,
+  migration guardy, mobile typecheck. Dependabot (npm+actions+terraform).
+- **První testy v repu**: jest + @swc/jest, 76 unit testů (XP/streak/level,
+  recovery score, Epley 1RM, TDEE/makra, atomic XP debit). Extrakce
+  `one-rm.helpers.ts` + `nutrition.calculations.ts` (chování 1:1).
+- **Prisma migration history (ADR-22, krok 1)**: baseline `0_init`
+  (127 tabulek), smazané 4 zombie migrace z 2026-04, CI guard na
+  destruktivní DDL, drift check skript. Produkce zatím na db push;
+  cutover na `migrate deploy` následuje po baseline resolve.
+- **Deploy safety**: buildspec už nedeployuje před migrací (double-deploy
+  + code-ahead-of-schema bug), rolloutState gate odhalí circuit-breaker
+  rollback, pre-migrate RDS snapshot (IAM grant pending — RUNBOOK),
+  git tag per deploy, `docs/RUNBOOK-rollback.md`.
+- **Terraform srovnán s produkcí a aplikován**: květnové ruční změny
+  (autoscaling 20/10 @60 %, ALB idle 120, HTTPS redirect, IAM assets,
+  CodeBuild https URL) zpětně zaneseny do kódu — apply by je jinak
+  revertoval. Nově: deployment circuit breakery, web autoscaling policy
+  importována, TG matcher 200-399, ECR lifecycle 30, DATABASE_URL
+  connection_limit=10, S3 public-access-block + SSE, RDS deletion
+  protection, rds/redis alarmy + SNS email. **Redis cluster obnoven**
+  (byl smazán v úsporném režimu; cache + throttle store zpět, ~$12/mo).
+- **Web/mobile tsc 0 chyb**: 9 skrytých chyb opraveno (duplicate
+  @types/react přes tsconfig paths pin, otypované feed/promo/upload API
+  returns), smazáno 49 commitnutých build artefaktů + 180 untracked
+  .js/.d.ts v api/src. Bundle ID mismatch (App Store blocker) opraven
+  v eas.json. Smoke test už self-nepasuje při výpadku auth.
+- Root expo/RN deps ponechány (záměrný anti-hoist pin — dokumentováno).
+
+---
+
 ## [Audit follow-up — slices 7-14] 2026-05-15 → 2026-05-20
 
 Continues the 2026-05-14 monster audit cleanup. 8 additional commits
