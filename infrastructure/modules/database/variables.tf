@@ -22,3 +22,9 @@ variable "db_password" {
   type      = string
   sensitive = true
 }
+
+variable "multi_az" {
+  description = "RDS Multi-AZ standby. Enabling triggers a brief failover window; flip deliberately."
+  type        = bool
+  default     = false
+}

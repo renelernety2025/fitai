@@ -19,3 +19,6 @@ variable "redis_cluster_id" {
   type    = string
   default = ""
 }
+variable "ecs_web_service_name" { type = string }
+variable "api_tg_arn_suffix" { type = string }
+variable "web_tg_arn_suffix" { type = string }

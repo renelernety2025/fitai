@@ -6,3 +6,5 @@ output "ecs_cluster_name" { value = aws_ecs_cluster.main.name }
 output "ecs_api_service_name" { value = aws_ecs_service.api.name }
 output "ecs_web_service_name" { value = aws_ecs_service.web.name }
 output "alb_arn" { value = aws_lb.main.arn }
+output "api_tg_arn_suffix" { value = aws_lb_target_group.api.arn_suffix }
+output "web_tg_arn_suffix" { value = aws_lb_target_group.web.arn_suffix }

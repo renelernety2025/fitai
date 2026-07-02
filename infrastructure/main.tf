@@ -103,4 +103,7 @@ module "monitoring" {
   rds_identifier       = "${var.project_name}-${var.env}-postgres"
   redis_cluster_id     = "${var.project_name}-${var.env}-redis"
   alb_arn_suffix       = replace(module.compute.alb_arn, "/.*:loadbalancer\\//", "")
+  ecs_web_service_name = module.compute.ecs_web_service_name
+  api_tg_arn_suffix    = module.compute.api_tg_arn_suffix
+  web_tg_arn_suffix    = module.compute.web_tg_arn_suffix
 }

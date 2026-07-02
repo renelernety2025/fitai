@@ -18,7 +18,7 @@ resource "aws_db_instance" "postgres" {
   username = "fitai"
   password = var.db_password
 
-  multi_az               = false
+  multi_az               = var.multi_az # flip via tfvars in a maintenance window (failover ~1-2 min)
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [var.rds_sg_id]
   parameter_group_name   = "default.postgres16"
