@@ -252,6 +252,7 @@ model WorkoutSession {
   snapshots  PoseSnapshot[]
 
   @@index([userId])
+  @@index([userId, startedAt])
   @@index([videoId])
 }
 
@@ -374,6 +375,7 @@ model GymSession {
   journalEntry   JournalEntry?
 
   @@index([userId])
+  @@index([userId, startedAt])
 }
 
 model ExerciseSet {

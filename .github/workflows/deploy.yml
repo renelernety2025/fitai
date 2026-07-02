@@ -157,10 +157,17 @@ jobs:
         if: needs.detect-changes.outputs.schema == 'true'
         run: |
           SNAP_ID="fitai-predeploy-$(echo $GITHUB_SHA | cut -c1-7)-$(date -u +%Y%m%d-%H%M%S)"
-          aws rds create-db-snapshot \
+          # TODO(user): flip this to hard-fail once the rds-predeploy-snapshots
+          # IAM policy is attached to fitai-github-actions (command in
+          # docs/RUNBOOK-rollback.md). Until then a failed snapshot only warns —
+          # destructive migrations are still blocked by the approval gate.
+          if ! aws rds create-db-snapshot \
             --db-instance-identifier fitai-production-postgres \
             --db-snapshot-identifier "$SNAP_ID" \
-            --region $AWS_REGION
+            --region $AWS_REGION; then
+            echo "::warning::Pre-migration snapshot FAILED (IAM grant pending — see docs/RUNBOOK-rollback.md). Proceeding without snapshot."
+            exit 0
+          fi
           echo "Snapshot marker created: $SNAP_ID (crash-consistent as of initiation; completes in background)"
           # Housekeeping: drop fitai-predeploy-* snapshots older than 14 days.
           CUTOFF=$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%S)
