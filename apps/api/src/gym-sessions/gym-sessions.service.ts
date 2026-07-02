@@ -51,59 +51,61 @@ export class GymSessionsService {
           return (order[a.exercise.category] ?? 1) - (order[b.exercise.category] ?? 1);
         });
 
+        const rows: {
+          gymSessionId: string;
+          exerciseId: string;
+          setNumber: number;
+          targetReps: number;
+          targetWeight: number | null;
+          isWarmup?: boolean;
+        }[] = [];
         for (const pe of sorted) {
           let setNum = 1;
           // Warmup sets for compound exercises with weight
           if (pe.exercise.category === 'compound' && pe.targetWeight && pe.targetWeight > 20) {
-            await this.prisma.exerciseSet.create({
-              data: {
-                gymSessionId: gymSession.id,
-                exerciseId: pe.exerciseId,
-                setNumber: setNum++,
-                targetReps: 15,
-                targetWeight: Math.round(pe.targetWeight * 0.5),
-                isWarmup: true,
-              },
+            rows.push({
+              gymSessionId: gymSession.id,
+              exerciseId: pe.exerciseId,
+              setNumber: setNum++,
+              targetReps: 15,
+              targetWeight: Math.round(pe.targetWeight * 0.5),
+              isWarmup: true,
             });
-            await this.prisma.exerciseSet.create({
-              data: {
-                gymSessionId: gymSession.id,
-                exerciseId: pe.exerciseId,
-                setNumber: setNum++,
-                targetReps: 8,
-                targetWeight: Math.round(pe.targetWeight * 0.75),
-                isWarmup: true,
-              },
+            rows.push({
+              gymSessionId: gymSession.id,
+              exerciseId: pe.exerciseId,
+              setNumber: setNum++,
+              targetReps: 8,
+              targetWeight: Math.round(pe.targetWeight * 0.75),
+              isWarmup: true,
             });
           }
           // Working sets
           for (let s = 1; s <= pe.targetSets; s++) {
-            await this.prisma.exerciseSet.create({
-              data: {
-                gymSessionId: gymSession.id,
-                exerciseId: pe.exerciseId,
-                setNumber: setNum++,
-                targetReps: pe.targetReps,
-                targetWeight: pe.targetWeight,
-              },
+            rows.push({
+              gymSessionId: gymSession.id,
+              exerciseId: pe.exerciseId,
+              setNumber: setNum++,
+              targetReps: pe.targetReps,
+              targetWeight: pe.targetWeight,
             });
           }
         }
+        // Single INSERT instead of one round-trip per set (was N+1 —
+        // a 6-exercise day with warmups issued ~30 sequential creates).
+        if (rows.length) await this.prisma.exerciseSet.createMany({ data: rows });
       }
     } else if (dto.adHocExercises) {
-      for (const ex of dto.adHocExercises) {
-        for (let s = 1; s <= ex.targetSets; s++) {
-          await this.prisma.exerciseSet.create({
-            data: {
-              gymSessionId: gymSession.id,
-              exerciseId: ex.exerciseId,
-              setNumber: s,
-              targetReps: ex.targetReps,
-              targetWeight: ex.targetWeight,
-            },
-          });
-        }
-      }
+      const rows = dto.adHocExercises.flatMap((ex) =>
+        Array.from({ length: ex.targetSets }, (_, i) => ({
+          gymSessionId: gymSession.id,
+          exerciseId: ex.exerciseId,
+          setNumber: i + 1,
+          targetReps: ex.targetReps,
+          targetWeight: ex.targetWeight,
+        })),
+      );
+      if (rows.length) await this.prisma.exerciseSet.createMany({ data: rows });
     }
 
     return this.prisma.gymSession.findUnique({
