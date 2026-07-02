@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authMe, getToken, setToken as saveToken, removeToken, registerExpoPushToken } from './api';
+import { authMe, getToken, setToken as saveToken, removeToken, registerExpoPushToken, setUnauthorizedHandler } from './api';
 
 /**
  * Mobile push notifications temporarily disabled.
@@ -76,6 +76,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokenState(null);
     setUser(null);
   }, []);
+
+  // Any 401 anywhere in the API layer logs the session out cleanly
+  // (previously only the initial authMe() 401 did).
+  useEffect(() => {
+    setUnauthorizedHandler(logout);
+    return () => setUnauthorizedHandler(null);
+  }, [logout]);
 
   const updateUser = useCallback((next: any) => {
     setUser(next);

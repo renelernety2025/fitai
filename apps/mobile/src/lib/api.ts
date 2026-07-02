@@ -14,6 +14,28 @@ export async function removeToken() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
+const REQUEST_TIMEOUT_MS = 15000;
+
+/**
+ * Global 401 listener — auth-context registers a logout handler so any
+ * expired-token response logs the user out cleanly instead of leaving
+ * screens erroring against a dead session.
+ */
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = await getToken();
   const headers: Record<string, string> = {
@@ -21,9 +43,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...(options?.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  const isGet = !options?.method || options.method === 'GET';
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+  } catch (err) {
+    // One retry for idempotent GETs on network failure / timeout.
+    if (!isGet) throw err;
+    res = await fetchWithTimeout(`${API_URL}${path}`, { ...options, headers });
+  }
+
   if (!res.ok) {
-    if (res.status === 401) removeToken(); // fire-and-forget, no await (prevents race with parallel 401s)
+    if (res.status === 401) {
+      removeToken(); // fire-and-forget, no await (prevents race with parallel 401s)
+      onUnauthorized?.();
+    }
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || `Request failed: ${res.status}`);
   }
