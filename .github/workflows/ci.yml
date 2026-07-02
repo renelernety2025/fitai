@@ -49,6 +49,8 @@ jobs:
       - name: Prisma generate + validate
         run: npx prisma generate && npx prisma validate
         working-directory: apps/api
+      - name: Unit tests
+        run: npm run test -w @fitai/api
       - name: API conventions
         run: bash scripts/check-api-conventions.sh
       - name: Docs integrity
