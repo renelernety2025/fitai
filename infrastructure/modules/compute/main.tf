@@ -42,11 +42,11 @@ resource "aws_ecr_lifecycle_policy" "api" {
   policy = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Keep last 10 images"
+      description  = "Keep last 30 images"
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 10
+        countNumber = 30
       }
       action = { type = "expire" }
     }]
@@ -298,7 +298,7 @@ resource "aws_lb_target_group" "web" {
     unhealthy_threshold = 3
     timeout             = 10
     interval            = 30
-    matcher             = "200-404"
+    matcher             = "200-399"
   }
 
   tags = var.tags
@@ -337,6 +337,15 @@ resource "aws_ecs_service" "api" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
+  health_check_grace_period_seconds  = 90
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
   network_configuration {
     subnets         = var.private_subnet_ids
     security_groups = [var.api_sg_id]
@@ -357,6 +366,15 @@ resource "aws_ecs_service" "web" {
   task_definition = aws_ecs_task_definition.web.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
+  health_check_grace_period_seconds  = 60
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   network_configuration {
     subnets         = var.private_subnet_ids
@@ -402,4 +420,19 @@ resource "aws_appautoscaling_target" "web" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.web.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "web_cpu" {
+  name               = "${var.project_name}-web-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.web.resource_id
+  scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.web.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
 }
