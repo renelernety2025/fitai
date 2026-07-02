@@ -61,7 +61,8 @@ export default function ExperiencesPage() {
   useEffect(() => {
     setLoading(true);
     getExperiences(filter ? { category: filter } : undefined)
-      .then((e) => setItems(e as Experience[]))
+      // TODO(shared-types): local Experience shape diverges from the API contract (location, price, trainerName, spotsLeft do not exist server-side)
+      .then((e) => setItems(e as unknown as Experience[]))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [filter]);

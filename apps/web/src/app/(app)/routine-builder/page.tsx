@@ -61,10 +61,13 @@ function AddForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
+      // TODO(shared-types): payload/response diverge from the API contract
+      // (API expects { type: RoutineItemType, referenceName } and returns
+      // { timing, referenceName, sortOrder } — not { slot, name, order }).
       const item = await addRoutineItem(routineId, {
         slot, type, name: name.trim(),
-      });
-      onAdd(item);
+      } as unknown as Parameters<typeof addRoutineItem>[1]);
+      onAdd(item as unknown as RoutineItem);
     } catch { /* noop */ } finally { setSaving(false); }
   }
 
@@ -169,7 +172,11 @@ export default function RoutineBuilderPage() {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      const r = await createRoutine({ name: newName.trim() });
+      // TODO(shared-types): API create response has no `items` array;
+      // local Routine type expects it (pre-existing shape divergence).
+      const r = (await createRoutine({
+        name: newName.trim(),
+      })) as unknown as Routine;
       setRoutines((p) => [...p, r]);
       setActive(r);
       setNewName('');

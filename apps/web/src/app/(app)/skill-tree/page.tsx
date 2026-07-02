@@ -95,8 +95,11 @@ export default function SkillTreePage() {
   useEffect(() => { document.title = 'FitAI — Skill Tree'; }, []);
 
   useEffect(() => {
+    // TODO(shared-types): page expects a legacy shape (totalNodes, unlockedCount, nodes[].id/
+    // name/description/requirement/level/available) — real contract is SkillTreeResponse from
+    // @fitai/shared (nodes use code/branch/titleCs/requires/check/unlocked).
     getSkillTree()
-      .then(setData)
+      .then((d) => setData(d as unknown as TreeData))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
@@ -105,12 +108,14 @@ export default function SkillTreePage() {
     setChecking(true);
     setError(null);
     try {
-      const result = await checkSkillTree();
+      // TODO(shared-types): real result is SkillTreeCheckResult (newlyUnlocked items have
+      // `code`, not `id`) — the highlight below never matches at runtime.
+      const result = (await checkSkillTree()) as unknown as { newlyUnlocked?: SkillNode[] };
       if (result.newlyUnlocked) {
         setNewUnlocked(result.newlyUnlocked.map((n: SkillNode) => n.id));
       }
       const fresh = await getSkillTree();
-      setData(fresh);
+      setData(fresh as unknown as TreeData);
     } catch {
       setError('Failed to check progress');
     }

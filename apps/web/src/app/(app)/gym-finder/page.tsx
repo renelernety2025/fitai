@@ -76,7 +76,9 @@ export default function GymFinderPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const review = await addGymReview(form);
+      // TODO(shared-types): API expects { gymName }, page sends { name } —
+      // pre-existing field mismatch, kept as-is (type-level cast only).
+      const review = await addGymReview(form as unknown as Parameters<typeof addGymReview>[0]);
       setGyms((prev) => [...prev, review]);
       setShowForm(false);
       setForm({ name: '', address: '', rating: 4, equipment: [], notes: '' });

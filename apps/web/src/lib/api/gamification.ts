@@ -1,132 +1,142 @@
 import { request } from './base';
+import type {
+  Achievement,
+  AchievementCheckResult,
+  AchievementDefinition,
+  ApplyCreatorPayload,
+  BossCompleteResult,
+  BossFightStatus,
+  BossStartResult,
+  CompleteBossPayload,
+  CreatePaidChallengePayload,
+  CreatorListItem,
+  CreatorProfile,
+  DailyQuest,
+  DailyQuestCompleteResult,
+  LeagueCurrent,
+  LeagueMembership,
+  PaidChallenge,
+  PaidChallengeDetail,
+  PaidChallengeEntry,
+  PaidChallengeListItem,
+  SeasonCurrent,
+  SeasonMissionCheckResult,
+  SeasonProgress,
+  SkillTreeCheckResult,
+  SkillTreeResponse,
+  StreakFreezeStatus,
+  StreakFreezeUseResult,
+  UpdateCreatorPayload,
+} from '@fitai/shared';
 
-export interface Achievement {
-  id: string;
-  code: string;
-  title: string;
-  titleCs: string;
-  description: string;
-  descriptionCs: string;
-  category: string;
-  icon: string;
-  xpReward: number;
-  threshold: number | null;
-  unlocked: boolean;
-  unlockedAt: string | null;
-}
+export type { Achievement, StreakFreezeStatus };
 
-export function getAchievements() {
+export function getAchievements(): Promise<Achievement[]> {
   return request<Achievement[]>('/achievements');
 }
 
-export function checkAchievements() {
-  return request<{ newlyUnlocked: any[]; total: number }>(
+export function checkAchievements(): Promise<AchievementCheckResult> {
+  return request<AchievementCheckResult>(
     '/achievements/check',
     { method: 'POST' },
   );
 }
 
-export function unlockAchievement(code: string) {
-  return request<any>('/achievements/unlock', {
+export function unlockAchievement(code: string): Promise<AchievementDefinition | null> {
+  return request<AchievementDefinition | null>('/achievements/unlock', {
     method: 'POST',
     body: JSON.stringify({ code }),
   });
 }
 
-export function getLeagueCurrent() {
-  return request<any>('/leagues/current');
+export function getLeagueCurrent(): Promise<LeagueCurrent> {
+  return request<LeagueCurrent>('/leagues/current');
 }
 
-export function joinLeague() {
-  return request<any>('/leagues/join', { method: 'POST' });
+export function joinLeague(): Promise<LeagueMembership> {
+  return request<LeagueMembership>('/leagues/join', { method: 'POST' });
 }
 
-export function getSkillTree() {
-  return request<any>('/skill-tree');
+export function getSkillTree(): Promise<SkillTreeResponse> {
+  return request<SkillTreeResponse>('/skill-tree');
 }
 
-export function checkSkillTree() {
-  return request<any>('/skill-tree/check', {
+export function checkSkillTree(): Promise<SkillTreeCheckResult> {
+  return request<SkillTreeCheckResult>('/skill-tree/check', {
     method: 'POST',
   });
 }
 
-export function getCurrentSeason() {
-  return request<any>('/seasons/current');
+export function getCurrentSeason(): Promise<SeasonCurrent> {
+  return request<SeasonCurrent>('/seasons/current');
 }
 
-export function joinSeason() {
-  return request<any>('/seasons/join', { method: 'POST' });
+export function joinSeason(): Promise<SeasonProgress> {
+  return request<SeasonProgress>('/seasons/join', { method: 'POST' });
 }
 
-export function checkSeasonMissions() {
-  return request<any>('/seasons/check-missions', {
+export function checkSeasonMissions(): Promise<SeasonMissionCheckResult> {
+  return request<SeasonMissionCheckResult>('/seasons/check-missions', {
     method: 'POST',
   });
 }
 
-export function getBossFights(): Promise<any> {
-  return request('/boss-fights');
+export function getBossFights(): Promise<BossFightStatus[]> {
+  return request<BossFightStatus[]>('/boss-fights');
 }
 
-export function startBoss(code: string): Promise<any> {
-  return request(`/boss-fights/${code}/start`, {
+export function startBoss(code: string): Promise<BossStartResult> {
+  return request<BossStartResult>(`/boss-fights/${code}/start`, {
     method: 'POST',
   });
 }
 
 export function completeBoss(
   code: string,
-  data: any,
-): Promise<any> {
-  return request(`/boss-fights/${code}/complete`, {
+  data: CompleteBossPayload,
+): Promise<BossCompleteResult> {
+  return request<BossCompleteResult>(`/boss-fights/${code}/complete`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
-}
-
-export interface StreakFreezeStatus {
-  available: number;
-  maxPerMonth: number;
-  usedDates: string[];
 }
 
 export function getStreakFreezeStatus(): Promise<StreakFreezeStatus> {
   return request<StreakFreezeStatus>('/streak-freeze/status');
 }
 
-export function useStreakFreeze(): Promise<{ ok: boolean; date: string }> {
-  return request('/streak-freeze/use', { method: 'POST' });
+export function useStreakFreeze(): Promise<StreakFreezeUseResult> {
+  return request<StreakFreezeUseResult>('/streak-freeze/use', { method: 'POST' });
 }
 
-export function getDailyQuests(): Promise<any[]> {
-  return request('/daily-quests/today');
+export function getDailyQuests(): Promise<DailyQuest[]> {
+  return request<DailyQuest[]>('/daily-quests/today');
 }
 
 export function completeDailyQuest(
   id: string,
-): Promise<any> {
-  return request(`/daily-quests/${id}/complete`, {
+): Promise<DailyQuestCompleteResult> {
+  return request<DailyQuestCompleteResult>(`/daily-quests/${id}/complete`, {
     method: 'POST',
   });
 }
 
 // Paid Challenges
 
-export function getPaidChallenges(): Promise<any[]> {
-  return request('/paid-challenges');
+export function getPaidChallenges(): Promise<PaidChallengeListItem[]> {
+  return request<PaidChallengeListItem[]>('/paid-challenges');
 }
 
 export function getPaidChallengeDetail(
   id: string,
-): Promise<any> {
-  return request(`/paid-challenges/${id}`);
+): Promise<PaidChallengeDetail> {
+  return request<PaidChallengeDetail>(`/paid-challenges/${id}`);
 }
 
 export function createPaidChallenge(
-  data: any,
-): Promise<any> {
-  return request('/paid-challenges', {
+  data: CreatePaidChallengePayload,
+): Promise<PaidChallenge> {
+  return request<PaidChallenge>('/paid-challenges', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -134,37 +144,37 @@ export function createPaidChallenge(
 
 export function joinPaidChallenge(
   id: string,
-): Promise<any> {
-  return request(`/paid-challenges/${id}/join`, {
+): Promise<PaidChallengeEntry> {
+  return request<PaidChallengeEntry>(`/paid-challenges/${id}/join`, {
     method: 'POST',
   });
 }
 
 // Creators
 
-export function getCreators(): Promise<any[]> {
-  return request('/creators');
+export function getCreators(): Promise<CreatorListItem[]> {
+  return request<CreatorListItem[]>('/creators');
 }
 
 export function getCreatorDetail(
   id: string,
-): Promise<any> {
-  return request(`/creators/${id}`);
+): Promise<CreatorListItem> {
+  return request<CreatorListItem>(`/creators/${id}`);
 }
 
 export function applyAsCreator(
-  data: any,
-): Promise<any> {
-  return request('/creators/apply', {
+  data: ApplyCreatorPayload,
+): Promise<CreatorProfile> {
+  return request<CreatorProfile>('/creators/apply', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export function updateCreatorProfile(
-  data: any,
-): Promise<any> {
-  return request('/creators/profile', {
+  data: UpdateCreatorPayload,
+): Promise<CreatorProfile> {
+  return request<CreatorProfile>('/creators/profile', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });

@@ -27,14 +27,14 @@ export default function DuelsPage() {
 
   function refresh() {
     Promise.all([getActiveDuels(), getDuelHistory()])
-      .then(([a, h]) => { setActive(a as Duel[]); setHistory(h as Duel[]); })
+      .then(([a, h]) => { setActive(a as unknown as Duel[]); setHistory(h as unknown as Duel[]); })
       .catch(() => {});
   }
 
   useEffect(() => { document.title = 'FitAI — Duels'; }, []);
   useEffect(() => {
     Promise.all([getActiveDuels(), getDuelHistory()])
-      .then(([a, h]) => { setActive(a as Duel[]); setHistory(h as Duel[]); })
+      .then(([a, h]) => { setActive(a as unknown as Duel[]); setHistory(h as unknown as Duel[]); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -47,7 +47,7 @@ export default function DuelsPage() {
     if (!scoreInput || !scoreInput.value) return;
     submitDuelScore(scoreInput.id, Number(scoreInput.value))
       .then(() => getActiveDuels())
-      .then(a => { setActive(a as Duel[]); setScoreInput(null); })
+      .then(a => { setActive(a as unknown as Duel[]); setScoreInput(null); })
       .catch(() => {});
   }
 

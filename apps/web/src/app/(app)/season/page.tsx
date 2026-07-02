@@ -132,8 +132,11 @@ export default function SeasonPage() {
   useEffect(() => { document.title = 'FitAI — Season'; }, []);
 
   useEffect(() => {
+    // TODO(shared-types): page expects a legacy shape (name, currentXP, nextLevelXP, endsAt,
+    // missions[].current/target/locked) — real contract is SeasonCurrent from @fitai/shared
+    // (season nested under `season`, missions use titleCs/targetValue).
     getCurrentSeason()
-      .then(setData)
+      .then((d) => setData(d as unknown as SeasonData))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
@@ -142,8 +145,10 @@ export default function SeasonPage() {
     setJoining(true);
     setError(null);
     try {
+      // TODO(shared-types): joinSeason returns a SeasonProgress row (no name/missions);
+      // page should refetch getCurrentSeason() after joining.
       const d = await joinSeason();
-      setData(d);
+      setData(d as unknown as SeasonData);
     } catch {
       setError('Failed to join season');
     }
@@ -154,14 +159,16 @@ export default function SeasonPage() {
     setChecking(true);
     setError(null);
     try {
-      const result = await checkSeasonMissions();
+      // TODO(shared-types): API returns SeasonMissionCheckResult with `newlyCompleted:
+      // { code, titleCs }[]` — the `completed` field read below never exists at runtime.
+      const result = (await checkSeasonMissions()) as unknown as { completed?: Mission[] };
       if (result.completed && result.completed.length > 0) {
         setNewlyCompleted(result.completed.map((m: Mission) => m.id));
         setConfettiTrigger(true);
         setTimeout(() => setConfettiTrigger(false), 100);
       }
       const fresh = await getCurrentSeason();
-      setData(fresh);
+      setData(fresh as unknown as SeasonData);
     } catch {
       setError('Failed to check missions');
     }

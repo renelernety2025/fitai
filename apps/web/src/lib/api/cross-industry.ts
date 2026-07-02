@@ -1,4 +1,47 @@
 import { request } from './base';
+import type {
+  BodyMileageEntry,
+  ClipCommentData,
+  ClipData,
+  ClipDetail,
+  ClipFeedItem,
+  ClipLikeResponse,
+  ClipPlayUrlResponse,
+  ClipUploadUrlResponse,
+  DeletedResponse,
+  DuelDeclineResponse,
+  DuelSummary,
+  DuelWithUsers,
+  ExerciseRecordEntry,
+  GearItemData,
+  GearItemWithReviews,
+  GearReviewData,
+  GymReviewInput,
+  GymReviewItem,
+  GymReviewWithUser,
+  MaintenanceAlertItem,
+  MaintenanceScheduleItem,
+  NearbyGym,
+  OkResponse,
+  PersonalRecordEntry,
+  PlaylistLink,
+  SectorTimeEntry,
+  SquadDetail,
+  SquadLeaderboardEntry,
+  SquadMember,
+  SquadMine,
+  SquadWithMembers,
+  SupplementDayLog,
+  SupplementItem,
+  SupplementLogEntry,
+  SupplementStackItem,
+  UpdateGearInput,
+  UserSupplementData,
+  UserSupplementWithSupplement,
+} from '@fitai/shared';
+
+// Re-export contract types consumed by pages via '@/lib/api'.
+export type { PlaylistLink, PersonalRecordEntry as PersonalRecord };
 
 // Duels
 export function challengeDuel(data: {
@@ -7,38 +50,40 @@ export function challengeDuel(data: {
   metric: string;
   duration: string;
   xpBet: number;
-}): Promise<any> {
+}): Promise<DuelWithUsers> {
   return request('/duels/challenge', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function acceptDuel(id: string): Promise<any> {
+export function acceptDuel(id: string): Promise<DuelWithUsers> {
   return request(`/duels/${id}/accept`, { method: 'POST' });
 }
 
-export function declineDuel(id: string): Promise<any> {
+export function declineDuel(id: string): Promise<DuelDeclineResponse> {
   return request(`/duels/${id}/decline`, {
     method: 'POST',
   });
 }
 
+// Concurrent-settle race path returns the bare duel row (or null) without
+// challenger/challenged relations — see DuelsService.submitScore.
 export function submitDuelScore(
   id: string,
   score: number,
-): Promise<any> {
+): Promise<DuelWithUsers | DuelSummary | null> {
   return request(`/duels/${id}/score`, {
     method: 'POST',
     body: JSON.stringify({ score }),
   });
 }
 
-export function getActiveDuels(): Promise<any[]> {
+export function getActiveDuels(): Promise<DuelWithUsers[]> {
   return request('/duels/active');
 }
 
-export function getDuelHistory(): Promise<any[]> {
+export function getDuelHistory(): Promise<DuelWithUsers[]> {
   return request('/duels/history');
 }
 
@@ -46,47 +91,47 @@ export function getDuelHistory(): Promise<any[]> {
 export function createSquad(data: {
   name: string;
   motto?: string;
-}): Promise<any> {
+}): Promise<SquadWithMembers> {
   return request('/squads', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function getMySquad(): Promise<any> {
+export function getMySquad(): Promise<SquadMine | null> {
   return request('/squads/mine');
 }
 
 export function inviteToSquad(
   squadId: string,
   userId: string,
-): Promise<any> {
+): Promise<SquadMember> {
   return request(`/squads/${squadId}/invite`, {
     method: 'POST',
     body: JSON.stringify({ userId }),
   });
 }
 
-export function getSquadDetail(id: string): Promise<any> {
+export function getSquadDetail(id: string): Promise<SquadDetail> {
   return request(`/squads/${id}`);
 }
 
-export function getSquadLeaderboard(): Promise<any[]> {
+export function getSquadLeaderboard(): Promise<SquadLeaderboardEntry[]> {
   return request('/squads/leaderboard');
 }
 
-export function leaveSquad(id: string): Promise<any> {
+export function leaveSquad(id: string): Promise<OkResponse> {
   return request(`/squads/${id}/leave`, {
     method: 'DELETE',
   });
 }
 
 // Supplements
-export function getSupplementCatalog(): Promise<any[]> {
+export function getSupplementCatalog(): Promise<SupplementItem[]> {
   return request('/supplements/catalog');
 }
 
-export function getMyStack(): Promise<any[]> {
+export function getMyStack(): Promise<SupplementStackItem[]> {
   return request('/supplements/stack');
 }
 
@@ -95,14 +140,14 @@ export function addToStack(data: {
   dosage: string;
   timing: string;
   monthlyCostKc?: number;
-}): Promise<any> {
+}): Promise<UserSupplementWithSupplement> {
   return request('/supplements/stack', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function removeFromStack(id: string): Promise<any> {
+export function removeFromStack(id: string): Promise<UserSupplementData> {
   return request(`/supplements/stack/${id}`, {
     method: 'DELETE',
   });
@@ -110,7 +155,7 @@ export function removeFromStack(id: string): Promise<any> {
 
 export function logSupplement(
   userSupplementId: string,
-): Promise<any> {
+): Promise<SupplementLogEntry> {
   return request('/supplements/log', {
     method: 'POST',
     body: JSON.stringify({ userSupplementId }),
@@ -119,12 +164,12 @@ export function logSupplement(
 
 export function getSupplementLog(
   date: string,
-): Promise<any[]> {
+): Promise<SupplementDayLog[]> {
   return request(`/supplements/log/${date}`);
 }
 
 // Gear
-export function getMyGear(): Promise<any[]> {
+export function getMyGear(): Promise<GearItemWithReviews[]> {
   return request('/gear');
 }
 
@@ -135,7 +180,7 @@ export function addGearItem(data: {
   purchaseDate?: string;
   priceKc?: number;
   maxSessions?: number;
-}): Promise<any> {
+}): Promise<GearItemData> {
   return request('/gear', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -144,22 +189,22 @@ export function addGearItem(data: {
 
 export function updateGearItem(
   id: string,
-  data: any,
-): Promise<any> {
+  data: UpdateGearInput,
+): Promise<GearItemData> {
   return request(`/gear/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
-export function deleteGearItem(id: string): Promise<any> {
+export function deleteGearItem(id: string): Promise<OkResponse> {
   return request(`/gear/${id}`, { method: 'DELETE' });
 }
 
 export function reviewGear(
   id: string,
   data: { rating: number; text?: string },
-): Promise<any> {
+): Promise<GearReviewData> {
   return request(`/gear/${id}/review`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -167,60 +212,47 @@ export function reviewGear(
 }
 
 // Maintenance
-export function getMaintenanceStatus(): Promise<any[]> {
+export function getMaintenanceStatus(): Promise<MaintenanceScheduleItem[]> {
   return request('/maintenance');
 }
 
-export function getMaintenanceAlerts(): Promise<any[]> {
+export function getMaintenanceAlerts(): Promise<MaintenanceAlertItem[]> {
   return request('/maintenance/alerts');
 }
 
 export function markDeload(
   muscleGroup: string,
-): Promise<any> {
+): Promise<MaintenanceScheduleItem> {
   return request(`/maintenance/${muscleGroup}/deload`, {
     method: 'POST',
   });
 }
 
-export function dismissAlert(id: string): Promise<any> {
+export function dismissAlert(id: string): Promise<MaintenanceAlertItem> {
   return request(
     `/maintenance/alerts/${id}/dismiss`,
     { method: 'POST' },
   );
 }
 
-export function getBodyMileage(): Promise<any> {
+export function getBodyMileage(): Promise<BodyMileageEntry[]> {
   return request('/maintenance/mileage');
 }
 
 // Personal Records
-export interface PersonalRecord {
-  exerciseId: string;
-  exerciseName: string;
-  category: string;
-  bestWeight: number;
-  bestReps: number;
-  date: string;
-  deltaWeight: number | null;
-  deltaReps: number | null;
-}
-
-export function getPersonalRecords(): Promise<
-  PersonalRecord[]
-> {
+export function getPersonalRecords(): Promise<PersonalRecordEntry[]> {
   return request('/records');
 }
 
 export function getExerciseRecords(
   exerciseId: string,
-): Promise<any> {
+): Promise<ExerciseRecordEntry[]> {
   return request(`/records/${exerciseId}`);
 }
 
 export function getSectorTimes(
   exerciseSetId: string,
-): Promise<any> {
+): Promise<SectorTimeEntry[]> {
   return request(`/records/sectors/${exerciseSetId}`);
 }
 
@@ -228,7 +260,7 @@ export function getSectorTimes(
 export function getClipUploadUrl(data: {
   fileName: string;
   contentType: string;
-}): Promise<any> {
+}): Promise<ClipUploadUrlResponse> {
   return request('/clips/upload-url', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -238,17 +270,17 @@ export function getClipUploadUrl(data: {
 export function getClipsFeed(
   page = 1,
   limit = 10,
-): Promise<any[]> {
+): Promise<ClipFeedItem[]> {
   return request(
     `/clips/feed?page=${page}&limit=${limit}`,
   );
 }
 
-export function getClipDetail(id: string): Promise<any> {
+export function getClipDetail(id: string): Promise<ClipDetail> {
   return request(`/clips/${id}`);
 }
 
-export function getClipPlayUrl(id: string): Promise<{ url: string; expiresIn: number; durationSeconds: number }> {
+export function getClipPlayUrl(id: string): Promise<ClipPlayUrlResponse> {
   return request(`/clips/${id}/play-url`);
 }
 
@@ -258,42 +290,32 @@ export function createClip(data: {
   exerciseId?: string;
   tags?: string[];
   caption?: string;
-}): Promise<any> {
+}): Promise<ClipData> {
   return request('/clips', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function toggleClipLike(id: string): Promise<any> {
+export function toggleClipLike(id: string): Promise<ClipLikeResponse> {
   return request(`/clips/${id}/like`, { method: 'POST' });
 }
 
 export function commentOnClip(
   id: string,
   text: string,
-): Promise<any> {
+): Promise<ClipCommentData> {
   return request(`/clips/${id}/comment`, {
     method: 'POST',
     body: JSON.stringify({ text }),
   });
 }
 
-export function deleteClip(id: string): Promise<any> {
+export function deleteClip(id: string): Promise<DeletedResponse> {
   return request(`/clips/${id}`, { method: 'DELETE' });
 }
 
 // Playlists
-export interface PlaylistLink {
-  id: string;
-  title: string;
-  spotifyUrl?: string;
-  appleMusicUrl?: string;
-  bpm?: number;
-  workoutType?: string;
-  user: { name: string };
-}
-
 export function getPlaylists(params?: {
   exerciseId?: string;
   workoutType?: string;
@@ -313,7 +335,7 @@ export function addPlaylistLink(data: {
   appleMusicUrl?: string;
   title: string;
   bpm?: number;
-}): Promise<any> {
+}): Promise<PlaylistLink> {
   return request('/playlists', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -321,11 +343,11 @@ export function addPlaylistLink(data: {
 }
 
 // Gym Finder
-export function getGymReviews(): Promise<any[]> {
+export function getGymReviews(): Promise<GymReviewWithUser[]> {
   return request('/gym-finder');
 }
 
-export function addGymReview(data: any): Promise<any> {
+export function addGymReview(data: GymReviewInput): Promise<GymReviewItem> {
   return request('/gym-finder', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -335,7 +357,7 @@ export function addGymReview(data: any): Promise<any> {
 export function getNearbyGyms(
   lat: number,
   lng: number,
-): Promise<any[]> {
+): Promise<NearbyGym[]> {
   return request(
     `/gym-finder/nearby?lat=${lat}&lng=${lng}`,
   );

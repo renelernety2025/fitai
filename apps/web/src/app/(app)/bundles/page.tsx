@@ -5,7 +5,7 @@ import { Card, Button, SectionHeader, Tag } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getBundles, purchaseBundle } from '@/lib/api';
 
-type Bundle = { id: string; name: string; description?: string; items: any[]; priceXP: number; giftable: boolean; creator?: { name: string }; purchased?: boolean; creatorName?: string };
+type Bundle = { id: string; name: string; description?: string | null; items: any[]; priceXP: number; giftable: boolean; creator?: { name: string }; purchased?: boolean; creatorName?: string };
 
 const TYPE_ICON: Record<string, string> = { workout_plan: 'dumbbell', meal_plan: 'apple', supplement: 'pill', challenge: 'bolt', recovery: 'heart' };
 

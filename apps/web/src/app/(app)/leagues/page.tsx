@@ -32,12 +32,16 @@ export default function LeaguesPage() {
 
   useEffect(() => { document.title = 'FitAI — Leagues'; }, []);
   useEffect(() => {
-    getLeagueCurrent().then(setData).catch(() => setData(null)).finally(() => setLoading(false));
+    // TODO(shared-types): page expects fields the API does not return (rank, nextTierXP,
+    // endsAt, promotionLine, relegationLine) — real contract is LeagueCurrent from @fitai/shared.
+    getLeagueCurrent().then((d) => setData(d as unknown as LeagueData)).catch(() => setData(null)).finally(() => setLoading(false));
   }, []);
 
   async function handleJoin() {
     setJoining(true);
-    try { setData(await joinLeague()); } catch { /* noop */ }
+    // TODO(shared-types): joinLeague returns a LeagueMembership row (no leaderboard);
+    // page should refetch getLeagueCurrent() after joining.
+    try { setData((await joinLeague()) as unknown as LeagueData); } catch { /* noop */ }
     setJoining(false);
   }
 

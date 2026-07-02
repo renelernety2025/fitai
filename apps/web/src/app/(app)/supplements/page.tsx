@@ -24,7 +24,9 @@ export default function SupplementsPage() {
   useEffect(() => { document.title = 'FitAI — Supplements'; }, []);
 
   const refresh = useCallback(() => {
-    getMyStack().then(setStack).catch(console.error).finally(() => setLoading(false));
+    // TODO(shared-types): API returns SupplementStackItem[] (name lives on
+    // item.supplement.name, cost on monthlyCostKc) — page type predates contract.
+    getMyStack().then((s) => setStack(s as unknown as Supplement[])).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -33,7 +35,7 @@ export default function SupplementsPage() {
     setShowModal(true);
     if (catalog.length === 0) {
       setCatalogLoading(true);
-      getSupplementCatalog().then(setCatalog).catch(console.error).finally(() => setCatalogLoading(false));
+      getSupplementCatalog().then((c) => setCatalog(c as unknown as CatalogItem[])).catch(console.error).finally(() => setCatalogLoading(false));
     }
   }
 

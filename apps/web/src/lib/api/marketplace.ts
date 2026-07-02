@@ -1,9 +1,46 @@
+import type {
+  AddRoutineItemPayload,
+  AddWishlistPayload,
+  ApplyTrainerPayload,
+  Bundle,
+  BundleDetail,
+  BundlePurchase,
+  BundleWithCreator,
+  CreateBundlePayload,
+  CreateExperiencePayload,
+  CreateListingPayload,
+  CreateRoutinePayload,
+  DeleteResult,
+  DropDetail,
+  DropItem,
+  DropPurchase,
+  DropPurchaseWithDrop,
+  Experience,
+  ExperienceBooking,
+  ExperienceBookingWithExperience,
+  ExperienceDetail,
+  ExperienceListing,
+  MarketplaceListing,
+  MarketplaceListingWithAuthor,
+  MarketplacePurchaseResult,
+  MarketplaceRatingResult,
+  PublicRoutine,
+  Routine,
+  RoutineItem,
+  RoutineWithItems,
+  TrainerDetail,
+  TrainerProfile,
+  TrainerProfileWithUser,
+  UpdateTrainerProfilePayload,
+  WishlistCount,
+  WishlistEntry,
+} from '@fitai/shared';
 import { request } from './base';
 
 // Marketplace
 export function getMarketplace(
   params?: string,
-): Promise<any[]> {
+): Promise<MarketplaceListingWithAuthor[]> {
   return request(
     `/marketplace${params ? `?${params}` : ''}`,
   );
@@ -11,11 +48,13 @@ export function getMarketplace(
 
 export function getMarketplaceListing(
   id: string,
-): Promise<any> {
+): Promise<MarketplaceListingWithAuthor> {
   return request(`/marketplace/${id}`);
 }
 
-export function createListing(data: any): Promise<any> {
+export function createListing(
+  data: CreateListingPayload,
+): Promise<MarketplaceListing> {
   return request('/marketplace', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -24,7 +63,7 @@ export function createListing(data: any): Promise<any> {
 
 export function purchaseListing(
   id: string,
-): Promise<any> {
+): Promise<MarketplacePurchaseResult> {
   return request(`/marketplace/${id}/purchase`, {
     method: 'POST',
   });
@@ -33,7 +72,7 @@ export function purchaseListing(
 export function rateListing(
   id: string,
   rating: number,
-): Promise<any> {
+): Promise<MarketplaceRatingResult> {
   return request(`/marketplace/${id}/rate`, {
     method: 'POST',
     body: JSON.stringify({ rating }),
@@ -45,7 +84,7 @@ export function getExperiences(params?: {
   category?: string;
   difficulty?: string;
   search?: string;
-}): Promise<any[]> {
+}): Promise<ExperienceListing[]> {
   const qs = params
     ? new URLSearchParams(
         params as Record<string, string>,
@@ -56,13 +95,13 @@ export function getExperiences(params?: {
 
 export function getExperienceDetail(
   id: string,
-): Promise<any> {
+): Promise<ExperienceDetail> {
   return request(`/experiences/${id}`);
 }
 
 export function createExperience(
-  data: any,
-): Promise<any> {
+  data: CreateExperiencePayload,
+): Promise<Experience> {
   return request('/experiences', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -71,20 +110,24 @@ export function createExperience(
 
 export function bookExperience(
   id: string,
-): Promise<any> {
+): Promise<ExperienceBooking> {
   return request(`/experiences/${id}/book`, {
     method: 'POST',
   });
 }
 
-export function cancelBooking(id: string): Promise<any> {
+export function cancelBooking(
+  id: string,
+): Promise<ExperienceBooking> {
   return request(
     `/experiences/bookings/${id}/cancel`,
     { method: 'POST' },
   );
 }
 
-export function checkinBooking(id: string): Promise<any> {
+export function checkinBooking(
+  id: string,
+): Promise<ExperienceBooking> {
   return request(
     `/experiences/bookings/${id}/checkin`,
     { method: 'POST' },
@@ -94,41 +137,23 @@ export function checkinBooking(id: string): Promise<any> {
 export function reviewBooking(
   id: string,
   data: { rating: number; reviewText?: string },
-): Promise<any> {
+): Promise<ExperienceBooking> {
   return request(
     `/experiences/bookings/${id}/review`,
     { method: 'POST', body: JSON.stringify(data) },
   );
 }
 
-export function getMyBookings(): Promise<any[]> {
+export function getMyBookings(): Promise<
+  ExperienceBookingWithExperience[]
+> {
   return request('/experiences/my-bookings');
 }
 
 // Trainers
-export interface Trainer {
-  id: string;
-  userId: string;
-  bio: string;
-  supertrainer: boolean;
-  responseRate: number;
-  totalSessions: number;
-  isVerified: boolean;
-  specializations: string[];
-  certifications: string[];
-  user: { name: string; avatarUrl?: string };
-  _count?: { reviews: number };
-  avgRating?: number;
-}
-
-export interface TrainerDetail extends Trainer {
-  reviews: any[];
-  experiences: any[];
-}
-
 export function getTrainers(
   search?: string,
-): Promise<Trainer[]> {
+): Promise<TrainerProfileWithUser[]> {
   return request(
     `/trainers${search ? `?search=${encodeURIComponent(search)}` : ''}`,
   );
@@ -140,11 +165,9 @@ export function getTrainerDetail(
   return request(`/trainers/${id}`);
 }
 
-export function applyAsTrainer(data: {
-  bio: string;
-  certifications: string[];
-  specializations: string[];
-}): Promise<any> {
+export function applyAsTrainer(
+  data: ApplyTrainerPayload,
+): Promise<TrainerProfile> {
   return request('/trainers/apply', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -152,8 +175,8 @@ export function applyAsTrainer(data: {
 }
 
 export function updateTrainerProfile(
-  data: any,
-): Promise<any> {
+  data: UpdateTrainerProfilePayload,
+): Promise<TrainerProfile> {
   return request('/trainers/profile', {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -161,44 +184,29 @@ export function updateTrainerProfile(
 }
 
 // Routine Builder
-export interface Routine {
-  id: string;
-  name: string;
-  isPublic: boolean;
-  items: RoutineItem[];
-}
-
-export interface RoutineItem {
-  id: string;
-  type: string;
-  timing: string;
-  referenceName: string;
-  notes?: string;
-  sortOrder: number;
-}
-
-export function getMyRoutines(): Promise<Routine[]> {
+export function getMyRoutines(): Promise<RoutineWithItems[]> {
   return request('/routines/mine');
 }
 
-export function createRoutine(data: {
-  name: string;
-  isPublic?: boolean;
-}): Promise<any> {
+export function createRoutine(
+  data: CreateRoutinePayload,
+): Promise<Routine> {
   return request('/routines', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function deleteRoutine(id: string): Promise<any> {
+export function deleteRoutine(
+  id: string,
+): Promise<DeleteResult> {
   return request(`/routines/${id}`, { method: 'DELETE' });
 }
 
 export function addRoutineItem(
   routineId: string,
-  data: any,
-): Promise<any> {
+  data: AddRoutineItemPayload,
+): Promise<RoutineItem> {
   return request(`/routines/${routineId}/items`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -208,84 +216,78 @@ export function addRoutineItem(
 export function removeRoutineItem(
   routineId: string,
   itemId: string,
-): Promise<any> {
+): Promise<DeleteResult> {
   return request(
     `/routines/${routineId}/items/${itemId}`,
     { method: 'DELETE' },
   );
 }
 
-export function getPublicRoutines(): Promise<Routine[]> {
+export function getPublicRoutines(): Promise<PublicRoutine[]> {
   return request('/routines/public');
 }
 
 // Limited Drops
-export function getDrops(): Promise<any[]> {
+export function getDrops(): Promise<DropItem[]> {
   return request('/drops');
 }
 
-export function getDropDetail(id: string): Promise<any> {
+export function getDropDetail(
+  id: string,
+): Promise<DropDetail> {
   return request(`/drops/${id}`);
 }
 
-export function purchaseDrop(id: string): Promise<any> {
+export function purchaseDrop(
+  id: string,
+): Promise<DropPurchase> {
   return request(`/drops/${id}/purchase`, {
     method: 'POST',
   });
 }
 
-export function getMyDropPurchases(): Promise<any[]> {
+export function getMyDropPurchases(): Promise<
+  DropPurchaseWithDrop[]
+> {
   return request('/drops/my-purchases');
 }
 
 // Bundles
-export interface Bundle {
-  id: string;
-  name: string;
-  description?: string;
-  items: any[];
-  priceXP: number;
-  giftable: boolean;
-  creator: { name: string };
-}
-
-export function getBundles(): Promise<Bundle[]> {
+export function getBundles(): Promise<BundleWithCreator[]> {
   return request('/bundles');
 }
 
-export function getBundleDetail(id: string): Promise<any> {
+export function getBundleDetail(
+  id: string,
+): Promise<BundleDetail> {
   return request(`/bundles/${id}`);
 }
 
-export function createBundle(data: any): Promise<any> {
+export function createBundle(
+  data: CreateBundlePayload,
+): Promise<Bundle> {
   return request('/bundles', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export function purchaseBundle(id: string): Promise<any> {
+export function purchaseBundle(
+  id: string,
+): Promise<BundlePurchase> {
   return request(`/bundles/${id}/purchase`, {
     method: 'POST',
   });
 }
 
 // Wishlist
-export interface WishlistItem {
-  id: string;
-  itemType: string;
-  itemId: string;
-  addedAt: string;
-}
-
-export function getWishlist(): Promise<WishlistItem[]> {
+export function getWishlist(): Promise<WishlistEntry[]> {
   return request('/wishlist');
 }
 
-export function addToWishlist(data: {
-  itemType: string;
-  itemId: string;
-}): Promise<any> {
+export function addToWishlist(
+  data: AddWishlistPayload,
+): Promise<WishlistEntry> {
   return request('/wishlist', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -294,14 +296,16 @@ export function addToWishlist(data: {
 
 export function removeFromWishlist(
   id: string,
-): Promise<any> {
+): Promise<DeleteResult> {
   return request(`/wishlist/${id}`, { method: 'DELETE' });
 }
 
+// NOTE: previously typed Promise<number>; the API actually returns
+// { itemType, itemId, count } (WishlistService.count). No callers today.
 export function getWishlistCount(
   itemType: string,
   itemId: string,
-): Promise<number> {
+): Promise<WishlistCount> {
   return request(
     `/wishlist/count/${itemType}/${itemId}`,
   );

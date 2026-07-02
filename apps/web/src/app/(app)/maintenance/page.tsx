@@ -23,7 +23,9 @@ export default function MaintenancePage() {
   const refresh = useCallback(() => {
     setError(false);
     Promise.all([getMaintenanceStatus(), getMaintenanceAlerts(), getBodyMileage()])
-      .then(([m, a, b]) => { setMuscles(m); setAlerts(a); setMileage(b); })
+      // TODO(shared-types): API returns BodyMileageEntry[] (per muscle group),
+      // page still treats it as a single aggregate object.
+      .then(([m, a, b]) => { setMuscles(m); setAlerts(a); setMileage(b as unknown as BodyMileage); })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);

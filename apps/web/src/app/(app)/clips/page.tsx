@@ -18,7 +18,7 @@ export default function ClipsPage() {
   const [urlLoading, setUrlLoading] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Clips'; }, []);
-  useEffect(() => { setLoading(true); getClipsFeed(1, 20).then((c) => setClips(c as Clip[])).catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => { setLoading(true); getClipsFeed(1, 20).then((c) => setClips(c as unknown as Clip[])).catch(() => {}).finally(() => setLoading(false)); }, []);
 
   // Fetch a fresh signed URL when the active clip changes. Presigned URLs
   // expire in 15 min, plenty for normal browsing; refetch on every switch

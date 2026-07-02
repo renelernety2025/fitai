@@ -33,12 +33,13 @@ export default function DropsPage() {
 
   useEffect(() => { document.title = 'FitAI — Drops'; }, []);
   useEffect(() => {
-    Promise.all([getDrops(), getMyDropPurchases()]).then(([d, p]) => { setDrops(d as Drop[]); setPurchases(p as Purchase[]); }).catch(() => {}).finally(() => setLoading(false));
+    // TODO(shared-types): local Drop/Purchase shapes diverge from the API contract (remaining, imageUrl, dropName do not exist server-side)
+    Promise.all([getDrops(), getMyDropPurchases()]).then(([d, p]) => { setDrops(d as unknown as Drop[]); setPurchases(p as unknown as Purchase[]); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   function handlePurchase(id: string) {
     setPurchasing(id);
-    purchaseDrop(id).then(() => Promise.all([getDrops(), getMyDropPurchases()]).then(([d, p]) => { setDrops(d as Drop[]); setPurchases(p as Purchase[]); })).catch(() => {}).finally(() => setPurchasing(null));
+    purchaseDrop(id).then(() => Promise.all([getDrops(), getMyDropPurchases()]).then(([d, p]) => { setDrops(d as unknown as Drop[]); setPurchases(p as unknown as Purchase[]); })).catch(() => {}).finally(() => setPurchasing(null));
   }
 
   return (
