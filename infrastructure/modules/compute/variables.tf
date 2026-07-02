@@ -68,6 +68,10 @@ variable "videos_bucket_arn" {
   type = string
 }
 
+variable "assets_bucket_arn" {
+  type = string
+}
+
 variable "cloudfront_url" {
   type = string
 }

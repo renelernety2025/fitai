@@ -70,8 +70,9 @@ module "compute" {
   anthropic_api_key  = var.anthropic_api_key
   videos_bucket_name = module.storage.videos_bucket_name
   videos_bucket_arn  = module.storage.videos_bucket_arn
+  assets_bucket_arn  = module.storage.assets_bucket_arn
   cloudfront_url     = module.storage.cloudfront_url
-  api_url            = "http://${module.compute.alb_dns_name}"
+  api_url            = var.public_url
 }
 
 module "cicd" {
@@ -87,7 +88,7 @@ module "cicd" {
   ecs_cluster_name     = module.compute.ecs_cluster_name
   ecs_api_service_name = module.compute.ecs_api_service_name
   ecs_web_service_name = module.compute.ecs_web_service_name
-  api_url              = "http://${module.compute.alb_dns_name}"
+  api_url              = var.public_url
 }
 
 module "monitoring" {

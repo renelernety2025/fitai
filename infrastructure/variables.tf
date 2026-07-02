@@ -59,3 +59,9 @@ locals {
     Env     = var.env
   }
 }
+
+variable "public_url" {
+  description = "Public HTTPS origin (DNS + ACM cert managed outside Terraform)"
+  type        = string
+  default     = "https://fitai.bfevents.cz"
+}

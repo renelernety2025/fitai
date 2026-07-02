@@ -129,9 +129,12 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
-        Resource = ["${var.videos_bucket_arn}", "${var.videos_bucket_arn}/*"]
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [
+          "${var.videos_bucket_arn}", "${var.videos_bucket_arn}/*",
+          "${var.assets_bucket_arn}", "${var.assets_bucket_arn}/*",
+        ]
       },
       {
         Effect   = "Allow"
@@ -264,6 +267,10 @@ resource "aws_lb" "main" {
   security_groups    = [var.alb_sg_id]
   subnets            = var.public_subnet_ids
 
+  # SSE streaming endpoints (coaching/chat) can idle between events;
+  # default 60s cut long streams (was manually raised to 120 in console).
+  idle_timeout = 300
+
   tags = var.tags
 }
 
@@ -304,14 +311,22 @@ resource "aws_lb_target_group" "web" {
   tags = var.tags
 }
 
+# HTTPS 443 listener (ACM cert) was created outside Terraform and is not
+# managed here yet — do not remove the redirect below without importing it.
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web.arn
+    type = "redirect"
+
+    redirect {
+      host        = "fitai.bfevents.cz"
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 
@@ -357,6 +372,12 @@ resource "aws_ecs_service" "api" {
     container_port   = 3001
   }
 
+  # Deploys register new task def revisions outside Terraform (CI :latest
+  # flow); without this, apply would roll the service back to revision 1.
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = var.tags
 }
 
@@ -387,12 +408,16 @@ resource "aws_ecs_service" "web" {
     container_port   = 3000
   }
 
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = var.tags
 }
 
 # Auto Scaling
 resource "aws_appautoscaling_target" "api" {
-  max_capacity       = 3
+  max_capacity       = 20
   min_capacity       = 1
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"
   scalable_dimension = "ecs:service:DesiredCount"
@@ -410,12 +435,14 @@ resource "aws_appautoscaling_policy" "api_cpu" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value = 70.0
+    target_value       = 60.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
   }
 }
 
 resource "aws_appautoscaling_target" "web" {
-  max_capacity       = 3
+  max_capacity       = 10
   min_capacity       = 1
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.web.name}"
   scalable_dimension = "ecs:service:DesiredCount"
@@ -433,6 +460,8 @@ resource "aws_appautoscaling_policy" "web_cpu" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
-    target_value = 70.0
+    target_value       = 60.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
   }
 }
