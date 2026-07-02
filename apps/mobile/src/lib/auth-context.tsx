@@ -1,27 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authMe, getToken, setToken as saveToken, removeToken, registerExpoPushToken, setUnauthorizedHandler } from './api';
+import { authMe, getToken, setToken as saveToken, removeToken, setUnauthorizedHandler } from './api';
 
 /**
- * Mobile push notifications temporarily disabled.
- *
- * The `expo-notifications` package was removed to unblock EAS dev build —
- * its autolinking adds `aps-environment` entitlement which requires Push
- * Notifications capability in the provisioning profile. That capability
- * isn't set up because APNs key upload was blocked by unrelated keyboard/
- * auth issues.
- *
- * TODO: Restore by:
- * 1. Upload APNs .p8 via `npx eas credentials` → iOS → Push Notifications
- * 2. `npm install expo-notifications@~0.32.16 --workspace=@fitai/mobile`
- * 3. Re-add `expo-notifications` to `app.json` plugins array
- * 4. Restore the real implementation from git history (commit before this fix)
- * 5. `npx eas build --clear-cache --profile development --platform ios`
- *
- * Web push (VAPID) continues to work — this only affects mobile.
+ * Mobile push notifications are disabled (expo-notifications removed to
+ * unblock the EAS dev build — missing APNs capability). Restore steps live
+ * in docs/MOBILE-BUILD-CHECKLIST.md; the server endpoint
+ * POST /users/expo-push-token (api.ts registerExpoPushToken) stays for it.
+ * Web push (VAPID) is unaffected.
  */
-async function registerForPushNotificationsAsync(): Promise<string | null> {
-  return null;
-}
 
 interface AuthContextType {
   user: any | null;
@@ -46,10 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authMe()
         .then((u) => {
           setUser(u);
-          // Re-register expo token (idempotent — server upserts)
-          registerForPushNotificationsAsync().then((pushToken) => {
-            if (pushToken) registerExpoPushToken(pushToken).catch(() => {});
-          });
         })
         .catch((e: any) => {
           // Only logout on auth failure (401), not on network/server errors
@@ -65,10 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveToken(newToken);
     setTokenState(newToken);
     setUser(newUser);
-    // Register expo push token in background
-    registerForPushNotificationsAsync().then((pushToken) => {
-      if (pushToken) registerExpoPushToken(pushToken).catch(() => {});
-    });
   }, []);
 
   const logout = useCallback(() => {
