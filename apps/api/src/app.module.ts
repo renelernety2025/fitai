@@ -8,6 +8,7 @@ import { SentryModule } from '@sentry/nestjs/setup';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
 import { EmbeddingsModule } from './embeddings/embeddings.module';
+import { ClaudeModule } from './claude/claude.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
@@ -154,6 +155,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PrismaModule,
     CacheModule,
     EmbeddingsModule,
+    ClaudeModule,
     MetricsModule,
     NotifyModule,
     HealthModule,

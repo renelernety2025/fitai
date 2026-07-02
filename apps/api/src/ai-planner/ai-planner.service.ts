@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { FitnessGoal } from '@prisma/client';
 
 const HOME_EXERCISES = ['Plank', 'Lunges']; // Bodyweight exercises available at home
@@ -9,7 +9,7 @@ const HOME_EXERCISES = ['Plank', 'Lunges']; // Bodyweight exercises available at
 export class AIPlannerService {
   private readonly logger = new Logger(AIPlannerService.name);
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {}
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {}
 
   // ── Fitness Profile ──
 
@@ -305,23 +305,16 @@ Pravidla:
   }
 
   private async callClaude(prompt: string): Promise<any> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       this.logger.warn('No ANTHROPIC_API_KEY — generating mock plan');
       return this.getMockPlan();
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk').default;
-      const client = new Anthropic({ apiKey });
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 2000,
+      const text = await this.claude.complete('ai-planner/generate', {
+        maxTokens: 2000,
         messages: [{ role: 'user', content: prompt }],
       });
-      this.metrics.trackClaudeUsage('ai-planner/generate', response);
-
-      const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON in response');
       return JSON.parse(jsonMatch[0]);
