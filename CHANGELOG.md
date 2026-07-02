@@ -11,6 +11,35 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Platform hardening — batch 2+3] 2026-07-02
+
+- **Prisma migrate cutover DOKONČEN a ověřen (ADR-22)**: drift check
+  prázdný → `0_init` resolved na prod → `fitai-migrate:4` (TF-owned,
+  `migrate deploy && db seed`, family reference, dynamické subnety/SG)
+  → canary migrace (composite indexy [userId, startedAt] na
+  WorkoutSession/GymSession) prošla celým pipeline → smoke 115/115.
+  Destruktivní DDL blokuje GitHub environment `production-migrations`
+  (required reviewer). Snapshot krok warn-only do IAM grantu (RUNBOOK).
+- **ClaudeService (ADR-23)**: centrální wrapper (model registry, retry,
+  metriky, opt-in Redis cache) + migrace všech 13 služeb / 26 call
+  sites; streamy získaly usage tracking. 9 nových unit testů (95 celkem).
+- **Shared API contract typy (ADR-24)**: cross-industry + marketplace +
+  gamification — 128 typů, −101× `Promise<any>` ve web klientu.
+  Typování odhalilo 15 pre-existujících kontrakt bugů na stránkách
+  (TODO(shared-types), ROADMAP). base.ts: timeout + retry + ApiError.
+- **Observabilita (aplikováno)**: 7 nových alarmů (web CPU/mem, api p99,
+  per-TG 5XX ×2, RunningTaskCount ×2), VPC endpoints (S3 + ECR/Secrets/
+  Logs — NAT SPOF mitigace + cost), CodeBuild docker layer cache,
+  RDS multi_az za var (apply na okno). Terraform fmt/validate v CI.
+- **Mobile hardening**: root ErrorBoundary (konec white-screenů),
+  api.ts 15s timeout + globální 401 logout + GET retry, mrtvý push kód
+  pryč; Sentry RN + privacy manifest → docs/MOBILE-BUILD-CHECKLIST.md
+  (native dep nesmí bez EAS buildu — ADR-9).
+- **Perf**: gym-sessions set pre-populace přes createMany (~30
+  round-tripů → 1-2 INSERTy).
+
+---
+
 ## [Platform hardening — Vlna 0+1 batch 1] 2026-07-01 → 2026-07-02
 
 Plný platformní audit (`docs/AUDIT-2026-07-PLATFORM.md`) + první dvě vlny fixů.

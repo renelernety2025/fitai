@@ -90,6 +90,32 @@ VoiceEngine native modul (Swift, AVAudioEngine + VoiceProcessingIO) je v EAS bin
 
 **Po opravě:** Hardware AEC eliminuje echo loop, Phase E-3 mobile streaming playback se odblokuje, cílová latence <1.5s first word.
 
+### 2b. Backlog z 2026-07 platform auditu (po hardening vlnách 0-5)
+
+Hotovo 2026-07-01→02: CI oprava (pnpm→npm) + build/test/tf gaty, jest (95+ testů),
+prisma migrate cutover (ADR-22, canary ověřen), deploy safety (circuit breaker,
+rollout gate, runbook, deploy tagy), TF↔prod reconcile + Redis obnoven, 7 alarmů,
+VPC endpoints, ClaudeService (ADR-23), shared api typy 3 domén (ADR-24),
+mobile ErrorBoundary + api hardening. Detaily: CHANGELOG + docs/AUDIT-2026-07-PLATFORM.md.
+
+| Item | Effort | Pozn. |
+|---|---|---|
+| **[USER] IAM grant rds-predeploy-snapshots** + flip snapshot kroku na hard-fail | 5 min | příkaz v docs/RUNBOOK-rollback.md |
+| **[USER] RDS Multi-AZ flip** (`multi_az=true` v tfvars + apply, okno ~2 min) | 15 min | kód ready |
+| Kontrakt bugy odhalené typováním (11× `TODO(shared-types)`: routine-builder, drops, experiences, supplements, maintenance, gym-finder, duels, clips, squads) | ~4h | typy = realita, opravit STRÁNKY |
+| Sentry: web (@sentry/nextjs) + mobile (@sentry/react-native, EAS build) | ~2h | DSN pending (user) |
+| Playwright e2e (login, gym session, food log) | ~4h | |
+| Smoke test shape assertions (jq) top 20 endpointů | ~1h | |
+| Backend strictNullChecks/noImplicitAny burn-down (545 any) | ~2 dny | per-modul |
+| Shared typy zbývající domény (social 19, user 13, …) + mobile api.ts (154 any) | ~1 den | pattern ADR-24 |
+| Claude response cache — zapnout cacheKey na vhodných callerech (daily-brief má vlastní, kandidáti: recovery/nutrition tips) | ~2h | infra ready v ClaudeService |
+| Redis HA replication group + encryption (recreate okno) | ~3h | security H3 |
+| React Query na webu, DataState abstrakce, next/image, mediapipe dynamic import, SEO metadata | ~2 dny | |
+| npm audit majors (next@16, @nestjs/platform-express), Node 20 actions deprecation | ~1 den | breaking |
+| Root package.json anti-hoist pin cleanup (vyžaduje EAS verifikaci) | s buildem | docs/MOBILE-BUILD-CHECKLIST.md |
+| Staging environment | ~2 dny | |
+| Soft-delete na UGC modelech | ~1 den | |
+
 ### 3. Backlog z 2026-05-14 monster auditu (zbyvajicich items)
 
 | Item | Effort | Status |
