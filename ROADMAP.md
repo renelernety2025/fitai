@@ -28,35 +28,9 @@
 
 ---
 
-## Hotovo (2026-05-04 — odkaz)
+## Hotovo (2026-05-04)
 
-### Wave 1 backend (tech-uplift) ✅
-Plán: `~/.claude/plans/super-m-e-se-pros-m-snazzy-nebula.md`. Wave 1 backend dokončený:
-- **pgvector setup**, HNSW indexy, Prisma schema (Exercise/Recipe/WorkoutSession `embedding vector(1536)`)
-- **EmbeddingsService** (@Global, OpenAI text-embedding-3-small)
-- **Semantic exercise search**: `POST /api/exercises/search/semantic`
-- **RAG history query**: `POST /api/ai-insights/history-query` (top-10 sessions → Claude Haiku, cache 24h, throttle 10/h) + weekly cron pro re-embed
-- **HealthKit-aware Daily Brief**: `calcRecoveryScoreSmart` preferuje HRV/sleep/restingHR z `WearableData` před self-reported `DailyCheckIn`
-- **Wearables DTO**: přidány providery `google_fit` + `health_connect`
-
-### Wave 3 sneak — Oura Ring OAuth ✅
-- `WearableConnection` model + `OuraOAuthService` (CSRF přes JWT state) + `OuraSyncService` + daily cron `@Cron('0 4 * * *')`
-- 5 new endpointů: `oauth/oura/{authorize,callback,sync}`, DELETE, `wearables/connections`
-- Mobile `HealthSyncScreen` rozšířený o Oura sekci s `expo-web-browser` OAuth flow
-- Production deploy: env `OURA_CLIENT_ID/SECRET/REDIRECT_URI` přes Secrets Manager
-- Wave 2 #20/#21 (VisionCamera mobile pose) — **už shipped** v `apps/mobile/src/lib/pose/` + `CameraWorkoutProScreen`
-
-### Wave 1 mobile ✅
-- `@kingstinct/react-native-healthkit` + `react-native-health-connect` installed + plugin config v `app.json`
-- Cross-platform `health-sync.ts` wrapper + `HealthSyncScreen` + ProfileScreen entry
-- Code-complete; user-driven: `expo prebuild --clean` + `pod install` + EAS dev build + device test
-
-### Wave 1 zbývá pro produkci (user-driven)
-- EAS development build (iOS + Android, ~15 min každá)
-- Device test HealthKit/Health Connect permissions + initial 7d sync
-- RDS: `CREATE EXTENSION vector;` + schema push (Exercise/Recipe/WorkoutSession `embedding` column) přes ECS migrate task
-- Embedding seed přes ECS task (`OPENAI_API_KEY` ze Secrets Manager, ~$0.05)
-- Smoke test prod (`bash test-production.sh` → 115/115)
+> Wave 1 backend + Oura + mobile detaily: `ROADMAP-archive/2026-05-wave1-completed.md`
 
 ---
 
@@ -141,34 +115,9 @@ Kompletní systematika v [`SCALING.md`](./SCALING.md). Vrstvy 1-3 plánovány al
 
 ---
 
-## Další priorita (next session)
+## Další priorita
 
-### Tier 1 — Okamžitá hodnota ✅
-- ~~**AI Chat Coach**~~ ✅ — /ai-chat s Claude streaming, hero + suggested prompts, conversation memory
-- ~~**Workout streak calendar**~~ ✅ — GitHub-style heatmap 7x12 na /habity, recovery score barvy
-- ~~**"Co dnes?" smart widget**~~ ✅ — rules-based karta nad Daily Brief, 5 scénářů, dismiss per day
-
-### Tier 2 — Diferenciace
-- **AI Form Coach split-screen** — kamera + 3D model vedle sebe
-- ~~**Workout journal**~~ ✅ — /journal s timeline feed, book-style karty, fotky, AI insights, milestones
-- ~~**AI food recognition**~~ ✅ — Claude Vision fotka→makra, recipe kniha, food camera, source tracking
-- ~~**Superset/Circuit builder**~~ ✅ — DnD editor, superset/circuit/giant/drop grouping, inline edit
-
-### Tier 3 — Škálování
-- ~~**Social challenges**~~ ✅ — user-created challenges, invite, detail page, leaderboard
-- ~~**Export dat**~~ ✅ — CSV/PDF workout history, journal, nutrition. /export page
-- **Dark/light mode** přepínač
-
-### Fitness Instagram ✅ Wave 1 + Wave 2
-- ~~**Fitness Instagram Wave 1**~~ ✅ — Posts, algorithmic feed (For You/Following/Trending), hashtags, verified badges, promo cards.
-- ~~**Fitness Instagram Wave 2**~~ ✅ — Creator Economy (XP subscriptions, tips, subscriber-only posts), Smart Notifications v2 (11 types, batching, dedup), Creator Dashboard (stats, analytics, content tools, scheduled posts).
-
-### Cross-industry ✅
-- ~~**FitAI Wrapped**~~ ✅ — Spotify-style monthly/yearly recap, AI summary, shareable
-- ~~**Ligy/Divize**~~ ✅ — Weekly XP competition, 5 tiers, promotion/relegation
-- ~~**Skill Tree**~~ ✅ — 21 skills, 4 branches, progressive unlocking
-- ~~**Workout Kalendář**~~ ✅ — Monthly calendar, schedule workouts, plan linking
-- ~~**Battle Pass / Sezóny**~~ ✅ — 30-day seasons, 10 missions, level progression
+> Tier 1-3 / Instagram / Cross-industry: většina ✅ hotová — detaily v `ROADMAP-archive/2026-04-tier-features-completed.md`. Otevřené: AI Form Coach split-screen, dark/light mode přepínač.
 
 ## Střední priorita (infrastructure)
 
