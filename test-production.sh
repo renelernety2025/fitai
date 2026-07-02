@@ -65,10 +65,11 @@ TOKEN=$(echo "$LOGIN_RESP" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
 
 AUTH_AVAILABLE=true
 if [ -z "$TOKEN" ]; then
-  echo "  $(yellow ⚠) POST /api/auth/login — no accessToken (demo account may not exist on production)"
-  echo "  Skipping authenticated endpoint tests."
+  echo "  $(red ✗) POST /api/auth/login — no accessToken (auth outage or demo account missing)"
+  echo "  Authenticated endpoint tests will be counted as FAILED."
   AUTH_AVAILABLE=false
-  PASS=$((PASS+1))
+  FAIL=$((FAIL+1))
+  FAILED_TESTS+=("POST /api/auth/login")
 else
   echo "  $(green ✓) POST /api/auth/login (token acquired)"
   PASS=$((PASS+1))
@@ -81,8 +82,9 @@ check_auth() {
   local expected="$2"
   local url="$3"
   if [ "$AUTH_AVAILABLE" = "false" ]; then
-    echo "  $(yellow ⊘) $name (skipped — no auth)"
-    PASS=$((PASS+1))
+    echo "  $(red ✗) $name (no auth — counted as failure)"
+    FAIL=$((FAIL+1))
+    FAILED_TESTS+=("$name")
     return
   fi
   check "$name" "$expected" "$(http_status "$url" "$AUTH")"
@@ -94,8 +96,9 @@ check_auth_multi() {
   shift 2
   local accepted=("$@")
   if [ "$AUTH_AVAILABLE" = "false" ]; then
-    echo "  $(yellow ⊘) $name (skipped — no auth)"
-    PASS=$((PASS+1))
+    echo "  $(red ✗) $name (no auth — counted as failure)"
+    FAIL=$((FAIL+1))
+    FAILED_TESTS+=("$name")
     return
   fi
   local actual
