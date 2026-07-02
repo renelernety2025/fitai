@@ -106,14 +106,47 @@ jobs:
             sleep 15
           done
 
+  check-migration-safety:
+    name: Scan new migrations for destructive DDL
+    needs: detect-changes
+    if: needs.detect-changes.outputs.schema == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      destructive: ${{ steps.scan.outputs.destructive }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: scan
+        run: |
+          if bash scripts/check-destructive-migration.sh HEAD~1; then
+            echo "destructive=false" >> $GITHUB_OUTPUT
+          else
+            echo "destructive=true" >> $GITHUB_OUTPUT
+          fi
+
+  approve-destructive-migration:
+    name: Manual approval (destructive migration)
+    needs: check-migration-safety
+    if: needs.check-migration-safety.outputs.destructive == 'true'
+    runs-on: ubuntu-latest
+    environment: production-migrations # blocks until a reviewer approves
+    steps:
+      - run: echo "Destructive migration approved by reviewer."
+
   migrate:
     name: Run Prisma migrate
-    needs: [detect-changes, build-api]
-    # Always run after a successful API build. `prisma db push` is idempotent —
-    # no-op (~5s) if schema already matches DB, ~15-20s when migrating.
+    needs: [detect-changes, build-api, check-migration-safety, approve-destructive-migration]
+    # Always run after a successful API build. `prisma migrate deploy` is
+    # idempotent — no-op (~5s) when _prisma_migrations is current.
     # Prevents the failure mode where a previous commit introduced a schema
     # change but the build failed before migration ran, leaving DB out of
     # sync with the new code. See 2026-04-08 incident (commit 8e0c071 → 4aac844).
+    # Gate jobs skip on non-schema deploys; 'skipped' satisfies the condition.
+    if: >-
+      always() && !cancelled() && needs.build-api.result == 'success' &&
+      needs.check-migration-safety.result != 'failure' &&
+      (needs.approve-destructive-migration.result == 'success' || needs.approve-destructive-migration.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
@@ -140,12 +173,20 @@ jobs:
             done || true
       - name: Run fitai-migrate task
         run: |
+          # Family name (no pinned revision) -> latest ACTIVE revision, which
+          # Terraform registers (modules/compute migrate task def).
+          # Network config is borrowed from the live api service so subnet/SG
+          # ids never live in this file.
+          NETCFG=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $API_SERVICE \
+            --region $AWS_REGION \
+            --query 'services[0].networkConfiguration.awsvpcConfiguration.{subnets:subnets,securityGroups:securityGroups}' \
+            --output json)
           TASK_ARN=$(aws ecs run-task \
             --cluster $ECS_CLUSTER \
-            --task-definition fitai-migrate:3 \
+            --task-definition fitai-migrate \
             --launch-type FARGATE \
             --region $AWS_REGION \
-            --network-configuration "awsvpcConfiguration={subnets=[subnet-0bd0a6c5d4eadd609,subnet-0d261214e57e14fba],securityGroups=[sg-0bfd908240d06c541]}" \
+            --network-configuration "{\"awsvpcConfiguration\":$(echo $NETCFG | jq -c '. + {assignPublicIp:"DISABLED"}')}" \
             --query 'tasks[0].taskArn' --output text)
           echo "Migration task: $TASK_ARN"
           aws ecs wait tasks-stopped \
@@ -159,7 +200,11 @@ jobs:
             --query 'tasks[0].containers[0].exitCode' --output text)
           echo "Migration exit code: $EXIT_CODE"
           if [ "$EXIT_CODE" != "0" ]; then
-            echo "::error::Migration failed with exit code $EXIT_CODE"
+            echo "::error::Migration failed with exit code $EXIT_CODE — tailing logs:"
+            TASK_ID=$(basename "$TASK_ARN")
+            aws logs get-log-events --log-group-name /ecs/fitai-api \
+              --log-stream-name "migrate/migrate/$TASK_ID" --region $AWS_REGION \
+              --query 'events[].message' --output text | tail -30 || true
             exit 1
           fi
 
@@ -168,9 +213,13 @@ jobs:
     needs: [build-api, migrate]
     # This is the ONLY deploy trigger (buildspec post_build no longer deploys —
     # it used to roll new code out BEFORE the migrate task ran).
-    # Skipped automatically when migrate failed — we don't want to deploy new
-    # code against a stale schema.
-    if: always() && !cancelled() && needs.migrate.result != 'failure' && (needs.build-api.result == 'success' || github.event_name == 'workflow_dispatch')
+    # Requires migrate SUCCESS (skipped/failed migrate = no deploy — we never
+    # ship code against a stale schema). workflow_dispatch may redeploy the
+    # current :latest even when migrate was skipped (no api build).
+    if: >-
+      always() && !cancelled() &&
+      (needs.migrate.result == 'success' ||
+       (github.event_name == 'workflow_dispatch' && needs.migrate.result == 'skipped'))
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4

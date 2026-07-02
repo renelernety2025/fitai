@@ -162,6 +162,42 @@ resource "aws_ecs_cluster" "main" {
   tags = var.tags
 }
 
+# One-off DB migration task (run by deploy.yml before rolling the api).
+# Terraform OWNS the command here (no ignore_changes): registering a new
+# revision is how the migrate command changes — deploy.yml references the
+# family name, so the latest ACTIVE revision is picked up automatically.
+resource "aws_ecs_task_definition" "migrate" {
+  family                   = "${var.project_name}-migrate"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
+
+  container_definitions = jsonencode([{
+    name      = "migrate"
+    image     = "${aws_ecr_repository.api.repository_url}:latest"
+    essential = true
+    command   = ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
+
+    secrets = [
+      { name = "DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:DATABASE_URL::" },
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.api.name
+        "awslogs-region"        = data.aws_region.current.name
+        "awslogs-stream-prefix" = "migrate"
+      }
+    }
+  }])
+
+  tags = var.tags
+}
+
 # Task Definitions
 resource "aws_ecs_task_definition" "api" {
   family                   = "${var.project_name}-api"
