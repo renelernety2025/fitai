@@ -15,6 +15,5 @@ phases:
       - docker push $ECR_URL:latest
   post_build:
     commands:
-      - echo Deploying to ECS...
-      - aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+      # Deployment is triggered by deploy.yml after all gates pass.
       - echo Build completed on $(date)

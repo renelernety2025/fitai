@@ -11,7 +11,7 @@ concurrency:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write # deploy tags (deploy-YYYYMMDD-sha)
 
 env:
   AWS_REGION: eu-west-1
@@ -120,6 +120,24 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::326334468637:role/fitai-github-actions
           aws-region: eu-west-1
+      - name: Pre-migration RDS snapshot (schema changes only)
+        if: needs.detect-changes.outputs.schema == 'true'
+        run: |
+          SNAP_ID="fitai-predeploy-$(echo $GITHUB_SHA | cut -c1-7)-$(date -u +%Y%m%d-%H%M%S)"
+          aws rds create-db-snapshot \
+            --db-instance-identifier fitai-production-postgres \
+            --db-snapshot-identifier "$SNAP_ID" \
+            --region $AWS_REGION
+          echo "Snapshot marker created: $SNAP_ID (crash-consistent as of initiation; completes in background)"
+          # Housekeeping: drop fitai-predeploy-* snapshots older than 14 days.
+          CUTOFF=$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%S)
+          aws rds describe-db-snapshots --snapshot-type manual \
+            --db-instance-identifier fitai-production-postgres \
+            --region $AWS_REGION \
+            --query "DBSnapshots[?starts_with(DBSnapshotIdentifier,'fitai-predeploy-') && SnapshotCreateTime<'$CUTOFF'].DBSnapshotIdentifier" \
+            --output text | tr '\t' '\n' | while read -r OLD; do
+              [ -n "$OLD" ] && aws rds delete-db-snapshot --db-snapshot-identifier "$OLD" --region $AWS_REGION && echo "Deleted old snapshot: $OLD"
+            done || true
       - name: Run fitai-migrate task
         run: |
           TASK_ARN=$(aws ecs run-task \
@@ -148,10 +166,8 @@ jobs:
   deploy-api:
     name: Force ECS redeploy (API)
     needs: [build-api, migrate]
-    # Belt-and-suspenders: buildspec.yml post_build already calls update-service
-    # when CodeBuild runs. This step runs again so that workflow_dispatch (or any
-    # future flow that skips build-api but still wants to roll the running tasks)
-    # can force a redeploy without manual `aws ecs update-service` from a shell.
+    # This is the ONLY deploy trigger (buildspec post_build no longer deploys —
+    # it used to roll new code out BEFORE the migrate task ran).
     # Skipped automatically when migrate failed — we don't want to deploy new
     # code against a stale schema.
     if: always() && !cancelled() && needs.migrate.result != 'failure' && (needs.build-api.result == 'success' || github.event_name == 'workflow_dispatch')
@@ -216,6 +232,19 @@ jobs:
             --region $AWS_REGION || echo "::warning::Web service wait timed out"
           echo "Both services stable. Sleeping 15s for ALB target group to register..."
           sleep 15
+      - name: Verify rollout completed (circuit breaker did not roll back)
+        run: |
+          FAILED=0
+          for SVC in $API_SERVICE $WEB_SERVICE; do
+            STATE=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $SVC \
+              --region $AWS_REGION --query 'services[0].deployments[0].rolloutState' --output text)
+            echo "$SVC rolloutState=$STATE"
+            if [ "$STATE" != "COMPLETED" ]; then
+              echo "::error::$SVC deployment did not complete (state=$STATE) — circuit breaker likely rolled back to the previous version"
+              FAILED=1
+            fi
+          done
+          exit $FAILED
       - name: Run test-production.sh
         run: |
           if [ -f test-production.sh ]; then
@@ -223,6 +252,20 @@ jobs:
           else
             echo "::warning::test-production.sh not found — skipping"
           fi
+
+  tag-release:
+    name: Tag successful deploy
+    needs: [smoke-test]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create deploy tag
+        run: |
+          TAG="deploy-$(date -u +%Y%m%d-%H%M%S)-$(echo $GITHUB_SHA | cut -c1-7)"
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Tagged: $TAG"
 
   summary:
     name: Deploy summary
