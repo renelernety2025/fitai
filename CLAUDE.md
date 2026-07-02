@@ -39,7 +39,7 @@ fitai/
 - **Load test:** `k6 run load-tests/01-smoke.js`
 - **Smoke test prod:** `bash test-production.sh` (115 testů proti `fitai.bfevents.cz`)
 - **Migrate DB:** GitHub Actions deploy workflow to spustí automaticky
-- **Manual migrate:** `aws ecs run-task --task-definition fitai-migrate:2 ...` (viz [GITHUB_ACTIONS_SETUP](./docs/GITHUB_ACTIONS_SETUP.md))
+- **Manual migrate:** `aws ecs run-task --task-definition fitai-migrate ...` (family bez revize; viz [GITHUB_ACTIONS_SETUP](./docs/GITHUB_ACTIONS_SETUP.md))
 
 ## Před začátkem práce
 1. **Přečti [@MODULES.md](./MODULES.md)** — najdi správný modul, jeho endpointy, web stránku a mobile screen
@@ -66,7 +66,7 @@ fitai/
 
 ## Critical conventions
 - **API prefix `/api/*`** — všechny backend endpointy. ALB: `/api/*` + `/health` → API, ostatní → Web. Nikdy nevolej `/exercises` přímo — vždy `/api/exercises`.
-- **Schema změny:** `npx prisma db push --accept-data-loss` (NE `migrate dev` — produkce nemá migration history)
+- **Schema změny:** `npx prisma migrate dev --name <change>` (migration history od 2026-07, baseline `0_init`; NE `db push --accept-data-loss`)
 - **`@Throttle()` dekorátor** na každém Claude endpointu (chrání budget)
 - **Cache layer:** `CacheService` (Redis) pro read-heavy endpointy (7d TTL pro static content, 1h pro per-user)
 

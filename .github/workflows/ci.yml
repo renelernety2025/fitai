@@ -55,6 +55,17 @@ jobs:
         run: bash scripts/check-api-conventions.sh
       - name: Docs integrity
         run: bash scripts/verify-docs-integrity.sh
+      - name: Migration safety (no destructive DDL without review)
+        run: bash scripts/check-destructive-migration.sh "origin/${{ github.base_ref }}"
+      - name: Schema change requires a migration
+        run: |
+          if ! git diff --quiet "origin/${{ github.base_ref }}"...HEAD -- apps/api/prisma/schema.prisma; then
+            if [ -z "$(git diff --name-only --diff-filter=A "origin/${{ github.base_ref }}"...HEAD -- 'apps/api/prisma/migrations/*/migration.sql')" ]; then
+              echo "::error::schema.prisma changed but no migration was added. Run: cd apps/api && npx prisma migrate dev --name <change>"
+              exit 1
+            fi
+          fi
+          echo "OK"
       - name: Typecheck Mobile
         run: npx tsc --noEmit
         working-directory: apps/mobile

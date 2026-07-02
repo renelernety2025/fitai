@@ -187,7 +187,7 @@ Nemazat ani nepřejmenovávat tato pole:
 | `BodyAnalysis` | `id`, `bodyPhotoId`, `estimatedBodyFatPct`, `estimatedMuscleMass`, `postureNotes`, `visibleStrengths[]`, `areasToWork[]`, `comparisonNotes`, `modelUsed` |
 | `MealPlan` | `id`, `userId`, `weekStart` (Date, Mon), `generatedAt`, `source`, `modelUsed`, `payload` (Json: days × meals + shoppingList), `notes` |
 
-**Schema změny vždy přes `prisma db push --accept-data-loss` + seed task.**
+**Schema změny vždy přes `prisma migrate dev --name <change>` (committed migration) → deploy spustí `prisma migrate deploy` + seed task. `db push --accept-data-loss` je od 2026-07 zakázané (ADR-22).**
 
 ---
 

@@ -47,7 +47,7 @@ Tato pravidla se uplatňují při editaci čehokoli v `apps/api/`.
 - **Používej Prisma ORM** — nikdy raw SQL s concat (SQL injection).
 - Pokud nutné: `$queryRaw\`... ${param}\`` (parametrizované), NIKDY `$queryRawUnsafe`.
 - **Row-level security pattern:** každý dotaz `where: { userId: req.user.id }`.
-- **Schema změny:** `npx prisma db push --accept-data-loss` (NE `migrate dev` — produkce nemá migration history).
+- **Schema změny:** `npx prisma migrate dev --name <change>` (od 2026-07 je migration history — baseline `0_init`). NIKDY `db push --accept-data-loss` proti produkci. Destruktivní DDL (DROP/RENAME/TRUNCATE) vyžaduje `.approved-destructive` marker vedle migration.sql (viz `scripts/check-destructive-migration.sh`).
 
 ## Cache
 - **`CacheService` (Redis) pro read-heavy endpointy:**
