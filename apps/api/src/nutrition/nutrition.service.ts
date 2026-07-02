@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { calculateNutritionTargets, NutritionProfileInput } from './nutrition.calculations';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -12,7 +12,7 @@ export class NutritionService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
       region: process.env.AWS_REGION || 'eu-west-1',
@@ -219,14 +219,11 @@ export class NutritionService {
         })
       : { dailyKcal: 2200, dailyProteinG: 140, dailyCarbsG: 250, dailyFatG: 70 };
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
     let payload: any;
     let source: 'claude' | 'rules' = 'rules';
 
-    if (apiKey) {
+    if (this.claude.isAvailable()) {
       try {
-        const Anthropic = require('@anthropic-ai/sdk');
-        const client = new Anthropic.default({ apiKey });
         const allergiesStr = opts.allergies?.length
           ? opts.allergies.join(', ')
           : profile?.injuries?.join(', ') || 'žádné';
@@ -291,13 +288,10 @@ Pravidla:
 - Nákupní seznam přesně z ingrediencí všech 28 jídel
 - Vše v češtině`;
 
-        const response = await client.messages.create({
-          model: 'claude-haiku-4-5',
-          max_tokens: 16000, // 28 meals + shopping list + ingredients is heavy
+        const text = await this.claude.complete('nutrition/meal-plan', {
+          maxTokens: 16000, // 28 meals + shopping list + ingredients is heavy
           messages: [{ role: 'user', content: prompt }],
         });
-        this.metrics.trackClaudeUsage('nutrition/meal-plan', response);
-        const text = response.content[0].type === 'text' ? response.content[0].text : '';
         // Balanced-brace extraction: find first `{` and walk to matching `}`.
         // Safer than greedy regex for long responses that might contain
         // nested braces or even be truncated.
@@ -523,8 +517,7 @@ Pravidla:
     if (!s3Key.startsWith(`food-photos/${userId}/`)) {
       throw new ForbiddenException('Invalid photo key');
     }
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         name: 'Neznámé jídlo',
         kcal: 300,
@@ -538,12 +531,10 @@ Pravidla:
 
     try {
       const base64 = await this.fetchFoodPhotoBase64(s3Key);
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
 
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
+      const text = await this.claude.complete('nutrition/photo-analysis', {
+        model: 'sonnet',
+        maxTokens: 500,
         messages: [
           {
             role: 'user',
@@ -582,10 +573,7 @@ DŮLEŽITÉ:
           },
         ],
       });
-      this.metrics.trackClaudeUsage('nutrition/photo-analysis', response);
 
-      const text =
-        response.content[0].type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON in Claude response');
 

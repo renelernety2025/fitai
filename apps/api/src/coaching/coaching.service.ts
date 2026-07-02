@@ -1,7 +1,7 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ElevenLabsService } from './elevenlabs.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { buildCoachingSystemPrompt, buildCoachingUserMessage, type CoachingContext } from './coaching-prompt';
 import { buildChatSystemPrompt } from './coaching-chat-prompt';
 import { checkSafetyRules } from './safety-rules';
@@ -65,7 +65,7 @@ export class CoachingService {
   constructor(
     private prisma: PrismaService,
     private elevenLabs: ElevenLabsService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
   ) {}
 
   async generateFeedback(req: FeedbackRequest) {
@@ -172,8 +172,7 @@ export class CoachingService {
     completedReps?: number,
     audioFormat?: 'mp3' | 'pcm',
   ) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         answer: 'Soustřeď se na formu a pokračuj.',
         audioBase64: null,
@@ -188,20 +187,12 @@ export class CoachingService {
         completedReps,
       });
 
-      const Anthropic = require('@anthropic-ai/sdk').default;
-      const client = new Anthropic({ apiKey });
-
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 150,
+      const text = await this.claude.complete('coaching/ask', {
+        maxTokens: 150,
         system: systemPrompt,
         messages: [{ role: 'user', content: question }],
       });
-      this.metrics.trackClaudeUsage('coaching/ask', response);
-
-      const answer = response.content[0]?.type === 'text'
-        ? response.content[0].text
-        : 'Pokračuj, děláš to dobře.';
+      const answer = text || 'Pokračuj, děláš to dobře.';
 
       // Audio format is client-driven: new mobile builds (VoiceEngine)
       // request 'pcm' to skip MP3 decode + match VoiceProcessingIO hw
@@ -248,8 +239,7 @@ export class CoachingService {
     },
     emit: (event: StreamEvent) => void,
   ): Promise<void> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       emit({ type: 'text_delta', delta: 'Soustřeď se na formu a pokračuj.' });
       emit({ type: 'text_done' });
       return;
@@ -263,17 +253,13 @@ export class CoachingService {
         completedReps: dto.completedReps,
       });
 
-      const Anthropic = require('@anthropic-ai/sdk').default;
-      const client = new Anthropic({ apiKey });
-
-      // `messages.stream()` returns a MessageStream that implements
-      // AsyncIterable<MessageStreamEvent>. SDK v0.82 does NOT expose a
-      // `.textStream` convenience iterator (older docs mention it, some
-      // newer versions have it back; we're in the gap). Iterate raw
-      // events and unwrap text deltas from content_block_delta frames.
-      const stream = client.messages.stream({
-        model: 'claude-haiku-4-5',
-        max_tokens: 150,
+      // `stream()` returns the SDK MessageStream (AsyncIterable over
+      // MessageStreamEvents). SDK v0.82 does NOT expose a `.textStream`
+      // convenience iterator (older docs mention it, some newer versions
+      // have it back; we're in the gap). Iterate raw events and unwrap
+      // text deltas from content_block_delta frames.
+      const stream = this.claude.stream('coaching/ask-stream', {
+        maxTokens: 150,
         system: systemPrompt,
         messages: [{ role: 'user', content: dto.question }],
       });
@@ -467,26 +453,18 @@ PRAVIDLA:
   }
 
   private async callClaude(ctx: CoachingContext): Promise<string> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       this.logger.warn('No ANTHROPIC_API_KEY — using static feedback');
       return this.getStaticFeedback(ctx);
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk').default;
-      const client = new Anthropic({ apiKey });
-
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 50,
+      const text = await this.claude.complete('coaching/feedback', {
+        maxTokens: 50,
         system: buildCoachingSystemPrompt(ctx),
         messages: [{ role: 'user', content: buildCoachingUserMessage(ctx) }],
       });
-      this.metrics.trackClaudeUsage('coaching/feedback', response);
-
-      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '';
-      return text || this.getStaticFeedback(ctx);
+      return text.trim() || this.getStaticFeedback(ctx);
     } catch (err: any) {
       this.logger.error(`Claude coaching failed: ${err.message}`);
       return this.getStaticFeedback(ctx);
@@ -625,12 +603,8 @@ PRAVIDLA:
       const userCtx = await buildUserPromptContext(this.prisma, userId);
       const systemPrompt = buildChatSystemPrompt(userCtx);
 
-      const Anthropic = require('@anthropic-ai/sdk').default;
-      const client = new Anthropic({ apiKey });
-
-      const stream = client.messages.stream({
-        model: 'claude-haiku-4-5',
-        max_tokens: 500,
+      const stream = this.claude.stream('coaching/chat-stream', {
+        maxTokens: 500,
         system: systemPrompt,
         messages,
       });
@@ -700,15 +674,10 @@ PRAVIDLA:
     question: string,
     answer: string,
   ): Promise<void> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return;
+    if (!this.claude.isAvailable()) return;
 
-    const Anthropic = require('@anthropic-ai/sdk').default;
-    const client = new Anthropic({ apiKey });
-
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 20,
+    const text = await this.claude.complete('coaching/title', {
+      maxTokens: 20,
       system: 'Generate a 3-5 word Czech title for this fitness conversation. Return ONLY the title, nothing else.',
       messages: [
         {
@@ -717,12 +686,7 @@ PRAVIDLA:
         },
       ],
     });
-    this.metrics.trackClaudeUsage('coaching/title', response);
-
-    const title =
-      response.content[0]?.type === 'text'
-        ? response.content[0].text.trim().slice(0, 100)
-        : null;
+    const title = text.trim().slice(0, 100) || null;
 
     if (title) {
       await this.prisma.coachingSession.update({

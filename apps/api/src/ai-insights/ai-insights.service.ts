@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { CacheService } from '../cache/cache.service';
 import { determineTodayAction, type TodayAction } from './today-action';
 import {
@@ -53,7 +53,7 @@ export class AiInsightsService {
 
   constructor(
     private prisma: PrismaService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
     private cache: CacheService,
   ) {}
 
@@ -90,8 +90,7 @@ export class AiInsightsService {
     const avgSoreness = avg(checkIns, 'soreness');
     const avgStress = avg(checkIns, 'stress');
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         tips: staticTips(avgSleep, avgEnergy, avgSoreness, avgStress),
         cached: false,
@@ -105,7 +104,6 @@ export class AiInsightsService {
         avgEnergy,
         avgSoreness,
         avgStress,
-        apiKey,
       );
       await this.cache.set(cacheKey, tips, this.TTL_1H);
       return { tips, cached: false };
@@ -164,8 +162,7 @@ export class AiInsightsService {
         0,
       ) / days;
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey || weekLogs.length === 0) {
+    if (!this.claude.isAvailable() || weekLogs.length === 0) {
       return {
         tips: staticNutritionTips(
           profile,
@@ -178,11 +175,7 @@ export class AiInsightsService {
     }
 
     try {
-      const tips = await this.claudeNutritionTips(
-        profile,
-        dailyAvg,
-        apiKey,
-      );
+      const tips = await this.claudeNutritionTips(profile, dailyAvg);
       await this.cache.set(cacheKey, tips, this.TTL_1H);
       return { tips, cached: false };
     } catch (e: any) {
@@ -246,8 +239,7 @@ export class AiInsightsService {
       return { review: fallback, cached: false };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         review: staticReview(
           sessionCount,
@@ -266,7 +258,6 @@ export class AiInsightsService {
         totalMinutes,
         checkIns.length,
         avgSleep,
-        apiKey,
       );
       await this.cache.set(cacheKey, review, this.TTL_1H);
       return { review, cached: false };
@@ -352,8 +343,7 @@ export class AiInsightsService {
       restingHR: recovery.restingHR,
     };
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (apiKey) {
+    if (this.claude.isAvailable()) {
       try {
         const brief = await this.claudeDailyBrief({
           todayKey,
@@ -370,7 +360,6 @@ export class AiInsightsService {
           recentSessions,
           oneRepMaxes,
           weeklyVolumes,
-          apiKey,
         });
         const enriched = { ...brief, recoverySignals };
         await this.cache.set(cacheKey, enriched, this.TTL_24H);
@@ -408,9 +397,8 @@ export class AiInsightsService {
     const streak = progress?.currentStreak ?? 0;
     const sessions = progress?.totalSessions ?? 0;
     const goal = profile?.goal || 'GENERAL_FITNESS';
-    const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         message: fallbackMotivation(name, streak),
         source: 'fallback',
@@ -418,11 +406,8 @@ export class AiInsightsService {
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 150,
+      const raw = await this.claude.complete('ai-insights/motivation', {
+        maxTokens: 150,
         system:
           'Jsi motivační fitness trenér. Generuješ 1 krátkou motivační větu (max 20 slov) v češtině. Buď energický, osobní, konkrétní. Odpověz POUZE textem věty.',
         messages: [
@@ -432,11 +417,7 @@ export class AiInsightsService {
           },
         ],
       });
-      this.metrics.trackClaudeUsage('ai-insights/motivation', response);
-      const text =
-        response.content[0]?.type === 'text'
-          ? response.content[0].text.trim()
-          : fallbackMotivation(name, streak);
+      const text = raw.trim() || fallbackMotivation(name, streak);
 
       await this.cache.set(cacheKey, text, 12 * 3600);
       return { message: text, source: 'claude' };
@@ -520,10 +501,7 @@ export class AiInsightsService {
     avgEnergy: number | null,
     avgSoreness: number | null,
     avgStress: number | null,
-    apiKey: string,
   ): Promise<RecoveryTip[]> {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey });
     const prompt = `Jsi AI fitness kouč. Uživatel zaznamenal posledních ${checkInCount} dní. Průměry:
 - Spánek: ${avgSleep != null ? avgSleep.toFixed(1) + 'h' : 'neznámé'}
 - Energie: ${avgEnergy != null ? avgEnergy.toFixed(1) + '/5' : 'neznámé'}
@@ -535,16 +513,10 @@ Vytvoř 3 konkrétní recovery tipy v češtině. Vrať JSON pole:
 
 Pouze JSON, žádný další text.`;
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 600,
+    const text = await this.claude.complete('ai-insights/recovery-tips', {
+      maxTokens: 600,
       messages: [{ role: 'user', content: prompt }],
     });
-    this.metrics.trackClaudeUsage('ai-insights/recovery-tips', response);
-    const text =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('No JSON in response');
     return JSON.parse(jsonMatch[0]);
@@ -553,10 +525,7 @@ Pouze JSON, žádný další text.`;
   private async claudeNutritionTips(
     profile: any,
     dailyAvg: (key: 'kcal' | 'proteinG' | 'carbsG' | 'fatG') => number,
-    apiKey: string,
   ): Promise<NutritionTip[]> {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey });
     const prompt = `Jsi AI nutriční kouč. Uživatel v posledních 7 dnech jí v průměru:
 - Kalorie: ${Math.round(dailyAvg('kcal'))} kcal (cíl ${profile?.dailyKcal || '?'})
 - Protein: ${Math.round(dailyAvg('proteinG'))}g (cíl ${profile?.dailyProteinG || '?'}g)
@@ -569,16 +538,10 @@ Vytvoř 3 konkrétní nutriční tipy v češtině. Vrať JSON pole:
 
 Pouze JSON, žádný další text.`;
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 600,
+    const text = await this.claude.complete('ai-insights/nutrition-tips', {
+      maxTokens: 600,
       messages: [{ role: 'user', content: prompt }],
     });
-    this.metrics.trackClaudeUsage('ai-insights/nutrition-tips', response);
-    const text =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('No JSON');
     return JSON.parse(jsonMatch[0]);
@@ -590,10 +553,7 @@ Pouze JSON, žádný další text.`;
     totalMinutes: number,
     checkInCount: number,
     avgSleep: number,
-    apiKey: string,
   ): Promise<WeeklyReview> {
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey });
     const prompt = `Jsi AI fitness kouč. Týdenní souhrn ${userName || 'uživatele'}:
 - Tréninky: ${sessionCount}
 - Celkem minut: ${Math.round(totalMinutes)}
@@ -610,16 +570,10 @@ Napiš týdenní review v češtině. Vrať JSON:
 
 Pouze JSON, žádný další text.`;
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 500,
+    const text = await this.claude.complete('ai-insights/weekly-review', {
+      maxTokens: 500,
       messages: [{ role: 'user', content: prompt }],
     });
-    this.metrics.trackClaudeUsage('ai-insights/weekly-review', response);
-    const text =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON');
     return JSON.parse(jsonMatch[0]);
@@ -640,7 +594,6 @@ Pouze JSON, žádný další text.`;
     recentSessions: any[];
     oneRepMaxes: any[];
     weeklyVolumes: any[];
-    apiKey: string;
   }): Promise<DailyBrief> {
     const {
       todayKey,
@@ -656,7 +609,6 @@ Pouze JSON, žádný další text.`;
       recentSessions,
       oneRepMaxes,
       weeklyVolumes,
-      apiKey,
     } = ctx;
 
     const recentMuscles = recentSessions
@@ -664,8 +616,6 @@ Pouze JSON, žádný další text.`;
       .filter(Boolean)
       .slice(0, 3);
 
-    const Anthropic = require('@anthropic-ai/sdk');
-    const client = new Anthropic.default({ apiKey });
     const goal = profile?.goal || 'GENERAL_FITNESS';
     const exp = profile?.experienceMonths ?? 0;
     const equipment = profile?.equipment?.join(', ') || 'gym';
@@ -764,24 +714,10 @@ Pravidla:
 - rpe odpovídá mood
 - vše v češtině`;
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 2000,
+    const text = await this.claude.complete('daily-brief', {
+      maxTokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     });
-    const usage = (response as any).usage || {};
-    this.metrics
-      .recordClaudeTokens(
-        'daily-brief',
-        usage.input_tokens || 0,
-        usage.output_tokens || 0,
-      )
-      .catch(() => {});
-
-    const text =
-      response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
     const parsed = JSON.parse(jsonMatch[0]);

@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
@@ -91,7 +91,7 @@ export class PreprocessingService {
   private bucket: string;
   private cloudfrontUrl: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket = process.env.S3_BUCKET_VIDEOS || 'fitai-videos';
     this.cloudfrontUrl = process.env.CLOUDFRONT_URL || '';
 
@@ -233,15 +233,10 @@ export class PreprocessingService {
     jobId: string,
     transcript: TranscriptSegment[],
   ) {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-
-    if (!anthropicKey) {
+    if (!this.claude.isAvailable()) {
       this.logger.warn(`[${jobId}] No ANTHROPIC_API_KEY — using mock choreography`);
       return getMockChoreography(videoId);
     }
-
-    const Anthropic = require('@anthropic-ai/sdk').default;
-    const client = new Anthropic({ apiKey: anthropicKey });
 
     const systemPrompt = `Jsi AI asistent specializovaný na analýzu fitness videí.
 Dostaneš přepis cvičebního videa s časovými razítky.
@@ -277,15 +272,12 @@ Pravidla pro úhly kloubů:
 Pokud pro danou pózu nelze určit konkrétní kloub, přidej alespoň jedno pravidlo
 pro nejdůležitější kloub dané pózy.`;
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 4096,
+    const text = await this.claude.complete('preprocessing/choreography', {
+      model: 'opus',
+      maxTokens: 4096,
       system: systemPrompt,
       messages: [{ role: 'user', content: JSON.stringify(transcript) }],
     });
-    this.metrics.trackClaudeUsage('preprocessing/choreography', response);
-
-    const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
     // Extract JSON from response (might have markdown fences)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Claude response did not contain valid JSON');

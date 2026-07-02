@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { CreateRehabDto } from './dto/create-rehab.dto';
 import { UpdateRehabDto } from './dto/update-rehab.dto';
 import { LogRehabSessionDto } from './dto/log-rehab-session.dto';
@@ -16,7 +16,7 @@ export class RehabService {
 
   constructor(
     private prisma: PrismaService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
   ) {}
 
   async getAll(userId: string) {
@@ -86,17 +86,12 @@ export class RehabService {
   }
 
   private async generatePlan(dto: CreateRehabDto) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return this.fallbackPlan(dto);
+    if (!this.claude.isAvailable()) return this.fallbackPlan(dto);
 
     try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey });
-
-      const msg = await Promise.race([
-        client.messages.create({
-          model: 'claude-haiku-4-5',
-          max_tokens: 800,
+      const text = await Promise.race([
+        this.claude.complete('rehab/plan', {
+          maxTokens: 800,
           messages: [{
             role: 'user',
             content: `Create a structured rehab plan for:
@@ -112,11 +107,8 @@ Reply in Czech, JSON format:
           setTimeout(() => reject(new Error('Claude timeout')), 15000),
         ),
       ]);
-      this.metrics.trackClaudeUsage('rehab/plan', msg);
 
-      const text = msg.content[0]?.type === 'text'
-        ? msg.content[0].text : '{}';
-      return JSON.parse(text);
+      return JSON.parse(text || '{}');
     } catch (err: any) {
       this.logger.warn(`Claude rehab plan failed: ${err.message}`);
       return this.fallbackPlan(dto);

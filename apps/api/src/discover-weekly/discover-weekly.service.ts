@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 
 @Injectable()
 export class DiscoverWeeklyService {
@@ -10,7 +10,7 @@ export class DiscoverWeeklyService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
   ) {}
 
   async getWeeklyWorkout(userId: string) {
@@ -45,12 +45,8 @@ export class DiscoverWeeklyService {
       .filter(Boolean);
 
     try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic();
-
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 600,
+      const text = await this.claude.complete('discover-weekly/generate', {
+        maxTokens: 600,
         messages: [{
           role: 'user',
           content: `Create a "Workout of the Week" for this user. Reply in Czech, JSON:
@@ -63,11 +59,8 @@ Weak muscles: ${[...new Set(weakMuscles)].join(', ') || 'none identified'}
 Rules: 5-7 exercises, avoid recent ones, focus on weak areas, match experience level.`,
         }],
       });
-      this.metrics.trackClaudeUsage('discover-weekly/generate', msg);
 
-      const text = msg.content[0]?.type === 'text'
-        ? msg.content[0].text : '{}';
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(text || '{}');
       return { ...parsed, generatedAt: new Date().toISOString() };
     } catch (err: any) {
       this.logger.warn(`Claude discover-weekly failed: ${err.message}`);

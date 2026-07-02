@@ -3,7 +3,8 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
+import { CLAUDE_MODELS } from '../claude/claude.models';
 
 type PhotoSide = 'FRONT' | 'SIDE' | 'BACK';
 
@@ -32,7 +33,7 @@ export class ProgressPhotosService {
   private readonly client: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket = process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
     // Disable AWS SDK v3 auto-checksum middleware. Otherwise the SDK signs an
@@ -178,8 +179,7 @@ export class ProgressPhotosService {
       orderBy: { takenAt: 'desc' },
     });
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       // Static fallback
       const fallback = await this.upsertAnalysis(photoId, {
         estimatedBodyFatPct: null,
@@ -195,9 +195,6 @@ export class ProgressPhotosService {
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
-
       // Fetch image from S3 as base64 (Claude Vision expects base64 or URL)
       const currentB64 = await this.fetchAsBase64(photo.s3Key);
       const previousB64 = previous ? await this.fetchAsBase64(previous.s3Key).catch(() => null) : null;
@@ -250,13 +247,11 @@ Buď respektující, motivační, konkrétní. Žádné medical advice. Nevypisu
         },
       ];
 
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 800,
+      const text = await this.claude.complete('progress-photos/analyze', {
+        model: 'sonnet',
+        maxTokens: 800,
         messages,
       });
-      this.metrics.trackClaudeUsage('progress-photos/analyze', response);
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON in Claude response');
       const parsed = JSON.parse(jsonMatch[0]);
@@ -270,7 +265,7 @@ Buď respektující, motivační, konkrétní. Žádné medical advice. Nevypisu
         areasToWork: Array.isArray(parsed.areasToWork) ? parsed.areasToWork : [],
         comparisonNotes: parsed.comparisonNotes || null,
         rawClaudeResponse: text,
-        modelUsed: 'claude-haiku-4-5',
+        modelUsed: CLAUDE_MODELS.sonnet,
       });
 
       await (this.prisma as any).bodyPhoto.update({

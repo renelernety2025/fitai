@@ -10,9 +10,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
-import Anthropic from '@anthropic-ai/sdk';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 
 export interface FormAnalysis {
   overallScore: number;
@@ -27,7 +26,7 @@ export class FormCheckService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
@@ -95,13 +94,9 @@ export class FormCheckService {
       : 'No phase data available';
 
     try {
-      const client = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      });
-
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 500,
+      const text = await this.claude.complete('form-check/analyze', {
+        model: 'sonnet',
+        maxTokens: 500,
         system:
           'You are a fitness form analysis expert. ' +
           'Analyze the exercise form and provide detailed ' +
@@ -119,12 +114,6 @@ export class FormCheckService {
           },
         ],
       });
-      this.metrics.trackClaudeUsage('form-check/analyze', response);
-
-      const text =
-        response.content[0].type === 'text'
-          ? response.content[0].text
-          : '';
 
       const parsed = JSON.parse(text) as FormAnalysis;
       return parsed;

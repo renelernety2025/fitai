@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import {
   S3Client,
   PutObjectCommand,
@@ -22,7 +22,7 @@ export class RecipesService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     this.s3 = new S3Client({
@@ -148,8 +148,7 @@ export class RecipesService {
     ) {
       throw new ForbiddenException('Invalid photo key');
     }
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         name: 'Neznamy recept',
         ingredients: [],
@@ -165,12 +164,10 @@ export class RecipesService {
 
     try {
       const base64 = await this.fetchPhotoBase64(s3Key);
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
 
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+      const text = await this.claude.complete('recipes/from-photo', {
+        model: 'sonnet',
+        maxTokens: 1000,
         messages: [
           {
             role: 'user',
@@ -212,12 +209,7 @@ DULEZITE: Vsechny texty cesky. Ingredience realisticky.`,
           },
         ],
       });
-      this.metrics.trackClaudeUsage('recipes/from-photo', response);
 
-      const text =
-        response.content[0].type === 'text'
-          ? response.content[0].text
-          : '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error('No JSON in Claude response');
 

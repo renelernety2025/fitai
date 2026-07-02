@@ -13,7 +13,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { UpsertJournalDto } from './dto/upsert-journal.dto';
 
 export interface DayData {
@@ -41,7 +41,7 @@ export class WorkoutJournalService {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
-  constructor(private prisma: PrismaService, private metrics: MetricsService) {
+  constructor(private prisma: PrismaService, private claude: ClaudeService) {
     this.bucket =
       process.env.S3_BUCKET_ASSETS || 'fitai-assets-production';
     const region = process.env.AWS_REGION || 'eu-west-1';
@@ -444,15 +444,11 @@ export class WorkoutJournalService {
     sessions: any[],
     month: string,
   ): Promise<string> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return this.rulesSummary(entries, sessions, month);
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
-
       const stats = {
         month,
         journalDays: entries.length,
@@ -464,9 +460,8 @@ export class WorkoutJournalService {
         tags: entries.flatMap((e: any) => e.tags ?? []),
       };
 
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 300,
+      const text = await this.claude.complete('workout-journal/monthly-summary', {
+        maxTokens: 300,
         messages: [
           {
             role: 'user',
@@ -474,12 +469,6 @@ export class WorkoutJournalService {
           },
         ],
       });
-      this.metrics.trackClaudeUsage('workout-journal/monthly-summary', response);
-
-      const text =
-        response.content[0].type === 'text'
-          ? response.content[0].text
-          : '';
       return text.trim() || this.rulesSummary(entries, sessions, month);
     } catch (e: any) {
       this.logger.error(
@@ -514,15 +503,11 @@ export class WorkoutJournalService {
     entry: any,
     recentEntries: any[],
   ): Promise<string> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return this.rulesDayInsight(entry);
     }
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
-
       const context = {
         date: toDateStr(entry.date),
         notes: entry.notes,
@@ -534,9 +519,8 @@ export class WorkoutJournalService {
           .map((e: any) => e.rating),
       };
 
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 150,
+      const text = await this.claude.complete('workout-journal/daily-insight', {
+        maxTokens: 150,
         messages: [
           {
             role: 'user',
@@ -544,12 +528,6 @@ export class WorkoutJournalService {
           },
         ],
       });
-      this.metrics.trackClaudeUsage('workout-journal/daily-insight', response);
-
-      const text =
-        response.content[0].type === 'text'
-          ? response.content[0].text
-          : '';
       return text.trim() || this.rulesDayInsight(entry);
     } catch (e: any) {
       this.logger.error(

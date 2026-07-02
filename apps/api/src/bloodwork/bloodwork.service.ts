@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { CreateBloodworkDto } from './dto/create-bloodwork.dto';
 
 const REFERENCE_RANGES: Record<string, { min: number; max: number; unit: string }> = {
@@ -26,7 +26,7 @@ export class BloodworkService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
   ) {}
 
   async getAll(userId: string) {
@@ -87,8 +87,7 @@ export class BloodworkService {
 
     const markers = this.analyzeMarkers(entries);
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    if (!this.claude.isAvailable()) {
       return {
         summary: 'AI analysis unavailable.',
         markers,
@@ -97,22 +96,15 @@ export class BloodworkService {
     }
 
     try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey });
-
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 600,
+      const text = await this.claude.complete('bloodwork/analyze', {
+        maxTokens: 600,
         messages: [{
           role: 'user',
           content: `Analyze these bloodwork results for a fitness user. Reply in Czech, JSON format: {"summary":"...","recommendations":["..."]}\n\nMarkers:\n${JSON.stringify(markers)}`,
         }],
       });
-      this.metrics.trackClaudeUsage('bloodwork/analyze', msg);
 
-      const text = msg.content[0]?.type === 'text'
-        ? msg.content[0].text : '{}';
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(text || '{}');
 
       return { ...parsed, markers };
     } catch (err: any) {

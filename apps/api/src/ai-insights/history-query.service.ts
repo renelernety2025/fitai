@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
-import { MetricsService } from '../metrics/metrics.service';
+import { ClaudeService } from '../claude/claude.service';
 import { CronTrackingService } from '../cron-tracking/cron-tracking.service';
 
 const CONTEXT_LIMIT = 10;
@@ -44,7 +44,7 @@ export class HistoryQueryService {
     private prisma: PrismaService,
     private cache: CacheService,
     private embeddings: EmbeddingsService,
-    private metrics: MetricsService,
+    private claude: ClaudeService,
     private cronTracking: CronTrackingService,
   ) {}
 
@@ -121,12 +121,9 @@ export class HistoryQueryService {
   }
 
   private async askClaude(userQuery: string, context: SessionContext[]): Promise<string> {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return this.fallbackSummary(context);
+    if (!this.claude.isAvailable()) return this.fallbackSummary(context);
 
     try {
-      const Anthropic = require('@anthropic-ai/sdk');
-      const client = new Anthropic.default({ apiKey });
       const ctxText = context
         .map(
           (c) =>
@@ -135,14 +132,12 @@ export class HistoryQueryService {
               .join('; ')}`,
         )
         .join('\n');
-      const response = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        max_tokens: 400,
+      const text = await this.claude.complete('ai-insights/history-query', {
+        maxTokens: 400,
         system: `Jsi AI fitness analytik. Odpovídej česky, konkrétně, podle dat. Max 5 vět. Nikdy si nevymýšlej čísla, pracuj jen s tím, co máš v kontextu.\n\nHistorie tréninků uživatele (top ${context.length} relevantních):\n${ctxText}`,
         messages: [{ role: 'user', content: userQuery }],
       });
-      this.metrics.trackClaudeUsage('ai-insights/history-query', response);
-      return response.content[0]?.type === 'text' ? response.content[0].text.trim() : this.fallbackSummary(context);
+      return text.trim() || this.fallbackSummary(context);
     } catch (err) {
       this.logger.warn(`history-query Claude error: ${(err as Error).message}`);
       return this.fallbackSummary(context);
