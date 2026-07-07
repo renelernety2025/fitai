@@ -360,3 +360,22 @@ resource "aws_cloudwatch_metric_alarm" "web_tasks_low" {
 
   tags = var.tags
 }
+
+# AI spend tripwire (2026-07-07 launch audit): sums ClaudeTokens across all
+# endpoint dimensions; fires when hourly token volume looks like abuse or a
+# runaway loop rather than organic use. Threshold is a tripwire, not a hard
+# cap — the per-user daily @Throttle limits are the actual budget control.
+resource "aws_cloudwatch_metric_alarm" "ai_token_spend" {
+  alarm_name          = "${var.project_name}-${var.env}-ai-token-spend-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ClaudeTokensTotal"
+  namespace           = "FitAI/AI"
+  period              = 3600
+  statistic           = "Sum"
+  threshold           = var.ai_token_hourly_alarm
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  treat_missing_data  = "notBreaching"
+
+  tags = var.tags
+}

@@ -22,3 +22,8 @@ variable "redis_cluster_id" {
 variable "ecs_web_service_name" { type = string }
 variable "api_tg_arn_suffix" { type = string }
 variable "web_tg_arn_suffix" { type = string }
+variable "ai_token_hourly_alarm" {
+  description = "Alarm when total Claude tokens/hour exceed this (abuse/runaway tripwire)."
+  type        = number
+  default     = 1000000
+}

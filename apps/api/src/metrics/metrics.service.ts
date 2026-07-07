@@ -33,6 +33,10 @@ export class MetricsService implements OnModuleInit {
       Endpoint: endpoint,
       Type: 'total',
     });
+    // Dimensionless aggregate so a single CloudWatch alarm can watch total
+    // spend across all endpoints (a dimensioned metric can't be summed by a
+    // plain alarm). Spend tripwire lives in the monitoring TF module.
+    await this.put('ClaudeTokensTotal', inputTokens + outputTokens, 'Count');
     // Track input/output separately for cost analysis
     await this.put('ClaudeInputTokens', inputTokens, 'Count', { Endpoint: endpoint });
     await this.put('ClaudeOutputTokens', outputTokens, 'Count', { Endpoint: endpoint });
