@@ -11,6 +11,35 @@ Lidsky čitelná historie změn. Aktualizovat při každém deployi.
 
 ---
 
+## [Session review + fixes] 2026-07-07
+
+Code-review + security-review (4 agentů) na všechny změny session, pak
+opravy všech nálezů. Souhrn session: `docs/SESSION-2026-07-SUMMARY.md`.
+
+- **🔴 Demo admin backdoor**: migrate task nenastavoval NODE_ENV → seed
+  vytvářel admin@fitai.com/demo1234 (isAdmin) v produkci. Fix: NODE_ENV=
+  production (rev 5). Existující účet = user musí smazat/změnit heslo.
+- **🔴 XP double-spend** (drops, paid-challenges): TOCTOU → atomický gte
+  debit (+8 testů).
+- **🔴 npm audit CRITICAL**: Next 14.2.21→14.2.35 (patch, ne major).
+- **🟠 Migration approval bypass**: check-migration-safety scanoval jen
+  HEAD~1 → destruktivní migrace v ne-špičkovém commitu obešla gate. Fix:
+  celý push range (github.event.before...HEAD).
+- **🟠 DB connection exhaustion**: connection_limit=10 × max_capacity=20 =
+  200 > t3.micro 112. Reconciled → 8×10=80.
+- **🟡 M1** destructive-guard regex rozšířen (DROP CONSTRAINT/SCHEMA, DELETE,
+  ALTER COLUMN, SET NOT NULL). **M2** `.approved-destructive` neobchází
+  deploy-time approval (IGNORE_APPROVED_MARKER).
+- **🔵** contents:write scoped na tag-release job, ClaudeService cache-key
+  userId izolace (+test), ci.yml base_ref přes env var, AI spend tripwire.
+- **13 stránek** zarovnáno na reálný API kontrakt (5 crashovalo:
+  maintenance/leagues/routine-builder/experiences/season/clips; zbytek
+  degradoval na blank/NaN; gym-finder write path 400). Bug fix, layout beze
+  změny, 0 contract castů zbylo.
+- Backend + app-code security review: čisté (chování migrací 1:1 ověřeno).
+
+---
+
 ## [Platform hardening — batch 2+3] 2026-07-02
 
 - **Prisma migrate cutover DOKONČEN a ověřen (ADR-22)**: drift check
