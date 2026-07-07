@@ -84,6 +84,11 @@ mobile ErrorBoundary + api hardening. Detaily: CHANGELOG + docs/AUDIT-2026-07-PL
 | Shared typy zbývající domény (social 19, user 13, …) + mobile api.ts (154 any) | ~1 den | pattern ADR-24 |
 | Claude response cache — zapnout cacheKey na vhodných callerech (daily-brief má vlastní, kandidáti: recovery/nutrition tips) | ~2h | infra ready v ClaudeService |
 | Redis HA replication group + encryption (recreate okno) | ~3h | security H3 |
+| **Next 16 major upgrade** (plný clear npm-audit next; 14.2.35 už patchuje exploitovatelné CVE) | ~1 den | breaking |
+| **NestJS 11 major** (multer/platform-express high) | ~1 den | breaking |
+| **[USER] Platby**: rozhodnout free launch vs Apple IAP / Stripe (billing je mock, tiery se nevynucují) | rozhodnutí | launch |
+| Auth hardening (bcrypt cost 10→12, JWT alg pin HS256, refresh token + revokace, admin inline→AdminGuard) — zamčené soubory, čeká na souhlas | ~3h | needs approval |
+| Launch-readiness audit report: `docs/AUDIT-2026-07-LAUNCH-READINESS.md` (2026-07-07) | — | ref |
 | React Query na webu, DataState abstrakce, next/image, mediapipe dynamic import, SEO metadata | ~2 dny | |
 | npm audit majors (next@16, @nestjs/platform-express), Node 20 actions deprecation | ~1 den | breaking |
 | Root package.json anti-hoist pin cleanup (vyžaduje EAS verifikaci) | s buildem | docs/MOBILE-BUILD-CHECKLIST.md |
