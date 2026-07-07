@@ -28,6 +28,12 @@ export interface ClaudeCompleteOptions {
    * inputs); identical prompts within TTL skip the API call entirely.
    */
   cacheKey?: string;
+  /**
+   * Cache isolation scope. Pass the userId when the cached response is
+   * per-user (prevents cross-user leakage). Omit only for responses that are
+   * identical for every user (treated as 'shared').
+   */
+  cacheScope?: string;
   /** Cache TTL in seconds; default 3600 (1h). */
   cacheTtlSeconds?: number;
 }

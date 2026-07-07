@@ -9,9 +9,10 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+# Least-privilege default: only the tag-release job elevates to contents:write.
 permissions:
   id-token: write
-  contents: write # deploy tags (deploy-YYYYMMDD-sha)
+  contents: read
 
 env:
   AWS_REGION: eu-west-1
@@ -118,8 +119,22 @@ jobs:
         with:
           fetch-depth: 0
       - id: scan
+        # Scan the FULL pushed range (github.event.before...HEAD), not just the
+        # tip commit — migrate deploy applies every pending migration, so a
+        # destructive migration in a non-tip commit must not slip the gate.
+        # IGNORE_APPROVED_MARKER: at deploy time the .approved-destructive
+        # marker must NOT bypass the production-migrations reviewer (it only
+        # unblocks the PR-merge CI gate). Destructive DDL always needs approval.
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          IGNORE_APPROVED_MARKER: "1"
         run: |
-          if bash scripts/check-destructive-migration.sh HEAD~1; then
+          BASE="$BEFORE_SHA"
+          # New-branch / zero SHA fallback → compare against the tip's parent.
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          if bash scripts/check-destructive-migration.sh "$BASE"; then
             echo "destructive=false" >> $GITHUB_OUTPUT
           else
             echo "destructive=true" >> $GITHUB_OUTPUT
@@ -312,8 +327,10 @@ jobs:
   tag-release:
     name: Tag successful deploy
     needs: [smoke-test]
-    if: success()
+    if: needs.smoke-test.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # only this job needs to push a tag
     steps:
       - uses: actions/checkout@v4
       - name: Create deploy tag

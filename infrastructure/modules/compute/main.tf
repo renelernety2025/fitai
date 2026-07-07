@@ -181,6 +181,14 @@ resource "aws_ecs_task_definition" "migrate" {
     essential = true
     command   = ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed"]
 
+    # NODE_ENV=production makes prisma/seed.ts skip the demo user block
+    # (admin@fitai.com / demo@fitai.com with a well-known password + isAdmin).
+    # Without it the seed re-creates a known-password admin on every deploy.
+    # Content upserts (exercises, plans, lessons) still run.
+    environment = [
+      { name = "NODE_ENV", value = "production" },
+    ]
+
     secrets = [
       { name = "DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:DATABASE_URL::" },
     ]
@@ -452,8 +460,12 @@ resource "aws_ecs_service" "web" {
 }
 
 # Auto Scaling
+# max_capacity is bounded by the RDS connection budget: max_capacity x
+# DATABASE_URL connection_limit(8) + migrate + admin must stay under t3.micro's
+# ~112 max_connections. 10 x 8 = 80. Raise only alongside connection_limit /
+# a bigger instance / RDS Proxy (see database/outputs.tf).
 resource "aws_appautoscaling_target" "api" {
-  max_capacity       = 20
+  max_capacity       = 10
   min_capacity       = 1
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"
   scalable_dimension = "ecs:service:DesiredCount"

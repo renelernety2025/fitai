@@ -48,7 +48,12 @@ export class ClaudeService {
 
   /** Non-streaming completion → response text. Throws on failure. */
   async complete(endpoint: string, opts: ClaudeCompleteOptions): Promise<string> {
-    const cacheKey = opts.cacheKey ? `claude:${endpoint}:${opts.cacheKey}` : null;
+    // Fold cacheScope (the caller's userId for per-user responses) into the
+    // key so one user's AI answer can never be served to another. Callers
+    // caching a per-user response MUST pass cacheScope; 'shared' is only for
+    // responses identical for everyone.
+    const scope = opts.cacheScope ?? 'shared';
+    const cacheKey = opts.cacheKey ? `claude:${endpoint}:${scope}:${opts.cacheKey}` : null;
     if (cacheKey) {
       const hit = await this.cache.get<string>(cacheKey);
       if (hit != null) {

@@ -71,14 +71,22 @@ describe('ClaudeService', () => {
     });
     expect(out).toBe('cached-answer');
     expect(sdkMock.__create).not.toHaveBeenCalled();
-    expect(cache.get).toHaveBeenCalledWith('claude:e:abc');
+    expect(cache.get).toHaveBeenCalledWith('claude:e:shared:abc');
   });
 
   it('complete() stores fresh responses in cache with TTL', async () => {
     const { svc, cache } = makeService();
     sdkMock.__create.mockResolvedValue(textResponse('fresh'));
     await svc.complete('e', { messages: [], maxTokens: 10, cacheKey: 'k', cacheTtlSeconds: 60 });
-    expect(cache.set).toHaveBeenCalledWith('claude:e:k', 'fresh', 60);
+    expect(cache.set).toHaveBeenCalledWith('claude:e:shared:k', 'fresh', 60);
+  });
+
+  it('complete() isolates the cache key by cacheScope (no cross-user leak)', async () => {
+    const { svc, cache } = makeService();
+    sdkMock.__create.mockResolvedValue(textResponse('x'));
+    await svc.complete('e', { messages: [], maxTokens: 10, cacheKey: 'k', cacheScope: 'user-1' });
+    expect(cache.get).toHaveBeenCalledWith('claude:e:user-1:k');
+    expect(cache.set).toHaveBeenCalledWith('claude:e:user-1:k', 'x', 3600);
   });
 
   it('complete() retries once on 429/5xx and succeeds', async () => {

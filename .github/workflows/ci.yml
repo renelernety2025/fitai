@@ -80,11 +80,16 @@ jobs:
       - name: Docs integrity
         run: bash scripts/verify-docs-integrity.sh
       - name: Migration safety (no destructive DDL without review)
-        run: bash scripts/check-destructive-migration.sh "origin/${{ github.base_ref }}"
+        # base_ref via env (not inline ${{ }}) — GHA expression-injection hygiene.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check-destructive-migration.sh "origin/$BASE_REF"
       - name: Schema change requires a migration
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if ! git diff --quiet "origin/${{ github.base_ref }}"...HEAD -- apps/api/prisma/schema.prisma; then
-            if [ -z "$(git diff --name-only --diff-filter=A "origin/${{ github.base_ref }}"...HEAD -- 'apps/api/prisma/migrations/*/migration.sql')" ]; then
+          if ! git diff --quiet "origin/$BASE_REF"...HEAD -- apps/api/prisma/schema.prisma; then
+            if [ -z "$(git diff --name-only --diff-filter=A "origin/$BASE_REF"...HEAD -- 'apps/api/prisma/migrations/*/migration.sql')" ]; then
               echo "::error::schema.prisma changed but no migration was added. Run: cd apps/api && npx prisma migrate dev --name <change>"
               exit 1
             fi
