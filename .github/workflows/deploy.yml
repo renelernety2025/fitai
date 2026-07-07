@@ -327,7 +327,10 @@ jobs:
   tag-release:
     name: Tag successful deploy
     needs: [smoke-test]
-    if: needs.smoke-test.result == 'success'
+    # always() so the job is evaluated (not implicitly skipped) — then gate on
+    # smoke-test actually succeeding. Bare `success()`/needs-only conditions can
+    # skip when upstream jobs in the graph were themselves skipped.
+    if: ${{ always() && needs.smoke-test.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # only this job needs to push a tag
