@@ -68,15 +68,20 @@ export class DropsService {
       });
       if (existing) throw new ConflictException('Already purchased');
 
-      // Check XP
-      const progress = await tx.userProgress.findUnique({
-        where: { userId },
-      });
-      if (!progress || progress.totalXP < drop.priceXP) {
-        throw new BadRequestException('Not enough XP');
+      // Atomic XP debit — the gte filter makes the balance check and the
+      // decrement a single conditional write. Without it, two concurrent
+      // purchases of DIFFERENT drops could both pass a separate balance read
+      // and drive totalXP negative (TOCTOU). count===0 == insufficient funds.
+      if (drop.priceXP > 0) {
+        const debit = await tx.userProgress.updateMany({
+          where: { userId, totalXP: { gte: drop.priceXP } },
+          data: { totalXP: { decrement: drop.priceXP } },
+        });
+        if (debit.count === 0) throw new BadRequestException('Not enough XP');
       }
 
-      // Atomic decrement with condition
+      // Atomic stock decrement — if sold out here, the whole transaction
+      // (including the XP debit above) rolls back.
       const updated = await tx.drop.updateMany({
         where: { id: dropId, remainingEditions: { gt: 0 } },
         data: { remainingEditions: { decrement: 1 } },
@@ -89,12 +94,6 @@ export class DropsService {
       });
       const editionNumber =
         drop.totalEditions - updatedDrop.remainingEditions;
-
-      // Deduct XP
-      await tx.userProgress.update({
-        where: { userId },
-        data: { totalXP: { decrement: drop.priceXP } },
-      });
 
       // Create purchase
       return tx.dropPurchase.create({

@@ -80,16 +80,17 @@ export class PaidChallengesService {
 
     return (this.prisma as any).$transaction(async (tx: any) => {
       if (challenge.entryFeeXP > 0) {
-        const progress = await tx.userProgress.findUnique({
-          where: { userId },
-        });
-        if (!progress || progress.totalXP < challenge.entryFeeXP) {
-          throw new BadRequestException('Not enough XP');
-        }
-        await tx.userProgress.update({
-          where: { userId },
+        // Atomic XP debit — gte filter makes the balance check and decrement
+        // one conditional write, preventing concurrent joins to different
+        // challenges from driving totalXP negative (TOCTOU). count===0 ==
+        // insufficient funds → rolls back the whole transaction.
+        const debit = await tx.userProgress.updateMany({
+          where: { userId, totalXP: { gte: challenge.entryFeeXP } },
           data: { totalXP: { decrement: challenge.entryFeeXP } },
         });
+        if (debit.count === 0) {
+          throw new BadRequestException('Not enough XP');
+        }
       }
 
       await tx.paidChallenge.update({
