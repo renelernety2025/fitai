@@ -8,49 +8,34 @@
 import { useEffect, useState } from 'react';
 import { FadeIn } from '@/components/v2/motion';
 import { getSkillTree, checkSkillTree } from '@/lib/api';
+import type { SkillNode, SkillTreeResponse } from '@fitai/shared';
 
 const BRANCH_COLORS: Record<string, string> = {
   strength: 'var(--accent)',
   endurance: 'var(--sage)',
-  form: 'var(--sage)',
+  knowledge: 'var(--sage)',
   nutrition: '#FF9F0A',
 };
 
 const BRANCH_LABELS: Record<string, string> = {
   strength: 'Strength',
   endurance: 'Endurance',
-  form: 'Form',
+  knowledge: 'Form',
   nutrition: 'Nutrition',
 };
 
-interface SkillNode {
-  id: string;
-  name: string;
-  description: string;
-  requirement: string;
-  branch: string;
-  level: number;
-  unlocked: boolean;
-  available: boolean;
-}
-
-interface TreeData {
-  totalNodes: number;
-  unlockedCount: number;
-  nodes: SkillNode[];
-}
-
 function NodeCircle({
   node,
+  available,
   color,
   onClick,
 }: {
   node: SkillNode;
+  available: boolean;
   color: string;
   onClick: () => void;
 }) {
   const unlocked = node.unlocked;
-  const available = !unlocked && node.available;
   const locked = !unlocked && !available;
 
   return (
@@ -73,19 +58,19 @@ function NodeCircle({
           color: locked ? '#555' : color,
         }}
       >
-        {unlocked ? '\u2713' : node.level}
+        {unlocked ? '✓' : ''}
       </div>
       <span className={`mt-2 max-w-[80px] text-center text-[10px] leading-tight ${
         locked ? 'text-white/20' : 'text-white/60'
       }`}>
-        {node.name}
+        {node.titleCs}
       </span>
     </button>
   );
 }
 
 export default function SkillTreePage() {
-  const [data, setData] = useState<TreeData | null>(null);
+  const [data, setData] = useState<SkillTreeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
   const [tooltip, setTooltip] = useState<SkillNode | null>(null);
@@ -95,11 +80,8 @@ export default function SkillTreePage() {
   useEffect(() => { document.title = 'FitAI — Skill Tree'; }, []);
 
   useEffect(() => {
-    // TODO(shared-types): page expects a legacy shape (totalNodes, unlockedCount, nodes[].id/
-    // name/description/requirement/level/available) — real contract is SkillTreeResponse from
-    // @fitai/shared (nodes use code/branch/titleCs/requires/check/unlocked).
     getSkillTree()
-      .then((d) => setData(d as unknown as TreeData))
+      .then((d) => setData(d))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
@@ -108,28 +90,32 @@ export default function SkillTreePage() {
     setChecking(true);
     setError(null);
     try {
-      // TODO(shared-types): real result is SkillTreeCheckResult (newlyUnlocked items have
-      // `code`, not `id`) — the highlight below never matches at runtime.
-      const result = (await checkSkillTree()) as unknown as { newlyUnlocked?: SkillNode[] };
-      if (result.newlyUnlocked) {
-        setNewUnlocked(result.newlyUnlocked.map((n: SkillNode) => n.id));
-      }
+      const result = await checkSkillTree();
+      setNewUnlocked(result.newlyUnlocked.map((n) => n.code));
       const fresh = await getSkillTree();
-      setData(fresh as unknown as TreeData);
+      setData(fresh);
     } catch {
       setError('Failed to check progress');
     }
     setChecking(false);
   }
 
+  // A node is available when its prerequisite (`requires`) is already unlocked.
+  const unlockedCodes = new Set(
+    data?.nodes.filter((n) => n.unlocked).map((n) => n.code) ?? [],
+  );
+  const isAvailable = (n: SkillNode) =>
+    !n.unlocked && (n.requires === null || unlockedCodes.has(n.requires));
+
+  const unlockedCount = data?.nodes.filter((n) => n.unlocked).length ?? 0;
+  const totalNodes = data?.nodes.length ?? 0;
+
   const branches = data
     ? Object.keys(BRANCH_LABELS).map((key) => ({
         key,
         label: BRANCH_LABELS[key],
         color: BRANCH_COLORS[key],
-        nodes: data.nodes
-          .filter((n) => n.branch === key)
-          .sort((a, b) => a.level - b.level),
+        nodes: data.nodes.filter((n) => n.branch === key),
       }))
     : [];
 
@@ -141,7 +127,7 @@ export default function SkillTreePage() {
             <p className="v3-eyebrow">Skill tree</p>
             {data && (
               <span className="text-sm text-white/40">
-                {data.unlockedCount} / {data.totalNodes} unlocked
+                {unlockedCount} / {totalNodes} unlocked
               </span>
             )}
           </div>
@@ -179,15 +165,14 @@ export default function SkillTreePage() {
             {tooltip && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setTooltip(null)}>
                 <div className="max-w-sm rounded-2xl border border-white/10 bg-black p-6" onClick={(e) => e.stopPropagation()}>
-                  <h3 className="mb-2 text-lg font-bold text-white">{tooltip.name}</h3>
-                  <p className="mb-3 text-sm text-white/60">{tooltip.description}</p>
+                  <h3 className="mb-2 text-lg font-bold text-white">{tooltip.titleCs}</h3>
                   <div className="text-xs text-white/40">
-                    Requirement: {tooltip.requirement}
+                    Requirement: {tooltip.check}
                   </div>
                   <div className="mt-2 text-xs">
                     {tooltip.unlocked
                       ? <span className="text-[var(--sage)]">Unlocked</span>
-                      : tooltip.available
+                      : isAvailable(tooltip)
                       ? <span className="text-[var(--warning)]">Available — meet the requirement</span>
                       : <span className="text-white/30">Locked</span>
                     }
@@ -230,24 +215,25 @@ export default function SkillTreePage() {
                   </div>
                   <div className="relative flex flex-col items-center gap-2">
                     {branch.nodes.map((node, i) => (
-                      <div key={node.id} className="flex flex-col items-center">
+                      <div key={node.code} className="flex flex-col items-center">
                         {/* Connecting line */}
                         {i > 0 && (
                           <div
                             className="mb-2 h-6 w-0.5"
                             style={{
-                              background: node.unlocked || node.available
+                              background: node.unlocked || isAvailable(node)
                                 ? branch.color
                                 : '#333',
                             }}
                           />
                         )}
                         <div
-                          className={newUnlocked.includes(node.id) ? 'animate-bounce' : ''}
-                          style={newUnlocked.includes(node.id) ? { filter: `drop-shadow(0 0 12px ${branch.color})` } : {}}
+                          className={newUnlocked.includes(node.code) ? 'animate-bounce' : ''}
+                          style={newUnlocked.includes(node.code) ? { filter: `drop-shadow(0 0 12px ${branch.color})` } : {}}
                         >
                           <NodeCircle
                             node={node}
+                            available={isAvailable(node)}
                             color={branch.color}
                             onClick={() => setTooltip(node)}
                           />

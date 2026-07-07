@@ -4,9 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, Button, SectionHeader, Tag } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getMyStack, logSupplement, getSupplementCatalog, addToStack } from '@/lib/api';
+import type { SupplementStackItem, SupplementItem } from '@fitai/shared';
 
-type Supplement = { id: string; name: string; dosage: string; timing: string; takenToday: boolean; monthlyCost?: number };
-type CatalogItem = { id: string; name: string; defaultDosage: string; description?: string };
+type Supplement = SupplementStackItem;
+type CatalogItem = SupplementItem;
 
 const TIMING_COLOR: Record<string, string> = { MORNING: '#FF9F0A', PRE_WORKOUT: 'var(--accent)', POST_WORKOUT: 'var(--sage, #34d399)', EVENING: '#BF5AF2' };
 const TIMING_LABEL: Record<string, string> = { MORNING: 'Morning', PRE_WORKOUT: 'Pre-workout', POST_WORKOUT: 'Post-workout', EVENING: 'Evening' };
@@ -24,9 +25,7 @@ export default function SupplementsPage() {
   useEffect(() => { document.title = 'FitAI — Supplements'; }, []);
 
   const refresh = useCallback(() => {
-    // TODO(shared-types): API returns SupplementStackItem[] (name lives on
-    // item.supplement.name, cost on monthlyCostKc) — page type predates contract.
-    getMyStack().then((s) => setStack(s as unknown as Supplement[])).catch(console.error).finally(() => setLoading(false));
+    getMyStack().then((s) => setStack(s)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -35,7 +34,7 @@ export default function SupplementsPage() {
     setShowModal(true);
     if (catalog.length === 0) {
       setCatalogLoading(true);
-      getSupplementCatalog().then((c) => setCatalog(c as unknown as CatalogItem[])).catch(console.error).finally(() => setCatalogLoading(false));
+      getSupplementCatalog().then(setCatalog).catch(console.error).finally(() => setCatalogLoading(false));
     }
   }
 
@@ -93,10 +92,10 @@ export default function SupplementsPage() {
                       {s.takenToday && <FitIcon name="check" size={14} color="var(--sage, #34d399)" />}
                     </button>
                   </div>
-                  <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{s.name}</div>
+                  <div className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{s.supplement.name}</div>
                   <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 2 }}>{s.dosage}</div>
-                  {s.monthlyCost != null && (
-                    <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 8 }}>{s.monthlyCost} Kc/month</div>
+                  {s.monthlyCostKc != null && (
+                    <div className="v3-caption" style={{ color: 'var(--text-3)', marginTop: 8 }}>{s.monthlyCostKc} Kc/month</div>
                   )}
                 </Card>
               ))}

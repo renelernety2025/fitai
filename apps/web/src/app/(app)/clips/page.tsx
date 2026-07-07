@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, Button, Tag } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getClipsFeed, toggleClipLike, commentOnClip, getClipPlayUrl } from '@/lib/api';
+import type { ClipFeedItem } from '@fitai/shared';
 
-type Clip = { id: string; userName: string; userAvatar: string | null; caption: string; tags: string[]; exerciseName: string | null; formScore: number | null; likeCount: number; commentCount: number; liked: boolean };
+// Real API shape + client-only optimistic like state (not on the contract).
+type Clip = ClipFeedItem & { liked?: boolean };
 
 export default function ClipsPage() {
   const [clips, setClips] = useState<Clip[]>([]);
@@ -18,7 +20,7 @@ export default function ClipsPage() {
   const [urlLoading, setUrlLoading] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Clips'; }, []);
-  useEffect(() => { setLoading(true); getClipsFeed(1, 20).then((c) => setClips(c as unknown as Clip[])).catch(() => {}).finally(() => setLoading(false)); }, []);
+  useEffect(() => { setLoading(true); getClipsFeed(1, 20).then((c) => setClips(c)).catch(() => {}).finally(() => setLoading(false)); }, []);
 
   // Fetch a fresh signed URL when the active clip changes. Presigned URLs
   // expire in 15 min, plenty for normal browsing; refetch on every switch
@@ -99,24 +101,14 @@ export default function ClipsPage() {
                 <p className="v3-body" style={{ color: 'var(--text-3)', marginTop: 12 }}>Video unavailable</p>
               </div>
             )}
-            {clip.formScore !== null && (
-              <div style={{ position: 'absolute', left: 16, top: 16 }}>
-                <Tag color="var(--sage, #34d399)">Form {clip.formScore}%</Tag>
-              </div>
-            )}
-            {clip.exerciseName && (
-              <div style={{ position: 'absolute', right: 16, top: 16 }}>
-                <Tag>{clip.exerciseName}</Tag>
-              </div>
-            )}
           </div>
 
           <div style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--text-1)', fontSize: 14 }}>
-                {clip.userName.charAt(0)}
+                {clip.user.name.charAt(0)}
               </div>
-              <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{clip.userName}</span>
+              <span className="v3-body" style={{ fontWeight: 600, color: 'var(--text-1)' }}>{clip.user.name}</span>
             </div>
             {clip.caption && <p className="v3-body" style={{ color: 'var(--text-2)', marginBottom: 8 }}>{clip.caption}</p>}
             {clip.tags.length > 0 && (

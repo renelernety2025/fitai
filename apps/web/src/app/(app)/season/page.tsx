@@ -9,27 +9,7 @@ import { useEffect, useState, useRef } from 'react';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { Confetti } from '@/components/v2/Confetti';
 import { getCurrentSeason, joinSeason, checkSeasonMissions } from '@/lib/api';
-
-interface Mission {
-  id: string;
-  title: string;
-  current: number;
-  target: number;
-  xpReward: number;
-  completed: boolean;
-  locked: boolean;
-}
-
-interface SeasonData {
-  name: string;
-  level: number;
-  maxLevel: number;
-  currentXP: number;
-  nextLevelXP: number;
-  joined: boolean;
-  endsAt: string;
-  missions: Mission[];
-}
+import type { SeasonCurrent, SeasonMissionStatus } from '@fitai/shared';
 
 function daysRemaining(endsAt: string): number {
   return Math.max(0, Math.ceil((new Date(endsAt).getTime() - Date.now()) / 86400000));
@@ -81,38 +61,38 @@ function MissionCard({
   mission,
   isNew,
 }: {
-  mission: Mission;
+  mission: SeasonMissionStatus;
   isNew: boolean;
 }) {
-  const pct = mission.target > 0 ? (mission.current / mission.target) * 100 : 0;
+  const pct = mission.completed ? 100 : 0;
   return (
     <div
       className={`rounded-xl border p-5 transition ${
-        mission.locked ? 'border-white/5 opacity-40' : !mission.completed ? 'border-white/10' : ''
+        !mission.completed ? 'border-white/10' : ''
       } ${isNew ? 'animate-pulse' : ''}`}
       style={mission.completed ? { borderColor: 'color-mix(in srgb, var(--sage) 20%, transparent)', background: 'color-mix(in srgb, var(--sage) 5%, transparent)' } : undefined}
     >
       <div className="mb-2 flex items-center justify-between">
         <span
-          className={`text-sm font-semibold ${mission.completed ? 'line-through' : ''} ${mission.locked ? 'text-white/30' : !mission.completed ? 'text-white' : ''}`}
+          className={`text-sm font-semibold ${mission.completed ? 'line-through' : 'text-white'}`}
           style={mission.completed ? { color: 'var(--sage)' } : undefined}
         >
-          {mission.completed && '\u2713 '}{mission.title}
+          {mission.completed && '\u2713 '}{mission.titleCs}
         </span>
         <span className="rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: 'color-mix(in srgb, var(--warning) 15%, transparent)', color: 'var(--warning)' }}>
           +{mission.xpReward} XP
         </span>
       </div>
-      {!mission.completed && !mission.locked && (
+      {!mission.completed && (
         <>
           <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ backgroundColor: 'var(--sage)', width: `${Math.min(100, pct)}%` }}
+              style={{ backgroundColor: 'var(--sage)', width: `${pct}%` }}
             />
           </div>
           <div className="text-[10px] tabular-nums text-white/40">
-            {mission.current} / {mission.target}
+            Goal: {mission.targetValue}
           </div>
         </>
       )}
@@ -121,7 +101,7 @@ function MissionCard({
 }
 
 export default function SeasonPage() {
-  const [data, setData] = useState<SeasonData | null>(null);
+  const [data, setData] = useState<SeasonCurrent | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -132,11 +112,8 @@ export default function SeasonPage() {
   useEffect(() => { document.title = 'FitAI — Season'; }, []);
 
   useEffect(() => {
-    // TODO(shared-types): page expects a legacy shape (name, currentXP, nextLevelXP, endsAt,
-    // missions[].current/target/locked) — real contract is SeasonCurrent from @fitai/shared
-    // (season nested under `season`, missions use titleCs/targetValue).
     getCurrentSeason()
-      .then((d) => setData(d as unknown as SeasonData))
+      .then((d) => setData(d))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
@@ -145,10 +122,9 @@ export default function SeasonPage() {
     setJoining(true);
     setError(null);
     try {
-      // TODO(shared-types): joinSeason returns a SeasonProgress row (no name/missions);
-      // page should refetch getCurrentSeason() after joining.
-      const d = await joinSeason();
-      setData(d as unknown as SeasonData);
+      // joinSeason() returns a SeasonProgress row (no season/missions) — refetch the full view.
+      await joinSeason();
+      setData(await getCurrentSeason());
     } catch {
       setError('Failed to join season');
     }
@@ -159,16 +135,13 @@ export default function SeasonPage() {
     setChecking(true);
     setError(null);
     try {
-      // TODO(shared-types): API returns SeasonMissionCheckResult with `newlyCompleted:
-      // { code, titleCs }[]` — the `completed` field read below never exists at runtime.
-      const result = (await checkSeasonMissions()) as unknown as { completed?: Mission[] };
-      if (result.completed && result.completed.length > 0) {
-        setNewlyCompleted(result.completed.map((m: Mission) => m.id));
+      const result = await checkSeasonMissions();
+      if (result.newlyCompleted.length > 0) {
+        setNewlyCompleted(result.newlyCompleted.map((m) => m.code));
         setConfettiTrigger(true);
         setTimeout(() => setConfettiTrigger(false), 100);
       }
-      const fresh = await getCurrentSeason();
-      setData(fresh as unknown as SeasonData);
+      setData(await getCurrentSeason());
     } catch {
       setError('Failed to check missions');
     }
@@ -193,14 +166,14 @@ export default function SeasonPage() {
           </div>
         )}
 
-        {!loading && data && (
+        {!loading && data?.active && (
           <>
             {/* Hero */}
             <h1
               className="mb-2 font-bold tracking-tight text-white"
               style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', letterSpacing: '-0.04em', lineHeight: 1 }}
             >
-              {data.name}
+              {data.season.name}
             </h1>
             <div className="mb-8 flex items-baseline gap-3">
               <span
@@ -214,20 +187,20 @@ export default function SeasonPage() {
 
             {/* XP bar */}
             <div className="mb-2 flex justify-between text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">
-              <span>XP to next level</span>
-              <span>{data.currentXP} / {data.nextLevelXP}</span>
+              <span>Total season XP</span>
+              <span>{data.totalXP} XP</span>
             </div>
             <div className="mb-8 h-3 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-[var(--sage)] transition-all duration-700"
-                style={{ width: `${data.nextLevelXP > 0 ? Math.min(100, (data.currentXP / data.nextLevelXP) * 100) : 0}%` }}
+                style={{ width: `${data.maxLevel > 0 ? Math.min(100, (data.level / data.maxLevel) * 100) : 0}%` }}
               />
             </div>
 
             {/* Timer + join */}
             <div className="mb-8 flex items-center gap-6">
               <span className="text-sm text-white/40">
-                Remaining <span className="font-semibold text-white/70">{daysRemaining(data.endsAt)} days</span>
+                Remaining <span className="font-semibold text-white/70">{daysRemaining(data.season.endDate)} days</span>
               </span>
               {!data.joined && (
                 <button
@@ -265,7 +238,7 @@ export default function SeasonPage() {
                 <StaggerItem key={m.id}>
                   <MissionCard
                     mission={m}
-                    isNew={newlyCompleted.includes(m.id)}
+                    isNew={newlyCompleted.includes(m.code)}
                   />
                 </StaggerItem>
               ))}
@@ -273,7 +246,7 @@ export default function SeasonPage() {
           </>
         )}
 
-        {!loading && !data && (
+        {!loading && (!data || !data.active) && (
           <div className="py-24 text-center">
             <h1
               className="mb-6 font-bold tracking-tight text-white"

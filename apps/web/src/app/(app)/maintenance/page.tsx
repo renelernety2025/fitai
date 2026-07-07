@@ -7,14 +7,14 @@ import { getMaintenanceStatus, getMaintenanceAlerts, getBodyMileage, markDeload,
 
 type MaintenanceStatus = { muscleGroup: string; status: string; sessionsSinceDeload: number; lastTrainedAt?: string };
 type MaintenanceAlert = { id: string; severity: string; muscleGroup: string; message: string };
-type BodyMileage = { totalVolumeKg: number; totalSessions: number; totalSets: number };
+type MileageSummary = { totalVolumeKg: number; totalSets: number; totalReps: number };
 
 const STATUS_COLOR: Record<string, string> = { FRESH: 'var(--sage, #34d399)', DUE: '#FF9F0A', OVERDUE: 'var(--danger, #ef4444)' };
 
 export default function MaintenancePage() {
   const [muscles, setMuscles] = useState<MaintenanceStatus[]>([]);
   const [alerts, setAlerts] = useState<MaintenanceAlert[]>([]);
-  const [mileage, setMileage] = useState<BodyMileage | null>(null);
+  const [mileage, setMileage] = useState<MileageSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -23,9 +23,23 @@ export default function MaintenancePage() {
   const refresh = useCallback(() => {
     setError(false);
     Promise.all([getMaintenanceStatus(), getMaintenanceAlerts(), getBodyMileage()])
-      // TODO(shared-types): API returns BodyMileageEntry[] (per muscle group),
-      // page still treats it as a single aggregate object.
-      .then(([m, a, b]) => { setMuscles(m); setAlerts(a); setMileage(b as unknown as BodyMileage); })
+      .then(([m, a, b]) => {
+        setMuscles(m);
+        setAlerts(a);
+        // getBodyMileage() returns one BodyMileageEntry per muscle group — aggregate client-side.
+        setMileage(
+          b.length
+            ? b.reduce<MileageSummary>(
+                (acc, e) => ({
+                  totalVolumeKg: acc.totalVolumeKg + e.totalVolumeKg,
+                  totalSets: acc.totalSets + e.totalSets,
+                  totalReps: acc.totalReps + e.totalReps,
+                }),
+                { totalVolumeKg: 0, totalSets: 0, totalReps: 0 },
+              )
+            : null,
+        );
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
@@ -63,8 +77,8 @@ export default function MaintenancePage() {
               <span className="v3-numeric" style={{ fontSize: 16, color: 'var(--text-3)' }}>kg</span>
             </div>
             <div style={{ display: 'flex', gap: 24, marginTop: 12 }}>
-              <Metric label="Sessions" value={mileage.totalSessions} />
               <Metric label="Sets" value={mileage.totalSets} />
+              <Metric label="Reps" value={mileage.totalReps} />
             </div>
           </Card>
         )}

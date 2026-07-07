@@ -5,21 +5,7 @@ import Link from 'next/link';
 import { StaggerContainer, StaggerItem } from '@/components/v2/motion';
 import { SkeletonCard } from '@/components/v2/Skeleton';
 import { getExperiences, bookExperience } from '@/lib/api';
-
-type Experience = {
-  id: string;
-  title: string;
-  category: string;
-  location: string;
-  date: string;
-  price: number;
-  currency: string;
-  trainerName: string;
-  trainerRating: number;
-  spotsTotal: number;
-  spotsLeft: number;
-  description: string;
-};
+import type { ExperienceListing } from '@fitai/shared';
 
 const CATEGORIES = [
   'GROUP',
@@ -49,7 +35,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 };
 
 export default function ExperiencesPage() {
-  const [items, setItems] = useState<Experience[]>([]);
+  const [items, setItems] = useState<ExperienceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string | null>(null);
   const [booking, setBooking] = useState<string | null>(null);
@@ -61,8 +47,7 @@ export default function ExperiencesPage() {
   useEffect(() => {
     setLoading(true);
     getExperiences(filter ? { category: filter } : undefined)
-      // TODO(shared-types): local Experience shape diverges from the API contract (location, price, trainerName, spotsLeft do not exist server-side)
-      .then((e) => setItems(e as unknown as Experience[]))
+      .then((e) => setItems(e))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [filter]);
@@ -77,7 +62,9 @@ export default function ExperiencesPage() {
       .then(() => {
         setItems((prev) =>
           prev.map((e) =>
-            e.id === id ? { ...e, spotsLeft: Math.max(0, e.spotsLeft - 1) } : e,
+            e.id === id
+              ? { ...e, currentBookings: Math.min(e.capacity, e.currentBookings + 1) }
+              : e,
           ),
         );
         setBookMsg({ type: 'ok', text: 'Booked successfully!' });
@@ -94,11 +81,6 @@ export default function ExperiencesPage() {
       month: 'short',
       year: 'numeric',
     });
-  }
-
-  function renderStars(rating: number): string {
-    const full = Math.round(rating);
-    return '\u2605'.repeat(full) + '\u2606'.repeat(5 - full);
   }
 
   return (
@@ -176,6 +158,8 @@ export default function ExperiencesPage() {
         <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((exp) => {
             const color = CATEGORY_COLORS[exp.category] || '#00E5FF';
+            const spotsLeft = Math.max(0, exp.capacity - exp.currentBookings);
+            const trainerName = exp.trainer.user.name;
             return (
               <StaggerItem key={exp.id}>
                 <div className="group overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] transition hover:border-white/15">
@@ -203,37 +187,37 @@ export default function ExperiencesPage() {
                       </h3>
                     </Link>
                     <p className="mt-1 text-xs text-white/40">
-                      {exp.location} &middot; {formatDate(exp.date)}
+                      {exp.locationAddress} &middot; {formatDate(exp.dateTime)}
                     </p>
                     <div className="mt-3 flex items-center gap-2">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white">
-                        {exp.trainerName.charAt(0)}
+                        {trainerName.charAt(0)}
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-white">
-                          {exp.trainerName}
+                          {trainerName}
                         </p>
-                        <p className="text-[10px] text-[#FF9F0A]">
-                          {renderStars(exp.trainerRating)}
-                        </p>
+                        {exp.trainer.isVerified && (
+                          <p className="text-[10px] text-[var(--sage)]">Verified trainer</p>
+                        )}
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div>
                         <p className="text-lg font-bold text-white">
-                          {exp.price} {exp.currency || 'Kc'}
+                          {exp.priceKc} Kc
                         </p>
                         <p className="text-[10px] text-white/30">
-                          {exp.spotsLeft}/{exp.spotsTotal} spots
+                          {spotsLeft}/{exp.capacity} spots
                         </p>
                       </div>
                       <button
                         onClick={() => handleBook(exp.id)}
-                        disabled={booking === exp.id || exp.spotsLeft <= 0}
+                        disabled={booking === exp.id || spotsLeft <= 0}
                         className="rounded-xl px-5 py-2 text-xs font-semibold uppercase tracking-wider text-white transition disabled:opacity-40"
                         style={{ backgroundColor: color }}
                       >
-                        {exp.spotsLeft <= 0 ? 'Full' : 'Book'}
+                        {spotsLeft <= 0 ? 'Full' : 'Book'}
                       </button>
                     </div>
                   </div>

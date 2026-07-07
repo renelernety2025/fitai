@@ -17,10 +17,8 @@ import {
   type WeeklyVolumeEntry,
 } from '@/lib/api';
 
-type PersonalRecord = {
-  exerciseId: string; exerciseName: string; bestWeight: number;
-  bestReps: number; delta: number | null; achievedAt: string;
-};
+import type { PersonalRecordEntry } from '@fitai/shared';
+type PersonalRecord = PersonalRecordEntry;
 
 export default function ProgressPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
@@ -36,7 +34,7 @@ export default function ProgressPage() {
     getInsights().then(setInsights).catch(console.error);
     getMyGymSessions().then(setSessions).catch(console.error);
     getMyWeeklyVolume().then(setVolume).catch(console.error);
-    getPersonalRecords().then((d) => setRecords(d as unknown as PersonalRecord[])).catch(console.error);
+    getPersonalRecords().then(setRecords).catch(console.error);
   }, []);
 
   if (!stats) {
@@ -156,10 +154,10 @@ function PersonalRecordsGrid({ records }: { records: PersonalRecord[] }) {
         {display.map((r) => (
           <div key={r.exerciseId} style={{ padding: 18, background: 'var(--bg-2)', borderRadius: 12, border: '1px solid var(--stroke-1)' }}>
             <div className="v3-caption" style={{ marginBottom: 6 }}>{r.exerciseName}</div>
-            <div className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)', marginBottom: 4 }}>{r.bestWeight} kg</div>
+            <div className="v3-numeric" style={{ fontSize: 28, color: 'var(--text-1)', marginBottom: 4 }}>{r.bestWeight ?? '--'} kg</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-              <span className="v3-caption">{new Date(r.achievedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              {r.delta !== null && <span style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.delta > 0 ? '+' : ''}{r.delta} kg</span>}
+              <span className="v3-caption">{new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              {r.deltaWeight != null && r.deltaWeight !== 0 && <span style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.deltaWeight > 0 ? '+' : ''}{r.deltaWeight} kg</span>}
             </div>
           </div>
         ))}

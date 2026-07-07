@@ -8,14 +8,10 @@ import {
   getDuelHistory,
   submitDuelScore,
 } from '@/lib/api';
+import type { DuelWithUsers } from '@fitai/shared';
 import { ChallengeModal } from '@/components/v3/ChallengeModal';
 
-type Duel = {
-  id: string; challengerName: string; challengedName: string;
-  type: string; metric: string; xpBet: number;
-  challengerScore: number | null; challengedScore: number | null;
-  status: string; endsAt: string; winnerId: string | null; winnerName: string | null;
-};
+type Duel = DuelWithUsers;
 
 export default function DuelsPage() {
   const [active, setActive] = useState<Duel[]>([]);
@@ -27,14 +23,14 @@ export default function DuelsPage() {
 
   function refresh() {
     Promise.all([getActiveDuels(), getDuelHistory()])
-      .then(([a, h]) => { setActive(a as unknown as Duel[]); setHistory(h as unknown as Duel[]); })
+      .then(([a, h]) => { setActive(a); setHistory(h); })
       .catch(() => {});
   }
 
   useEffect(() => { document.title = 'FitAI — Duels'; }, []);
   useEffect(() => {
     Promise.all([getActiveDuels(), getDuelHistory()])
-      .then(([a, h]) => { setActive(a as unknown as Duel[]); setHistory(h as unknown as Duel[]); })
+      .then(([a, h]) => { setActive(a); setHistory(h); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -47,7 +43,7 @@ export default function DuelsPage() {
     if (!scoreInput || !scoreInput.value) return;
     submitDuelScore(scoreInput.id, Number(scoreInput.value))
       .then(() => getActiveDuels())
-      .then(a => { setActive(a as unknown as Duel[]); setScoreInput(null); })
+      .then(a => { setActive(a); setScoreInput(null); })
       .catch(() => {});
   }
 
@@ -129,7 +125,9 @@ function ActiveDuels({ duels, onScore }: { duels: Duel[]; onScore: (id: string) 
 
 function DuelCard({ duel: d, onScore }: { duel: Duel; onScore: () => void }) {
   const winning = (d.challengerScore ?? 0) > (d.challengedScore ?? 0);
-  const daysLeft = Math.max(0, Math.ceil((new Date(d.endsAt).getTime() - Date.now()) / 86400000));
+  const daysLeft = d.endsAt
+    ? Math.max(0, Math.ceil((new Date(d.endsAt).getTime() - Date.now()) / 86400000))
+    : 0;
 
   return (
     <Card padding={28}>
@@ -140,7 +138,7 @@ function DuelCard({ duel: d, onScore }: { duel: Duel; onScore: () => void }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
         <VsColumn name="You" score={d.challengerScore} leading={winning} />
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-3)', fontStyle: 'italic' }}>vs</div>
-        <VsColumn name={d.challengedName} score={d.challengedScore} leading={!winning} />
+        <VsColumn name={d.challenged.name} score={d.challengedScore} leading={!winning} />
       </div>
       <div style={{ height: 6, background: 'var(--bg-3)', borderRadius: 'var(--r-pill)', overflow: 'hidden', display: 'flex' }}>
         <div style={{ flex: d.challengerScore ?? 1, background: 'var(--accent)' }} />
@@ -176,18 +174,18 @@ function HistorySection({ duels }: { duels: Duel[] }) {
           <Card key={d.id} padding={20} style={{ opacity: 0.75 }}>
             <div className="v3-caption" style={{ marginBottom: 8 }}>{d.type} · {d.metric}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-              <span style={{ color: 'var(--text-1)' }}>{d.challengerName}</span>
+              <span style={{ color: 'var(--text-1)' }}>{d.challenger.name}</span>
               <span style={{ color: 'var(--text-3)' }}>vs</span>
-              <span style={{ color: 'var(--text-1)' }}>{d.challengedName}</span>
+              <span style={{ color: 'var(--text-1)' }}>{d.challenged.name}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 20, fontWeight: 700, marginTop: 8 }}>
               <span>{d.challengerScore ?? 0}</span>
               <span style={{ color: 'var(--text-3)' }}>:</span>
               <span>{d.challengedScore ?? 0}</span>
             </div>
-            {d.winnerName && (
+            {d.winnerId && (
               <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>
-                Winner: {d.winnerName} (+{d.xpBet} XP)
+                Winner: {d.winnerId === d.challenger.id ? d.challenger.name : d.challenged.name} (+{d.xpBet} XP)
               </div>
             )}
           </Card>

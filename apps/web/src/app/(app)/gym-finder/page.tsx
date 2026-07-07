@@ -64,7 +64,7 @@ export default function GymFinderPage() {
     if (sortBy === 'rating') {
       result = [...result].sort((a, b) => (b.rating || 0) - (a.rating || 0));
     } else {
-      result = [...result].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      result = [...result].sort((a, b) => (a.gymName || '').localeCompare(b.gymName || ''));
     }
     return result;
   }, [gyms, equipFilter, sortBy]);
@@ -76,9 +76,13 @@ export default function GymFinderPage() {
     setSubmitting(true);
     setError(null);
     try {
-      // TODO(shared-types): API expects { gymName }, page sends { name } —
-      // pre-existing field mismatch, kept as-is (type-level cast only).
-      const review = await addGymReview(form as unknown as Parameters<typeof addGymReview>[0]);
+      const review = await addGymReview({
+        gymName: form.name,
+        address: form.address || undefined,
+        rating: form.rating,
+        equipment: form.equipment,
+        notes: form.notes || undefined,
+      });
       setGyms((prev) => [...prev, review]);
       setShowForm(false);
       setForm({ name: '', address: '', rating: 4, equipment: [], notes: '' });
@@ -206,7 +210,7 @@ export default function GymFinderPage() {
           >
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-base font-bold text-white">{g.name}</h3>
+                <h3 className="text-base font-bold text-white">{g.gymName}</h3>
                 {g.address && <p className="mt-0.5 text-xs text-white/40">{g.address}</p>}
               </div>
               <Stars rating={g.rating || 0} />

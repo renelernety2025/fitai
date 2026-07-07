@@ -5,6 +5,10 @@ import { Card, Button, Tag, Avatar, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { useAuth } from '@/lib/auth-context';
 import { getLeagueCurrent, joinLeague } from '@/lib/api';
+import type { LeagueCurrent } from '@fitai/shared';
+
+/** The `joined: true` branch of LeagueCurrent — the only shape with a leaderboard. */
+type JoinedLeague = Extract<LeagueCurrent, { joined: true }>;
 
 const TIER_COLORS: Record<string, string> = {
   bronze: '#A06B45', silver: '#B8B8B8', gold: '#E5B45A',
@@ -17,53 +21,50 @@ const TIERS = [
   { name: 'Master', xp: '40,000' }, { name: 'Legend', xp: 'inf' },
 ];
 
-interface LeagueData {
-  tier: string; rank: number; weeklyXP: number; nextTierXP: number;
-  joined: boolean; endsAt: string;
-  leaderboard: { userId: string; name: string; weeklyXP: number; rank: number }[];
-  promotionLine: number; relegationLine: number;
-}
-
 export default function LeaguesPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<LeagueData | null>(null);
+  const [data, setData] = useState<LeagueCurrent | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
 
   useEffect(() => { document.title = 'FitAI — Leagues'; }, []);
   useEffect(() => {
-    // TODO(shared-types): page expects fields the API does not return (rank, nextTierXP,
-    // endsAt, promotionLine, relegationLine) — real contract is LeagueCurrent from @fitai/shared.
-    getLeagueCurrent().then((d) => setData(d as unknown as LeagueData)).catch(() => setData(null)).finally(() => setLoading(false));
+    getLeagueCurrent().then((d) => setData(d)).catch(() => setData(null)).finally(() => setLoading(false));
   }, []);
 
   async function handleJoin() {
     setJoining(true);
-    // TODO(shared-types): joinLeague returns a LeagueMembership row (no leaderboard);
-    // page should refetch getLeagueCurrent() after joining.
-    try { setData((await joinLeague()) as unknown as LeagueData); } catch { /* noop */ }
+    // joinLeague() returns a LeagueMembership row (no leaderboard) — refetch the full view.
+    try { await joinLeague(); setData(await getLeagueCurrent()); } catch { /* noop */ }
     setJoining(false);
   }
 
-  const tierKey = data?.tier?.toLowerCase() ?? 'bronze';
+  const tierKey = data && data.joined ? data.tier.toLowerCase() : 'bronze';
   const tierColor = TIER_COLORS[tierKey] ?? '#B8B8B8';
 
   return (
     <div style={{ background: 'var(--bg-0)', minHeight: '100vh', padding: '64px 96px' }}>
-      <LeagueHeader tier={data?.tier ?? 'Leagues'} />
+      <LeagueHeader />
 
       {loading && <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-3)' }}>Loading...</div>}
 
-      {!loading && data && (
+      {!loading && data?.joined && (
         <>
           <TierLadder currentTier={tierKey} />
           <LeagueBoard data={data} userId={user?.id} tierColor={tierColor} />
         </>
       )}
 
-      {!loading && !data && (
+      {!loading && (!data || !data.joined) && (
         <div style={{ textAlign: 'center', padding: 64 }}>
-          <p style={{ color: 'var(--text-3)', marginBottom: 16 }}>No active league.</p>
+          <p style={{ color: 'var(--text-3)', marginBottom: 8 }}>
+            {data ? "You're not in a league yet." : 'No active league.'}
+          </p>
+          {data && !data.joined && (
+            <p className="v3-numeric" style={{ fontSize: 20, marginBottom: 16 }}>
+              {data.weeklyXP.toLocaleString()} XP this week
+            </p>
+          )}
           <Button variant="accent" onClick={handleJoin} disabled={joining}>
             {joining ? 'Joining...' : 'Join league'}
           </Button>
@@ -73,7 +74,7 @@ export default function LeaguesPage() {
   );
 }
 
-function LeagueHeader({ tier }: { tier: string }) {
+function LeagueHeader() {
   return (
     <div style={{ marginBottom: 32 }}>
       <div className="v3-eyebrow-serif" style={{ marginBottom: 12 }}>Leagues</div>
@@ -115,7 +116,7 @@ function TierLadder({ currentTier }: { currentTier: string }) {
   );
 }
 
-function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: string; tierColor: string }) {
+function LeagueBoard({ data, userId, tierColor }: { data: JoinedLeague; userId?: string; tierColor: string }) {
   const lb = data.leaderboard.slice(0, 20);
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32 }}>
@@ -147,7 +148,7 @@ function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: s
             );
           })}
           <div style={{ padding: '12px 24px', borderTop: '2px dashed var(--stroke-2)', textAlign: 'center', color: 'var(--text-3)', fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-            Promotion zone · Top {data.promotionLine}
+            Promotion zone · {data.totalInTier} in tier
           </div>
         </Card>
       </div>
@@ -156,14 +157,15 @@ function LeagueBoard({ data, userId, tierColor }: { data: LeagueData; userId?: s
   );
 }
 
-function PromotionSidebar({ data }: { data: LeagueData }) {
-  const daysLeft = Math.max(0, Math.ceil((new Date(data.endsAt).getTime() - Date.now()) / 86400000));
+function PromotionSidebar({ data }: { data: JoinedLeague }) {
   return (
     <div>
       <SectionHeader eyebrow="Promotion bar" title="What you need" />
       <Card padding={28} style={{ marginBottom: 16 }}>
-        <div className="v3-caption" style={{ marginBottom: 8 }}>Days remaining</div>
-        <div className="v3-numeric" style={{ fontSize: 56, color: 'var(--accent)' }}>{daysLeft}</div>
+        <div className="v3-caption" style={{ marginBottom: 8 }}>Your rank</div>
+        <div className="v3-numeric" style={{ fontSize: 56, color: 'var(--accent)' }}>
+          {data.rank != null ? `#${data.rank}` : '—'}
+        </div>
         <div style={{ height: 1, background: 'var(--stroke-1)', margin: '20px 0' }} />
         <div className="v3-caption" style={{ marginBottom: 8 }}>Your weekly XP</div>
         <div className="v3-numeric" style={{ fontSize: 32 }}>{data.weeklyXP.toLocaleString()}</div>

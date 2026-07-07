@@ -1,44 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Chip, Tag, Sparkline, SectionHeader } from '@/components/v3';
+import { Card, Tag, Sparkline, SectionHeader } from '@/components/v3';
 import { FitIcon } from '@/components/icons/FitIcons';
 import { getPersonalRecords, getPredictions } from '@/lib/api';
+import type { PersonalRecordEntry } from '@fitai/shared';
 import type { PredictionItem } from '@/lib/api/progress';
 
-type PersonalRecord = {
-  exerciseId: string; exerciseName: string; category: string;
-  bestWeight: number; bestReps: number; date: string;
-  delta: number | null; achievedAt: string;
+// Sector times are a feature gap: the /records list endpoint returns
+// PersonalRecordEntry (no sector splits), so the expanded panel stays hidden.
+type PersonalRecord = PersonalRecordEntry & {
   eccentricMs?: number; holdMs?: number; concentricMs?: number;
 };
-
-const FILTERS = [
-  { v: 'ALL', l: 'All' },
-  { v: 'COMPOUND', l: 'Compound' },
-  { v: 'ISOLATION', l: 'Isolation' },
-  { v: 'ACCESSORY', l: 'Accessory' },
-];
 
 export default function RecordsPage() {
   const [records, setRecords] = useState<PersonalRecord[]>([]);
   const [predictions, setPredictions] = useState<PredictionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('ALL');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => { document.title = 'FitAI — Records'; }, []);
 
   useEffect(() => {
     Promise.all([
-      getPersonalRecords().then((d) => setRecords(d as unknown as PersonalRecord[])),
+      getPersonalRecords().then((d) => setRecords(d)),
       getPredictions().then((d) => setPredictions(d.predictions)).catch(() => {}),
     ])
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
-  const filtered = filter === 'ALL' ? records : records.filter((r) => r.category === filter);
 
   if (loading) {
     return (
@@ -57,14 +47,7 @@ export default function RecordsPage() {
         </h1>
       </div>
 
-      {/* Filter chips */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
-        {FILTERS.map((f) => (
-          <Chip key={f.v} active={filter === f.v} onClick={() => setFilter(f.v)}>{f.l}</Chip>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
+      {records.length === 0 && (
         <Card padding={48} style={{ textAlign: 'center' }}>
           <div className="v3-display-3" style={{ marginBottom: 8 }}>No records yet</div>
           <div className="v3-caption">Start training to set personal records.</div>
@@ -72,7 +55,7 @@ export default function RecordsPage() {
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-        {filtered.map((pr) => (
+        {records.map((pr) => (
           <RecordCard key={pr.exerciseId} pr={pr} expanded={expanded === pr.exerciseId} onToggle={() => setExpanded(expanded === pr.exerciseId ? null : pr.exerciseId)} />
         ))}
       </div>
@@ -93,7 +76,7 @@ export default function RecordsPage() {
 
 function RecordCard({ pr, expanded, onToggle }: { pr: PersonalRecord; expanded: boolean; onToggle: () => void }) {
   const hasSectors = pr.eccentricMs || pr.holdMs || pr.concentricMs;
-  const daysAgo = Math.floor((Date.now() - new Date(pr.achievedAt).getTime()) / 86_400_000);
+  const daysAgo = Math.floor((Date.now() - new Date(pr.date).getTime()) / 86_400_000);
   const prLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo} days ago`;
 
   return (
@@ -102,13 +85,13 @@ function RecordCard({ pr, expanded, onToggle }: { pr: PersonalRecord; expanded: 
         <div>
           <div className="v3-eyebrow" style={{ marginBottom: 8 }}>{pr.exerciseName}</div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            <span className="v3-numeric" style={{ fontSize: 48, color: 'var(--accent)', lineHeight: 1 }}>{pr.bestWeight}</span>
+            <span className="v3-numeric" style={{ fontSize: 48, color: 'var(--accent)', lineHeight: 1 }}>{pr.bestWeight ?? '--'}</span>
             <span className="v3-caption">kg</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-            {pr.delta !== null && (
+            {pr.deltaWeight != null && pr.deltaWeight !== 0 && (
               <span className="v3-numeric" style={{ fontSize: 12, color: 'var(--sage)' }}>
-                {pr.delta > 0 ? '+' : ''}{pr.delta} kg
+                {pr.deltaWeight > 0 ? '+' : ''}{pr.deltaWeight} kg
               </span>
             )}
             <span className="v3-caption">{pr.bestReps} reps</span>
@@ -120,8 +103,8 @@ function RecordCard({ pr, expanded, onToggle }: { pr: PersonalRecord; expanded: 
       {/* Progress sparkline — shown only when real history is available */}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-        <span className="v3-caption">{pr.category}</span>
-        <span className="v3-caption">{new Date(pr.achievedAt).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}</span>
+        <span className="v3-caption">{pr.exerciseNameCs ?? ''}</span>
+        <span className="v3-caption">{new Date(pr.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}</span>
       </div>
 
       {expanded && hasSectors && (

@@ -10,14 +10,17 @@ import {
   removeRoutineItem,
   getDailyBrief,
 } from '@/lib/api';
+import type { RoutineItemType } from '@fitai/shared';
 
+// Local shapes mirror the authoritative Routine / RoutineItem from @fitai/shared.
 type RoutineItem = {
   id: string;
   type: string;
-  slot: string;
-  name: string;
-  order: number;
-  notes?: string;
+  timing: string;
+  referenceId: string | null;
+  referenceName: string;
+  notes: string | null;
+  sortOrder: number;
 };
 type Routine = {
   id: string;
@@ -26,34 +29,35 @@ type Routine = {
   items: RoutineItem[];
 };
 
+// Timeline slots grouped by the RoutineItem.timing enum. Items render once, in the
+// first slot (top-down) that matches their timing (see dedupe logic below).
 const SLOTS = [
-  { key: 'morning', label: 'Morning', time: '6:00', icon: 'bolt', color: '#FF9F0A' },
-  { key: 'pre_workout', label: 'Pre-Workout', time: '8:00', icon: 'flame', color: 'var(--sage, #34d399)' },
-  { key: 'workout', label: 'Workout', time: '10:00', icon: 'dumbbell', color: 'var(--accent)' },
-  { key: 'lunch', label: 'Lunch', time: '12:00', icon: 'apple', color: '#30D158' },
-  { key: 'during', label: 'Afternoon', time: '14:00', icon: 'drop', color: '#00E5FF' },
-  { key: 'post_workout', label: 'Post-Workout', time: '16:00', icon: 'drop', color: '#64D2FF' },
-  { key: 'evening', label: 'Evening', time: '18:00', icon: 'heart', color: '#BF5AF2' },
-  { key: 'night', label: 'Sleep', time: '22:00', icon: 'shield', color: 'var(--text-3)' },
+  { key: 'morning', label: 'Morning', time: '6:00', icon: 'bolt', color: '#FF9F0A', timing: 'RT_MORNING' },
+  { key: 'pre_workout', label: 'Pre-Workout', time: '8:00', icon: 'flame', color: 'var(--sage, #34d399)', timing: 'RT_PRE_WORKOUT' },
+  { key: 'workout', label: 'Workout', time: '10:00', icon: 'dumbbell', color: 'var(--accent)', timing: 'RT_DURING' },
+  { key: 'lunch', label: 'Lunch', time: '12:00', icon: 'apple', color: '#30D158', timing: 'RT_DURING' },
+  { key: 'during', label: 'Afternoon', time: '14:00', icon: 'drop', color: '#00E5FF', timing: 'RT_DURING' },
+  { key: 'post_workout', label: 'Post-Workout', time: '16:00', icon: 'drop', color: '#64D2FF', timing: 'RT_POST_WORKOUT' },
+  { key: 'evening', label: 'Evening', time: '18:00', icon: 'heart', color: '#BF5AF2', timing: 'RT_EVENING' },
+  { key: 'night', label: 'Sleep', time: '22:00', icon: 'shield', color: 'var(--text-3)', timing: 'RT_NIGHT' },
 ];
 
 const ITEM_TYPES = [
-  { value: 'supplement', label: 'Supplement', icon: 'pill' },
-  { value: 'workout', label: 'Workout', icon: 'dumbbell' },
-  { value: 'meal', label: 'Meal', icon: 'apple' },
-  { value: 'recovery', label: 'Recovery', icon: 'heart' },
-  { value: 'custom', label: 'Custom', icon: 'settings' },
+  { value: 'SUPPLEMENT_ITEM', label: 'Supplement', icon: 'pill' },
+  { value: 'WORKOUT_ITEM', label: 'Workout', icon: 'dumbbell' },
+  { value: 'MEAL_ITEM', label: 'Meal', icon: 'apple' },
+  { value: 'RECOVERY_ITEM', label: 'Recovery', icon: 'heart' },
+  { value: 'CUSTOM_ITEM', label: 'Custom', icon: 'settings' },
 ];
 
 function AddForm({
-  slot, routineId, onAdd, onClose,
+  routineId, onAdd, onClose,
 }: {
-  slot: string;
   routineId: string;
   onAdd: (item: RoutineItem) => void;
   onClose: () => void;
 }) {
-  const [type, setType] = useState('supplement');
+  const [type, setType] = useState('SUPPLEMENT_ITEM');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -61,13 +65,11 @@ function AddForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      // TODO(shared-types): payload/response diverge from the API contract
-      // (API expects { type: RoutineItemType, referenceName } and returns
-      // { timing, referenceName, sortOrder } — not { slot, name, order }).
       const item = await addRoutineItem(routineId, {
-        slot, type, name: name.trim(),
-      } as unknown as Parameters<typeof addRoutineItem>[1]);
-      onAdd(item as unknown as RoutineItem);
+        type: type as RoutineItemType,
+        referenceName: name.trim(),
+      });
+      onAdd(item);
     } catch { /* noop */ } finally { setSaving(false); }
   }
 
@@ -159,8 +161,7 @@ export default function RoutineBuilderPage() {
 
   useEffect(() => {
     getMyRoutines()
-      .then((raw) => {
-        const data = raw as unknown as Routine[];
+      .then((data) => {
         setRoutines(data);
         if (data.length > 0) setActive(data[0]);
       })
@@ -172,13 +173,12 @@ export default function RoutineBuilderPage() {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      // TODO(shared-types): API create response has no `items` array;
-      // local Routine type expects it (pre-existing shape divergence).
-      const r = (await createRoutine({
-        name: newName.trim(),
-      })) as unknown as Routine;
-      setRoutines((p) => [...p, r]);
-      setActive(r);
+      // createRoutine() returns a Routine with no `items` — synthesize an empty list
+      // so the timeline (active.items.filter) never dereferences undefined.
+      const r = await createRoutine({ name: newName.trim() });
+      const created: Routine = { ...r, items: [] };
+      setRoutines((p) => [...p, created]);
+      setActive(created);
       setNewName('');
     } catch {
       setError('Failed to create.');
@@ -208,11 +208,21 @@ export default function RoutineBuilderPage() {
     } catch { /* noop */ }
   }
 
-  function slotItems(key: string): RoutineItem[] {
-    return active?.items
-      .filter((i) => i.slot === key)
-      .sort((a, b) => a.order - b.order) || [];
+  // Group items by timing across all slots once per render; each item is claimed by the
+  // first slot (top-down) whose timing matches, so it never renders in two slots.
+  function buildSlotItems(): Record<string, RoutineItem[]> {
+    const claimed = new Set<string>();
+    const byKey: Record<string, RoutineItem[]> = {};
+    for (const slot of SLOTS) {
+      const items = (active?.items ?? [])
+        .filter((i) => i.timing === slot.timing && !claimed.has(i.id))
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      items.forEach((i) => claimed.add(i.id));
+      byKey[slot.key] = items;
+    }
+    return byKey;
   }
+  const slotItemsByKey = buildSlotItems();
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px 64px' }}>
@@ -256,7 +266,7 @@ export default function RoutineBuilderPage() {
                 width: 1, background: 'var(--stroke-1)',
               }} />
               {SLOTS.map((slot) => {
-                const items = slotItems(slot.key);
+                const items = slotItemsByKey[slot.key] ?? [];
                 return (
                   <div key={slot.key} style={{ position: 'relative', marginBottom: 24 }}>
                     <div style={{
@@ -289,7 +299,7 @@ export default function RoutineBuilderPage() {
                                   name={ITEM_TYPES.find((t) => t.value === item.type)?.icon || 'settings'}
                                   size={12} style={{ marginRight: 6 }}
                                 />
-                                {item.name}
+                                {item.referenceName}
                               </span>
                               <button onClick={() => handleRemove(item.id)} style={{
                                 background: 'none', border: 'none', cursor: 'pointer',
@@ -308,7 +318,7 @@ export default function RoutineBuilderPage() {
                       </Card>
                     )}
                     {addingSlot === slot.key ? (
-                      <AddForm slot={slot.key} routineId={active.id}
+                      <AddForm routineId={active.id}
                         onAdd={handleAddItem} onClose={() => setAddingSlot(null)} />
                     ) : (
                       <button onClick={() => setAddingSlot(slot.key)} style={{
